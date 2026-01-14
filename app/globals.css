@@ -1,0 +1,223 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+}
+
+/* KlikForm Design System - Flat Minimalist
+   Color Palette: Purple (#7C3AED), White (#FFFFFF), Gray (#6B7280)
+*/
+
+:root {
+  --radius: 0.5rem;
+
+  /* Background & Foreground */
+  --background: #FFFFFF;
+  --foreground: #1F2937;
+
+  /* Card */
+  --card: #FFFFFF;
+  --card-foreground: #1F2937;
+
+  /* Popover */
+  --popover: #FFFFFF;
+  --popover-foreground: #1F2937;
+
+  /* Primary - Deep Purple */
+  --primary: #451263;
+  --primary-foreground: #FFFFFF;
+
+  /* Secondary - Light Gray */
+  --secondary: #F3F4F6;
+  --secondary-foreground: #374151;
+
+  /* Muted - Soft Gray */
+  --muted: #F9FAFB;
+  --muted-foreground: #6B7280;
+
+  /* Accent - Light Purple */
+  --accent: #F3E8FF;
+  --accent-foreground: #451263;
+
+  /* Destructive */
+  --destructive: #EF4444;
+
+  /* Border & Input */
+  --border: #E5E7EB;
+  --input: #E5E7EB;
+  --ring: #451263;
+
+  /* Charts - Purple palette */
+  --chart-1: #451263;
+  --chart-2: #6B21A8;
+  --chart-3: #9333EA;
+  --chart-4: #C084FC;
+  --chart-5: #E9D5FF;
+
+  /* Sidebar */
+  --sidebar: #FAFAFA;
+  --sidebar-foreground: #1F2937;
+  --sidebar-primary: #451263;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F3F4F6;
+  --sidebar-accent-foreground: #374151;
+  --sidebar-border: #E5E7EB;
+  --sidebar-ring: #451263;
+}
+
+.dark {
+  /* Background & Foreground */
+  --background: #111827;
+  --foreground: #F9FAFB;
+
+  /* Card */
+  --card: #1F2937;
+  --card-foreground: #F9FAFB;
+
+  /* Popover */
+  --popover: #1F2937;
+  --popover-foreground: #F9FAFB;
+
+  /* Primary - Purple (brighter for dark mode) */
+  --primary: #A78BFA;
+  --primary-foreground: #1F2937;
+
+  /* Secondary */
+  --secondary: #374151;
+  --secondary-foreground: #F9FAFB;
+
+  /* Muted */
+  --muted: #374151;
+  --muted-foreground: #9CA3AF;
+
+  /* Accent */
+  --accent: #4C1D95;
+  --accent-foreground: #E9D5FF;
+
+  /* Destructive */
+  --destructive: #F87171;
+
+  /* Border & Input */
+  --border: #374151;
+  --input: #374151;
+  --ring: #A78BFA;
+
+  /* Charts */
+  --chart-1: #A78BFA;
+  --chart-2: #7C3AED;
+  --chart-3: #6D28D9;
+  --chart-4: #5B21B6;
+  --chart-5: #4C1D95;
+
+  /* Sidebar */
+  --sidebar: #1F2937;
+  --sidebar-foreground: #F9FAFB;
+  --sidebar-primary: #A78BFA;
+  --sidebar-primary-foreground: #1F2937;
+  --sidebar-accent: #374151;
+  --sidebar-accent-foreground: #F9FAFB;
+  --sidebar-border: #374151;
+  --sidebar-ring: #A78BFA;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+/* Flat minimalist button overrides */
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 transition-colors duration-200;
+  }
+
+  .card-flat {
+    @apply bg-card border border-border shadow-none hover:shadow-sm transition-shadow duration-200;
+  }
+}
+
+/* TipTap Editor Styles */
+.ProseMirror {
+  outline: none;
+}
+
+.ProseMirror ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+
+.ProseMirror ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+
+.ProseMirror li {
+  margin: 0.25rem 0;
+}
+
+.ProseMirror li p {
+  margin: 0;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: #9ca3af;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.ProseMirror a {
+  color: var(--primary);
+  text-decoration: underline;
+  cursor: pointer;
+}
