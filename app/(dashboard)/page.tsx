@@ -11,6 +11,7 @@ import { DashboardFilter } from '@/components/dashboard-filter';
 interface DashboardPageProps {
     searchParams?: Promise<{
         q?: string;
+        sort?: string;
     }>;
 }
 
