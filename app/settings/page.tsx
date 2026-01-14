@@ -1,7 +1,6 @@
-
 'use client'
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,7 +14,7 @@ import { saveSettingsAction, getSettingsAction } from '@/actions/form';
 
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function SettingsPage() {
+function SettingsContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [loading, setLoading] = useState(true);
@@ -179,5 +178,13 @@ export default function SettingsPage() {
                 </Card>
             </div>
         </div>
+    );
+}
+
+export default function SettingsPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center text-gray-500">Loading...</div>}>
+            <SettingsContent />
+        </Suspense>
     );
 }
