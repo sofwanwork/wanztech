@@ -18,6 +18,8 @@ export const metadata: Metadata = {
   description: "Create forms and collect data in Google Sheets",
   icons: {
     icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
   },
 };
 
