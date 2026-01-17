@@ -18,3 +18,9 @@ export function getProxiedImageUrl(url: string) {
   }
   return url;
 }
+
+// Strip HTML tags for plain text display (e.g., card previews)
+export function stripHtml(html: string): string {
+  if (!html) return '';
+  return html.replace(/<[^>]*>/g, '').trim();
+}

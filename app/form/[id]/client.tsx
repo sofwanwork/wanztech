@@ -1,7 +1,7 @@
 
 'use client'
 
-import { Form, FormField } from '@/lib/storage';
+import { Form, FormField } from '@/lib/types';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -143,7 +143,7 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
                         <CardTitle className="text-2xl font-bold text-gray-900">{form.title}</CardTitle>
                         {form.description && (
                             <div
-                                className="prose prose-sm text-gray-600 mt-2"
+                                className="text-gray-600 mt-2 [&>p]:mb-0 [&>p:empty]:h-3 [&>strong]:font-semibold"
                                 dangerouslySetInnerHTML={{ __html: form.description }}
                             />
                         )}

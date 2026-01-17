@@ -3,7 +3,7 @@ import { getForms } from '@/lib/storage';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ExternalLink, QrCode, FileText, ArrowRight, Search } from 'lucide-react';
-import { getProxiedImageUrl } from '@/lib/utils';
+import { getProxiedImageUrl, stripHtml } from '@/lib/utils';
 import { createFormAction } from '@/actions/form';
 import { DashboardSearch } from '@/components/dashboard-search';
 import { DashboardFilter } from '@/components/dashboard-filter';
@@ -154,7 +154,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
                                 {/* Option menu trigger could go here */}
                             </div>
                             <CardDescription className="line-clamp-2 text-sm mt-1.5 text-gray-500 h-10 leading-relaxed">
-                                {form.description || "No description provided for this form."}
+                                {stripHtml(form.description) || "No description provided for this form."}
                             </CardDescription>
                         </CardHeader>
 

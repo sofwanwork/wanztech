@@ -16,9 +16,6 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "KlikForm",
   description: "Create forms and collect data in Google Sheets",
-  icons: {
-    icon: '/logo.png',
-  },
 };
 
 export default function RootLayout({

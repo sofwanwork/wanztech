@@ -2,7 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { Form } from '@/lib/storage';
+import { Form } from '@/lib/types';
 import { updateFormAction, deleteFormAction } from '@/actions/form';
 import { FieldsEditor } from '@/components/fields-editor';
 import { Button } from '@/components/ui/button';

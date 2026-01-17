@@ -2,7 +2,8 @@
 'use server'
 
 import { v4 as uuidv4 } from 'uuid';
-import { Form, saveForm, getFormById, deleteForm } from '@/lib/storage';
+import { saveForm, getFormById, deleteForm } from '@/lib/storage';
+import { Form, Settings } from '@/lib/types';
 import { appendToSheet, createSpreadsheet } from '@/lib/google-sheets';
 import { uploadToDrive } from '@/lib/google-drive';
 import { redirect } from 'next/navigation';
@@ -12,7 +13,7 @@ import { redirect } from 'next/navigation';
 
 // --- Settings Storage for Credentials ---
 // Replaced by lib/storage which uses Supabase
-import { getSettings, saveSettings, Settings } from '@/lib/storage';
+import { getSettings, saveSettings, getSettingsByFormId } from '@/lib/storage';
 
 export async function saveSettingsAction(settings: Settings) {
     await saveSettings(settings);
@@ -69,7 +70,8 @@ export async function submitFormAction(formId: string, formDataOrObj: FormData |
 
     let dbData: Record<string, any> = {};
 
-    const settings = await getSettings();
+    // Use getSettingsByFormId for public form submission (no auth required)
+    const settings = await getSettingsByFormId(formId);
     // Default to empty object if undefined
     const safeSettings = settings || {};
 
