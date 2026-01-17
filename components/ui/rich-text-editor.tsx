@@ -3,10 +3,8 @@
 import { useMemo, useCallback, useState } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import Underline from '@tiptap/extension-underline'
 import TextAlign from '@tiptap/extension-text-align'
 import Placeholder from '@tiptap/extension-placeholder'
-import Link from '@tiptap/extension-link'
 import {
     Bold,
     Italic,
@@ -50,6 +48,7 @@ export function RichTextEditor({ value, onChange, placeholder = 'Enter descripti
             codeBlock: false,
             blockquote: false,
             horizontalRule: false,
+            strike: false, // Disable strike if not used
             bulletList: {
                 keepMarks: true,
                 keepAttributes: false,
@@ -58,21 +57,22 @@ export function RichTextEditor({ value, onChange, placeholder = 'Enter descripti
                 keepMarks: true,
                 keepAttributes: false,
             },
+            // Configure Link via StarterKit (it is included in v3)
+            link: {
+                openOnClick: false,
+                HTMLAttributes: {
+                    class: 'text-primary underline cursor-pointer',
+                },
+            },
+            // Enable Underline via StarterKit (it is included in v3)
+            underline: {},
         }),
-        Underline,
         TextAlign.configure({
             types: ['paragraph'],
         }),
         Placeholder.configure({
             placeholder: 'Enter description...',
         }),
-        Link.configure({
-            openOnClick: false,
-            HTMLAttributes: {
-                class: 'text-primary underline cursor-pointer',
-            },
-        }),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     ], [])
 
     const editor = useEditor({
