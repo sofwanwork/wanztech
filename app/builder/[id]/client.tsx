@@ -112,35 +112,36 @@ export function BuilderClient({ initialForm }: BuilderClientProps) {
         <div className="min-h-screen bg-gray-50">
             {/* Header */}
             <header className="sticky top-0 bg-white border-b border-gray-200 z-10">
-                <div className="container mx-auto py-3 px-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                <div className="container mx-auto py-3 px-3 sm:px-4 flex items-center justify-between gap-1.5">
+                    <div className="flex items-center gap-2 shrink-0 max-w-[55%]">
                         <Link href="/">
-                            <Button variant="ghost" size="icon" className="h-8 w-8"><ArrowLeft className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0"><ArrowLeft className="h-4 w-4" /></Button>
                         </Link>
-                        <div>
-                            <h1 className="text-lg font-semibold text-gray-900 truncate max-w-[200px] md:max-w-md">{form.title}</h1>
-                            <p className="text-xs text-gray-500">Editing Form</p>
+                        <div className="min-w-0">
+                            <h1 className="text-lg font-semibold text-gray-900 truncate">{form.title}</h1>
+                            <p className="text-xs text-gray-500 hidden sm:block">Editing Form</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 shrink-0">
                         <Link href={form.shortCode ? `/s/${form.shortCode}` : `/form/${form.id}`} target="_blank">
-                            <Button variant="outline" size="sm">
-                                <ExternalLink className="mr-2 h-4 w-4" />
-                                Preview
+                            <Button variant="outline" size="sm" className="px-2 sm:px-3">
+                                <ExternalLink className="h-4 w-4 sm:mr-2" />
+                                <span className="hidden sm:inline">Preview</span>
                             </Button>
                         </Link>
-                        <Button variant="outline" size="sm" onClick={handleDelete} className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200">
+                        <Button variant="outline" size="sm" onClick={handleDelete} className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 px-2 sm:px-3">
                             <Trash className="h-4 w-4" />
                         </Button>
-                        <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/90">
-                            <Save className="mr-2 h-4 w-4" />
-                            {saving ? 'Saving...' : 'Save Changes'}
+                        <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/90 px-3 sm:px-4">
+                            <Save className="h-4 w-4 sm:mr-2" />
+                            <span className="hidden sm:inline">{saving ? 'Saving...' : 'Save Changes'}</span>
+                            <span className="sm:hidden">{saving ? '...' : 'Save'}</span>
                         </Button>
                     </div>
                 </div>
             </header>
 
-            <main className="container mx-auto py-6 px-4">
+            <main className="container mx-auto py-6 px-3 sm:px-4">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left: Form Settings & Fields */}
                     <div className="lg:col-span-2 space-y-6">
