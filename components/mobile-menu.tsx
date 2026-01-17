@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { DashboardSidebar } from '@/components/dashboard-sidebar';
 
 interface MobileMenuProps {
@@ -23,6 +23,8 @@ export function MobileMenu({ profile }: MobileMenuProps) {
                         </Button>
                     </SheetTrigger>
                     <SheetContent side="left" className="p-0 w-64">
+                        <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                        <SheetDescription className="sr-only">Main navigation for KlikForm dashboard</SheetDescription>
                         <DashboardSidebar profile={profile} onNavigate={() => setOpen(false)} />
                     </SheetContent>
                 </Sheet>

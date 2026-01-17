@@ -154,7 +154,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
                                 {/* Option menu trigger could go here */}
                             </div>
                             <CardDescription className="line-clamp-2 text-sm mt-1.5 text-gray-500 h-10 leading-relaxed">
-                                {stripHtml(form.description) || "No description provided for this form."}
+                                {stripHtml(form.description || '') || "No description provided for this form."}
                             </CardDescription>
                         </CardHeader>
 
