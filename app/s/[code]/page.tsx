@@ -12,9 +12,46 @@ interface ShortLinkPageProps {
 export async function generateMetadata({ params }: ShortLinkPageProps): Promise<Metadata> {
     const { code } = await params;
     const form = await getFormByShortCode(code);
+
+    if (!form) {
+        return {
+            title: 'Form Not Found',
+        };
+    }
+
+    const title = form.title || 'Form';
+    const description = form.description ? form.description.replace(/<[^>]*>/g, '').substring(0, 160) : 'Please fill out this form.';
+
+    // Prepare OG Image
+    let images: string[] = [];
+    if (form.coverImage) {
+        const match = form.coverImage.match(/\/d\/([a-zA-Z0-9-_]+)/);
+        if (match && match[1] && (form.coverImage.includes('drive.google.com') || form.coverImage.includes('docs.google.com'))) {
+            images = [`https://lh3.googleusercontent.com/d/${match[1]}`];
+        } else {
+            images = [form.coverImage];
+        }
+    } else {
+        // Fallback to default og image if needed (or app logo)
+        // For now, let's leave it empty to use default from layout?
+        // Layout doesn't have OG image.
+        // Let's use a default if we have one, or just empty.
+    }
+
     return {
-        title: form?.title || 'Form',
-        description: form?.description || 'Please fill out this form.',
+        title,
+        description,
+        openGraph: {
+            title,
+            description,
+            images,
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title,
+            description,
+            images,
+        },
     };
 }
 
