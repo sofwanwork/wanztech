@@ -12,9 +12,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface SidebarProps {
     profile: any; // Using any for simplicity here, ideally import Profile type
+    onNavigate?: () => void; // Callback for mobile menu close
 }
 
-export function DashboardSidebar({ profile }: SidebarProps) {
+export function DashboardSidebar({ profile, onNavigate }: SidebarProps) {
     const pathname = usePathname();
 
     const navItems = [
@@ -64,7 +65,7 @@ export function DashboardSidebar({ profile }: SidebarProps) {
                 <div className="space-y-1">
                     <p className="px-2 text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Menu</p>
                     {navItems.map((item) => (
-                        <Link key={item.href} href={item.href} className="block">
+                        <Link key={item.href} href={item.href} className="block" onClick={onNavigate}>
                             <Button
                                 variant="ghost"
                                 className={cn(
