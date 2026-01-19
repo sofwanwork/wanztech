@@ -10,14 +10,12 @@ async function getUser() {
 }
 
 export async function getForms(): Promise<Form[]> {
-    const supabase = await createClient();
-    // No need to check user explicitly here if we rely on RLS, but explicit check is safer for logic
-    // Actually, createClient (server) uses cookies, so it has the user session.
-    // RLS will ensure we only get our own forms.
+    const { supabase, user } = await getUser();
 
     const { data, error } = await supabase
         .from('forms')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
     if (error) {
@@ -88,6 +86,20 @@ export async function getFormByShortCode(code: string): Promise<Form | undefined
 export async function saveForm(form: Form): Promise<void> {
     const { supabase, user } = await getUser();
 
+    // Security check: If form exists, ensure it belongs to the user
+    if (form.id) {
+        const { data: existing } = await supabase
+            .from('forms')
+            .select('user_id')
+            .eq('id', form.id)
+            .single();
+
+        if (existing && existing.user_id !== user.id) {
+            console.error(`Unauthorized attempt to update form ${form.id} by user ${user.id}`);
+            throw new Error('Unauthorized');
+        }
+    }
+
     // Prepare snake_case data
     const formData = {
         id: form.id,
@@ -113,11 +125,12 @@ export async function saveForm(form: Form): Promise<void> {
 }
 
 export async function deleteForm(id: string): Promise<void> {
-    const { supabase } = await getUser();
+    const { supabase, user } = await getUser();
     const { error } = await supabase
         .from('forms')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user.id);
 
     if (error) throw error;
 }
