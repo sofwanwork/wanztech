@@ -1,14 +1,26 @@
-
-'use client'
+'use client';
 
 import { Form, FormField } from '@/lib/types';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn, getProxiedImageUrl } from '@/lib/utils';
@@ -17,283 +29,743 @@ import { CalendarIcon, Loader2, CheckCircle2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { submitFormAction } from '@/actions/form';
 import { toast } from 'sonner';
+import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 interface PublicFormClientProps {
-    form: Form;
+  form: Form;
 }
 
 export function PublicFormClient({ form }: PublicFormClientProps) {
-    const [submitting, setSubmitting] = useState(false);
-    const [submitted, setSubmitted] = useState(false);
-    const [formData, setFormData] = useState<Record<string, any>>({});
-    const [dateOpen, setDateOpen] = useState<Record<string, boolean>>({});
-    const [mounted, setMounted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [dateOpen, setDateOpen] = useState<Record<string, boolean>>({});
+  const [mounted, setMounted] = useState(false);
 
-    useEffect(() => {
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Helper to check visibility
+  const isFieldVisible = (field: FormField) => {
+    if (!field.conditional) return true;
+    const { fieldId, value } = field.conditional;
+    const dependentValue = formData[fieldId];
+    // Simple string comparison. For checkboxes/arrays, might need includes() check in future.
+    return dependentValue === value;
+  };
+
+  const visibleFields = form.fields.filter(isFieldVisible);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Validation (only for visible fields)
+    for (const field of visibleFields) {
+      const error = validateField(field, formData[field.id]);
+      if (error) {
+        toast.error(error);
+        // Optional: Scroll to error field
+        return;
+      }
+    }
+
+    setSubmitting(true);
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('timestamp', new Date().toISOString());
+
+      // Only append visible fields
+      visibleFields.forEach((field) => {
+        let value = formData[field.id];
+        if (value instanceof Date) {
+          value = format(value, 'yyyy-MM-dd');
+        } else if (Array.isArray(value)) {
+          value = value.join(', ');
+        }
+
+        if (field.type === 'file' && value instanceof File) {
+          formDataToSend.append(field.label, value);
+        } else {
+          formDataToSend.append(field.label, value || '');
+        }
+      });
+
+      const result = await submitFormAction(form.id, formDataToSend);
+
+      if (result.success) {
+        setSubmitted(true);
+        toast.success('Submitted successfully!');
+      } else {
+        toast.error(result.error || 'Something went wrong');
+      }
+    } catch (error) {
+      toast.error('An error occurred');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleInputChange = (id: string, value: any) => {
+    setFormData((prev) => ({ ...prev, [id]: value }));
+  };
+
+  const [checkingAccess, setCheckingAccess] = useState(true);
+  const [accessDenied, setAccessDenied] = useState<string | null>(null);
+
+  // Haversine formula to calculate distance in meters
+  const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371e3; // metres
+    const φ1 = (lat1 * Math.PI) / 180;
+    const φ2 = (lat2 * Math.PI) / 180;
+    const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+    const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+    const a =
+      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
+  };
+
+  useEffect(() => {
+    const checkAccess = () => {
+      const settings = form.attendanceSettings;
+      if (!settings || !settings.enabled) {
+        setCheckingAccess(false);
         setMounted(true);
-    }, []);
+        return;
+      }
 
-    // Helper to check visibility
-    const isFieldVisible = (field: FormField) => {
-        if (!field.conditional) return true;
-        const { fieldId, value } = field.conditional;
-        const dependentValue = formData[fieldId];
-        // Simple string comparison. For checkboxes/arrays, might need includes() check in future.
-        return dependentValue === value;
-    };
+      // 1. Time Check
+      const now = new Date();
+      if (settings.startTime) {
+        const start = new Date(settings.startTime);
+        if (now < start) {
+          setAccessDenied(
+            `Form ini belum dibuka.\nSila tunggu sehingga: ${format(start, 'PP pp')}`
+          );
+          setCheckingAccess(false);
+          setMounted(true);
+          return;
+        }
+      }
+      if (settings.endTime) {
+        const end = new Date(settings.endTime);
+        if (now > end) {
+          setAccessDenied(`Form ini telah ditutup pada: ${format(end, 'PP pp')}`);
+          setCheckingAccess(false);
+          setMounted(true);
+          return;
+        }
+      }
 
-    const visibleFields = form.fields.filter(isFieldVisible);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        // Validation (only for visible fields)
-        for (const field of visibleFields) {
-            if (field.required && !formData[field.id]) {
-                toast.error(`Please fill out "${field.label}"`);
-                return;
-            }
+      // 2. Geofence Check
+      if (settings.geofence?.enabled) {
+        if (!navigator.geolocation) {
+          setAccessDenied('Browser anda tidak menyokong Geolocation. Sila guna browser lain.');
+          setCheckingAccess(false);
+          setMounted(true);
+          return;
         }
 
-        setSubmitting(true);
-        try {
-            const formDataToSend = new FormData();
-            formDataToSend.append('timestamp', new Date().toISOString());
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const userLat = position.coords.latitude;
+            const userLng = position.coords.longitude;
+            const targetLat = settings.geofence!.lat;
+            const targetLng = settings.geofence!.lng;
+            const radius = settings.geofence!.radius;
 
-            // Only append visible fields
-            visibleFields.forEach(field => {
-                let value = formData[field.id];
-                if (value instanceof Date) {
-                    value = format(value, 'yyyy-MM-dd');
-                }
+            const distance = getDistance(userLat, userLng, targetLat, targetLng);
 
-                if (field.type === 'file' && value instanceof File) {
-                    formDataToSend.append(field.label, value);
-                } else {
-                    formDataToSend.append(field.label, value || '');
-                }
-            });
-
-            const result = await submitFormAction(form.id, formDataToSend);
-
-            if (result.success) {
-                setSubmitted(true);
-                toast.success('Submitted successfully!');
-            } else {
-                toast.error(result.error || 'Something went wrong');
+            if (distance > radius) {
+              setAccessDenied(
+                `Anda berada di luar kawasan yang dibenarkan.\nJarak anda: ${Math.round(distance)}m\nJarak dibenarkan: ${radius}m`
+              );
             }
-        } catch (error) {
-            toast.error('An error occurred');
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    const handleInputChange = (id: string, value: any) => {
-        setFormData(prev => ({ ...prev, [id]: value }));
-    };
-
-    if (!mounted) {
-        return <div className="min-h-screen bg-slate-50" />;
-    }
-
-    if (submitted) {
-        return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-                <Card className="w-full max-w-md text-center border border-gray-200 bg-white">
-                    <CardHeader className="pt-8 pb-6">
-                        <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
-                            <CheckCircle2 className="h-6 w-6 text-green-600" />
-                        </div>
-                        <CardTitle className="text-xl font-semibold text-gray-900">
-                            Thank You!
-                        </CardTitle>
-                        <CardDescription className="whitespace-pre-wrap text-gray-600 mt-2">
-                            {form.thankYouMessage || "Your response has been recorded."}
-                        </CardDescription>
-                    </CardHeader>
-                </Card>
-            </div>
+            setCheckingAccess(false);
+            setMounted(true);
+          },
+          (error) => {
+            console.error(error);
+            setAccessDenied('Sila benarkan akses lokasi (GPS) untuk mengisi form ini.');
+            setCheckingAccess(false);
+            setMounted(true);
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
+        return; // Wait for callback
+      }
+
+      // All good
+      setCheckingAccess(false);
+      setMounted(true);
+    };
+
+    checkAccess();
+  }, [form.attendanceSettings]);
+
+  if (!mounted || checkingAccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-gray-500">Checking access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const { primaryColor, backgroundColor } = form.theme || {};
+
+  if (accessDenied) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center p-4 transition-colors duration-500 font-sans"
+        style={
+          {
+            backgroundColor: backgroundColor || '#f9fafb',
+            // @ts-ignore
+            '--primary': primaryColor || '#0f172a',
+          } as React.CSSProperties
+        }
+      >
+        <Card className="w-full max-w-md text-center border-t-4 border-red-500 shadow-lg bg-white">
+          <CardHeader className="pt-8 pb-6">
+            <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+              <span className="text-2xl">🚫</span>
+            </div>
+            <CardTitle className="text-xl font-semibold text-gray-900">Akses Dihadkan</CardTitle>
+            <CardDescription className="whitespace-pre-wrap text-gray-600 mt-2 font-medium">
+              {accessDenied}
+            </CardDescription>
+          </CardHeader>
+          <CardFooter className="justify-center pb-8">
+            <Button variant="outline" onClick={() => window.location.reload()}>
+              Cuba Semula
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
+  if (submitted) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center p-4 transition-colors duration-500 font-sans"
+        style={
+          {
+            backgroundColor: backgroundColor || '#f9fafb',
+            // @ts-ignore
+            '--primary': primaryColor || '#0f172a',
+          } as React.CSSProperties
+        }
+      >
+        <Card className="w-full max-w-md text-center border-t-4 border-t-[var(--primary)] shadow-lg bg-white">
+          <CardHeader className="pt-8 pb-6">
+            <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
+              <CheckCircle2 className="h-6 w-6 text-green-600" />
+            </div>
+            <CardTitle className="text-xl font-semibold text-gray-900">Thank You!</CardTitle>
+            <CardDescription className="whitespace-pre-wrap text-gray-600 mt-2">
+              {form.thankYouMessage || 'Your response has been recorded.'}
+            </CardDescription>
+          </CardHeader>
+          <CardFooter className="justify-center pb-8">
+            <Button
+              variant="outline"
+              onClick={() => window.location.reload()}
+              className="border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-colors"
+            >
+              Submit another response
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
+  // Check validity (only visible inputs)
+  const validateField = (field: FormField, value: any): string | null => {
+    if (field.type === 'separator') return null;
+
+    // Required Check
+    if (
+      field.required &&
+      (value === undefined ||
+        value === '' ||
+        value === null ||
+        (Array.isArray(value) && value.length === 0))
+    ) {
+      return `Please fill out "${field.label}"`;
     }
 
-    // Check validity (only visible)
-    const isFormValid = visibleFields.every(field => {
-        if (!field.required) return true;
-        const value = formData[field.id];
-        return value !== undefined && value !== '' && value !== null;
-    });
+    // Skip other validations if empty and not required
+    if (!value) return null;
 
-    return (
-        <div className="min-h-screen bg-gray-50 py-8 px-4">
-            <div className="max-w-2xl mx-auto space-y-6">
-                {/* Cover Image */}
-                {form.coverImage && (
-                    <div className="rounded-lg overflow-hidden border border-gray-200">
-                        <div
-                            className="w-full aspect-[2/1] bg-cover bg-center"
-                            style={{ backgroundImage: `url(${getProxiedImageUrl(form.coverImage)})` }}
-                        />
+    // String validations (Text, Textarea, Email, Number as string)
+    if (typeof value === 'string') {
+      if (field.validation?.minLength && value.length < field.validation.minLength) {
+        return `"${field.label}" requires just at least ${field.validation.minLength} characters.`;
+      }
+      if (field.validation?.maxLength && value.length > field.validation.maxLength) {
+        return `"${field.label}" cannot exceed ${field.validation.maxLength} characters.`;
+      }
+      if (field.validation?.pattern) {
+        try {
+          const regex = new RegExp(field.validation.pattern);
+          if (!regex.test(value)) {
+            return `"${field.label}" is invalid format.`;
+          }
+        } catch (e) {
+          // Invalid regex in config, ignore
+        }
+      }
+    }
+
+    return null;
+  };
+
+  const isFormValid = visibleFields.every((field) => !validateField(field, formData[field.id]));
+
+  return (
+    <div
+      className="min-h-screen py-8 sm:py-12 px-4 transition-colors duration-500 font-sans"
+      style={
+        {
+          backgroundColor: backgroundColor || '#f9fafb',
+          // @ts-ignore
+          '--primary': primaryColor || '#0f172a',
+          '--primary-foreground': '#ffffff',
+        } as React.CSSProperties
+      }
+    >
+      <style jsx global>{`
+        :root {
+          --primary: ${primaryColor || '#0f172a'};
+          --ring: ${primaryColor || '#0f172a'};
+        }
+        .text-primary {
+          color: var(--primary) !important;
+        }
+        .bg-primary {
+          background-color: var(--primary) !important;
+        }
+        .border-primary {
+          border-color: var(--primary) !important;
+        }
+        .focus\\:ring-primary\\/20:focus {
+          --tw-ring-color: color-mix(in srgb, var(--primary), transparent 80%) !important;
+        }
+      `}</style>
+      <div className="max-w-2xl mx-auto space-y-6">
+        {/* Cover Image */}
+        {form.coverImage && (
+          <div className="rounded-lg overflow-hidden border border-gray-200">
+            <div
+              className="w-full aspect-[2/1] bg-cover bg-center"
+              style={{ backgroundImage: `url(${getProxiedImageUrl(form.coverImage)})` }}
+            />
+          </div>
+        )}
+
+        {/* Header */}
+        <Card className="border border-gray-200 bg-white">
+          <CardHeader className="border-l-4 border-l-primary">
+            <CardTitle className="text-2xl font-bold text-gray-900">{form.title}</CardTitle>
+            {form.description && (
+              <div
+                className="text-gray-600 mt-2 [&>p]:mb-0 [&>p:empty]:h-3 [&_strong]:font-bold [&_b]:font-bold"
+                style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
+                dangerouslySetInnerHTML={{ __html: form.description }}
+              />
+            )}
+          </CardHeader>
+        </Card>
+
+        {/* Form Fields */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <Card className="border border-gray-200 bg-white">
+            <CardContent className="p-0">
+              {visibleFields.map((field, index) => {
+                if (field.type === 'separator') {
+                  return (
+                    <div
+                      key={field.id}
+                      className="py-6 px-6 bg-slate-50 border-b border-gray-100 last:border-b-0"
+                    >
+                      <h3 className="text-lg font-semibold text-gray-900">{field.label}</h3>
+                      {field.description && (
+                        <p className="text-sm text-gray-500 mt-1 whitespace-pre-wrap">
+                          {field.description}
+                        </p>
+                      )}
                     </div>
-                )}
+                  );
+                }
 
-                {/* Header */}
-                <Card className="border border-gray-200 bg-white">
-                    <CardHeader className="border-l-4 border-l-primary">
-                        <CardTitle className="text-2xl font-bold text-gray-900">{form.title}</CardTitle>
-                        {form.description && (
-                            <div
-                                className="text-gray-600 mt-2 [&>p]:mb-0 [&>p:empty]:h-3 [&_strong]:font-bold [&_b]:font-bold"
-                                style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
-                                dangerouslySetInnerHTML={{ __html: form.description }}
+                return (
+                  <div
+                    key={field.id}
+                    className="py-5 px-6 border-b border-gray-100 last:border-b-0"
+                  >
+                    <Label className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-1">
+                      {field.label}
+                      {field.required && <span className="text-red-500">*</span>}
+                    </Label>
+
+                    {field.description && (
+                      <p className="text-sm text-gray-500 mb-3">{field.description}</p>
+                    )}
+
+                    {field.type === 'text' && (
+                      <Input
+                        className="h-12 text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 border-slate-200"
+                        placeholder="Your answer"
+                        value={formData[field.id] || ''}
+                        onChange={(e) => handleInputChange(field.id, e.target.value)}
+                      />
+                    )}
+
+                    {field.type === 'email' && (
+                      <Input
+                        type="email"
+                        className="h-12 text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 border-slate-200"
+                        placeholder="name@example.com"
+                        value={formData[field.id] || ''}
+                        onChange={(e) => handleInputChange(field.id, e.target.value)}
+                      />
+                    )}
+
+                    {field.type === 'number' && (
+                      <Input
+                        type="number"
+                        className="h-12 text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 border-slate-200"
+                        placeholder="0"
+                        value={formData[field.id] || ''}
+                        onChange={(e) => handleInputChange(field.id, e.target.value)}
+                      />
+                    )}
+
+                    {field.type === 'textarea' && (
+                      <Textarea
+                        className="min-h-[120px] text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 border-slate-200 resize-y"
+                        placeholder="Your answer"
+                        value={formData[field.id] || ''}
+                        onChange={(e) => handleInputChange(field.id, e.target.value)}
+                      />
+                    )}
+
+                    {field.type === 'select' && (
+                      <Select
+                        onValueChange={(val) => handleInputChange(field.id, val)}
+                        value={formData[field.id] || ''}
+                      >
+                        <SelectTrigger className="h-12 text-base border-slate-200">
+                          <SelectValue placeholder="Select an option" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {field.options?.map((opt, i) => (
+                            <SelectItem key={i} value={opt} className="text-base">
+                              {opt}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+
+                    {field.type === 'checkbox' && (
+                      <div className="space-y-3 pt-2">
+                        {field.options?.map((opt, i) => (
+                          <div key={i} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`${field.id}-${i}`}
+                              checked={(formData[field.id] || []).includes(opt)}
+                              onCheckedChange={(checked) => {
+                                const current = formData[field.id] || [];
+                                if (checked) {
+                                  handleInputChange(field.id, [...current, opt]);
+                                } else {
+                                  handleInputChange(
+                                    field.id,
+                                    current.filter((v: string) => v !== opt)
+                                  );
+                                }
+                              }}
                             />
-                        )}
-                    </CardHeader>
-                </Card>
-
-                {/* Form Fields */}
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <Card className="border border-gray-200 bg-white">
-                        <CardContent className="p-0">
-                            {visibleFields.map((field, index) => (
-                                <div key={field.id} className="py-5 px-6 border-b border-gray-100 last:border-b-0">
-                                    <Label className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-3">
-                                        {field.label}
-                                        {field.required && <span className="text-red-500">*</span>}
-                                    </Label>
-
-                                    {field.type === 'text' && (
-                                        <Input
-                                            className="h-12 text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 border-slate-200"
-                                            placeholder="Your answer"
-                                            value={formData[field.id] || ''}
-                                            onChange={(e) => handleInputChange(field.id, e.target.value)}
-                                        />
-                                    )}
-
-                                    {field.type === 'email' && (
-                                        <Input
-                                            type="email"
-                                            className="h-12 text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 border-slate-200"
-                                            placeholder="name@example.com"
-                                            value={formData[field.id] || ''}
-                                            onChange={(e) => handleInputChange(field.id, e.target.value)}
-                                        />
-                                    )}
-
-                                    {field.type === 'number' && (
-                                        <Input
-                                            type="number"
-                                            className="h-12 text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 border-slate-200"
-                                            placeholder="0"
-                                            value={formData[field.id] || ''}
-                                            onChange={(e) => handleInputChange(field.id, e.target.value)}
-                                        />
-                                    )}
-
-                                    {field.type === 'textarea' && (
-                                        <Textarea
-                                            className="min-h-[120px] text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 border-slate-200 resize-y"
-                                            placeholder="Your answer"
-                                            value={formData[field.id] || ''}
-                                            onChange={(e) => handleInputChange(field.id, e.target.value)}
-                                        />
-                                    )}
-
-                                    {field.type === 'select' && (
-                                        <Select
-                                            onValueChange={(val) => handleInputChange(field.id, val)}
-                                            value={formData[field.id] || ''}
-                                        >
-                                            <SelectTrigger className="h-12 text-base border-slate-200">
-                                                <SelectValue placeholder="Select an option" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {field.options?.map((opt, i) => (
-                                                    <SelectItem key={i} value={opt} className="text-base">{opt}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    )}
-
-                                    {field.type === 'file' && (
-                                        <div className="flex items-center justify-center w-full">
-                                            <Label
-                                                htmlFor={`file-${field.id}`}
-                                                className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors"
-                                            >
-                                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                                    <svg className="w-8 h-8 mb-4 text-slate-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
-                                                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2" />
-                                                    </svg>
-                                                    <p className="mb-2 text-sm text-slate-500"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-                                                    <p className="text-xs text-slate-500">
-                                                        {formData[field.id] instanceof File ? (
-                                                            <span className="text-primary font-medium">{formData[field.id].name}</span>
-                                                        ) : (
-                                                            "Any file type"
-                                                        )}
-                                                    </p>
-                                                </div>
-                                                <Input
-                                                    id={`file-${field.id}`}
-                                                    type="file"
-                                                    className="hidden"
-                                                    onChange={(e) => {
-                                                        if (e.target.files && e.target.files[0]) {
-                                                            handleInputChange(field.id, e.target.files[0]);
-                                                        }
-                                                    }}
-                                                />
-                                            </Label>
-                                        </div>
-                                    )}
-
-                                    {field.type === 'date' && (
-                                        <Popover open={dateOpen[field.id]} onOpenChange={(open) => setDateOpen(prev => ({ ...prev, [field.id]: open }))}>
-                                            <PopoverTrigger asChild>
-                                                <Button
-                                                    variant={"outline"}
-                                                    className={cn(
-                                                        "w-full h-12 justify-start text-left font-normal text-base border-slate-200",
-                                                        !formData[field.id] && "text-muted-foreground"
-                                                    )}
-                                                >
-                                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                                    {formData[field.id] ? format(formData[field.id], "PPP") : <span>Pick a date</span>}
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0">
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={formData[field.id]}
-                                                    onSelect={(date) => {
-                                                        handleInputChange(field.id, date);
-                                                        setDateOpen(prev => ({ ...prev, [field.id]: false }));
-                                                    }}
-                                                    initialFocus
-                                                />
-                                            </PopoverContent>
-                                        </Popover>
-                                    )}
-                                </div>
-                            ))}
-                        </CardContent>
-                        <CardFooter className="p-6 border-t border-gray-100">
-                            <Button
-                                type="submit"
-                                disabled={submitting || !isFormValid}
-                                className="w-full h-11 bg-primary hover:bg-primary/90 text-white font-medium disabled:bg-gray-200 disabled:text-gray-400"
+                            <Label
+                              htmlFor={`${field.id}-${i}`}
+                              className="text-base font-normal cursor-pointer"
                             >
-                                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {submitting ? 'Submitting...' : 'Submit'}
-                            </Button>
-                        </CardFooter>
-                    </Card>
-                </form>
-            </div>
-        </div>
-    );
+                              {opt}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
+                    {field.type === 'radio' && (
+                      <RadioGroup
+                        value={formData[field.id] || ''}
+                        onValueChange={(val) => handleInputChange(field.id, val)}
+                        className="space-y-3 pt-2"
+                      >
+                        {field.options?.map((opt, i) => (
+                          <div key={i} className="flex items-center space-x-2">
+                            <RadioGroupItem value={opt} id={`${field.id}-${i}`} />
+                            <Label
+                              htmlFor={`${field.id}-${i}`}
+                              className="text-base font-normal cursor-pointer"
+                            >
+                              {opt}
+                            </Label>
+                          </div>
+                        ))}
+                      </RadioGroup>
+                    )}
+
+                    {field.type === 'file' && (
+                      <div className="flex items-center justify-center w-full">
+                        <Label
+                          htmlFor={`file-${field.id}`}
+                          className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors"
+                        >
+                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <svg
+                              className="w-8 h-8 mb-4 text-slate-500"
+                              aria-hidden="true"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 20 16"
+                            >
+                              <path
+                                stroke="currentColor"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.017 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
+                              />
+                            </svg>
+                            <p className="mb-2 text-sm text-slate-500">
+                              <span className="font-semibold">Click to upload</span> or drag and
+                              drop
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {formData[field.id] instanceof File ? (
+                                <span className="text-primary font-medium">
+                                  {formData[field.id].name}
+                                </span>
+                              ) : (
+                                'Any file type'
+                              )}
+                            </p>
+                          </div>
+                          <Input
+                            id={`file-${field.id}`}
+                            type="file"
+                            className="hidden"
+                            onChange={(e) => {
+                              if (e.target.files && e.target.files[0]) {
+                                handleInputChange(field.id, e.target.files[0]);
+                              }
+                            }}
+                          />
+                        </Label>
+                      </div>
+                    )}
+
+                    {field.type === 'date' && (
+                      <Popover
+                        open={dateOpen[field.id]}
+                        onOpenChange={(open) =>
+                          setDateOpen((prev) => ({ ...prev, [field.id]: open }))
+                        }
+                      >
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant={'outline'}
+                            className={cn(
+                              'w-full h-12 justify-start text-left font-normal text-base border-slate-200',
+                              !formData[field.id] && 'text-muted-foreground'
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {formData[field.id] ? (
+                              format(formData[field.id], 'PPP')
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <Calendar
+                            mode="single"
+                            selected={formData[field.id]}
+                            onSelect={(date) => {
+                              handleInputChange(field.id, date);
+                              setDateOpen((prev) => ({ ...prev, [field.id]: false }));
+                            }}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    )}
+
+                    {field.type === 'time' && (
+                      <Input
+                        type="time"
+                        className="h-12 text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 border-slate-200"
+                        value={formData[field.id] || ''}
+                        onChange={(e) => handleInputChange(field.id, e.target.value)}
+                      />
+                    )}
+
+                    {field.type === 'rating' && (
+                      <RadioGroup
+                        value={formData[field.id]?.toString() || ''}
+                        onValueChange={(val) => handleInputChange(field.id, val)}
+                        className="w-full pt-4 overflow-x-auto"
+                      >
+                        <div className="flex items-end justify-between min-w-[300px] gap-4">
+                          {/* Min Label */}
+                          <div className="flex flex-col justify-end pb-1 w-20">
+                            {field.ratingConfig?.minLabel && (
+                              <span className="text-sm text-gray-500 font-medium leading-tight">
+                                {field.ratingConfig.minLabel}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Scale */}
+                          <div className="flex justify-center gap-3 sm:gap-6 flex-1 px-2">
+                            {Array.from(
+                              {
+                                length:
+                                  (field.ratingConfig?.max || 5) -
+                                  (field.ratingConfig?.min || 1) +
+                                  1,
+                              },
+                              (_, i) => i + (field.ratingConfig?.min || 1)
+                            ).map((val) => (
+                              <div key={val} className="flex flex-col items-center gap-3">
+                                <Label
+                                  htmlFor={`${field.id}-${val}`}
+                                  className="text-sm font-medium cursor-pointer text-gray-600"
+                                >
+                                  {val}
+                                </Label>
+                                <RadioGroupItem
+                                  value={val.toString()}
+                                  id={`${field.id}-${val}`}
+                                  className="h-6 w-6 border-slate-300 text-primary data-[state=checked]:border-primary"
+                                />
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Max Label */}
+                          <div className="flex flex-col justify-end pb-1 w-20 text-right">
+                            {field.ratingConfig?.maxLabel && (
+                              <span className="text-sm text-gray-500 font-medium leading-tight">
+                                {field.ratingConfig.maxLabel}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </RadioGroup>
+                    )}
+                    {field.type === 'product' && (
+                      <div className="space-y-4 pt-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {field.products?.map((product) => {
+                            const isSelected = (formData[field.id] || []).includes(
+                              `${product.name} (${product.currency} ${product.price})`
+                            );
+                            return (
+                              <div
+                                key={product.id}
+                                className={cn(
+                                  'relative group cursor-pointer border rounded-lg overflow-hidden transition-all duration-200',
+                                  isSelected
+                                    ? 'border-primary ring-1 ring-primary bg-primary/5'
+                                    : 'border-slate-200 hover:border-slate-300 hover:shadow-sm'
+                                )}
+                                onClick={() => {
+                                  const val = `${product.name} (${product.currency} ${product.price})`;
+                                  const current = formData[field.id] || [];
+                                  if (isSelected) {
+                                    handleInputChange(
+                                      field.id,
+                                      current.filter((v: string) => v !== val)
+                                    );
+                                  } else {
+                                    handleInputChange(field.id, [...current, val]);
+                                  }
+                                }}
+                              >
+                                <div className="aspect-[4/3] w-full bg-slate-100 relative overflow-hidden">
+                                  {product.imageUrl ? (
+                                    /* eslint-disable-next-line @next/next/no-img-element */
+                                    <img
+                                      src={product.imageUrl}
+                                      alt={product.name}
+                                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-slate-400">
+                                      <span className="text-xs">No Image</span>
+                                    </div>
+                                  )}
+                                  <div className="absolute top-2 right-2">
+                                    <div
+                                      className={cn(
+                                        'h-6 w-6 rounded-full border border-white shadow-sm flex items-center justify-center transition-colors',
+                                        isSelected
+                                          ? 'bg-primary border-primary'
+                                          : 'bg-white/80 backdrop-blur-sm'
+                                      )}
+                                    >
+                                      {isSelected && (
+                                        <CheckCircle2 className="h-4 w-4 text-white" />
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="p-3">
+                                  <div className="font-medium text-gray-900 leading-tight mb-1">
+                                    {product.name}
+                                  </div>
+                                  <div className="text-sm font-semibold text-primary">
+                                    {product.currency} {product.price.toFixed(2)}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </CardContent>
+            <CardFooter className="p-6 border-t border-gray-100">
+              <Button
+                type="submit"
+                disabled={submitting || !isFormValid}
+                className="w-full h-11 bg-primary hover:bg-primary/90 text-white font-medium disabled:bg-gray-200 disabled:text-gray-400"
+              >
+                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {submitting ? 'Submitting...' : 'Submit'}
+              </Button>
+            </CardFooter>
+          </Card>
+        </form>
+      </div>
+    </div>
+  );
 }
-
