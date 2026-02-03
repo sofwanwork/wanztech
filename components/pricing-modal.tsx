@@ -82,16 +82,14 @@ export function PricingModal({ children }: PricingModalProps) {
 
   const handleUpgrade = (plan: string) => {
     if (plan === 'Pro') {
-      // Open WhatsApp or email for manual upgrade
-      const message = encodeURIComponent(
-        'Hi, I would like to upgrade to KlikForm Pro plan. Please provide payment details.'
-      );
-      window.open(`https://wa.me/60123456789?text=${message}`, '_blank');
+      // Open WhatsApp for manual upgrade
+      const message = encodeURIComponent('Hi, saya nak upgrade ke Pro Plan klikform.');
+      window.open(`https://wa.me/601133114369?text=${message}`, '_blank');
     } else if (plan === 'Enterprise') {
       const message = encodeURIComponent(
         'Hi, I am interested in KlikForm Enterprise plan. Please contact me for details.'
       );
-      window.open(`https://wa.me/60123456789?text=${message}`, '_blank');
+      window.open(`https://wa.me/601133114369?text=${message}`, '_blank');
     }
     setOpen(false);
   };
@@ -183,8 +181,8 @@ export function PricingModal({ children }: PricingModalProps) {
 
         <p className="text-center text-xs text-gray-500 mt-6">
           Need help choosing? Contact us at{' '}
-          <a href="mailto:support@klikform.com" className="text-primary hover:underline">
-            support@klikform.com
+          <a href="mailto:wanztechenterprise@gmail.com" className="text-primary hover:underline">
+            wanztechenterprise@gmail.com
           </a>
         </p>
       </DialogContent>
