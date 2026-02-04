@@ -27,8 +27,8 @@ const plans = [
     icon: Users,
     color: 'bg-slate-100 text-slate-700',
     features: [
-      '3 forms per month',
-      '100 responses per form',
+      '5 forms per month',
+      '3,000 responses per form',
       'Basic form fields',
       'Google Sheets integration',
       'QR code generation',
