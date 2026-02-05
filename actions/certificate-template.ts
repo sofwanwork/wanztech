@@ -3,12 +3,17 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { saveCertificateTemplate, deleteCertificateTemplate } from '@/lib/storage/certificates';
-import { CertificateTemplate, CertificateElement } from '@/lib/types';
+import { CertificateTemplate, CertificateElement, CertificateCategory } from '@/lib/types';
 
 import { canCreateCertificate } from '@/lib/storage/subscription';
 
+const VALID_CATEGORIES: CertificateCategory[] = ['school', 'corporate', 'training', 'event', 'other'];
+
 export async function createCertificateTemplateAction(formData: FormData): Promise<void> {
-  const category = formData.get('category') as string | null;
+  const categoryInput = formData.get('category') as string | null;
+  const category: CertificateCategory = VALID_CATEGORIES.includes(categoryInput as CertificateCategory)
+    ? (categoryInput as CertificateCategory)
+    : 'other';
 
   // Check limits
   const { allowed, message } = await canCreateCertificate();
@@ -23,7 +28,7 @@ export async function createCertificateTemplateAction(formData: FormData): Promi
 
   const template = await saveCertificateTemplate({
     name: 'Sijil Baru',
-    category: category || 'other',
+    category,
     elements: [
       // Default placeholder elements
       {

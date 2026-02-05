@@ -1,6 +1,17 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy-initialized Resend client
+let resend: Resend | null = null;
+
+function getResendClient(): Resend | null {
+    if (!process.env.RESEND_API_KEY) {
+        return null;
+    }
+    if (!resend) {
+        resend = new Resend(process.env.RESEND_API_KEY);
+    }
+    return resend;
+}
 
 interface EmailOptions {
     to: string;
@@ -9,13 +20,15 @@ interface EmailOptions {
 }
 
 export async function sendEmail({ to, subject, html }: EmailOptions) {
-    if (!process.env.RESEND_API_KEY) {
+    const client = getResendClient();
+
+    if (!client) {
         console.error('RESEND_API_KEY not configured');
         return { success: false, error: 'Email service not configured' };
     }
 
     try {
-        const { data, error } = await resend.emails.send({
+        const { data, error } = await client.emails.send({
             from: 'KlikForm <noreply@klikform.com>',
             to,
             subject,
