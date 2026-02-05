@@ -227,7 +227,10 @@ export function PricingModal({ children }: PricingModalProps) {
 
         <p className="text-center text-xs text-gray-500 mt-6">
           Need help choosing? Contact us at{' '}
-          <a href="mailto:wanztechenterprise@gmail.com" className="text-primary hover:underline">
+          <a
+            href="mailto:wanztechenterprise@gmail.com?subject=Pertanyaan%20tentang%20KlikForm&body=Salam%2C%0A%0ASaya%20ingin%20bertanya%20tentang%20pelan%20KlikForm.%0A%0ANama%3A%20%0ASyarikat%2FOrganisasi%3A%20%0ASoalan%3A%20%0A%0ATerima%20kasih."
+            className="text-primary hover:underline"
+          >
             wanztechenterprise@gmail.com
           </a>
         </p>
