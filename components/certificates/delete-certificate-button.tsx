@@ -24,10 +24,11 @@ interface DeleteCertificateButtonProps {
 export function DeleteCertificateButton({ templateId, templateName }: DeleteCertificateButtonProps) {
     const [loading, setLoading] = useState(false);
 
-    const handleDelete = async () => {
+    const handleDelete = async (e: React.MouseEvent) => {
+        e.preventDefault(); // Prevent dialog from closing immediately
         setLoading(true);
         await deleteCertificateTemplateAction(templateId);
-        // Action will redirect, no need to reset loading
+        // Action will redirect, no need to reset loading or close manually
     };
 
     return (
