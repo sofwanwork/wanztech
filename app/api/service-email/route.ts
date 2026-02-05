@@ -1,4 +1,4 @@
-import { getSettings } from '@/lib/storage';
+import { getSettings } from '@/lib/storage/settings';
 import { NextResponse } from 'next/server';
 
 export async function GET() {

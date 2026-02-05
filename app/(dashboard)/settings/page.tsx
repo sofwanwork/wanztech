@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/accordion';
 import { toast } from 'sonner';
 import { ExternalLink } from 'lucide-react';
-import { saveSettingsAction, getSettingsAction } from '@/actions/form';
+import { saveSettingsAction, getSettingsAction } from '@/actions/forms';
 
 import { useRouter, useSearchParams } from 'next/navigation';
 

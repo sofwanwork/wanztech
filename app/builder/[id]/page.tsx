@@ -1,5 +1,5 @@
-import { getFormById } from '@/lib/storage';
-import { getCertificateTemplates } from '@/lib/certificate-storage';
+import { getFormById } from '@/lib/storage/forms';
+import { getCertificateTemplates } from '@/lib/storage/certificates';
 import { notFound } from 'next/navigation';
 import { BuilderClient } from './client';
 

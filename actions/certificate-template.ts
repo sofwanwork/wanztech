@@ -2,10 +2,10 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { saveCertificateTemplate, deleteCertificateTemplate } from '@/lib/certificate-storage';
+import { saveCertificateTemplate, deleteCertificateTemplate } from '@/lib/storage/certificates';
 import { CertificateTemplate, CertificateElement } from '@/lib/types';
 
-import { canCreateCertificate } from '@/lib/subscription';
+import { canCreateCertificate } from '@/lib/storage/subscription';
 
 export async function createCertificateTemplateAction(): Promise<void> {
   // Check limits
@@ -16,7 +16,7 @@ export async function createCertificateTemplateAction(): Promise<void> {
     // For now we will just return (and maybe redirect to an upgrade page if we could).
     // Or we could redirect with an error param.
     // Let's redirect to builder with error query param.
-    redirect('/esijil/builder?error=' + encodeURIComponent(message || 'Limit reached'));
+    redirect('/certificates/builder?error=' + encodeURIComponent(message || 'Limit reached'));
   }
 
   const template = await saveCertificateTemplate({
@@ -112,7 +112,7 @@ export async function createCertificateTemplateAction(): Promise<void> {
   });
 
   if (template) {
-    redirect(`/esijil/builder/${template.id}`);
+    redirect(`/certificates/builder/${template.id}`);
   }
   // If failed, stay on same page (no return needed for form actions)
 }
@@ -127,8 +127,8 @@ export async function updateCertificateTemplateAction(
   });
 
   if (template) {
-    revalidatePath('/esijil/builder');
-    revalidatePath(`/esijil/builder/${id}`);
+    revalidatePath('/certificates/builder');
+    revalidatePath(`/certificates/builder/${id}`);
     return { success: true, template };
   }
 
@@ -139,8 +139,8 @@ export async function deleteCertificateTemplateAction(id: string) {
   const success = await deleteCertificateTemplate(id);
 
   if (success) {
-    revalidatePath('/esijil/builder');
-    redirect('/esijil/builder');
+    revalidatePath('/certificates/builder');
+    redirect('/certificates/builder');
   }
 
   return { error: 'Failed to delete template' };
@@ -148,7 +148,7 @@ export async function deleteCertificateTemplateAction(id: string) {
 
 export async function cloneCertificateTemplateAction(id: string): Promise<void> {
   // Get existing template
-  const { getCertificateTemplate } = await import('@/lib/certificate-storage');
+  const { getCertificateTemplate } = await import('@/lib/storage/certificates');
   const existingTemplate = await getCertificateTemplate(id);
 
   if (!existingTemplate) {
@@ -158,7 +158,7 @@ export async function cloneCertificateTemplateAction(id: string): Promise<void> 
   // Check limits
   const { allowed, message } = await canCreateCertificate();
   if (!allowed) {
-    redirect('/esijil/builder?error=' + encodeURIComponent(message || 'Limit reached'));
+    redirect('/certificates/builder?error=' + encodeURIComponent(message || 'Limit reached'));
   }
 
   // Create new template with copied data
@@ -172,7 +172,7 @@ export async function cloneCertificateTemplateAction(id: string): Promise<void> 
   });
 
   if (newTemplate) {
-    revalidatePath('/esijil/builder');
-    redirect(`/esijil/builder/${newTemplate.id}`);
+    revalidatePath('/certificates/builder');
+    redirect(`/certificates/builder/${newTemplate.id}`);
   }
 }

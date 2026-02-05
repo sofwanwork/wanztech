@@ -10,7 +10,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from '@/components/ui/sheet';
-import { DashboardSidebar } from '@/components/dashboard-sidebar';
+import { DashboardSidebar } from '@/components/dashboard/sidebar';
 
 interface MobileMenuProps {
   profile: { id?: string; username?: string; full_name?: string; avatar_url?: string } | undefined;

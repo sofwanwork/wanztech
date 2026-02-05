@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Form, CertificateTemplate as CertificateTemplateType } from '@/lib/types';
-import { updateFormAction, deleteFormAction } from '@/actions/form';
-import { FieldsEditor } from '@/components/fields-editor';
+import { updateFormAction, deleteFormAction } from '@/actions/forms';
+import { FieldsEditor } from '@/components/forms/fields-editor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -49,7 +49,7 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import { QrCustomizer } from '@/components/qr-customizer';
+import { QrCustomizer } from '@/components/forms/qr-customizer';
 
 interface BuilderClientProps {
   initialForm: Form;
@@ -348,11 +348,7 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                           ...f,
                           theme: {
                             ...f.theme,
-                            headerFont: val as
-                              | 'inter'
-                              | 'playfair'
-                              | 'lora'
-                              | 'roboto',
+                            headerFont: val as 'inter' | 'playfair' | 'lora' | 'roboto',
                           },
                         }))
                       }
@@ -592,10 +588,11 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                             },
                           }))
                         }
-                        className={`flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all ${(form.theme?.backgroundPattern || 'none') === p.id
-                          ? 'border-primary bg-primary/5'
-                          : 'border-gray-200 hover:border-gray-300'
-                          }`}
+                        className={`flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all ${
+                          (form.theme?.backgroundPattern || 'none') === p.id
+                            ? 'border-primary bg-primary/5'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
                       >
                         <div className={`w-10 h-10 rounded-md ${p.pattern} border`} />
                         <span className="text-xs font-medium">{p.label}</span>
@@ -684,10 +681,11 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                             onClick={() =>
                               setForm((f) => ({ ...f, eCertificateTemplate: cert.id }))
                             }
-                            className={`cursor-pointer rounded-lg border-2 overflow-hidden transition-all relative group ${form.eCertificateTemplate === cert.id
-                              ? 'border-primary ring-2 ring-primary/20'
-                              : 'border-gray-200 hover:border-gray-300'
-                              }`}
+                            className={`cursor-pointer rounded-lg border-2 overflow-hidden transition-all relative group ${
+                              form.eCertificateTemplate === cert.id
+                                ? 'border-primary ring-2 ring-primary/20'
+                                : 'border-gray-200 hover:border-gray-300'
+                            }`}
                           >
                             {/* Thumbnail */}
                             <div

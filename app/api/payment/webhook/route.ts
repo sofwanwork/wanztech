@@ -25,24 +25,46 @@ export async function POST(req: NextRequest) {
       body.status === 'success' ||
       body.record_type === 'transaction.successful';
 
-    if (!transactionId) {
-      return NextResponse.json({ error: 'Missing transaction ID' }, { status: 400 });
+    // Identify transaction
+    let transaction;
+
+    if (transactionId) {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select()
+        .eq('id', transactionId)
+        .single();
+
+      if (!error) transaction = data;
+    }
+
+    // Fallback: Look up by order_number (provider_reference)
+    if (!transaction && body.order_number) {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select()
+        .eq('provider_reference', body.order_number)
+        .single();
+
+      if (!error) transaction = data;
+    }
+
+    if (!transaction) {
+      return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
     }
 
     if (isSuccessful) {
       // 1. Update Transaction
-      const { data: transaction, error: txError } = await supabase
+      const { error: txError } = await supabase
         .from('transactions')
         .update({
           status: 'completed',
           metadata: body,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', transactionId)
-        .select()
-        .single();
+        .eq('id', transaction.id);
 
-      if (txError || !transaction) {
+      if (txError) {
         console.error('Error updating transaction:', txError);
         return NextResponse.json({ error: 'Transaction update failed' }, { status: 500 });
       }
@@ -76,7 +98,7 @@ export async function POST(req: NextRequest) {
           metadata: body,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', transactionId);
+        .eq('id', transaction.id);
     }
 
     return NextResponse.json({ success: true });

@@ -1,6 +1,6 @@
 import { templateRegistry, templateList } from './certificates';
 import { CertificateTemplate as CertificateTemplateType } from '@/lib/types';
-import { CertificateRenderer } from './certificate-renderer';
+import { CertificateRenderer } from './certificates/renderer';
 
 interface CertificateTemplateProps {
   type: string;
@@ -25,10 +25,10 @@ export function CertificateTemplate({
 }: CertificateTemplateProps) {
   const formattedDate = date
     ? new Date(date).toLocaleDateString('ms-MY', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    })
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
     : undefined;
 
   // Use custom JSON template if available

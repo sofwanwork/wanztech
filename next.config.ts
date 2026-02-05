@@ -5,6 +5,30 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  async redirects() {
+    return [
+      {
+        source: '/ecert',
+        destination: '/certificates',
+        permanent: true,
+      },
+      {
+        source: '/ecert/:path*',
+        destination: '/certificates/:path*',
+        permanent: true,
+      },
+      {
+        source: '/esijil',
+        destination: '/certificates',
+        permanent: true,
+      },
+      {
+        source: '/esijil/:path*',
+        destination: '/certificates/:path*',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default withSentryConfig(nextConfig, {
