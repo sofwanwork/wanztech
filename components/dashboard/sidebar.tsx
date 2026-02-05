@@ -64,6 +64,22 @@ export function DashboardSidebar({ profile, onNavigate }: SidebarProps) {
     },
   ];
 
+  const [showArrow, setShowArrow] = useState(false);
+
+  // Cycle between Logo and Arrow when collapsed
+  useEffect(() => {
+    if (!isCollapsed) {
+      setShowArrow(false);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setShowArrow((prev) => !prev);
+    }, 3000); // Toggle every 3 seconds
+
+    return () => clearInterval(interval);
+  }, [isCollapsed]);
+
   if (!mounted) {
     return (
       <div className="flex flex-col h-full bg-white border-r border-gray-200 w-64">
@@ -95,25 +111,44 @@ export function DashboardSidebar({ profile, onNavigate }: SidebarProps) {
         )}
 
         {isCollapsed && (
-          <div className="w-full flex justify-center mb-2">
-            <div className="relative h-10 w-10 rounded-xl overflow-hidden border border-primary/20">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo.png?v=3" alt="KlikForm Logo" className="w-full h-full object-cover" />
+          <div
+            className="w-full flex justify-center mb-2 cursor-pointer transition-all hover:scale-105 active:scale-95"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            title="Expand Sidebar"
+          >
+            <div className="relative h-10 w-10 rounded-xl overflow-hidden border border-primary/20 flex items-center justify-center bg-white">
+              {/* Show Arrow or Logo based on state */}
+              <div
+                className={cn(
+                  "absolute inset-0 transition-opacity duration-500 flex items-center justify-center",
+                  showArrow ? "opacity-100" : "opacity-0"
+                )}
+              >
+                <ChevronRight className="h-6 w-6 text-primary" />
+              </div>
+              <div
+                className={cn(
+                  "absolute inset-0 transition-opacity duration-500",
+                  showArrow ? "opacity-0" : "opacity-100"
+                )}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logo.png?v=3" alt="KlikForm Logo" className="w-full h-full object-cover" />
+              </div>
             </div>
           </div>
         )}
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className={cn(
-            'h-6 w-6 text-gray-400 hover:text-gray-600',
-            isCollapsed && 'w-full mt-2 h-6'
-          )}
-          onClick={() => setIsCollapsed(!isCollapsed)}
-        >
-          {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-        </Button>
+        {!isCollapsed && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 text-gray-400 hover:text-gray-600"
+            onClick={() => setIsCollapsed(true)}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       {/* Main Navigation */}
