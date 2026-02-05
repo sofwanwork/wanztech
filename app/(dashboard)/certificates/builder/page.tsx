@@ -10,6 +10,7 @@ import { canCreateCertificate } from '@/lib/storage/subscription';
 import { PricingModal } from '@/components/pricing-modal';
 import { AlertTriangle } from 'lucide-react';
 import { NewCertificateDialog } from '@/components/certificates/new-certificate-dialog';
+import { DeleteCertificateButton } from '@/components/certificates/delete-certificate-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -181,17 +182,20 @@ export default async function CertificateBuilderPage({
                       {new Date(template.updatedAt).toLocaleDateString('ms-MY')}
                     </p>
                   </div>
-                  <form action={cloneCertificateTemplateAction.bind(null, template.id)}>
-                    <Button
-                      type="submit"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 shrink-0"
-                      title="Clone template"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </form>
+                  <div className="flex items-center gap-1">
+                    <form action={cloneCertificateTemplateAction.bind(null, template.id)}>
+                      <Button
+                        type="submit"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        title="Clone template"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </form>
+                    <DeleteCertificateButton templateId={template.id} templateName={template.name} />
+                  </div>
                 </div>
               </CardContent>
             </Card>
