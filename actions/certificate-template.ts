@@ -7,7 +7,9 @@ import { CertificateTemplate, CertificateElement } from '@/lib/types';
 
 import { canCreateCertificate } from '@/lib/storage/subscription';
 
-export async function createCertificateTemplateAction(): Promise<void> {
+export async function createCertificateTemplateAction(formData: FormData): Promise<void> {
+  const category = formData.get('category') as string | null;
+
   // Check limits
   const { allowed, message } = await canCreateCertificate();
   if (!allowed) {
@@ -21,6 +23,7 @@ export async function createCertificateTemplateAction(): Promise<void> {
 
   const template = await saveCertificateTemplate({
     name: 'Sijil Baru',
+    category: category || 'other',
     elements: [
       // Default placeholder elements
       {

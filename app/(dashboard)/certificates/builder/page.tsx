@@ -3,15 +3,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, FileImage, Copy } from 'lucide-react';
 import Link from 'next/link';
-import {
-  createCertificateTemplateAction,
-  cloneCertificateTemplateAction,
-} from '@/actions/certificate-template';
+import { cloneCertificateTemplateAction } from '@/actions/certificate-template';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { canCreateCertificate } from '@/lib/storage/subscription';
 import { PricingModal } from '@/components/pricing-modal';
 import { AlertTriangle } from 'lucide-react';
+import { NewCertificateDialog } from '@/components/certificates/new-certificate-dialog';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,12 +58,12 @@ export default async function CertificateBuilderPage({
         </div>
 
         {allowed ? (
-          <form action={createCertificateTemplateAction}>
-            <Button type="submit" className="gap-2">
+          <NewCertificateDialog>
+            <Button className="gap-2">
               <Plus className="h-4 w-4" />
               New Certificate
             </Button>
-          </form>
+          </NewCertificateDialog>
         ) : (
           <PricingModal>
             <Button className="gap-2 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white border-0">
@@ -116,11 +114,11 @@ export default async function CertificateBuilderPage({
               Start by creating your first certificate template.
             </p>
             {allowed ? (
-              <form action={createCertificateTemplateAction}>
-                <Button type="submit" size="lg" className="shadow-xl shadow-primary/30">
+              <NewCertificateDialog>
+                <Button size="lg" className="shadow-xl shadow-primary/30">
                   Create Certificate Now
                 </Button>
-              </form>
+              </NewCertificateDialog>
             ) : (
               <PricingModal>
                 <Button
