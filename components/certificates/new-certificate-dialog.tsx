@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Plus, GraduationCap, Building2, BookOpen, Calendar, MoreHorizontal } from 'lucide-react';
+import { Plus, GraduationCap, Building2, BookOpen, Calendar, MoreHorizontal, Loader2 } from 'lucide-react';
 import { createCertificateTemplateAction } from '@/actions/certificate-template';
 
 interface NewCertificateDialogProps {
@@ -99,7 +99,7 @@ export function NewCertificateDialog({ children }: NewCertificateDialogProps) {
                         <Button type="submit" className="flex-1 gap-2" disabled={loading}>
                             {loading ? (
                                 <>
-                                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     Creating...
                                 </>
                             ) : (

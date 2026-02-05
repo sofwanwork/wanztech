@@ -12,13 +12,14 @@ import {
   Award,
   ChevronLeft,
   ChevronRight,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createFormAction } from '@/actions/forms';
 import { logoutAction } from '@/actions/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import useLocalStorage from '@/hooks/use-local-storage';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 
 interface SidebarProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -31,6 +32,8 @@ export function DashboardSidebar({ profile, onNavigate }: SidebarProps) {
   // Initialize with false (expanded) by default
   const [isCollapsed, setIsCollapsed] = useLocalStorage<boolean>('sidebar-collapsed', false);
   const [mounted, setMounted] = useState(false);
+  const [isCreating, startCreate] = useTransition();
+  const [isLoggingOut, startLogout] = useTransition();
 
   // Prevent hydration mismatch
   useEffect(() => {
@@ -143,7 +146,7 @@ export function DashboardSidebar({ profile, onNavigate }: SidebarProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6 text-gray-400 hover:text-gray-600"
+            className="hidden md:flex h-6 w-6 text-gray-400 hover:text-gray-600"
             onClick={() => setIsCollapsed(true)}
           >
             <ChevronLeft className="h-4 w-4" />
@@ -155,8 +158,10 @@ export function DashboardSidebar({ profile, onNavigate }: SidebarProps) {
       <div className="flex-1 py-6 px-3 space-y-2 overflow-y-auto overflow-x-hidden">
         <div className="mb-6 px-1">
           <form
-            action={async () => {
-              await createFormAction({});
+            action={() => {
+              startCreate(async () => {
+                await createFormAction({});
+              });
             }}
           >
             <Button
@@ -166,9 +171,14 @@ export function DashboardSidebar({ profile, onNavigate }: SidebarProps) {
               )}
               size={isCollapsed ? 'icon' : 'lg'}
               title="New Form"
+              disabled={isCreating}
             >
-              <Plus className={cn('h-5 w-5', !isCollapsed && 'mr-2')} />
-              {!isCollapsed && 'New Form'}
+              {isCreating ? (
+                <Loader2 className={cn('h-5 w-5 animate-spin', !isCollapsed && 'mr-2')} />
+              ) : (
+                <Plus className={cn('h-5 w-5', !isCollapsed && 'mr-2')} />
+              )}
+              {!isCollapsed && (isCreating ? 'Creating...' : 'New Form')}
             </Button>
           </form>
         </div>
@@ -230,7 +240,13 @@ export function DashboardSidebar({ profile, onNavigate }: SidebarProps) {
             </div>
           )}
         </div>
-        <form action={logoutAction}>
+        <form
+          action={() => {
+            startLogout(async () => {
+              await logoutAction();
+            });
+          }}
+        >
           <Button
             variant="ghost"
             size="sm"
@@ -239,9 +255,14 @@ export function DashboardSidebar({ profile, onNavigate }: SidebarProps) {
               isCollapsed ? 'justify-center px-0' : 'justify-start'
             )}
             title="Log Out"
+            disabled={isLoggingOut}
           >
-            <LogOut className={cn('h-4 w-4', !isCollapsed && 'mr-2')} />
-            {!isCollapsed && 'Log Out'}
+            {isLoggingOut ? (
+              <Loader2 className={cn('h-4 w-4 animate-spin', !isCollapsed && 'mr-2')} />
+            ) : (
+              <LogOut className={cn('h-4 w-4', !isCollapsed && 'mr-2')} />
+            )}
+            {!isCollapsed && (isLoggingOut ? 'Logging out...' : 'Log Out')}
           </Button>
         </form>
       </div>

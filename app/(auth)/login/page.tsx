@@ -70,12 +70,13 @@ export default function LoginPage() {
 
     if (error) {
       toast.error(error.message);
+      setLoading(false);
     } else {
       toast.success('Welcome back!');
       router.push('/');
       router.refresh();
+      // Keep loading true while redirecting
     }
-    setLoading(false);
   }
 
   async function handleSignUp() {

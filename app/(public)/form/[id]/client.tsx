@@ -394,7 +394,7 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
       }
     >
       <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Lora:wght@400;600;700&family=Roboto:wght@400;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Lora:wght@400;600;700;900&family=Roboto:wght@400;500;700;900&display=swap');
 
         :root {
           --primary: ${primaryColor || '#0f172a'};
@@ -453,7 +453,7 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
                 </div>
               )}
               <CardTitle
-                className="text-2xl font-bold text-gray-900 leading-tight"
+                className="text-2xl font-black text-gray-900 leading-tight"
                 style={{
                   fontFamily:
                     form.theme?.headerFont === 'playfair'
