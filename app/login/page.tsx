@@ -16,7 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -24,20 +24,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import {
-  Sparkles,
-  ArrowRight,
-  Loader2,
-  QrCode,
-  Lock,
-  Eye,
-  EyeOff,
-  Mail,
-  CheckCircle2,
-} from 'lucide-react';
+import { Sparkles, ArrowRight, Loader2, Lock, Eye, EyeOff, Mail, CheckCircle2 } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');

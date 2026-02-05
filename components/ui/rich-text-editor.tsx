@@ -34,7 +34,7 @@ interface RichTextEditorProps {
 export function RichTextEditor({
   value,
   onChange,
-  placeholder: _placeholder = 'Enter description...',
+  placeholder = 'Enter description...',
 }: RichTextEditorProps) {
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
@@ -70,10 +70,10 @@ export function RichTextEditor({
         types: ['paragraph'],
       }),
       Placeholder.configure({
-        placeholder: 'Enter description...',
+        placeholder,
       }),
     ],
-    []
+    [placeholder]
   );
 
   const editor = useEditor({

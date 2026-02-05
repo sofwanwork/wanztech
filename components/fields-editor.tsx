@@ -129,7 +129,7 @@ function SortableField({
                   <SelectItem value="checkbox">Checkboxes</SelectItem>
                   <SelectItem value="radio">Multiple Choice</SelectItem>
                   <SelectItem value="file">File Upload</SelectItem>
-                  <SelectItem value="date">Date</SelectItem>
+
                   <SelectItem value="time">Time</SelectItem>
                   <SelectItem value="rating">Linear Scale (Rating)</SelectItem>
                   <SelectItem value="separator">Section / Text</SelectItem>
@@ -160,10 +160,8 @@ function SortableField({
               <Label>Options (comma separated)</Label>
               <Input
                 placeholder="Option A, Option B, Option C"
-                value={field.options?.join(', ') || ''}
-                onChange={(e) =>
-                  updateField(index, { options: e.target.value.split(',').map((s) => s.trim()) })
-                }
+                value={field.options?.join(',') || ''}
+                onChange={(e) => updateField(index, { options: e.target.value.split(',') })}
               />
             </div>
           )}
@@ -349,7 +347,12 @@ function SortableField({
                     </div>
 
                     <div className="space-y-1">
-                      <Label className="text-xs text-slate-500">Image URL</Label>
+                      <div className="flex justify-between items-baseline">
+                        <Label className="text-xs text-slate-500">Image URL</Label>
+                        <span className="text-[10px] text-muted-foreground">
+                          Rec: 4:3 Ratio (e.g. 800x600px)
+                        </span>
+                      </div>
                       <Input
                         value={product.imageUrl || ''}
                         onChange={(e) => {
@@ -382,77 +385,77 @@ function SortableField({
             field.type === 'textarea' ||
             field.type === 'email' ||
             field.type === 'number') && (
-              <div className="pt-4 border-t space-y-3">
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Validation Rules
-                </Label>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-sm">Min Length</Label>
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      value={field.validation?.minLength || ''}
-                      onChange={(e) =>
-                        updateField(index, {
-                          validation: {
-                            ...field.validation,
-                            minLength: e.target.value ? parseInt(e.target.value) : undefined,
-                          },
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm">Max Length</Label>
-                    <Input
-                      type="number"
-                      placeholder="255"
-                      value={field.validation?.maxLength || ''}
-                      onChange={(e) =>
-                        updateField(index, {
-                          validation: {
-                            ...field.validation,
-                            maxLength: e.target.value ? parseInt(e.target.value) : undefined,
-                          },
-                        })
-                      }
-                    />
-                  </div>
+            <div className="pt-4 border-t space-y-3">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Validation Rules
+              </Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm">Min Length</Label>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={field.validation?.minLength || ''}
+                    onChange={(e) =>
+                      updateField(index, {
+                        validation: {
+                          ...field.validation,
+                          minLength: e.target.value ? parseInt(e.target.value) : undefined,
+                        },
+                      })
+                    }
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm">Regex Pattern (Advanced)</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="e.g. ^[0-9]+$"
-                      value={field.validation?.pattern || ''}
-                      onChange={(e) =>
-                        updateField(index, {
-                          validation: { ...field.validation, pattern: e.target.value },
-                        })
-                      }
-                    />
-                    <Select
-                      onValueChange={(val) =>
-                        updateField(index, {
-                          validation: { ...field.validation, pattern: val },
-                        })
-                      }
-                    >
-                      <SelectTrigger className="w-[130px]">
-                        <SelectValue placeholder="Presets" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="^[0-9]+$">Numbers</SelectItem>
-                        <SelectItem value="^[a-zA-Z]+$">Letters</SelectItem>
-                        <SelectItem value="^[^@]+@[^@]+\.[^@]+$">Email</SelectItem>
-                        <SelectItem value="^(\+?6?01)[0-46-9]-*[0-9]{7,8}$">Phone (MY)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Label className="text-sm">Max Length</Label>
+                  <Input
+                    type="number"
+                    placeholder="255"
+                    value={field.validation?.maxLength || ''}
+                    onChange={(e) =>
+                      updateField(index, {
+                        validation: {
+                          ...field.validation,
+                          maxLength: e.target.value ? parseInt(e.target.value) : undefined,
+                        },
+                      })
+                    }
+                  />
                 </div>
               </div>
-            )}
+              <div className="space-y-2">
+                <Label className="text-sm">Regex Pattern (Advanced)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="e.g. ^[0-9]+$"
+                    value={field.validation?.pattern || ''}
+                    onChange={(e) =>
+                      updateField(index, {
+                        validation: { ...field.validation, pattern: e.target.value },
+                      })
+                    }
+                  />
+                  <Select
+                    onValueChange={(val) =>
+                      updateField(index, {
+                        validation: { ...field.validation, pattern: val },
+                      })
+                    }
+                  >
+                    <SelectTrigger className="w-[130px]">
+                      <SelectValue placeholder="Presets" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="^[0-9]+$">Numbers</SelectItem>
+                      <SelectItem value="^[a-zA-Z]+$">Letters</SelectItem>
+                      <SelectItem value="^[^@]+@[^@]+\.[^@]+$">Email</SelectItem>
+                      <SelectItem value="^(\+?6?01)[0-46-9]-*[0-9]{7,8}$">Phone (MY)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Conditional Logic Section */}
           {field.type !== 'separator' && (

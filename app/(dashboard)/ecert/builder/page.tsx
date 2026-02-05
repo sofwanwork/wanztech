@@ -34,7 +34,7 @@ export default async function CertificateBuilderPage({
   const selectedCategory = categoryParam || 'all';
   const error = errorParam ? decodeURIComponent(errorParam) : null;
 
-  const { allowed, message: limitMessage } = await canCreateCertificate();
+  const { allowed } = await canCreateCertificate();
 
   const templates = allTemplates.filter(
     (t) => selectedCategory === 'all' || t.category === selectedCategory
@@ -81,7 +81,7 @@ export default async function CertificateBuilderPage({
         {CATEGORIES.map((cat) => (
           <Link
             key={cat.id}
-            href={cat.id === 'all' ? '/esijil/builder' : `/esijil/builder?category=${cat.id}`}
+            href={cat.id === 'all' ? '/ecert/builder' : `/ecert/builder?category=${cat.id}`}
           >
             <Badge
               variant={selectedCategory === cat.id ? 'default' : 'outline'}
@@ -135,7 +135,7 @@ export default async function CertificateBuilderPage({
               className="group hover:shadow-xl transition-all duration-300 overflow-hidden rounded-2xl ring-1 ring-gray-100 hover:ring-primary/20 hover:-translate-y-1 p-0 gap-0 border-0"
             >
               {/* Thumbnail */}
-              <Link href={`/esijil/builder/${template.id}`}>
+              <Link href={`/ecert/builder/${template.id}`}>
                 <div
                   className="aspect-[297/210] bg-gray-100 relative overflow-hidden cursor-pointer"
                   style={{ backgroundColor: template.backgroundColor }}

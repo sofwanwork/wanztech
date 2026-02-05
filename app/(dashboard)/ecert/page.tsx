@@ -3,13 +3,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Award } from 'lucide-react';
 import Link from 'next/link';
-import { getProfile } from '@/lib/storage';
 import { getCertificateTemplates } from '@/lib/certificate-storage';
 import { CertificateQrCard } from '@/components/certificate-qr-card';
 
-export default async function ESijilDashboard() {
+export default async function EcertDashboard() {
   const forms = await getForms();
-  const profile = await getProfile();
   const userTemplates = await getCertificateTemplates();
 
   // Filter forms with e-certificate enabled

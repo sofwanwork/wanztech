@@ -33,13 +33,20 @@ const plans = [
       'Google Sheets integration',
       'QR code generation',
     ],
-    notIncluded: ['Unlimited forms', 'Unlimited responses', 'Priority support', 'Custom branding'],
+    notIncluded: [
+      'Unlimited forms',
+      'Unlimited responses',
+      'Priority support',
+      'Remove KlikForm branding',
+    ],
     current: true,
   },
   {
     name: 'Pro',
-    price: 'RM 29',
+    price: 'RM 10',
     period: '/ month',
+    periodDetail: 'for first 3 months',
+    priceDetail: 'then RM 19 / month',
     description: 'For professionals and growing teams',
     icon: Crown,
     color: 'bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800',
@@ -80,18 +87,39 @@ const plans = [
 export function PricingModal({ children }: PricingModalProps) {
   const [open, setOpen] = useState(false);
 
-  const handleUpgrade = (plan: string) => {
+  const [loading, setLoading] = useState(false);
+
+  const handleUpgrade = async (plan: string) => {
     if (plan === 'Pro') {
-      // Open WhatsApp for manual upgrade
-      const message = encodeURIComponent('Hi, saya nak upgrade ke Pro Plan klikform.');
-      window.open(`https://wa.me/601133114369?text=${message}`, '_blank');
+      try {
+        setLoading(true);
+        const response = await fetch('/api/payment/initiate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plan: 'pro' }),
+        });
+
+        const data = await response.json();
+
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          console.error('Payment initiation failed:', data);
+          alert('Failed to initiate payment. Please try again.');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+      } finally {
+        setLoading(false);
+      }
     } else if (plan === 'Enterprise') {
       const message = encodeURIComponent(
         'Hi, I am interested in KlikForm Enterprise plan. Please contact me for details.'
       );
       window.open(`https://wa.me/601133114369?text=${message}`, '_blank');
+      setOpen(false);
     }
-    setOpen(false);
   };
 
   return (
@@ -141,8 +169,19 @@ export function PricingModal({ children }: PricingModalProps) {
                   <CardDescription>{plan.description}</CardDescription>
                   <div className="mt-4">
                     <span className="text-3xl font-bold">{plan.price}</span>
-                    <span className="text-gray-500 text-sm">{plan.period}</span>
+                    <span className="text-gray-500 text-sm">
+                      {plan.period}
+
+                      {plan.periodDetail && (
+                        <span className="block text-xs">{plan.periodDetail}</span>
+                      )}
+                    </span>
                   </div>
+                  {plan.priceDetail && (
+                    <p className="text-xs text-muted-foreground mt-1 font-medium text-amber-900 bg-amber-50 inline-block px-2 py-0.5 rounded">
+                      {plan.priceDetail}
+                    </p>
+                  )}
                 </CardHeader>
 
                 <CardContent className="space-y-4">
@@ -164,14 +203,21 @@ export function PricingModal({ children }: PricingModalProps) {
                   <Button
                     className="w-full"
                     variant={plan.popular ? 'default' : 'outline'}
-                    disabled={plan.current || plan.comingSoon}
+                    disabled={plan.current || plan.comingSoon || (loading && plan.name === 'Pro')}
                     onClick={() => handleUpgrade(plan.name)}
                   >
-                    {plan.current
-                      ? 'Current Plan'
-                      : plan.comingSoon
-                        ? 'Coming Soon'
-                        : `Upgrade to ${plan.name}`}
+                    {loading && plan.name === 'Pro' ? (
+                      <>
+                        <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        Processing...
+                      </>
+                    ) : plan.current ? (
+                      'Current Plan'
+                    ) : plan.comingSoon ? (
+                      'Coming Soon'
+                    ) : (
+                      `Upgrade to ${plan.name}`
+                    )}
                   </Button>
                 </CardContent>
               </Card>

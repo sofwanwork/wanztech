@@ -20,8 +20,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { toast } from 'sonner';
-import { ExternalLink, ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
+import { ExternalLink } from 'lucide-react';
 import { saveSettingsAction, getSettingsAction } from '@/actions/form';
 
 import { useRouter, useSearchParams } from 'next/navigation';

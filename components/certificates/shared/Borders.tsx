@@ -13,8 +13,6 @@ export function CornerBorders({
   thickness = '4px',
   offset = '6',
 }: CornerBordersProps) {
-  const borderStyle = { borderColor: color, borderWidth: thickness };
-
   return (
     <>
       <div

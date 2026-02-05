@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { LayoutDashboard, Settings, LogOut, Plus, FileText, Award } from 'lucide-react';
@@ -11,6 +10,7 @@ import { logoutAction } from '@/actions/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface SidebarProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   profile: any; // Using any for simplicity here, ideally import Profile type
   onNavigate?: () => void; // Callback for mobile menu close
 }
@@ -33,15 +33,15 @@ export function DashboardSidebar({ profile, onNavigate }: SidebarProps) {
     },
     {
       title: 'E-Cert',
-      href: '/esijil',
+      href: '/ecert',
       icon: Award,
-      active: pathname === '/esijil' && !pathname.includes('/builder'),
+      active: pathname === '/ecert' && !pathname.includes('/builder'),
     },
     {
       title: 'E-Cert Builder',
-      href: '/esijil/builder',
+      href: '/ecert/builder',
       icon: FileText,
-      active: pathname.startsWith('/esijil/builder'),
+      active: pathname.startsWith('/ecert/builder'),
     },
   ];
 

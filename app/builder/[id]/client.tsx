@@ -12,6 +12,14 @@ import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import {
   ArrowLeft,
   Save,
   Trash,
@@ -42,7 +50,6 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { QrCustomizer } from '@/components/qr-customizer';
-import { Switch } from '@/components/ui/switch';
 
 interface BuilderClientProps {
   initialForm: Form;
@@ -98,7 +105,7 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
       await deleteFormAction(form.id);
       toast.success('Form deleted successfully');
       // Redirect handled by server action usually, or we can redirect here if needed
-    } catch (error) {
+    } catch {
       toast.error('Failed to delete form');
       setDeleting(false);
       setDeleteDialogOpen(false);
@@ -191,6 +198,7 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                   variant="outline"
                   size="sm"
                   className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 px-2 sm:px-3"
+                  suppressHydrationWarning
                 >
                   <Trash className="h-4 w-4" />
                 </Button>
@@ -262,7 +270,10 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Cover Image URL</Label>
+                  <div className="flex justify-between items-baseline">
+                    <Label>Cover Image URL</Label>
+                    <span className="text-xs text-muted-foreground">Rec: 1200x600px (2:1)</span>
+                  </div>
                   <Input
                     placeholder="https://example.com/poster.jpg"
                     value={form.coverImage || ''}
@@ -274,6 +285,89 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                       style={{ backgroundImage: `url(${getProxiedImageUrl(form.coverImage)})` }}
                     />
                   )}
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between items-baseline">
+                    <Label>Logo URL (Optional)</Label>
+                    <span className="text-xs text-muted-foreground">Rec Height: 100-200px</span>
+                  </div>
+                  <Input
+                    placeholder="https://example.com/logo.png"
+                    value={form.theme?.logo || ''}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        theme: { ...f.theme, logo: e.target.value },
+                      }))
+                    }
+                  />
+                  {form.theme?.logo && (
+                    <div className="mt-2 h-16 w-auto inline-block border rounded bg-slate-50 p-1">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={form.theme.logo}
+                        alt="Logo"
+                        className="h-full w-auto object-contain"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Title Alignment</Label>
+                    <Select
+                      value={form.theme?.headerAlignment || 'left'}
+                      onValueChange={(val) =>
+                        setForm((f) => ({
+                          ...f,
+                          theme: {
+                            ...f.theme,
+                            headerAlignment: val as 'left' | 'center',
+                          },
+                        }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Alignment" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="left">Left</SelectItem>
+                        <SelectItem value="center">Center</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Header Font Style</Label>
+                    <Select
+                      value={form.theme?.headerFont || 'inter'}
+                      onValueChange={(val) =>
+                        setForm((f) => ({
+                          ...f,
+                          theme: {
+                            ...f.theme,
+                            headerFont: val as
+                              | 'inter'
+                              | 'playfair'
+                              | 'lora'
+                              | 'roboto',
+                          },
+                        }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Font Style" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="inter">Modern (Inter)</SelectItem>
+                        <SelectItem value="playfair">Elegant (Playfair)</SelectItem>
+                        <SelectItem value="lora">Formal (Lora)</SelectItem>
+                        <SelectItem value="roboto">Official (Roboto)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Google Sheet Share URL</Label>
@@ -339,6 +433,24 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                     Optional. Leave blank to show the default message.
                   </p>
                 </div>
+
+                <div className="flex items-center space-x-2 border p-3 rounded-lg bg-slate-50">
+                  <Switch
+                    id="allow-multiple"
+                    checked={form.allowMultipleSubmissions ?? true} // Default to true if undefined
+                    onCheckedChange={(checked) =>
+                      setForm((f) => ({ ...f, allowMultipleSubmissions: checked }))
+                    }
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <Label htmlFor="allow-multiple" className="cursor-pointer">
+                      Show &quot;Submit another response&quot; button
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Enable this to let users submit the form multiple times easily.
+                    </p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
@@ -352,7 +464,10 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                 <div className="space-y-2">
                   <Label>Primary Color</Label>
                   <div className="flex items-center gap-3">
-                    <div className="relative overflow-hidden w-10 h-10 rounded-full border shadow-sm ring-1 ring-black/5">
+                    <div
+                      className="relative w-10 h-10 rounded-full border shadow-sm ring-1 ring-black/5"
+                      style={{ clipPath: 'circle(50%)' }}
+                    >
                       <input
                         type="color"
                         value={form.theme?.primaryColor || '#000000'}
@@ -362,7 +477,7 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                             theme: { ...f.theme, primaryColor: e.target.value },
                           }))
                         }
-                        className="absolute inset-0 w-[150%] h-[150%] -top-[25%] -left-[25%] p-0 m-0 cursor-pointer border-0"
+                        className="absolute -inset-2 w-[calc(100%+16px)] h-[calc(100%+16px)] p-0 m-0 cursor-pointer border-0"
                       />
                     </div>
                     <Input
@@ -385,7 +500,10 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                 <div className="space-y-2">
                   <Label>Background Color</Label>
                   <div className="flex items-center gap-3">
-                    <div className="relative overflow-hidden w-10 h-10 rounded-full border shadow-sm ring-1 ring-black/5">
+                    <div
+                      className="relative w-10 h-10 rounded-full border shadow-sm ring-1 ring-black/5"
+                      style={{ clipPath: 'circle(50%)' }}
+                    >
                       <input
                         type="color"
                         value={form.theme?.backgroundColor || '#ffffff'}
@@ -395,7 +513,7 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                             theme: { ...f.theme, backgroundColor: e.target.value },
                           }))
                         }
-                        className="absolute inset-0 w-[150%] h-[150%] -top-[25%] -left-[25%] p-0 m-0 cursor-pointer border-0"
+                        className="absolute -inset-2 w-[calc(100%+16px)] h-[calc(100%+16px)] p-0 m-0 cursor-pointer border-0"
                       />
                     </div>
                     <Input
@@ -412,6 +530,82 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                   </div>
                   <p className="text-xs text-muted-foreground">Main page background color.</p>
                 </div>
+
+                <div className="space-y-2 sm:col-span-2">
+                  <Label>Background Pattern</Label>
+                  <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
+                    {[
+                      { id: 'none', label: 'None', pattern: 'bg-gray-100' },
+                      {
+                        id: 'dots',
+                        label: 'Dots',
+                        pattern:
+                          'bg-[radial-gradient(circle,_#00000040_1px,_transparent_1px)] bg-[length:12px_12px]',
+                      },
+                      {
+                        id: 'grid',
+                        label: 'Grid',
+                        pattern:
+                          'bg-[linear-gradient(#00000020_1px,_transparent_1px),linear-gradient(90deg,_#00000020_1px,_transparent_1px)] bg-[length:20px_20px]',
+                      },
+                      {
+                        id: 'diagonal',
+                        label: 'Diagonal',
+                        pattern:
+                          'bg-[repeating-linear-gradient(45deg,_transparent,_transparent_10px,_#00000015_10px,_#00000015_11px)]',
+                      },
+                      {
+                        id: 'waves',
+                        label: 'Waves',
+                        pattern:
+                          'bg-[radial-gradient(circle_at_50%_0,_#00000040_10px,_transparent_10.5px)] bg-[length:20px_20px]',
+                      },
+                      {
+                        id: 'circles',
+                        label: 'Circles',
+                        pattern:
+                          'bg-[radial-gradient(circle_at_center,_#00000040_2px,_transparent_2px)] bg-[length:24px_24px]',
+                      },
+                      {
+                        id: 'triangles',
+                        label: 'Triangles',
+                        pattern:
+                          'bg-[linear-gradient(135deg,_#00000020_25%,_transparent_25%),linear-gradient(225deg,_#00000020_25%,_transparent_25%)] bg-[length:20px_20px]',
+                      },
+                    ].map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() =>
+                          setForm((f) => ({
+                            ...f,
+                            theme: {
+                              ...f.theme,
+                              backgroundPattern: p.id as
+                                | 'none'
+                                | 'dots'
+                                | 'grid'
+                                | 'diagonal'
+                                | 'waves'
+                                | 'circles'
+                                | 'triangles',
+                            },
+                          }))
+                        }
+                        className={`flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all ${(form.theme?.backgroundPattern || 'none') === p.id
+                          ? 'border-primary bg-primary/5'
+                          : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                      >
+                        <div className={`w-10 h-10 rounded-md ${p.pattern} border`} />
+                        <span className="text-xs font-medium">{p.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Add a subtle pattern overlay to the background.
+                  </p>
+                </div>
               </CardContent>
             </Card>
 
@@ -423,17 +617,12 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                     <Award className="h-5 w-5 text-primary" />
                     <CardTitle>E-Cert Settings</CardTitle>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={form.eCertificateEnabled || false}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, eCertificateEnabled: e.target.checked }))
-                      }
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                  </label>
+                  <Switch
+                    checked={form.eCertificateEnabled || false}
+                    onCheckedChange={(checked) =>
+                      setForm((f) => ({ ...f, eCertificateEnabled: checked }))
+                    }
+                  />
                 </div>
                 <CardDescription>
                   Enable e-certificate for participants to download with IC verification
@@ -466,7 +655,7 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <Label>Select Certificate Template</Label>
-                      <Link href="/esijil/builder">
+                      <Link href="/ecert/builder">
                         <Button variant="outline" size="sm" className="gap-1">
                           <Plus className="h-4 w-4" />
                           Create New Certificate
@@ -480,7 +669,7 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                         <p className="text-gray-500 mb-4">
                           No certificate templates. Create your certificate template first.
                         </p>
-                        <Link href="/esijil/builder">
+                        <Link href="/ecert/builder">
                           <Button className="gap-2">
                             <Plus className="h-4 w-4" />
                             Create Certificate Now
@@ -495,11 +684,10 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                             onClick={() =>
                               setForm((f) => ({ ...f, eCertificateTemplate: cert.id }))
                             }
-                            className={`cursor-pointer rounded-lg border-2 overflow-hidden transition-all relative group ${
-                              form.eCertificateTemplate === cert.id
-                                ? 'border-primary ring-2 ring-primary/20'
-                                : 'border-gray-200 hover:border-gray-300'
-                            }`}
+                            className={`cursor-pointer rounded-lg border-2 overflow-hidden transition-all relative group ${form.eCertificateTemplate === cert.id
+                              ? 'border-primary ring-2 ring-primary/20'
+                              : 'border-gray-200 hover:border-gray-300'
+                              }`}
                           >
                             {/* Thumbnail */}
                             <div
@@ -538,14 +726,14 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                       </p>
                       <div className="flex items-center gap-2">
                         <code className="flex-1 text-xs bg-white p-2 rounded border text-green-700 break-all">
-                          {`${window.location.origin}/esijil/check/${form.id}`}
+                          {`${window.location.origin}/ecert/check/${form.id}`}
                         </code>
                         <Button
                           type="button"
                           size="sm"
                           variant="outline"
                           onClick={async () => {
-                            const url = `${window.location.origin}/esijil/check/${form.id}`;
+                            const url = `${window.location.origin}/ecert/check/${form.id}`;
                             const copied = await copyToClipboard(url);
                             if (copied) toast.success('Link disalin!');
                           }}
@@ -590,13 +778,17 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                         type="datetime-local"
                         value={form.attendanceSettings?.startTime || ''}
                         onChange={(e) =>
-                          setForm((f) => ({
-                            ...f,
-                            attendanceSettings: {
-                              ...(f.attendanceSettings || { list: '' }),
-                              startTime: e.target.value,
-                            } as any,
-                          }))
+                          setForm(
+                            (f) =>
+                              ({
+                                ...f,
+                                attendanceSettings: {
+                                  ...(f.attendanceSettings || { list: '' }),
+                                  startTime: e.target.value,
+                                },
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                              }) as any
+                          )
                         }
                       />
                     </div>
@@ -606,13 +798,17 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                         type="datetime-local"
                         value={form.attendanceSettings?.endTime || ''}
                         onChange={(e) =>
-                          setForm((f) => ({
-                            ...f,
-                            attendanceSettings: {
-                              ...(f.attendanceSettings || {}),
-                              endTime: e.target.value,
-                            } as any,
-                          }))
+                          setForm(
+                            (f) =>
+                              ({
+                                ...f,
+                                attendanceSettings: {
+                                  ...(f.attendanceSettings || {}),
+                                  endTime: e.target.value,
+                                },
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                              }) as any
+                          )
                         }
                       />
                     </div>
@@ -624,20 +820,24 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                       <Switch
                         checked={form.attendanceSettings?.geofence?.enabled || false}
                         onCheckedChange={(checked) =>
-                          setForm((f) => ({
-                            ...f,
-                            attendanceSettings: {
-                              ...(f.attendanceSettings || {}),
-                              geofence: {
-                                ...(f.attendanceSettings?.geofence || {
-                                  lat: 0,
-                                  lng: 0,
-                                  radius: 100,
-                                }),
-                                enabled: checked,
-                              },
-                            } as any,
-                          }))
+                          setForm(
+                            (f) =>
+                              ({
+                                ...f,
+                                attendanceSettings: {
+                                  ...(f.attendanceSettings || {}),
+                                  geofence: {
+                                    ...(f.attendanceSettings?.geofence || {
+                                      lat: 0,
+                                      lng: 0,
+                                      radius: 100,
+                                    }),
+                                    enabled: checked,
+                                  },
+                                },
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                              }) as any
+                          )
                         }
                       />
                     </div>
@@ -652,16 +852,20 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                               step="0.000001"
                               value={form.attendanceSettings.geofence?.lat || 0}
                               onChange={(e) =>
-                                setForm((f) => ({
-                                  ...f,
-                                  attendanceSettings: {
-                                    ...f.attendanceSettings,
-                                    geofence: {
-                                      ...f.attendanceSettings!.geofence!,
-                                      lat: parseFloat(e.target.value),
-                                    },
-                                  } as any,
-                                }))
+                                setForm(
+                                  (f) =>
+                                    ({
+                                      ...f,
+                                      attendanceSettings: {
+                                        ...f.attendanceSettings,
+                                        geofence: {
+                                          ...f.attendanceSettings!.geofence!,
+                                          lat: parseFloat(e.target.value),
+                                        },
+                                      },
+                                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                    }) as any
+                                )
                               }
                             />
                           </div>
@@ -672,16 +876,20 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                               step="0.000001"
                               value={form.attendanceSettings.geofence?.lng || 0}
                               onChange={(e) =>
-                                setForm((f) => ({
-                                  ...f,
-                                  attendanceSettings: {
-                                    ...f.attendanceSettings,
-                                    geofence: {
-                                      ...f.attendanceSettings!.geofence!,
-                                      lng: parseFloat(e.target.value),
-                                    },
-                                  } as any,
-                                }))
+                                setForm(
+                                  (f) =>
+                                    ({
+                                      ...f,
+                                      attendanceSettings: {
+                                        ...f.attendanceSettings,
+                                        geofence: {
+                                          ...f.attendanceSettings!.geofence!,
+                                          lng: parseFloat(e.target.value),
+                                        },
+                                      },
+                                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                    }) as any
+                                )
                               }
                             />
                           </div>
@@ -693,16 +901,20 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                               type="number"
                               value={form.attendanceSettings.geofence?.radius || 100}
                               onChange={(e) =>
-                                setForm((f) => ({
-                                  ...f,
-                                  attendanceSettings: {
-                                    ...f.attendanceSettings,
-                                    geofence: {
-                                      ...f.attendanceSettings!.geofence!,
-                                      radius: parseInt(e.target.value),
-                                    },
-                                  } as any,
-                                }))
+                                setForm(
+                                  (f) =>
+                                    ({
+                                      ...f,
+                                      attendanceSettings: {
+                                        ...f.attendanceSettings,
+                                        geofence: {
+                                          ...f.attendanceSettings!.geofence!,
+                                          radius: parseInt(e.target.value),
+                                        },
+                                      },
+                                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                    }) as any
+                                )
                               }
                             />
                             <span className="text-sm text-gray-500">meters</span>
@@ -717,17 +929,21 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                             if (navigator.geolocation) {
                               navigator.geolocation.getCurrentPosition(
                                 (position) => {
-                                  setForm((f) => ({
-                                    ...f,
-                                    attendanceSettings: {
-                                      ...f.attendanceSettings,
-                                      geofence: {
-                                        ...f.attendanceSettings!.geofence!,
-                                        lat: position.coords.latitude,
-                                        lng: position.coords.longitude,
-                                      },
-                                    } as any,
-                                  }));
+                                  setForm(
+                                    (f) =>
+                                      ({
+                                        ...f,
+                                        attendanceSettings: {
+                                          ...f.attendanceSettings,
+                                          geofence: {
+                                            ...f.attendanceSettings!.geofence!,
+                                            lat: position.coords.latitude,
+                                            lng: position.coords.longitude,
+                                          },
+                                        },
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                      }) as any
+                                  );
                                   toast.success('Location updated to your current position');
                                 },
                                 (error) => {

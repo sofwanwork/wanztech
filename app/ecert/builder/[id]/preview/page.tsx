@@ -2,7 +2,7 @@ import { getCertificateTemplate } from '@/lib/certificate-storage';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Download } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -30,7 +30,7 @@ export default async function CertificatePreviewPage({ params }: PageProps) {
       {/* Header */}
       <div className="bg-gray-800 border-b border-gray-700 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href={`/esijil/builder/${id}`}>
+          <Link href={`/ecert/builder/${id}`}>
             <Button variant="ghost" size="icon" className="text-white hover:bg-gray-700">
               <ArrowLeft className="h-5 w-5" />
             </Button>

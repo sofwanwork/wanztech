@@ -41,6 +41,7 @@ export async function getForms(): Promise<Form[]> {
     e_certificate_template: unknown;
     attendance_settings: unknown;
     qr_settings: unknown;
+    theme: unknown;
   }
   return data.map((f: DbFormRow) => ({
     id: f.id,
@@ -56,6 +57,7 @@ export async function getForms(): Promise<Form[]> {
     eCertificateTemplate: f.e_certificate_template as Form['eCertificateTemplate'],
     attendanceSettings: f.attendance_settings as Form['attendanceSettings'],
     qrSettings: f.qr_settings as Form['qrSettings'],
+    theme: f.theme as Form['theme'],
   }));
 }
 
@@ -65,6 +67,13 @@ export async function getFormById(id: string): Promise<Form | undefined> {
 
   if (error || !data) return undefined;
 
+  // Fetch subscription tier
+  const { data: subscription } = await supabase
+    .from('subscriptions')
+    .select('tier')
+    .eq('user_id', data.user_id)
+    .single();
+
   return {
     id: data.id,
     title: data.title,
@@ -72,6 +81,7 @@ export async function getFormById(id: string): Promise<Form | undefined> {
     coverImage: data.cover_image,
     thankYouMessage: data.thank_you_message,
     googleSheetUrl: data.google_sheet_url,
+    allowMultipleSubmissions: data.allow_multiple_submissions,
     fields: data.fields || [], // Fallback to empty array if null
     createdAt: data.created_at,
     shortCode: data.short_code,
@@ -79,6 +89,8 @@ export async function getFormById(id: string): Promise<Form | undefined> {
     eCertificateTemplate: data.e_certificate_template,
     attendanceSettings: data.attendance_settings,
     qrSettings: data.qr_settings,
+    theme: data.theme,
+    userTier: (subscription?.tier as Form['userTier']) || 'free',
   };
 }
 
@@ -88,6 +100,13 @@ export async function getFormByShortCode(code: string): Promise<Form | undefined
 
   if (error || !data) return undefined;
 
+  // Fetch subscription tier
+  const { data: subscription } = await supabase
+    .from('subscriptions')
+    .select('tier')
+    .eq('user_id', data.user_id)
+    .single();
+
   return {
     id: data.id,
     title: data.title,
@@ -95,6 +114,7 @@ export async function getFormByShortCode(code: string): Promise<Form | undefined
     coverImage: data.cover_image,
     thankYouMessage: data.thank_you_message,
     googleSheetUrl: data.google_sheet_url,
+    allowMultipleSubmissions: data.allow_multiple_submissions,
     fields: data.fields || [],
     createdAt: data.created_at,
     shortCode: data.short_code,
@@ -102,6 +122,8 @@ export async function getFormByShortCode(code: string): Promise<Form | undefined
     eCertificateTemplate: data.e_certificate_template,
     attendanceSettings: data.attendance_settings,
     qrSettings: data.qr_settings,
+    theme: data.theme,
+    userTier: (subscription?.tier as Form['userTier']) || 'free',
   };
 }
 
@@ -131,11 +153,13 @@ export async function saveForm(form: Form): Promise<void> {
     cover_image: form.coverImage,
     thank_you_message: form.thankYouMessage,
     google_sheet_url: form.googleSheetUrl,
+    allow_multiple_submissions: form.allowMultipleSubmissions,
     fields: form.fields, // jsonb handles array automatically
     e_certificate_enabled: form.eCertificateEnabled,
     e_certificate_template: form.eCertificateTemplate,
     attendance_settings: form.attendanceSettings,
     qr_settings: form.qrSettings,
+    theme: form.theme,
     // created_at is default now(), but for updates we might want to keep original or allow db to handle.
     // If we pass id, upsert works.
   };

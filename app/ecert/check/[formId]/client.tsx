@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -29,15 +29,6 @@ interface CertificateCheckClientProps {
   customTemplateData?: CertificateTemplateType | null;
 }
 
-// Template URL mappings
-const TEMPLATE_URLS: Record<string, string> = {
-  classic: '/templates/cert_classic_1769780543340.png',
-  modern: '/templates/cert_modern_1769780573939.png',
-  elegant: '/templates/cert_elegant_1769780598518.png',
-  corporate: '/templates/cert_corporate_1769780629083.png',
-  creative: '/templates/cert_creative_1769780649445.png',
-};
-
 export function CertificateCheckClient({
   formId,
   formTitle,
@@ -63,7 +54,7 @@ export function CertificateCheckClient({
     try {
       const checkResult = await checkCertificateByIC(formId, ic.trim());
       setResult(checkResult);
-    } catch (error) {
+    } catch {
       toast.error('Ralat semasa menyemak sijil');
     } finally {
       setLoading(false);
@@ -263,6 +254,8 @@ export function CertificateCheckClient({
                             date={result.date}
                             id="check-preview"
                             customTemplateData={customTemplateData}
+                            ic={ic}
+                            formId={formId}
                           />
                         </div>
                       </div>
@@ -295,6 +288,8 @@ export function CertificateCheckClient({
                 date={result.date}
                 id="hidden-certificate"
                 customTemplateData={customTemplateData}
+                ic={ic}
+                formId={formId}
               />
             </div>
           </div>

@@ -9,6 +9,8 @@ interface CertificateTemplateProps {
   date?: string;
   id?: string;
   customTemplateData?: CertificateTemplateType | null;
+  ic?: string; // IC for QR verification URL
+  formId?: string; // Form ID for QR verification URL
 }
 
 export function CertificateTemplate({
@@ -18,13 +20,15 @@ export function CertificateTemplate({
   date,
   id,
   customTemplateData,
+  ic,
+  formId,
 }: CertificateTemplateProps) {
   const formattedDate = date
     ? new Date(date).toLocaleDateString('ms-MY', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      })
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    })
     : undefined;
 
   // Use custom JSON template if available
@@ -37,6 +41,8 @@ export function CertificateTemplate({
           name,
           program,
           date: formattedDate || date || '', // Use formatted if available
+          ic,
+          formId,
         }}
       />
     );

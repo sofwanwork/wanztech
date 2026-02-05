@@ -1,6 +1,7 @@
 'use client';
 
 import { Form, FormField } from '@/lib/types';
+import Link from 'next/link';
 
 import {
   Card,
@@ -21,16 +22,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn, getProxiedImageUrl } from '@/lib/utils';
 import { format } from 'date-fns';
-import { CalendarIcon, Loader2, CheckCircle2 } from 'lucide-react';
+import { Loader2, CheckCircle2, List } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { submitFormAction } from '@/actions/form';
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { TimePicker } from '@/components/ui/time-picker';
+import { DatePicker } from '@/components/ui/date-picker';
 
 interface PublicFormClientProps {
   form: Form;
@@ -39,8 +40,8 @@ interface PublicFormClientProps {
 export function PublicFormClient({ form }: PublicFormClientProps) {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [formData, setFormData] = useState<Record<string, any>>({});
-  const [dateOpen, setDateOpen] = useState<Record<string, boolean>>({});
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -100,13 +101,14 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
       } else {
         toast.error(result.error || 'Something went wrong');
       }
-    } catch (error) {
+    } catch {
       toast.error('An error occurred');
     } finally {
       setSubmitting(false);
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleInputChange = (id: string, value: any) => {
     setFormData((prev) => ({ ...prev, [id]: value }));
   };
@@ -219,7 +221,44 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
     );
   }
 
-  const { primaryColor, backgroundColor } = form.theme || {};
+  const { primaryColor, backgroundColor, backgroundPattern } = form.theme || {};
+
+  // Pattern CSS helper
+  const getPatternStyle = (pattern?: string): string => {
+    switch (pattern) {
+      case 'dots':
+        return 'radial-gradient(circle, rgba(0,0,0,0.15) 1px, transparent 1px)';
+      case 'grid':
+        return 'linear-gradient(rgba(0,0,0,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.08) 1px, transparent 1px)';
+      case 'diagonal':
+        return 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 11px)';
+      case 'waves':
+        return 'radial-gradient(circle at 50% 0, rgba(0,0,0,0.15) 10px, transparent 10.5px)';
+      case 'circles':
+        return 'radial-gradient(circle at center, rgba(0,0,0,0.15) 2px, transparent 2px)';
+      case 'triangles':
+        return 'linear-gradient(135deg, rgba(0,0,0,0.08) 25%, transparent 25%), linear-gradient(225deg, rgba(0,0,0,0.08) 25%, transparent 25%)';
+      default:
+        return '';
+    }
+  };
+
+  const getPatternSize = (pattern?: string): string => {
+    switch (pattern) {
+      case 'dots':
+        return '12px 12px';
+      case 'grid':
+        return '20px 20px';
+      case 'waves':
+        return '20px 20px';
+      case 'circles':
+        return '24px 24px';
+      case 'triangles':
+        return '20px 20px';
+      default:
+        return 'auto';
+    }
+  };
 
   if (accessDenied) {
     return (
@@ -228,7 +267,7 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
         style={
           {
             backgroundColor: backgroundColor || '#f9fafb',
-            // @ts-ignore
+
             '--primary': primaryColor || '#0f172a',
           } as React.CSSProperties
         }
@@ -260,29 +299,34 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
         style={
           {
             backgroundColor: backgroundColor || '#f9fafb',
-            // @ts-ignore
+
             '--primary': primaryColor || '#0f172a',
           } as React.CSSProperties
         }
       >
-        <Card className="w-full max-w-md text-center border-t-4 border-t-[var(--primary)] shadow-lg bg-white">
+        <Card className="w-full max-w-md text-center shadow-lg bg-white overflow-hidden relative border-none">
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-[var(--primary)]" />
           <CardHeader className="pt-8 pb-6">
             <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
               <CheckCircle2 className="h-6 w-6 text-green-600" />
             </div>
-            <CardTitle className="text-xl font-semibold text-gray-900">Thank You!</CardTitle>
+            {!form.thankYouMessage && (
+              <CardTitle className="text-xl font-semibold text-gray-900">Thank You!</CardTitle>
+            )}
             <CardDescription className="whitespace-pre-wrap text-gray-600 mt-2">
               {form.thankYouMessage || 'Your response has been recorded.'}
             </CardDescription>
           </CardHeader>
           <CardFooter className="justify-center pb-8">
-            <Button
-              variant="outline"
-              onClick={() => window.location.reload()}
-              className="border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-colors"
-            >
-              Submit another response
-            </Button>
+            {(form.allowMultipleSubmissions ?? true) && (
+              <Button
+                variant="outline"
+                onClick={() => window.location.reload()}
+                className="border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-colors"
+              >
+                Submit another response
+              </Button>
+            )}
           </CardFooter>
         </Card>
       </div>
@@ -290,6 +334,7 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
   }
 
   // Check validity (only visible inputs)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const validateField = (field: FormField, value: any): string | null => {
     if (field.type === 'separator') return null;
 
@@ -321,7 +366,7 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
           if (!regex.test(value)) {
             return `"${field.label}" is invalid format.`;
           }
-        } catch (e) {
+        } catch {
           // Invalid regex in config, ignore
         }
       }
@@ -338,13 +383,19 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
       style={
         {
           backgroundColor: backgroundColor || '#f9fafb',
-          // @ts-ignore
+          backgroundImage: getPatternStyle(backgroundPattern) || undefined,
+          backgroundSize:
+            backgroundPattern && backgroundPattern !== 'none'
+              ? getPatternSize(backgroundPattern)
+              : undefined,
           '--primary': primaryColor || '#0f172a',
           '--primary-foreground': '#ffffff',
         } as React.CSSProperties
       }
     >
       <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Lora:wght@400;600;700&family=Roboto:wght@400;500;700&display=swap');
+
         :root {
           --primary: ${primaryColor || '#0f172a'};
           --ring: ${primaryColor || '#0f172a'};
@@ -374,24 +425,64 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
         )}
 
         {/* Header */}
-        <Card className="border border-gray-200 bg-white">
-          <CardHeader className="border-l-4 border-l-primary">
-            <CardTitle className="text-2xl font-bold text-gray-900">{form.title}</CardTitle>
-            {form.description && (
-              <div
-                className="text-gray-600 mt-2 [&>p]:mb-0 [&>p:empty]:h-3 [&_strong]:font-bold [&_b]:font-bold"
-                style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
-                dangerouslySetInnerHTML={{ __html: form.description }}
-              />
+        <div className="rounded-xl shadow-lg flex overflow-hidden bg-transparent">
+          <div
+            className="w-[10px] shrink-0"
+            style={{ backgroundColor: primaryColor || '#0f172a' }}
+          />
+          <div
+            className={cn(
+              'flex-1 bg-white',
+              form.theme?.headerAlignment === 'center' && 'text-center'
             )}
-          </CardHeader>
-        </Card>
+          >
+            <CardHeader className="pt-8 pb-6">
+              {form.theme?.logo && (
+                <div
+                  className={cn(
+                    'mb-6',
+                    form.theme?.headerAlignment === 'center' ? 'flex justify-center' : ''
+                  )}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={form.theme.logo}
+                    alt="Logo"
+                    className="max-h-24 w-auto object-contain"
+                  />
+                </div>
+              )}
+              <CardTitle
+                className="text-2xl font-bold text-gray-900 leading-tight"
+                style={{
+                  fontFamily:
+                    form.theme?.headerFont === 'playfair'
+                      ? '"Playfair Display", serif'
+                      : form.theme?.headerFont === 'lora'
+                        ? '"Lora", serif'
+                        : form.theme?.headerFont === 'roboto'
+                          ? '"Roboto", sans-serif'
+                          : 'inherit',
+                }}
+              >
+                {form.title}
+              </CardTitle>
+              {form.description && (
+                <div
+                  className="text-gray-600 mt-2 [&>p]:mb-0 [&>p:empty]:h-3 [&_strong]:font-bold [&_b]:font-bold"
+                  style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
+                  dangerouslySetInnerHTML={{ __html: form.description }}
+                />
+              )}
+            </CardHeader>
+          </div>
+        </div>
 
         {/* Form Fields */}
         <form onSubmit={handleSubmit} className="space-y-6">
           <Card className="border border-gray-200 bg-white">
             <CardContent className="p-0">
-              {visibleFields.map((field, index) => {
+              {visibleFields.map((field) => {
                 if (field.type === 'separator') {
                   return (
                     <div
@@ -465,7 +556,8 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
                         onValueChange={(val) => handleInputChange(field.id, val)}
                         value={formData[field.id] || ''}
                       >
-                        <SelectTrigger className="h-12 text-base border-slate-200">
+                        <SelectTrigger className="w-full h-12 text-base border-slate-200 justify-start px-3 font-normal">
+                          <List className="mr-2 h-4 w-4 text-muted-foreground" />
                           <SelectValue placeholder="Select an option" />
                         </SelectTrigger>
                         <SelectContent>
@@ -579,48 +671,21 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
                     )}
 
                     {field.type === 'date' && (
-                      <Popover
-                        open={dateOpen[field.id]}
-                        onOpenChange={(open) =>
-                          setDateOpen((prev) => ({ ...prev, [field.id]: open }))
-                        }
-                      >
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant={'outline'}
-                            className={cn(
-                              'w-full h-12 justify-start text-left font-normal text-base border-slate-200',
-                              !formData[field.id] && 'text-muted-foreground'
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {formData[field.id] ? (
-                              format(formData[field.id], 'PPP')
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar
-                            mode="single"
-                            selected={formData[field.id]}
-                            onSelect={(date) => {
-                              handleInputChange(field.id, date);
-                              setDateOpen((prev) => ({ ...prev, [field.id]: false }));
-                            }}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
+                      <DatePicker
+                        value={formData[field.id]}
+                        onChange={(date) => {
+                          handleInputChange(field.id, date);
+                          // Ensure uncontrolled state sync if needed, though DatePicker handles its own open state
+                        }}
+                        placeholder="Pick a date"
+                      />
                     )}
 
                     {field.type === 'time' && (
-                      <Input
-                        type="time"
-                        className="h-12 text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 border-slate-200"
+                      <TimePicker
                         value={formData[field.id] || ''}
-                        onChange={(e) => handleInputChange(field.id, e.target.value)}
+                        onChange={(val) => handleInputChange(field.id, val)}
+                        placeholder="Pick a time"
                       />
                     )}
 
@@ -682,32 +747,63 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
                       <div className="space-y-4 pt-2">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           {field.products?.map((product) => {
-                            const isSelected = (formData[field.id] || []).includes(
-                              `${product.name} (${product.currency} ${product.price})`
+                            const selectedProducts = formData[field.id] || [];
+                            const selectedProduct = selectedProducts.find(
+                              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                              (p: any) => p.id === product.id
                             );
+                            const isSelected = !!selectedProduct;
+                            const quantity = selectedProduct?.quantity || 0;
+
+                            const updateQuantity = (newQty: number) => {
+                              const current = formData[field.id] || [];
+                              if (newQty <= 0) {
+                                // Remove product
+                                handleInputChange(
+                                  field.id,
+                                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                  current.filter((p: any) => p.id !== product.id)
+                                );
+                              } else {
+                                const productData = {
+                                  id: product.id,
+                                  name: product.name,
+                                  price: product.price,
+                                  currency: product.currency,
+                                  quantity: newQty,
+                                };
+                                if (isSelected) {
+                                  // Update quantity
+                                  handleInputChange(
+                                    field.id,
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                    current.map((p: any) => (p.id === product.id ? productData : p))
+                                  );
+                                } else {
+                                  // Add product
+                                  handleInputChange(field.id, [...current, productData]);
+                                }
+                              }
+                            };
+
                             return (
                               <div
                                 key={product.id}
                                 className={cn(
-                                  'relative group cursor-pointer border rounded-lg overflow-hidden transition-all duration-200',
+                                  'relative group border rounded-lg overflow-hidden transition-all duration-200',
                                   isSelected
                                     ? 'border-primary ring-1 ring-primary bg-primary/5'
                                     : 'border-slate-200 hover:border-slate-300 hover:shadow-sm'
                                 )}
-                                onClick={() => {
-                                  const val = `${product.name} (${product.currency} ${product.price})`;
-                                  const current = formData[field.id] || [];
-                                  if (isSelected) {
-                                    handleInputChange(
-                                      field.id,
-                                      current.filter((v: string) => v !== val)
-                                    );
-                                  } else {
-                                    handleInputChange(field.id, [...current, val]);
-                                  }
-                                }}
                               >
-                                <div className="aspect-[4/3] w-full bg-slate-100 relative overflow-hidden">
+                                <div
+                                  className="aspect-[4/3] w-full bg-slate-100 relative overflow-hidden cursor-pointer"
+                                  onClick={() => {
+                                    if (!isSelected) {
+                                      updateQuantity(1);
+                                    }
+                                  }}
+                                >
                                   {product.imageUrl ? (
                                     /* eslint-disable-next-line @next/next/no-img-element */
                                     <img
@@ -739,9 +835,59 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
                                   <div className="font-medium text-gray-900 leading-tight mb-1">
                                     {product.name}
                                   </div>
-                                  <div className="text-sm font-semibold text-primary">
-                                    {product.currency} {product.price.toFixed(2)}
+                                  <div className="flex items-center justify-between">
+                                    <div className="text-sm font-semibold text-primary">
+                                      {product.currency} {product.price.toFixed(2)}
+                                    </div>
+                                    {/* Quantity Controls */}
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          updateQuantity(quantity - 1);
+                                        }}
+                                        className={cn(
+                                          'h-7 w-7 rounded-full flex items-center justify-center text-sm font-bold transition-colors',
+                                          isSelected
+                                            ? 'bg-primary/10 text-primary hover:bg-primary/20'
+                                            : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                        )}
+                                        disabled={!isSelected}
+                                      >
+                                        −
+                                      </button>
+                                      <span
+                                        className={cn(
+                                          'w-6 text-center font-semibold text-sm',
+                                          isSelected ? 'text-gray-900' : 'text-slate-400'
+                                        )}
+                                      >
+                                        {quantity}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          updateQuantity(quantity + 1);
+                                        }}
+                                        className="h-7 w-7 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold hover:bg-primary/90 transition-colors"
+                                      >
+                                        +
+                                      </button>
+                                    </div>
                                   </div>
+                                  {/* Subtotal */}
+                                  {isSelected && quantity > 0 && (
+                                    <div className="mt-2 pt-2 border-t border-slate-100">
+                                      <div className="text-xs text-slate-500 flex justify-between">
+                                        <span>Subtotal:</span>
+                                        <span className="font-semibold text-gray-900">
+                                          {product.currency} {(product.price * quantity).toFixed(2)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             );
@@ -765,6 +911,19 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
             </CardFooter>
           </Card>
         </form>
+
+        {(!form.userTier || form.userTier === 'free') && (
+          <div className="mt-8 pb-8 text-center">
+            <Link
+              href="/"
+              target="_blank"
+              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-gray-900 transition-colors"
+            >
+              <span>Powered by</span>
+              <span className="font-semibold">KlikForm</span>
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );

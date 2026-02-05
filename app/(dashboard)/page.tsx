@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { ExternalLink, QrCode, FileText, ArrowRight, Search } from 'lucide-react';
+import { ExternalLink, QrCode, FileText, Search } from 'lucide-react';
 import { getProxiedImageUrl, stripHtml } from '@/lib/utils';
 import { createFormAction } from '@/actions/form';
 import { DashboardSearch } from '@/components/dashboard-search';
