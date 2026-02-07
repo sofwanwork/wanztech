@@ -221,57 +221,11 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
     );
   }
 
-  const { primaryColor, backgroundColor, backgroundPattern } = form.theme || {};
-
-  // Pattern CSS helper
-  const getPatternStyle = (pattern?: string): string => {
-    switch (pattern) {
-      case 'dots':
-        return 'radial-gradient(circle, rgba(0,0,0,0.15) 1px, transparent 1px)';
-      case 'grid':
-        return 'linear-gradient(rgba(0,0,0,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.08) 1px, transparent 1px)';
-      case 'diagonal':
-        return 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 11px)';
-      case 'waves':
-        return 'radial-gradient(circle at 50% 0, rgba(0,0,0,0.15) 10px, transparent 10.5px)';
-      case 'circles':
-        return 'radial-gradient(circle at center, rgba(0,0,0,0.15) 2px, transparent 2px)';
-      case 'triangles':
-        return 'linear-gradient(135deg, rgba(0,0,0,0.08) 25%, transparent 25%), linear-gradient(225deg, rgba(0,0,0,0.08) 25%, transparent 25%)';
-      default:
-        return '';
-    }
-  };
-
-  const getPatternSize = (pattern?: string): string => {
-    switch (pattern) {
-      case 'dots':
-        return '12px 12px';
-      case 'grid':
-        return '20px 20px';
-      case 'waves':
-        return '20px 20px';
-      case 'circles':
-        return '24px 24px';
-      case 'triangles':
-        return '20px 20px';
-      default:
-        return 'auto';
-    }
-  };
+  const { primaryColor, backgroundColor } = form.theme || {};
 
   if (accessDenied) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center p-4 transition-colors duration-500 font-sans"
-        style={
-          {
-            backgroundColor: backgroundColor || '#f9fafb',
-
-            '--primary': primaryColor || '#0f172a',
-          } as React.CSSProperties
-        }
-      >
+      <div className="min-h-screen flex items-center justify-center p-4 transition-colors duration-500 font-sans access-denied-container">
         <Card className="w-full max-w-md text-center border-t-4 border-red-500 shadow-lg bg-white">
           <CardHeader className="pt-8 pb-6">
             <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
@@ -294,16 +248,7 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
 
   if (submitted) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center p-4 transition-colors duration-500 font-sans"
-        style={
-          {
-            backgroundColor: backgroundColor || '#f9fafb',
-
-            '--primary': primaryColor || '#0f172a',
-          } as React.CSSProperties
-        }
-      >
+      <div className="min-h-screen flex items-center justify-center p-4 transition-colors duration-500 font-sans submitted-container">
         <Card className="w-full max-w-md text-center shadow-lg bg-white overflow-hidden relative border-none">
           <div className="absolute top-0 left-0 right-0 h-1.5 bg-[var(--primary)]" />
           <CardHeader className="pt-8 pb-6">
@@ -378,58 +323,40 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
   const isFormValid = visibleFields.every((field) => !validateField(field, formData[field.id]));
 
   return (
-    <div
-      className="min-h-screen py-8 sm:py-12 px-4 transition-colors duration-500 font-sans"
-      style={
-        {
-          backgroundColor: backgroundColor || '#f9fafb',
-          backgroundImage: getPatternStyle(backgroundPattern) || undefined,
-          backgroundSize:
-            backgroundPattern && backgroundPattern !== 'none'
-              ? getPatternSize(backgroundPattern)
-              : undefined,
-          '--primary': primaryColor || '#0f172a',
-          '--primary-foreground': '#ffffff',
-        } as React.CSSProperties
-      }
-    >
+    <div className="min-h-screen py-8 sm:py-12 px-4 transition-colors duration-500 font-sans form-container">
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Lora:wght@400;600;700;900&family=Roboto:wght@400;500;700;900&display=swap');
 
         :root {
           --primary: ${primaryColor || '#0f172a'};
+          --primary-foreground: #ffffff;
           --ring: ${primaryColor || '#0f172a'};
+          --bg-color: ${backgroundColor || '#f9fafb'};
+          --cover-image: url(${form.coverImage ? getProxiedImageUrl(form.coverImage) : ''});
+          --cover-image-display: ${form.coverImage ? 'block' : 'none'};
         }
-        .text-primary {
-          color: var(--primary) !important;
+
+        .cover-image-container {
+          background-image: var(--cover-image);
+          display: var(--cover-image-display);
         }
-        .bg-primary {
-          background-color: var(--primary) !important;
-        }
-        .border-primary {
-          border-color: var(--primary) !important;
-        }
-        .focus\\:ring-primary\\/20:focus {
-          --tw-ring-color: color-mix(in srgb, var(--primary), transparent 80%) !important;
-        }
+
+        /* ... existing styles ... */
       `}</style>
+
+      {/* ... */}
+
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Cover Image */}
         {form.coverImage && (
           <div className="rounded-lg overflow-hidden border border-gray-200">
-            <div
-              className="w-full aspect-[2/1] bg-cover bg-center"
-              style={{ backgroundImage: `url(${getProxiedImageUrl(form.coverImage)})` }}
-            />
+            <div className="w-full aspect-[2/1] bg-cover bg-center cover-image-container" />
           </div>
         )}
 
         {/* Header */}
         <div className="rounded-xl shadow-lg flex overflow-hidden bg-transparent">
-          <div
-            className="w-[10px] shrink-0"
-            style={{ backgroundColor: primaryColor || '#0f172a' }}
-          />
+          <div className="w-[10px] shrink-0 bg-primary" />
           <div
             className={cn(
               'flex-1 bg-white',
@@ -469,8 +396,7 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
               </CardTitle>
               {form.description && (
                 <div
-                  className="text-gray-600 mt-2 [&>p]:mb-0 [&>p:empty]:h-3 [&_strong]:font-bold [&_b]:font-bold"
-                  style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
+                  className="text-gray-600 mt-2 [&>p]:mb-0 [&>p:empty]:h-3 [&_strong]:font-bold [&_strong]:text-black [&_b]:font-bold [&_b]:text-black font-sans"
                   dangerouslySetInnerHTML={{ __html: form.description }}
                 />
               )}

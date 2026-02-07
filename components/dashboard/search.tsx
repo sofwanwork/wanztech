@@ -34,7 +34,7 @@ export function DashboardSearch() {
     return () => {
       clearTimeout(handler);
     };
-  }, [term, replace]); // Removed searchParams from dependencies
+  }, [term, replace, pathname]); // Removed searchParams from dependencies
 
   return (
     <div className="relative w-full md:w-64">

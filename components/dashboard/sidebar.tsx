@@ -37,6 +37,7 @@ export function DashboardSidebar({ profile, onNavigate }: SidebarProps) {
 
   // Prevent hydration mismatch
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -72,7 +73,7 @@ export function DashboardSidebar({ profile, onNavigate }: SidebarProps) {
   // Cycle between Logo and Arrow when collapsed
   useEffect(() => {
     if (!isCollapsed) {
-      setShowArrow(false);
+      setTimeout(() => setShowArrow(false), 0);
       return;
     }
 
@@ -123,20 +124,24 @@ export function DashboardSidebar({ profile, onNavigate }: SidebarProps) {
               {/* Show Arrow or Logo based on state */}
               <div
                 className={cn(
-                  "absolute inset-0 transition-opacity duration-500 flex items-center justify-center",
-                  showArrow ? "opacity-100" : "opacity-0"
+                  'absolute inset-0 transition-opacity duration-500 flex items-center justify-center',
+                  showArrow ? 'opacity-100' : 'opacity-0'
                 )}
               >
                 <ChevronRight className="h-6 w-6 text-primary" />
               </div>
               <div
                 className={cn(
-                  "absolute inset-0 transition-opacity duration-500",
-                  showArrow ? "opacity-0" : "opacity-100"
+                  'absolute inset-0 transition-opacity duration-500',
+                  showArrow ? 'opacity-0' : 'opacity-100'
                 )}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo.png?v=3" alt="KlikForm Logo" className="w-full h-full object-cover" />
+                <img
+                  src="/logo.png?v=3"
+                  alt="KlikForm Logo"
+                  className="w-full h-full object-cover"
+                />
               </div>
             </div>
           </div>

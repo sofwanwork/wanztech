@@ -7,11 +7,19 @@ import { CertificateTemplate, CertificateElement, CertificateCategory } from '@/
 
 import { canCreateCertificate } from '@/lib/storage/subscription';
 
-const VALID_CATEGORIES: CertificateCategory[] = ['school', 'corporate', 'training', 'event', 'other'];
+const VALID_CATEGORIES: CertificateCategory[] = [
+  'school',
+  'corporate',
+  'training',
+  'event',
+  'other',
+];
 
 export async function createCertificateTemplateAction(formData: FormData): Promise<void> {
   const categoryInput = formData.get('category') as string | null;
-  const category: CertificateCategory = VALID_CATEGORIES.includes(categoryInput as CertificateCategory)
+  const category: CertificateCategory = VALID_CATEGORIES.includes(
+    categoryInput as CertificateCategory
+  )
     ? (categoryInput as CertificateCategory)
     : 'other';
 

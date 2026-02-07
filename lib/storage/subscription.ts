@@ -276,7 +276,11 @@ export async function incrementSubmissionCount(formOwnerId: string): Promise<voi
 }
 
 // Check if user can create a new form
-export async function canCreateForm(): Promise<{ allowed: boolean; message?: string; reason?: string }> {
+export async function canCreateForm(): Promise<{
+  allowed: boolean;
+  message?: string;
+  reason?: string;
+}> {
   // First check if subscription is blocked (grace period or expired)
   const blockStatus = await isSubscriptionBlocked();
 
@@ -293,7 +297,8 @@ export async function canCreateForm(): Promise<{ allowed: boolean; message?: str
       return {
         allowed: false,
         reason: 'expired',
-        message: 'Langganan Pro anda telah tamat dan akaun disekat. Sila renew untuk terus menggunakan KlikForm.',
+        message:
+          'Langganan Pro anda telah tamat dan akaun disekat. Sila renew untuk terus menggunakan KlikForm.',
       };
     }
   }

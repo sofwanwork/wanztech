@@ -4,52 +4,52 @@ import { Resend } from 'resend';
 let resend: Resend | null = null;
 
 function getResendClient(): Resend | null {
-    if (!process.env.RESEND_API_KEY) {
-        return null;
-    }
-    if (!resend) {
-        resend = new Resend(process.env.RESEND_API_KEY);
-    }
-    return resend;
+  if (!process.env.RESEND_API_KEY) {
+    return null;
+  }
+  if (!resend) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resend;
 }
 
 interface EmailOptions {
-    to: string;
-    subject: string;
-    html: string;
+  to: string;
+  subject: string;
+  html: string;
 }
 
 export async function sendEmail({ to, subject, html }: EmailOptions) {
-    const client = getResendClient();
+  const client = getResendClient();
 
-    if (!client) {
-        console.error('RESEND_API_KEY not configured');
-        return { success: false, error: 'Email service not configured' };
+  if (!client) {
+    console.error('RESEND_API_KEY not configured');
+    return { success: false, error: 'Email service not configured' };
+  }
+
+  try {
+    const { data, error } = await client.emails.send({
+      from: 'KlikForm <noreply@klikform.com>',
+      to,
+      subject,
+      html,
+    });
+
+    if (error) {
+      console.error('Email send error:', error);
+      return { success: false, error: error.message };
     }
 
-    try {
-        const { data, error } = await client.emails.send({
-            from: 'KlikForm <noreply@klikform.com>',
-            to,
-            subject,
-            html,
-        });
-
-        if (error) {
-            console.error('Email send error:', error);
-            return { success: false, error: error.message };
-        }
-
-        return { success: true, id: data?.id };
-    } catch (error) {
-        console.error('Email send exception:', error);
-        return { success: false, error: 'Failed to send email' };
-    }
+    return { success: true, id: data?.id };
+  } catch (error) {
+    console.error('Email send exception:', error);
+    return { success: false, error: 'Failed to send email' };
+  }
 }
 
 // Base email template wrapper
 function emailWrapper(content: string, accentColor: string = '#6366f1') {
-    return `
+  return `
     <!DOCTYPE html>
     <html lang="ms">
       <head>
@@ -111,8 +111,12 @@ function emailWrapper(content: string, accentColor: string = '#6366f1') {
 }
 
 // Email templates
-export function getSubscriptionReminderEmail(userName: string, daysRemaining: number, renewUrl: string) {
-    const content = `
+export function getSubscriptionReminderEmail(
+  userName: string,
+  daysRemaining: number,
+  renewUrl: string
+) {
+  const content = `
         <!-- Header -->
         <tr>
           <td style="background: linear-gradient(135deg, #f59e0b 0%, #eab308 100%); padding: 40px 40px 30px; text-align: center;">
@@ -167,14 +171,14 @@ export function getSubscriptionReminderEmail(userName: string, daysRemaining: nu
         </tr>
     `;
 
-    return {
-        subject: `⏰ Langganan Pro KlikForm anda akan tamat dalam ${daysRemaining} hari`,
-        html: emailWrapper(content, '#f59e0b'),
-    };
+  return {
+    subject: `⏰ Langganan Pro KlikForm anda akan tamat dalam ${daysRemaining} hari`,
+    html: emailWrapper(content, '#f59e0b'),
+  };
 }
 
 export function getGracePeriodStartedEmail(userName: string, graceDays: number, renewUrl: string) {
-    const content = `
+  const content = `
         <!-- Header -->
         <tr>
           <td style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); padding: 40px 40px 30px; text-align: center;">
@@ -240,14 +244,14 @@ export function getGracePeriodStartedEmail(userName: string, graceDays: number, 
         </tr>
     `;
 
-    return {
-        subject: `🚨 URGENT: Langganan KlikForm tamat - ${graceDays} hari untuk renew`,
-        html: emailWrapper(content, '#dc2626'),
-    };
+  return {
+    subject: `🚨 URGENT: Langganan KlikForm tamat - ${graceDays} hari untuk renew`,
+    html: emailWrapper(content, '#dc2626'),
+  };
 }
 
 export function getAccountBlockedEmail(userName: string, renewUrl: string) {
-    const content = `
+  const content = `
         <!-- Header -->
         <tr>
           <td style="background: linear-gradient(135deg, #1f2937 0%, #111827 100%); padding: 40px 40px 30px; text-align: center;">
@@ -310,15 +314,15 @@ export function getAccountBlockedEmail(userName: string, renewUrl: string) {
         </tr>
     `;
 
-    return {
-        subject: `🔒 Akaun KlikForm disekat - Unlock sekarang`,
-        html: emailWrapper(content, '#6366f1'),
-    };
+  return {
+    subject: `🔒 Akaun KlikForm disekat - Unlock sekarang`,
+    html: emailWrapper(content, '#6366f1'),
+  };
 }
 
 // Welcome email for new Pro subscribers
 export function getWelcomeProEmail(userName: string, dashboardUrl: string) {
-    const content = `
+  const content = `
         <!-- Header -->
         <tr>
           <td style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); padding: 40px 40px 30px; text-align: center;">
@@ -378,15 +382,20 @@ export function getWelcomeProEmail(userName: string, dashboardUrl: string) {
         </tr>
     `;
 
-    return {
-        subject: `🎉 Welcome to KlikForm Pro, ${userName}!`,
-        html: emailWrapper(content, '#6366f1'),
-    };
+  return {
+    subject: `🎉 Welcome to KlikForm Pro, ${userName}!`,
+    html: emailWrapper(content, '#6366f1'),
+  };
 }
 
 // Payment success confirmation
-export function getPaymentSuccessEmail(userName: string, amount: string, renewalDate: string, receiptUrl: string) {
-    const content = `
+export function getPaymentSuccessEmail(
+  userName: string,
+  amount: string,
+  renewalDate: string,
+  receiptUrl: string
+) {
+  const content = `
         <!-- Header -->
         <tr>
           <td style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 40px 30px; text-align: center;">
@@ -439,8 +448,8 @@ export function getPaymentSuccessEmail(userName: string, amount: string, renewal
         </tr>
     `;
 
-    return {
-        subject: `✅ Pembayaran KlikForm Pro berjaya - ${amount}`,
-        html: emailWrapper(content, '#10b981'),
-    };
+  return {
+    subject: `✅ Pembayaran KlikForm Pro berjaya - ${amount}`,
+    html: emailWrapper(content, '#10b981'),
+  };
 }

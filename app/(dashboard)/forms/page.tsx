@@ -3,7 +3,7 @@ import { getForms } from '@/lib/storage/forms';
 import { getDashboardStats } from '@/lib/storage/subscription';
 import { Button } from '@/components/ui/button';
 
-import { ExternalLink, QrCode, FileText, Search } from 'lucide-react';
+import { FileText, Search } from 'lucide-react';
 import { createFormAction } from '@/actions/forms';
 import { DashboardSearch } from '@/components/dashboard/search';
 import { DashboardFilter } from '@/components/dashboard/filter';
