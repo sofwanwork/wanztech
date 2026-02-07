@@ -221,3 +221,8 @@
   text-decoration: underline;
   cursor: pointer;
 }
+
+.ProseMirror strong, .ProseMirror b {
+  font-weight: 700 !important;
+  color: black !important;
+}
