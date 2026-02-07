@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getForms } from '@/lib/storage/forms';
+import { getFormsSummary } from '@/lib/storage/forms';
 import { getDashboardStats } from '@/lib/storage/subscription';
 import { Button } from '@/components/ui/button';
 
@@ -26,7 +26,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
   const sort = searchParams?.sort || 'newest';
   const error = searchParams?.error || '';
 
-  const [allForms, stats] = await Promise.all([getForms(), getDashboardStats()]);
+  const [allForms, stats] = await Promise.all([getFormsSummary(), getDashboardStats()]);
 
   // 1. Filter
   let forms = allForms.filter(

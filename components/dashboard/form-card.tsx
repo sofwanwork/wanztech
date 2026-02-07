@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Form } from '@/lib/types';
 import {
   Card,
@@ -21,19 +20,24 @@ interface FormCardProps {
 }
 
 export function FormCard({ form }: FormCardProps) {
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const isNavigatingRef = useRef(false);
+  const builderHref = `/builder/${form.id}`;
 
   const handleEditClick = (e: React.MouseEvent) => {
-    e.preventDefault();
+    if (isNavigatingRef.current) {
+      e.preventDefault();
+      return;
+    }
+    isNavigatingRef.current = true;
     setIsLoading(true);
-    router.push(`/builder/${form.id}`);
   };
 
   return (
     <Card className="group hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 border-gray-100 bg-white overflow-hidden flex flex-col h-full rounded-2xl ring-1 ring-gray-100 hover:ring-primary/20 hover:-translate-y-1 p-0 gap-0">
       {/* Card Image Area */}
-      <div
+      <Link
+        href={builderHref}
         className="relative w-full aspect-[4/3] bg-gray-50 overflow-hidden cursor-pointer"
         onClick={handleEditClick}
       >
@@ -65,19 +69,16 @@ export function FormCard({ form }: FormCardProps) {
         {!isLoading && (
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-3 backdrop-blur-[2px]">
             <Button
+              asChild
               size="sm"
               variant="secondary"
               className="font-medium min-w-[100px] shadow-lg hover:bg-white transition-colors"
-              onClick={(e) => {
-                e.stopPropagation(); // Prevent double trigger
-                handleEditClick(e);
-              }}
             >
-              Edit Form
+              <span>Edit Form</span>
             </Button>
           </div>
         )}
-      </div>
+      </Link>
 
       {/* Card Content */}
       <CardHeader className="p-5 pb-3 overflow-hidden">

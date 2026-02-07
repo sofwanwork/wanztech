@@ -23,12 +23,13 @@ import { toast } from 'sonner';
 import { ExternalLink } from 'lucide-react';
 import { saveSettingsAction, getSettingsAction } from '@/actions/forms';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 
 function SettingsContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
+  const errorParam = searchParams.get('error');
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [email, setEmail] = useState('');
   const [personalEmail, setPersonalEmail] = useState('');
   const [key, setKey] = useState('');
@@ -36,24 +37,37 @@ function SettingsContent() {
   const hasShownError = useRef(false);
 
   useEffect(() => {
-    // Check for error param
-    if (searchParams.get('error') === 'missing_config' && !hasShownError.current) {
+    if (errorParam === 'missing_config' && !hasShownError.current) {
       toast.error('Please configure your settings first before creating a form.');
       hasShownError.current = true;
     }
+  }, [errorParam]);
 
-    getSettingsAction().then((settings) => {
-      if (settings) {
-        if (settings.googleClientEmail) setEmail(settings.googleClientEmail);
-        if (settings.userPersonalEmail) setPersonalEmail(settings.userPersonalEmail);
-        if (settings.googlePrivateKey) setKey(settings.googlePrivateKey);
-        if (settings.googleDriveFolderId) setFolderId(settings.googleDriveFolderId);
-      }
-      setLoading(false);
-    });
-  }, [searchParams]);
+  useEffect(() => {
+    let active = true;
+    getSettingsAction()
+      .then((settings) => {
+        if (!active) return;
+        if (settings) {
+          if (settings.googleClientEmail) setEmail(settings.googleClientEmail);
+          if (settings.userPersonalEmail) setPersonalEmail(settings.userPersonalEmail);
+          if (settings.googlePrivateKey) setKey(settings.googlePrivateKey);
+          if (settings.googleDriveFolderId) setFolderId(settings.googleDriveFolderId);
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!active) return;
+        setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleSave = async () => {
+    if (saving) return;
+    setSaving(true);
     try {
       await saveSettingsAction({
         googleClientEmail: email,
@@ -62,9 +76,10 @@ function SettingsContent() {
         googleDriveFolderId: folderId,
       });
       toast.success('Settings saved successfully');
-      router.push('/');
     } catch {
       toast.error('Failed to save settings');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -137,7 +152,9 @@ function SettingsContent() {
           </div>
         </CardContent>
         <CardFooter>
-          <Button onClick={handleSave}>Save Settings</Button>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? 'Saving...' : 'Save Settings'}
+          </Button>
         </CardFooter>
       </Card>
 

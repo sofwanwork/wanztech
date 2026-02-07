@@ -3,12 +3,13 @@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { SlidersHorizontal, ArrowDownAZ, ArrowUpAZ, Clock, History } from 'lucide-react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 
 export function DashboardFilter() {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const { replace } = useRouter();
   const currentSort = searchParams.get('sort') || 'newest';
   const [open, setOpen] = useState(false);
@@ -20,7 +21,8 @@ export function DashboardFilter() {
     } else {
       params.delete('sort');
     }
-    replace(`/?${params.toString()}`);
+    const newSearch = params.toString();
+    replace(newSearch ? `${pathname}?${newSearch}` : pathname);
     setOpen(false);
   };
 

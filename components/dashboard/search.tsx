@@ -27,7 +27,7 @@ export function DashboardSearch() {
       const currentSearch = window.location.search.substring(1);
 
       if (newSearch !== currentSearch) {
-        replace(`${pathname}?${newSearch}`);
+        replace(newSearch ? `${pathname}?${newSearch}` : pathname);
       }
     }, 300);
 

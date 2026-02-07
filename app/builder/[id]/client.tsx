@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { Form, CertificateTemplate as CertificateTemplateType } from '@/lib/types';
 import { updateFormAction, deleteFormAction } from '@/actions/forms';
 import { FieldsEditor } from '@/components/forms/fields-editor';
@@ -33,6 +34,7 @@ import {
   Settings2,
   MapPin,
   AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 
 import Link from 'next/link';
@@ -57,10 +59,12 @@ interface BuilderClientProps {
 }
 
 export function BuilderClient({ initialForm, userCertificates }: BuilderClientProps) {
+  const router = useRouter();
   const [form, setForm] = useState<Form>(initialForm);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isNavigating, startTransition] = useTransition();
 
   const [mounted, setMounted] = useState(false);
   const [publicUrl, setPublicUrl] = useState(`/form/${initialForm.id}`);
@@ -183,11 +187,23 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
       <header className="sticky top-0 bg-white border-b border-gray-200 z-10">
         <div className="container mx-auto py-3 px-3 sm:px-4 flex items-center justify-between gap-1.5">
           <div className="flex items-center gap-2 shrink-0 max-w-[55%]">
-            <Link href="/">
-              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 shrink-0"
+              disabled={isNavigating}
+              onClick={() => {
+                startTransition(() => {
+                  router.push('/');
+                });
+              }}
+            >
+              {isNavigating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
                 <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
+              )}
+            </Button>
             <div className="min-w-0">
               <h1 className="text-lg font-semibold text-gray-900 truncate">{form.title}</h1>
               <p className="text-xs text-gray-500 hidden sm:block">Editing Form</p>

@@ -19,19 +19,24 @@ import { createFormAction } from '@/actions/forms';
 import { logoutAction } from '@/actions/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import useLocalStorage from '@/hooks/use-local-storage';
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 
 interface SidebarProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   profile: any; // Using any for simplicity here, ideally import Profile type
   onNavigate?: () => void; // Callback for mobile menu close
+  isMobile?: boolean;
 }
 
-export function DashboardSidebar({ profile, onNavigate }: SidebarProps) {
+export function DashboardSidebar({ profile, onNavigate, isMobile = false }: SidebarProps) {
   const pathname = usePathname();
   // Initialize with false (expanded) by default
-  const [isCollapsed, setIsCollapsed] = useLocalStorage<boolean>('sidebar-collapsed', false);
+  const [storedCollapsed, setStoredCollapsed] = useLocalStorage<boolean>('sidebar-collapsed', false);
+  const isCollapsed = isMobile ? false : storedCollapsed;
+  const setIsCollapsed = setStoredCollapsed;
+
   const [mounted, setMounted] = useState(false);
+  const navLockedRef = useRef(false);
   const [isCreating, startCreate] = useTransition();
   const [isLoggingOut, startLogout] = useTransition();
 
@@ -40,6 +45,10 @@ export function DashboardSidebar({ profile, onNavigate }: SidebarProps) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    navLockedRef.current = false;
+  }, [pathname]);
 
   const navItems = [
     {
@@ -73,8 +82,8 @@ export function DashboardSidebar({ profile, onNavigate }: SidebarProps) {
   // Cycle between Logo and Arrow when collapsed
   useEffect(() => {
     if (!isCollapsed) {
-      setTimeout(() => setShowArrow(false), 0);
-      return;
+      const timer = setTimeout(() => setShowArrow(false), 0);
+      return () => clearTimeout(timer);
     }
 
     const interval = setInterval(() => {
@@ -195,28 +204,48 @@ export function DashboardSidebar({ profile, onNavigate }: SidebarProps) {
             </p>
           )}
           {navItems.map((item) => (
-            <Link key={item.href} href={item.href} className="block" onClick={onNavigate}>
-              <Button
-                variant="ghost"
-                className={cn(
-                  'w-full h-10 mb-1 transition-all duration-200',
-                  isCollapsed ? 'justify-center px-0' : 'justify-start px-3',
-                  item.active
-                    ? 'bg-primary/10 text-primary font-semibold hover:bg-primary/15 hover:text-primary'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/80'
-                )}
-                title={isCollapsed ? item.title : undefined}
+            <Button
+              key={item.href}
+              asChild
+              variant="ghost"
+              className={cn(
+                'w-full h-10 mb-1 transition-all duration-200',
+                isCollapsed ? 'justify-center px-0' : 'justify-start px-3',
+                item.active
+                  ? 'bg-primary/10 text-primary font-semibold hover:bg-primary/15 hover:text-primary'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/80'
+              )}
+              title={isCollapsed ? item.title : undefined}
+            >
+              <Link
+                href={item.href}
+                className={cn('flex items-center w-full', isCollapsed ? 'justify-center' : 'gap-3')}
+                onClick={(e) => {
+                  if (pathname === item.href) {
+                    e.preventDefault();
+                    return;
+                  }
+                  if (navLockedRef.current) {
+                    e.preventDefault();
+                    return;
+                  }
+                  navLockedRef.current = true;
+                  // Safety release in case navigation fails or takes too long
+                  setTimeout(() => {
+                    navLockedRef.current = false;
+                  }, 3000);
+                  onNavigate?.();
+                }}
               >
                 <item.icon
                   className={cn(
                     'h-5 w-5 flex-shrink-0',
-                    !isCollapsed && 'mr-3',
                     item.active ? 'text-primary' : 'text-gray-500'
                   )}
                 />
                 {!isCollapsed && <span className="truncate">{item.title}</span>}
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           ))}
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { getForms } from '@/lib/storage/forms';
+import { getFormsSummary } from '@/lib/storage/forms';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Award } from 'lucide-react';
@@ -7,7 +7,7 @@ import { getCertificateTemplates } from '@/lib/storage/certificates';
 import { CertificateQrCard } from '@/components/certificate-qr-card';
 
 export default async function EcertDashboard() {
-  const forms = await getForms();
+  const forms = await getFormsSummary();
   const userTemplates = await getCertificateTemplates();
 
   // Filter forms with e-certificate enabled

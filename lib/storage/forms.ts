@@ -62,6 +62,47 @@ export async function getForms(): Promise<Form[]> {
   }));
 }
 
+export async function getFormsSummary(): Promise<Form[]> {
+  const { supabase, user } = await getUser();
+
+  const { data, error } = await supabase
+    .from('forms')
+    .select(
+      'id,title,description,cover_image,created_at,short_code,e_certificate_enabled,e_certificate_template'
+    )
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching forms:', error);
+    return [];
+  }
+
+  interface DbFormSummaryRow {
+    id: string;
+    title: string;
+    description: string;
+    cover_image: string | null;
+    created_at: string;
+    short_code: string | null;
+    e_certificate_enabled: boolean;
+    e_certificate_template: unknown;
+  }
+
+  return data.map((f: DbFormSummaryRow) => ({
+    id: f.id,
+    title: f.title,
+    description: f.description,
+    coverImage: f.cover_image ?? undefined,
+    fields: [],
+    createdAt: f.created_at,
+    shortCode: f.short_code ?? undefined,
+    eCertificateEnabled: f.e_certificate_enabled,
+    eCertificateTemplate: f.e_certificate_template as Form['eCertificateTemplate'],
+    userId: user.id,
+  }));
+}
+
 export async function getFormById(id: string): Promise<Form | undefined> {
   const supabase = await createClient();
   const { data, error } = await supabase.from('forms').select('*').eq('id', id).single();
