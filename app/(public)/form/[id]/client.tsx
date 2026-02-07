@@ -396,7 +396,7 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
               </CardTitle>
               {form.description && (
                 <div
-                  className="text-gray-600 mt-2 [&>p]:mb-0 [&>p:empty]:h-3 [&_strong]:font-black [&_strong]:text-black [&_b]:font-black [&_b]:text-black font-sans"
+                  className="text-gray-600 mt-2 [&>p]:mb-0 [&>p:empty]:h-3 [&_strong]:font-bold [&_strong]:text-black [&_b]:font-bold [&_b]:text-black font-sans"
                   dangerouslySetInnerHTML={{ __html: form.description }}
                 />
               )}
