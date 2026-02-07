@@ -127,7 +127,7 @@ export function RichTextEditor({
     <>
       <div className="border border-gray-200 rounded-md overflow-hidden bg-white">
         {/* Toolbar */}
-        <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-gray-100 bg-gray-50/50 flex-nowrap overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-gray-100 bg-gray-50/50 flex-wrap">
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleBold().run()}
             isActive={editor.isActive('bold')}
@@ -285,10 +285,10 @@ function ToolbarButton({
       variant="ghost"
       size="sm"
       onClick={onClick}
-      onMouseDown={(e) => e.preventDefault()}
+      onPointerDown={(e) => e.preventDefault()}
       disabled={disabled}
       title={title}
-      className={cn('h-8 w-8 p-0 shrink-0', isActive && 'bg-primary/10 text-primary')}
+      className={cn('h-8 w-8 p-0', isActive && 'bg-primary/10 text-primary')}
     >
       {children}
     </Button>
