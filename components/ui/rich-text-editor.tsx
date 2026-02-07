@@ -285,7 +285,11 @@ function ToolbarButton({
       variant="ghost"
       size="sm"
       onClick={onClick}
-      onPointerDown={(e) => e.preventDefault()}
+      onMouseDown={(e) => e.preventDefault()}
+      onTouchStart={(e) => {
+        e.preventDefault();
+        onClick();
+      }}
       disabled={disabled}
       title={title}
       className={cn('h-8 w-8 p-0', isActive && 'bg-primary/10 text-primary')}
