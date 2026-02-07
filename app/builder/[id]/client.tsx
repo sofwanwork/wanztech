@@ -80,7 +80,14 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
     const timer = setTimeout(() => {
       // Only save if qrSettings exist (avoid saving initial empty state if irrelevant)
       if (form.qrSettings) {
-        updateFormAction(form).catch((err) => console.error('Auto-save failed', err));
+        updateFormAction(form)
+          .then((result) => {
+            if (!result.success) {
+              console.error('Auto-save failed:', result.error);
+              toast.error(`Auto-save failed: ${result.error}`);
+            }
+          })
+          .catch((err) => console.error('Auto-save network error', err));
       }
     }, 1000);
 
@@ -90,8 +97,12 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
   const handleSave = async () => {
     setSaving(true);
     try {
-      await updateFormAction(form);
-      toast.success('Form saved successfully');
+      const result = await updateFormAction(form);
+      if (result.success) {
+        toast.success('Form saved successfully');
+      } else {
+        toast.error(result.error || 'Failed to save');
+      }
     } catch {
       toast.error('Failed to save');
     } finally {
@@ -460,10 +471,7 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                 <div className="space-y-2">
                   <Label>Primary Color</Label>
                   <div className="flex items-center gap-3">
-                    <div
-                      className="relative w-10 h-10 rounded-full border shadow-sm ring-1 ring-black/5"
-                      style={{ clipPath: 'circle(50%)' }}
-                    >
+                    <div className="relative w-10 h-10 rounded-full border shadow-sm ring-1 ring-black/5 [clip-path:circle(50%)]">
                       <input
                         type="color"
                         value={form.theme?.primaryColor || '#000000'}
@@ -474,6 +482,7 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                           }))
                         }
                         className="absolute -inset-2 w-[calc(100%+16px)] h-[calc(100%+16px)] p-0 m-0 cursor-pointer border-0"
+                        title="Primary color picker"
                       />
                     </div>
                     <Input
@@ -496,10 +505,7 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                 <div className="space-y-2">
                   <Label>Background Color</Label>
                   <div className="flex items-center gap-3">
-                    <div
-                      className="relative w-10 h-10 rounded-full border shadow-sm ring-1 ring-black/5"
-                      style={{ clipPath: 'circle(50%)' }}
-                    >
+                    <div className="relative w-10 h-10 rounded-full border shadow-sm ring-1 ring-black/5 [clip-path:circle(50%)]">
                       <input
                         type="color"
                         value={form.theme?.backgroundColor || '#ffffff'}
@@ -510,6 +516,7 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                           }))
                         }
                         className="absolute -inset-2 w-[calc(100%+16px)] h-[calc(100%+16px)] p-0 m-0 cursor-pointer border-0"
+                        title="Background color picker"
                       />
                     </div>
                     <Input

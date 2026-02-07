@@ -60,5 +60,12 @@ export default async function PublicFormPage({ params }: PageProps) {
 
   if (!form) return notFound();
 
-  return <PublicFormClient form={form} />;
+  // Sanitize form data to avoid leaking sensitive fields to client
+  const sanitizedForm = {
+    ...form,
+    googleSheetUrl: undefined, // Hidden from client
+    userTier: undefined, // Internal use
+  };
+
+  return <PublicFormClient form={sanitizedForm} />;
 }

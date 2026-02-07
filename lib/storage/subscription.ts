@@ -275,6 +275,21 @@ export async function incrementSubmissionCount(formOwnerId: string): Promise<voi
   }
 }
 
+// Helper to get total forms count
+async function getUserFormCount(userId: string): Promise<number> {
+  const supabase = await createClient();
+  const { count, error } = await supabase
+    .from('forms')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId);
+
+  if (error) {
+    console.error('Error getting form count:', error);
+    return 0;
+  }
+  return count || 0;
+}
+
 // Check if user can create a new form
 export async function canCreateForm(): Promise<{
   allowed: boolean;
@@ -303,8 +318,8 @@ export async function canCreateForm(): Promise<{
     }
   }
 
+  const { user } = await getUser();
   const subscription = await getSubscription();
-  const usage = await getUsage();
   const limits = TIER_LIMITS[subscription.tier];
 
   // Unlimited forms
@@ -312,11 +327,38 @@ export async function canCreateForm(): Promise<{
     return { allowed: true };
   }
 
-  if (usage.formsCreated >= limits.maxForms) {
+  // CHECK TOTAL FORMS (Active), NOT Monthly Usage
+  const totalForms = await getUserFormCount(user.id);
+
+  if (totalForms >= limits.maxForms) {
     return {
       allowed: false,
       reason: 'limit_reached',
-      message: `Anda telah mencapai had ${limits.maxForms} form untuk bulan ini. Upgrade ke Pro untuk form tanpa had!`,
+      message: `Anda telah mencapai had ${limits.maxForms} form (Total Active). Upgrade ke Pro untuk form tanpa had!`,
+    };
+  }
+
+  return { allowed: true };
+}
+
+// Check if user can update an existing form
+export async function canUpdateForm(): Promise<{ allowed: boolean; message?: string }> {
+  const { user } = await getUser();
+  const subscription = await getSubscription();
+  const limits = TIER_LIMITS[subscription.tier];
+
+  // Unlimited forms
+  if (limits.maxForms === -1) {
+    return { allowed: true };
+  }
+
+  const totalForms = await getUserFormCount(user.id);
+
+  // If usage EXCEEDS the limit, block updates
+  if (totalForms > limits.maxForms) {
+    return {
+      allowed: false,
+      message: `Limit exceeded (${totalForms}/${limits.maxForms}). Upgrade to Pro or delete forms to edit.`,
     };
   }
 
@@ -365,6 +407,47 @@ export async function canAcceptSubmission(
   return { allowed: true };
 }
 
+// Check if form can accept more submissions
+export async function canSubmitForm(
+  formOwnerId: string
+): Promise<boolean> {
+  const supabase = await createClient();
+
+  // Get form owner's subscription
+  // We can't use getUser() because this runs for public submissions (no auth)
+  // We need to fetch subscription by userId directly.
+  const { data: sub } = await supabase
+    .from('subscriptions')
+    .select('tier')
+    .eq('user_id', formOwnerId)
+    .single();
+
+  const tier = (sub?.tier || 'free') as SubscriptionTier;
+  const limits = TIER_LIMITS[tier];
+
+  // Unlimited submissions
+  if (limits.maxSubmissionsPerForm === -1) {
+    return true;
+  }
+
+  // Get current month's usage
+  const month = getCurrentMonth();
+  const { data: usage } = await supabase
+    .from('usage')
+    .select('total_submissions')
+    .eq('user_id', formOwnerId)
+    .eq('month', month)
+    .single();
+
+  const currentSubmissions = usage?.total_submissions || 0;
+
+  if (currentSubmissions >= limits.maxSubmissionsPerForm) {
+    return false;
+  }
+
+  return true;
+}
+
 // Check if user can create a new certificate
 export async function canCreateCertificate(): Promise<{ allowed: boolean; message?: string }> {
   const subscription = await getSubscription();
@@ -388,6 +471,30 @@ export async function canCreateCertificate(): Promise<{ allowed: boolean; messag
     return {
       allowed: false,
       message: `Anda telah mencapai had ${limits.maxCertificates} sijil untuk plan Free. Upgrade ke Pro untuk sijil tanpa had!`,
+    };
+  }
+
+  return { allowed: true };
+}
+
+// Check if user can update an existing certificate
+export async function canUpdateCertificate(): Promise<{ allowed: boolean; message?: string }> {
+  const subscription = await getSubscription();
+  const limits = TIER_LIMITS[subscription.tier];
+
+  // Unlimited certificates
+  if (limits.maxCertificates === -1) {
+    return { allowed: true };
+  }
+
+  const { getCertificateTemplates } = await import('@/lib/storage/certificates');
+  const templates = await getCertificateTemplates();
+
+  // If usage EXCEEDS the limit, block updates (lockout mode)
+  if (templates.length > limits.maxCertificates) {
+    return {
+      allowed: false,
+      message: `Limit exceeded (${templates.length}/${limits.maxCertificates}). Upgrade to Pro or delete certificates to edit.`,
     };
   }
 

@@ -222,7 +222,8 @@
   cursor: pointer;
 }
 
-.ProseMirror strong, .ProseMirror b {
+.ProseMirror strong,
+.ProseMirror b {
   font-weight: 700 !important;
   color: black !important;
 }

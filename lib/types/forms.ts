@@ -144,6 +144,7 @@ export interface QRSettings {
  */
 export interface Form {
   id: string;
+  userId?: string; // Owner ID for rate limiting
   title: string;
   description?: string;
   coverImage?: string;

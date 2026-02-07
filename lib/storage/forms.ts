@@ -58,6 +58,7 @@ export async function getForms(): Promise<Form[]> {
     attendanceSettings: f.attendance_settings as Form['attendanceSettings'],
     qrSettings: f.qr_settings as Form['qrSettings'],
     theme: f.theme as Form['theme'],
+    userId: user.id,
   }));
 }
 
@@ -76,6 +77,7 @@ export async function getFormById(id: string): Promise<Form | undefined> {
 
   return {
     id: data.id,
+    userId: data.user_id,
     title: data.title,
     description: data.description,
     coverImage: data.cover_image,
@@ -109,6 +111,7 @@ export async function getFormByShortCode(code: string): Promise<Form | undefined
 
   return {
     id: data.id,
+    userId: data.user_id,
     title: data.title,
     description: data.description,
     coverImage: data.cover_image,

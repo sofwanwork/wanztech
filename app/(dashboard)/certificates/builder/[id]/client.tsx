@@ -208,7 +208,7 @@ export function CertificateBuilderClient({
       if (result.success) {
         toast.success('Template disimpan!');
       } else {
-        toast.error('Gagal menyimpan template');
+        toast.error(result.error || 'Gagal menyimpan template');
       }
     } catch {
       toast.error('Gagal menyimpan template');
@@ -385,6 +385,7 @@ export function CertificateBuilderClient({
         accept="image/png,image/jpeg,image/webp"
         onChange={handleImageUpload}
         className="hidden"
+        title="Upload Image"
       />
 
       {/* Top Toolbar */}
@@ -426,16 +427,13 @@ export function CertificateBuilderClient({
         >
           <div
             ref={canvasRef}
-            className="relative shadow-2xl"
+            className="relative shadow-2xl w-full max-w-[800px] bg-cover"
             style={{
-              width: '100%',
-              maxWidth: '800px',
               aspectRatio: `${template.width}/${template.height}`,
               backgroundColor: template.backgroundColor,
               backgroundImage: template.backgroundImage
                 ? `url(${template.backgroundImage})`
                 : undefined,
-              backgroundSize: 'cover',
             }}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -443,14 +441,7 @@ export function CertificateBuilderClient({
             onClick={() => setSelectedId(null)}
           >
             {showGrid && (
-              <div
-                className="absolute inset-0 pointer-events-none z-0"
-                style={{
-                  backgroundImage:
-                    'linear-gradient(to right, #e5e7eb 1px, transparent 1px), linear-gradient(to bottom, #e5e7eb 1px, transparent 1px)',
-                  backgroundSize: '20px 20px',
-                }}
-              />
+              <div className="absolute inset-0 pointer-events-none z-0 bg-[image:linear-gradient(to_right,#e5e7eb_1px,transparent_1px),linear-gradient(to_bottom,#e5e7eb_1px,transparent_1px)] bg-[length:20px_20px]" />
             )}
             {template.elements.map((el) => {
               const isSelected = el.id === selectedId || additionalSelectedIds.includes(el.id);
@@ -484,6 +475,7 @@ export function CertificateBuilderClient({
                 >
                   {el.type === 'text' && (
                     <div
+                      className="whitespace-nowrap"
                       style={{
                         fontSize: `${(el.fontSize || 16) * scale}px`,
                         fontFamily: el.fontFamily,
@@ -497,7 +489,6 @@ export function CertificateBuilderClient({
                         WebkitTextStroke: el.textStrokeWidth
                           ? `${el.textStrokeWidth * scale}px ${el.textStroke || '#000'}`
                           : undefined,
-                        whiteSpace: 'nowrap',
                       }}
                     >
                       {el.content}
@@ -505,7 +496,7 @@ export function CertificateBuilderClient({
                   )}
                   {el.type === 'placeholder' && (
                     <div
-                      className="border-2 border-dashed border-primary/40 bg-primary/5 px-2 py-1 rounded"
+                      className="border-2 border-dashed border-primary/40 bg-primary/5 px-2 py-1 rounded whitespace-nowrap"
                       style={{
                         fontSize: `${(el.fontSize || 16) * scale}px`,
                         fontFamily: el.fontFamily,
@@ -519,7 +510,6 @@ export function CertificateBuilderClient({
                         WebkitTextStroke: el.textStrokeWidth
                           ? `${el.textStrokeWidth * scale}px ${el.textStroke || '#000'}`
                           : undefined,
-                        whiteSpace: 'nowrap',
                       }}
                     >
                       {PLACEHOLDER_LABELS[el.placeholderType || 'name']}
@@ -527,9 +517,8 @@ export function CertificateBuilderClient({
                   )}
                   {el.type === 'shape' && (
                     <div
+                      className="w-full h-full"
                       style={{
-                        width: '100%',
-                        height: '100%',
                         backgroundColor: el.fill,
                         borderRadius: el.shapeType === 'circle' ? '50%' : 0,
                         border: el.strokeWidth
@@ -550,14 +539,9 @@ export function CertificateBuilderClient({
                   )}
                   {el.type === 'image' && el.src && (
                     <div
+                      className="w-full h-full bg-cover bg-center bg-no-repeat pointer-events-none"
                       style={{
-                        width: '100%',
-                        height: '100%',
                         backgroundImage: `url(${el.src})`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                        backgroundRepeat: 'no-repeat',
-                        pointerEvents: 'none',
                         borderRadius: `${el.borderRadius ?? 0}px`,
                         filter: `brightness(${el.brightness ?? 100}%) contrast(${el.contrast ?? 100}%) grayscale(${el.grayscale ?? 0}%)`,
                       }}
@@ -567,15 +551,10 @@ export function CertificateBuilderClient({
                   {/* Icon Rendering */}
                   {el.type === 'icon' && el.iconName && (
                     <div
+                      className="w-full h-full flex items-center justify-center pointer-events-none"
                       style={{
-                        width: '100%',
-                        height: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
                         color: el.stroke || '#000000',
                       }}
-                      className="pointer-events-none"
                     >
                       {(() => {
                         const IconComp = ICON_MAP[el.iconName as string] || Star;

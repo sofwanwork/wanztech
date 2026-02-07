@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useCallback, useState } from 'react';
+import { useMemo, useCallback, useState, useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TextAlign from '@tiptap/extension-text-align';
@@ -90,6 +90,13 @@ export function RichTextEditor({
       onChange(editor.getHTML());
     },
   });
+
+  // Sync content when value changes externally
+  useEffect(() => {
+    if (editor && value !== editor.getHTML()) {
+      editor.commands.setContent(value);
+    }
+  }, [editor, value]);
 
   const setLink = useCallback(() => {
     if (!editor) return;
@@ -278,6 +285,7 @@ function ToolbarButton({
       variant="ghost"
       size="sm"
       onClick={onClick}
+      onMouseDown={(e) => e.preventDefault()}
       disabled={disabled}
       title={title}
       className={cn('h-8 w-8 p-0', isActive && 'bg-primary/10 text-primary')}

@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { saveCertificateTemplate, deleteCertificateTemplate } from '@/lib/storage/certificates';
 import { CertificateTemplate, CertificateElement, CertificateCategory } from '@/lib/types';
 
-import { canCreateCertificate } from '@/lib/storage/subscription';
+import { canCreateCertificate, canUpdateCertificate } from '@/lib/storage/subscription';
 
 const VALID_CATEGORIES: CertificateCategory[] = [
   'school',
@@ -137,6 +137,12 @@ export async function updateCertificateTemplateAction(
   id: string,
   data: Partial<CertificateTemplate>
 ) {
+  // Check limits before update
+  const { allowed, message } = await canUpdateCertificate();
+  if (!allowed) {
+    return { error: message || 'Limit exceeded' };
+  }
+
   const template = await saveCertificateTemplate({
     id,
     ...data,
