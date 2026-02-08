@@ -1,10 +1,11 @@
 'use client';
 
+import { useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { FileImage, Copy } from 'lucide-react';
+import { FileImage, Copy, Loader2 } from 'lucide-react';
 import { cloneCertificateTemplateAction } from '@/actions/certificate-template';
 import { DeleteCertificateButton } from '@/components/certificates/delete-certificate-button';
 import type { CertificateTemplate } from '@/lib/types';
@@ -14,10 +15,28 @@ interface CertificateTemplateCardProps {
 }
 
 export function CertificateTemplateCard({ template }: CertificateTemplateCardProps) {
+  const [isLoading, setIsLoading] = useState(false);
+  const isNavigatingRef = useRef(false);
+
+  const handleEditClick = (e: React.MouseEvent) => {
+    if (isNavigatingRef.current) {
+      e.preventDefault();
+      return;
+    }
+    isNavigatingRef.current = true;
+    setIsLoading(true);
+
+    // Reset navigation state after a short delay to handle navigation completion
+    setTimeout(() => {
+      isNavigatingRef.current = false;
+      setIsLoading(false);
+    }, 3000); // Reset after 3 seconds (navigation should complete by then)
+  };
+
   return (
     <Card className="group hover:shadow-xl transition-all duration-300 overflow-hidden rounded-2xl ring-1 ring-gray-100 hover:ring-primary/20 hover:-translate-y-1 p-0 gap-0 border-0">
       {/* Thumbnail */}
-      <Link href={`/certificates/builder/${template.id}`}>
+      <Link href={`/certificates/builder/${template.id}`} onClick={handleEditClick}>
         <div className="aspect-[297/210] relative overflow-hidden cursor-pointer template-card-bg">
           <style jsx>{`
             .template-card-bg {
@@ -38,9 +57,20 @@ export function CertificateTemplateCard({ template }: CertificateTemplateCardPro
               <FileImage className="h-12 w-12 text-gray-300" />
             </div>
           )}
-          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <span className="text-white font-medium">Edit</span>
-          </div>
+          
+          {/* Loading Overlay */}
+          {isLoading && (
+            <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-20 flex flex-col items-center justify-center">
+              <Loader2 className="h-8 w-8 text-primary animate-spin mb-2" />
+              <span className="text-sm font-medium text-gray-900">Opening Builder...</span>
+            </div>
+          )}
+
+          {!isLoading && (
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <span className="text-white font-medium">Edit</span>
+            </div>
+          )}
 
           {/* Category Badge (Overlay) */}
           {template.category && (

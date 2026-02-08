@@ -264,9 +264,9 @@ export function QrCustomizer({ url, settings, onSettingsChange }: QrCustomizerPr
           {/* Style Tab */}
           <TabsContent value="style" className="space-y-4 pt-4">
             <div className="space-y-2">
-              <Label>Dots Style</Label>
+              <Label htmlFor="dots-style">Dots Style</Label>
               <Select value={dotsType} onValueChange={(v) => updateSetting('dotsType', v)}>
-                <SelectTrigger>
+                <SelectTrigger id="dots-style">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -280,9 +280,9 @@ export function QrCustomizer({ url, settings, onSettingsChange }: QrCustomizerPr
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Corners Style</Label>
+              <Label htmlFor="corners-style">Corners Style</Label>
               <Select value={cornersType} onValueChange={(v) => updateSetting('cornersType', v)}>
-                <SelectTrigger>
+                <SelectTrigger id="corners-style">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -297,15 +297,17 @@ export function QrCustomizer({ url, settings, onSettingsChange }: QrCustomizerPr
           {/* Colors Tab */}
           <TabsContent value="colors" className="space-y-4 pt-4">
             <div className="space-y-2">
-              <Label>Dots Color</Label>
+              <Label htmlFor="dots-color">Dots Color</Label>
               <div className="flex gap-2">
                 <Input
+                  id="dots-color"
                   type="color"
                   value={dotsColor}
                   onChange={(e) => updateSetting('dotsColor', e.target.value)}
                   className="h-10 w-20 p-1 cursor-pointer"
                 />
                 <Input
+                  aria-label="Dots Color Hex"
                   value={dotsColor}
                   onChange={(e) => updateSetting('dotsColor', e.target.value)}
                   className="flex-1 font-mono"
@@ -313,15 +315,17 @@ export function QrCustomizer({ url, settings, onSettingsChange }: QrCustomizerPr
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Corners Color</Label>
+              <Label htmlFor="corners-color">Corners Color</Label>
               <div className="flex gap-2">
                 <Input
+                  id="corners-color"
                   type="color"
                   value={cornersColor}
                   onChange={(e) => updateSetting('cornersColor', e.target.value)}
                   className="h-10 w-20 p-1 cursor-pointer"
                 />
                 <Input
+                  aria-label="Corners Color Hex"
                   value={cornersColor}
                   onChange={(e) => updateSetting('cornersColor', e.target.value)}
                   className="flex-1 font-mono"
@@ -329,15 +333,17 @@ export function QrCustomizer({ url, settings, onSettingsChange }: QrCustomizerPr
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Background Color</Label>
+              <Label htmlFor="background-color">Background Color</Label>
               <div className="flex gap-2">
                 <Input
+                  id="background-color"
                   type="color"
                   value={backgroundColor}
                   onChange={(e) => updateSetting('backgroundColor', e.target.value)}
                   className="h-10 w-20 p-1 cursor-pointer"
                 />
                 <Input
+                  aria-label="Background Color Hex"
                   value={backgroundColor}
                   onChange={(e) => updateSetting('backgroundColor', e.target.value)}
                   className="flex-1 font-mono"
@@ -349,7 +355,7 @@ export function QrCustomizer({ url, settings, onSettingsChange }: QrCustomizerPr
           {/* Logo Tab */}
           <TabsContent value="logo" className="space-y-4 pt-4">
             <div className="space-y-2">
-              <Label>Upload Logo (Optional)</Label>
+              <p className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Upload Logo (Optional)</p>
               <div className="flex gap-2 items-center">
                 <div className="relative">
                   <Input

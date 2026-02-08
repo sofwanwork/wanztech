@@ -21,13 +21,14 @@ export default function useLocalStorage<T>(
           return prev;
         });
       }
-    } catch (e) {
-      console.log(e);
+    } catch {
+      window.localStorage.removeItem(key);
+      setValue(defaultValue);
     }
     return () => {
       isMounted.current = false;
     };
-  }, [key]);
+  }, [defaultValue, key]);
 
   useEffect(() => {
     if (isMounted.current) {

@@ -31,6 +31,12 @@ export function FormCard({ form }: FormCardProps) {
     }
     isNavigatingRef.current = true;
     setIsLoading(true);
+
+    // Reset navigation state after a short delay to handle navigation completion
+    setTimeout(() => {
+      isNavigatingRef.current = false;
+      setIsLoading(false);
+    }, 3000); // Reset after 3 seconds (navigation should complete by then)
   };
 
   return (

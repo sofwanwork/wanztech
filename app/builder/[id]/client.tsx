@@ -119,9 +119,9 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
     try {
       await deleteFormAction(form.id);
       toast.success('Form deleted successfully');
-      // Redirect handled by server action usually, or we can redirect here if needed
     } catch {
       toast.error('Failed to delete form');
+    } finally {
       setDeleting(false);
       setDeleteDialogOpen(false);
     }
@@ -226,6 +226,7 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                   size="sm"
                   className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 px-2 sm:px-3"
                   suppressHydrationWarning
+                  aria-label="Delete Form"
                 >
                   <Trash className="h-4 w-4" />
                 </Button>
@@ -282,15 +283,18 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Form Title</Label>
+                  <Label htmlFor="form-title">Form Title</Label>
                   <Input
+                    id="form-title"
+                    name="title"
                     value={form.title}
                     onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Description</Label>
+                  <p id="form-description-label" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Description</p>
                   <RichTextEditor
+                    id="form-description"
                     value={form.description || ''}
                     onChange={(value) => setForm((f) => ({ ...f, description: value }))}
                     placeholder="Enter form description..."
@@ -298,10 +302,12 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between items-baseline">
-                    <Label>Cover Image URL</Label>
+                    <Label htmlFor="cover-image">Cover Image URL</Label>
                     <span className="text-xs text-muted-foreground">Rec: 1200x600px (2:1)</span>
                   </div>
                   <Input
+                    id="cover-image"
+                    name="coverImage"
                     placeholder="https://example.com/poster.jpg"
                     value={form.coverImage || ''}
                     onChange={(e) => setForm((f) => ({ ...f, coverImage: e.target.value }))}
@@ -316,10 +322,12 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
 
                 <div className="space-y-2">
                   <div className="flex justify-between items-baseline">
-                    <Label>Logo URL (Optional)</Label>
+                    <Label htmlFor="logo-url">Logo URL (Optional)</Label>
                     <span className="text-xs text-muted-foreground">Rec Height: 100-200px</span>
                   </div>
                   <Input
+                    id="logo-url"
+                    name="logoUrl"
                     placeholder="https://example.com/logo.png"
                     value={form.theme?.logo || ''}
                     onChange={(e) =>
@@ -343,7 +351,7 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Title Alignment</Label>
+                    <Label htmlFor="title-alignment">Title Alignment</Label>
                     <Select
                       value={form.theme?.headerAlignment || 'left'}
                       onValueChange={(val) =>
@@ -356,7 +364,7 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                         }))
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id="title-alignment">
                         <SelectValue placeholder="Alignment" />
                       </SelectTrigger>
                       <SelectContent>
@@ -367,7 +375,7 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Header Font Style</Label>
+                    <Label htmlFor="header-font">Header Font Style</Label>
                     <Select
                       value={form.theme?.headerFont || 'inter'}
                       onValueChange={(val) =>
@@ -380,7 +388,7 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                         }))
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id="header-font">
                         <SelectValue placeholder="Font Style" />
                       </SelectTrigger>
                       <SelectContent>
@@ -393,8 +401,10 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Google Sheet Share URL</Label>
+                  <Label htmlFor="google-sheet-url">Google Sheet Share URL</Label>
                   <Input
+                    id="google-sheet-url"
+                    name="googleSheetUrl"
                     placeholder="https://docs.google.com/spreadsheets/d/..."
                     value={form.googleSheetUrl || ''}
                     onChange={(e) => setForm((f) => ({ ...f, googleSheetUrl: e.target.value }))}
@@ -446,8 +456,10 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Custom Thank You Message</Label>
+                  <Label htmlFor="thank-you-message">Custom Thank You Message</Label>
                   <Textarea
+                    id="thank-you-message"
+                    name="thankYouMessage"
                     placeholder="Thank you for your submission! We will get back to you soon."
                     value={form.thankYouMessage || ''}
                     onChange={(e) => setForm((f) => ({ ...f, thankYouMessage: e.target.value }))}
@@ -485,10 +497,11 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
               </CardHeader>
               <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label>Primary Color</Label>
+                  <Label htmlFor="primary-color">Primary Color</Label>
                   <div className="flex items-center gap-3">
                     <div className="relative w-10 h-10 rounded-full border shadow-sm ring-1 ring-black/5 [clip-path:circle(50%)]">
                       <input
+                        id="primary-color-picker"
                         type="color"
                         value={form.theme?.primaryColor || '#000000'}
                         onChange={(e) =>
@@ -502,6 +515,8 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                       />
                     </div>
                     <Input
+                      id="primary-color"
+                      name="primaryColor"
                       value={form.theme?.primaryColor || '#000000'}
                       onChange={(e) =>
                         setForm((f) => ({
@@ -519,10 +534,11 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Background Color</Label>
+                  <Label htmlFor="background-color">Background Color</Label>
                   <div className="flex items-center gap-3">
                     <div className="relative w-10 h-10 rounded-full border shadow-sm ring-1 ring-black/5 [clip-path:circle(50%)]">
                       <input
+                        id="background-color-picker"
                         type="color"
                         value={form.theme?.backgroundColor || '#ffffff'}
                         onChange={(e) =>
@@ -536,6 +552,8 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                       />
                     </div>
                     <Input
+                      id="background-color"
+                      name="backgroundColor"
                       value={form.theme?.backgroundColor || '#ffffff'}
                       onChange={(e) =>
                         setForm((f) => ({
@@ -551,7 +569,7 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                 </div>
 
                 <div className="space-y-2 sm:col-span-2">
-                  <Label>Background Pattern</Label>
+                  <p className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Background Pattern</p>
                   <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
                     {[
                       { id: 'none', label: 'None', pattern: 'bg-gray-100' },
@@ -611,11 +629,10 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                             },
                           }))
                         }
-                        className={`flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all ${
-                          (form.theme?.backgroundPattern || 'none') === p.id
-                            ? 'border-primary bg-primary/5'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
+                        className={`flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all ${(form.theme?.backgroundPattern || 'none') === p.id
+                          ? 'border-primary bg-primary/5'
+                          : 'border-gray-200 hover:border-gray-300'
+                          }`}
                       >
                         <div className={`w-10 h-10 rounded-md ${p.pattern} border`} />
                         <span className="text-xs font-medium">{p.label}</span>
@@ -638,6 +655,7 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                     <CardTitle>E-Cert Settings</CardTitle>
                   </div>
                   <Switch
+                    id="ecert-enabled"
                     checked={form.eCertificateEnabled || false}
                     onCheckedChange={(checked) =>
                       setForm((f) => ({ ...f, eCertificateEnabled: checked }))
@@ -674,7 +692,7 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                   {/* Template Gallery - User Created Certificates */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <Label>Select Certificate Template</Label>
+                      <p className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Select Certificate Template</p>
                       <Link href="/ecert/builder">
                         <Button variant="outline" size="sm" className="gap-1">
                           <Plus className="h-4 w-4" />
@@ -704,11 +722,10 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                             onClick={() =>
                               setForm((f) => ({ ...f, eCertificateTemplate: cert.id }))
                             }
-                            className={`cursor-pointer rounded-lg border-2 overflow-hidden transition-all relative group ${
-                              form.eCertificateTemplate === cert.id
-                                ? 'border-primary ring-2 ring-primary/20'
-                                : 'border-gray-200 hover:border-gray-300'
-                            }`}
+                            className={`cursor-pointer rounded-lg border-2 overflow-hidden transition-all relative group ${form.eCertificateTemplate === cert.id
+                              ? 'border-primary ring-2 ring-primary/20'
+                              : 'border-gray-200 hover:border-gray-300'
+                              }`}
                           >
                             {/* Thumbnail */}
                             <div
@@ -777,6 +794,7 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                     <CardTitle>Attendance & Location</CardTitle>
                   </div>
                   <Switch
+                    id="attendance-enabled"
                     checked={form.attendanceSettings?.enabled || false}
                     onCheckedChange={(checked) =>
                       setForm((f) => ({
@@ -794,8 +812,10 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Start Time</Label>
+                      <Label htmlFor="start-time">Start Time</Label>
                       <Input
+                        id="start-time"
+                        name="startTime"
                         type="datetime-local"
                         value={form.attendanceSettings?.startTime || ''}
                         onChange={(e) =>
@@ -814,8 +834,10 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>End Time</Label>
+                      <Label htmlFor="end-time">End Time</Label>
                       <Input
+                        id="end-time"
+                        name="endTime"
                         type="datetime-local"
                         value={form.attendanceSettings?.endTime || ''}
                         onChange={(e) =>
@@ -837,8 +859,9 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
 
                   <div className="space-y-4 pt-4 border-t">
                     <div className="flex items-center justify-between">
-                      <Label className="text-base">Geofencing (Location Lock)</Label>
+                      <Label htmlFor="geofencing-enabled" className="text-base">Geofencing (Location Lock)</Label>
                       <Switch
+                        id="geofencing-enabled"
                         checked={form.attendanceSettings?.geofence?.enabled || false}
                         onCheckedChange={(checked) =>
                           setForm(
@@ -867,8 +890,9 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                       <div className="p-4 bg-gray-50 rounded-lg space-y-4 border">
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label>Latitude</Label>
+                            <Label htmlFor="geofence-lat">Latitude</Label>
                             <Input
+                              id="geofence-lat"
                               type="number"
                               step="0.000001"
                               value={form.attendanceSettings.geofence?.lat || 0}
@@ -891,8 +915,9 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label>Longitude</Label>
+                            <Label htmlFor="geofence-lng">Longitude</Label>
                             <Input
+                              id="geofence-lng"
                               type="number"
                               step="0.000001"
                               value={form.attendanceSettings.geofence?.lng || 0}
@@ -916,9 +941,10 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <Label>Radius (meters)</Label>
+                          <Label htmlFor="geofence-radius">Radius (meters)</Label>
                           <div className="flex items-center gap-2">
                             <Input
+                              id="geofence-radius"
                               type="number"
                               value={form.attendanceSettings.geofence?.radius || 100}
                               onChange={(e) =>

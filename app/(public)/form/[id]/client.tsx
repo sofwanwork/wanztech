@@ -356,7 +356,7 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
 
         {/* Header */}
         <div className="rounded-xl shadow-lg flex overflow-hidden bg-transparent">
-          <div className="w-[10px] shrink-0 bg-primary" />
+          <div className="w-[6px] shrink-0 bg-primary" />
           <div
             className={cn(
               'flex-1 bg-white',

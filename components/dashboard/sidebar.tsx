@@ -219,6 +219,7 @@ export function DashboardSidebar({ profile, onNavigate, isMobile = false }: Side
             >
               <Link
                 href={item.href}
+                prefetch={false}
                 className={cn('flex items-center w-full', isCollapsed ? 'justify-center' : 'gap-3')}
                 onClick={(e) => {
                   if (pathname === item.href) {
@@ -230,10 +231,6 @@ export function DashboardSidebar({ profile, onNavigate, isMobile = false }: Side
                     return;
                   }
                   navLockedRef.current = true;
-                  // Safety release in case navigation fails or takes too long
-                  setTimeout(() => {
-                    navLockedRef.current = false;
-                  }, 3000);
                   onNavigate?.();
                 }}
               >

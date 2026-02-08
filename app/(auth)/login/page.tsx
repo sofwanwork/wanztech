@@ -75,7 +75,7 @@ export default function LoginPage() {
       toast.success('Welcome back!');
       router.push('/');
       router.refresh();
-      // Keep loading true while redirecting
+      setLoading(false);
     }
   }
 

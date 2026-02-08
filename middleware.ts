@@ -1,74 +1,101 @@
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
-import { NextResponse, type NextRequest } from 'next/server';
+
+// Routes that require authentication
+const protectedRoutes = [
+    '/dashboard',
+    '/builder',
+    '/settings',
+    '/certificates',
+];
+
+// Routes that are always public
+const publicRoutes = [
+    '/login',
+    '/form',
+    '/s',
+    '/check',
+    '/verify',
+    '/api',
+];
 
 export async function middleware(request: NextRequest) {
-  if (request.nextUrl.pathname === '/@vite/client') {
-    return new NextResponse(null, { status: 204 });
-  }
+    const { pathname } = request.nextUrl;
 
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  });
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
-        },
-      },
+    // Skip public routes
+    if (publicRoutes.some(route => pathname.startsWith(route))) {
+        return NextResponse.next();
     }
-  );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    // Skip static files and images
+    if (
+        pathname.startsWith('/_next') ||
+        pathname.startsWith('/favicon') ||
+        pathname.includes('.')
+    ) {
+        return NextResponse.next();
+    }
 
-  // Protect routes
-  const protectedPaths = ['/settings', '/builder', '/dashboard', '/certificates', '/forms'];
-  const isProtected =
-    protectedPaths.some((path) => request.nextUrl.pathname.startsWith(path)) ||
-    request.nextUrl.pathname === '/';
+    // Check if route requires authentication
+    const isProtected = protectedRoutes.some(route => pathname.startsWith(route));
 
-  // Exceptions for public form viewing (e.g. /form/[id] is public)
-  // But '/' is the dashboard, so we protect it.
+    if (!isProtected) {
+        return NextResponse.next();
+    }
 
-  if (!user && isProtected && !request.nextUrl.pathname.startsWith('/form')) {
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
+    // Create Supabase client for middleware
+    let response = NextResponse.next({
+        request: {
+            headers: request.headers,
+        },
+    });
 
-  // If user is logged in, redirect away from login page
-  if (user && request.nextUrl.pathname.startsWith('/login')) {
-    return NextResponse.redirect(new URL('/', request.url));
-  }
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                getAll() {
+                    return request.cookies.getAll();
+                },
+                setAll(cookiesToSet) {
+                    cookiesToSet.forEach(({ name, value }) =>
+                        request.cookies.set(name, value)
+                    );
+                    response = NextResponse.next({
+                        request,
+                    });
+                    cookiesToSet.forEach(({ name, value, options }) =>
+                        response.cookies.set(name, value, options)
+                    );
+                },
+            },
+        }
+    );
 
-  return response;
+    // Check authentication
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        // Redirect to login with return URL
+        const loginUrl = new URL('/login', request.url);
+        loginUrl.searchParams.set('redirect', pathname);
+        return NextResponse.redirect(loginUrl);
+    }
+
+    return response;
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
-     */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
+    matcher: [
+        /*
+         * Match all request paths except:
+         * - _next/static (static files)
+         * - _next/image (image optimization files)
+         * - favicon.ico (favicon file)
+         * - public folder
+         */
+        '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    ],
 };

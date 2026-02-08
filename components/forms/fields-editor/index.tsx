@@ -86,6 +86,7 @@ function SortableField({
               className="h-8 w-8 text-muted-foreground hover:text-foreground"
               onClick={() => duplicateField(index)}
               title="Duplicate"
+              aria-label="Duplicate question"
             >
               <Copy className="h-4 w-4" />
             </Button>
@@ -95,6 +96,7 @@ function SortableField({
               className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
               onClick={() => removeField(index)}
               title="Delete"
+              aria-label="Delete question"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -103,19 +105,20 @@ function SortableField({
         <CardContent className="p-4 grid gap-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Label / Question</Label>
+              <Label htmlFor={`field-label-${field.id}`}>Label / Question</Label>
               <Input
+                id={`field-label-${field.id}`}
                 value={field.label}
                 onChange={(e) => updateField(index, { label: e.target.value })}
               />
             </div>
             <div className="space-y-2">
-              <Label>Type</Label>
+              <Label htmlFor={`field-type-${field.id}`}>Type</Label>
               <Select
                 value={field.type}
                 onValueChange={(val) => updateField(index, { type: val as FormField['type'] })}
               >
-                <SelectTrigger>
+                <SelectTrigger id={`field-type-${field.id}`}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -139,12 +142,13 @@ function SortableField({
           </div>
 
           <div className="space-y-2">
-            <Label>
+            <Label htmlFor={`field-desc-${field.id}`}>
               {field.type === 'separator'
                 ? 'Description / Body Text (Optional)'
                 : 'Description (Optional)'}
             </Label>
             <Input
+              id={`field-desc-${field.id}`}
               value={field.description || ''}
               onChange={(e) => updateField(index, { description: e.target.value })}
               placeholder={
@@ -157,8 +161,9 @@ function SortableField({
 
           {(field.type === 'select' || field.type === 'checkbox' || field.type === 'radio') && (
             <div className="space-y-2">
-              <Label>Options (comma separated)</Label>
+              <Label htmlFor={`field-options-${field.id}`}>Options (comma separated)</Label>
               <Input
+                id={`field-options-${field.id}`}
                 placeholder="Option A, Option B, Option C"
                 value={field.options?.join(',') || ''}
                 onChange={(e) => updateField(index, { options: e.target.value.split(',') })}
@@ -170,7 +175,7 @@ function SortableField({
             <div className="space-y-4 p-4 bg-slate-50 rounded-lg border border-slate-100">
               <div className="flex items-center gap-4">
                 <div className="space-y-2 flex-1">
-                  <Label>Scale Start (Min)</Label>
+                  <Label htmlFor={`rating-min-${field.id}`}>Scale Start (Min)</Label>
                   <Select
                     value={field.ratingConfig?.min?.toString() || '1'}
                     onValueChange={(val) =>
@@ -183,7 +188,7 @@ function SortableField({
                       })
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id={`rating-min-${field.id}`}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -193,7 +198,7 @@ function SortableField({
                   </Select>
                 </div>
                 <div className="space-y-2 flex-1">
-                  <Label>Scale End (Max)</Label>
+                  <Label htmlFor={`rating-max-${field.id}`}>Scale End (Max)</Label>
                   <Select
                     value={field.ratingConfig?.max?.toString() || '5'}
                     onValueChange={(val) =>
@@ -206,7 +211,7 @@ function SortableField({
                       })
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id={`rating-max-${field.id}`}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -221,8 +226,9 @@ function SortableField({
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Label for Min ({field.ratingConfig?.min || 1})</Label>
+                  <Label htmlFor={`rating-min-label-${field.id}`}>Label for Min ({field.ratingConfig?.min || 1})</Label>
                   <Input
+                    id={`rating-min-label-${field.id}`}
                     placeholder="e.g. Poor"
                     value={field.ratingConfig?.minLabel || ''}
                     onChange={(e) =>
@@ -238,8 +244,9 @@ function SortableField({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Label for Max ({field.ratingConfig?.max || 5})</Label>
+                  <Label htmlFor={`rating-max-label-${field.id}`}>Label for Max ({field.ratingConfig?.max || 5})</Label>
                   <Input
+                    id={`rating-max-label-${field.id}`}
                     placeholder="e.g. Excellent"
                     value={field.ratingConfig?.maxLabel || ''}
                     onChange={(e) =>
@@ -261,7 +268,7 @@ function SortableField({
           {field.type === 'product' && (
             <div className="space-y-4 p-4 bg-slate-50 rounded-lg border border-slate-100">
               <div className="flex items-center justify-between">
-                <Label>Products</Label>
+                <p className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Products</p>
                 <Button
                   variant="outline"
                   size="sm"
@@ -308,6 +315,7 @@ function SortableField({
                           newProducts.splice(pIndex, 1);
                           updateField(index, { products: newProducts });
                         }}
+                        aria-label="Remove Product"
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>
@@ -315,8 +323,9 @@ function SortableField({
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label className="text-xs text-slate-500">Product Name</Label>
+                        <Label htmlFor={`product-name-${product.id}`} className="text-xs text-slate-500">Product Name</Label>
                         <Input
+                          id={`product-name-${product.id}`}
                           value={product.name}
                           onChange={(e) => {
                             const newProducts = [...(field.products || [])];
@@ -328,8 +337,9 @@ function SortableField({
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs text-slate-500">Price (MYR)</Label>
+                        <Label htmlFor={`product-price-${product.id}`} className="text-xs text-slate-500">Price (MYR)</Label>
                         <Input
+                          id={`product-price-${product.id}`}
                           type="number"
                           value={product.price}
                           onChange={(e) => {
@@ -348,12 +358,13 @@ function SortableField({
 
                     <div className="space-y-1">
                       <div className="flex justify-between items-baseline">
-                        <Label className="text-xs text-slate-500">Image URL</Label>
+                        <Label htmlFor={`product-image-${product.id}`} className="text-xs text-slate-500">Image URL</Label>
                         <span className="text-[10px] text-muted-foreground">
                           Rec: 4:3 Ratio (e.g. 800x600px)
                         </span>
                       </div>
                       <Input
+                        id={`product-image-${product.id}`}
                         value={product.imageUrl || ''}
                         onChange={(e) => {
                           const newProducts = [...(field.products || [])];
@@ -373,10 +384,11 @@ function SortableField({
           {field.type !== 'separator' && (
             <div className="flex items-center gap-2">
               <Switch
+                id={`field-required-${field.id}`}
                 checked={field.required}
                 onCheckedChange={(checked) => updateField(index, { required: checked })}
               />
-              <Label>Required</Label>
+              <Label htmlFor={`field-required-${field.id}`}>Required</Label>
             </div>
           )}
 
@@ -385,85 +397,88 @@ function SortableField({
             field.type === 'textarea' ||
             field.type === 'email' ||
             field.type === 'number') && (
-            <div className="pt-4 border-t space-y-3">
-              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Validation Rules
-              </Label>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-sm">Min Length</Label>
-                  <Input
-                    type="number"
-                    placeholder="0"
-                    value={field.validation?.minLength || ''}
-                    onChange={(e) =>
-                      updateField(index, {
-                        validation: {
-                          ...field.validation,
-                          minLength: e.target.value ? parseInt(e.target.value) : undefined,
-                        },
-                      })
-                    }
-                  />
+              <div className="pt-4 border-t space-y-3">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Validation Rules
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor={`validation-min-${field.id}`} className="text-sm">Min Length</Label>
+                    <Input
+                      id={`validation-min-${field.id}`}
+                      type="number"
+                      placeholder="0"
+                      value={field.validation?.minLength || ''}
+                      onChange={(e) =>
+                        updateField(index, {
+                          validation: {
+                            ...field.validation,
+                            minLength: e.target.value ? parseInt(e.target.value) : undefined,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={`validation-max-${field.id}`} className="text-sm">Max Length</Label>
+                    <Input
+                      id={`validation-max-${field.id}`}
+                      type="number"
+                      placeholder="255"
+                      value={field.validation?.maxLength || ''}
+                      onChange={(e) =>
+                        updateField(index, {
+                          validation: {
+                            ...field.validation,
+                            maxLength: e.target.value ? parseInt(e.target.value) : undefined,
+                          },
+                        })
+                      }
+                    />
+                  </div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm">Max Length</Label>
-                  <Input
-                    type="number"
-                    placeholder="255"
-                    value={field.validation?.maxLength || ''}
-                    onChange={(e) =>
-                      updateField(index, {
-                        validation: {
-                          ...field.validation,
-                          maxLength: e.target.value ? parseInt(e.target.value) : undefined,
-                        },
-                      })
-                    }
-                  />
+                  <Label htmlFor={`validation-pattern-${field.id}`} className="text-sm">Regex Pattern (Advanced)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id={`validation-pattern-${field.id}`}
+                      placeholder="e.g. ^[0-9]+$"
+                      value={field.validation?.pattern || ''}
+                      onChange={(e) =>
+                        updateField(index, {
+                          validation: { ...field.validation, pattern: e.target.value },
+                        })
+                      }
+                    />
+                    <Select
+                      onValueChange={(val) =>
+                        updateField(index, {
+                          validation: { ...field.validation, pattern: val },
+                        })
+                      }
+                    >
+                      <SelectTrigger id={`validation-pattern-preset-${field.id}`} className="w-[130px]" aria-label="Regex Pattern Presets">
+                        <SelectValue placeholder="Presets" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="^[0-9]+$">Numbers</SelectItem>
+                        <SelectItem value="^[a-zA-Z]+$">Letters</SelectItem>
+                        <SelectItem value="^[^@]+@[^@]+\.[^@]+$">Email</SelectItem>
+                        <SelectItem value="^(\+?6?01)[0-46-9]-*[0-9]{7,8}$">Phone (MY)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label className="text-sm">Regex Pattern (Advanced)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="e.g. ^[0-9]+$"
-                    value={field.validation?.pattern || ''}
-                    onChange={(e) =>
-                      updateField(index, {
-                        validation: { ...field.validation, pattern: e.target.value },
-                      })
-                    }
-                  />
-                  <Select
-                    onValueChange={(val) =>
-                      updateField(index, {
-                        validation: { ...field.validation, pattern: val },
-                      })
-                    }
-                  >
-                    <SelectTrigger className="w-[130px]">
-                      <SelectValue placeholder="Presets" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="^[0-9]+$">Numbers</SelectItem>
-                      <SelectItem value="^[a-zA-Z]+$">Letters</SelectItem>
-                      <SelectItem value="^[^@]+@[^@]+\.[^@]+$">Email</SelectItem>
-                      <SelectItem value="^(\+?6?01)[0-46-9]-*[0-9]{7,8}$">Phone (MY)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-          )}
+            )}
 
           {/* Conditional Logic Section */}
           {field.type !== 'separator' && (
             <div className="pt-4 border-t space-y-3">
               <div className="flex items-center justify-between">
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Conditional Logic
-                </Label>
+                </p>
                 {field.conditional && (
                   <Button
                     variant="ghost"
@@ -477,7 +492,7 @@ function SortableField({
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center p-3 bg-slate-50 rounded-md border border-slate-100">
-                <span className="text-sm text-slate-600 whitespace-nowrap">Show this field if</span>
+                <span id={`condition-label-${field.id}`} className="text-sm text-slate-600 whitespace-nowrap">Show this field if</span>
                 <Select
                   value={field.conditional?.fieldId || 'none'}
                   onValueChange={(val) => {
@@ -490,7 +505,7 @@ function SortableField({
                     }
                   }}
                 >
-                  <SelectTrigger className="w-full sm:w-[180px] h-9 text-sm">
+                  <SelectTrigger className="w-full sm:w-[180px] h-9 text-sm" aria-labelledby={`condition-label-${field.id}`}>
                     <SelectValue placeholder="Select Question..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -507,6 +522,8 @@ function SortableField({
                   <>
                     <span className="text-sm text-slate-600">equals</span>
                     <Input
+                      id={`conditional-value-${field.id}`}
+                      aria-label="Condition Value"
                       className="h-9 text-sm"
                       placeholder="Value to match..."
                       value={field.conditional.value}
