@@ -2,10 +2,6 @@ import type { NextConfig } from 'next';
 import { withSentryConfig } from '@sentry/nextjs';
 
 const nextConfig: NextConfig = {
-  eslint: {
-    // Temporarily ignore ESLint during builds due to react-hooks plugin compatibility issue
-    ignoreDuringBuilds: true,
-  },
   images: {
     unoptimized: true,
   },
