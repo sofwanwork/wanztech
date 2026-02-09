@@ -9,8 +9,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import dynamic from 'next/dynamic';
+
+const RichTextEditor = dynamic(
+  () => import('@/components/ui/rich-text-editor').then((mod) => mod.RichTextEditor),
+  {
+    loading: () => <div className="h-[200px] w-full animate-pulse rounded-md bg-muted" />,
+    ssr: false,
+  }
+);
 import { Separator } from '@/components/ui/separator';
 import {
   Select,

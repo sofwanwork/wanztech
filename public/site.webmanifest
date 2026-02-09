@@ -1,0 +1,21 @@
+{
+    "name": "KlikForm",
+    "short_name": "KlikForm",
+    "description": "Platform borang online percuma terbaik di Malaysia",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#451263",
+    "icons": [
+        {
+            "src": "/logo.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/logo.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

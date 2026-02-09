@@ -3,7 +3,7 @@ import { withSentryConfig } from '@sentry/nextjs';
 
 const nextConfig: NextConfig = {
   images: {
-    unoptimized: true,
+    // unoptimized: true, // Enabled Image Optimization
   },
   async redirects() {
     return [

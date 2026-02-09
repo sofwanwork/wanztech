@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { Settings } from '@/lib/types';
+import { encrypt, decrypt } from '@/lib/encryption';
 
 // Helper to get user ID
 async function getUser() {
@@ -23,9 +24,9 @@ export async function getSettings(): Promise<Settings | undefined> {
   if (error || !data) return undefined;
 
   return {
-    googleClientEmail: data.google_client_email,
-    googlePrivateKey: data.google_private_key,
-    googleDriveFolderId: data.google_drive_folder_id,
+    googleClientEmail: decrypt(data.google_client_email),
+    googlePrivateKey: decrypt(data.google_private_key),
+    googleDriveFolderId: decrypt(data.google_drive_folder_id),
     userPersonalEmail: data.user_personal_email,
   };
 }
@@ -53,9 +54,9 @@ export async function getSettingsByFormId(formId: string): Promise<Settings | un
   if (error || !data) return undefined;
 
   return {
-    googleClientEmail: data.google_client_email,
-    googlePrivateKey: data.google_private_key,
-    googleDriveFolderId: data.google_drive_folder_id,
+    googleClientEmail: decrypt(data.google_client_email),
+    googlePrivateKey: decrypt(data.google_private_key),
+    googleDriveFolderId: decrypt(data.google_drive_folder_id),
     userPersonalEmail: data.user_personal_email,
   };
 }
@@ -65,9 +66,9 @@ export async function saveSettings(settings: Settings): Promise<void> {
 
   const settingsData = {
     user_id: user.id,
-    google_client_email: settings.googleClientEmail,
-    google_private_key: settings.googlePrivateKey,
-    google_drive_folder_id: settings.googleDriveFolderId,
+    google_client_email: encrypt(settings.googleClientEmail),
+    google_private_key: encrypt(settings.googlePrivateKey),
+    google_drive_folder_id: encrypt(settings.googleDriveFolderId),
     user_personal_email: settings.userPersonalEmail,
   };
 

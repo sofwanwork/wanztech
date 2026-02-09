@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { ImageCropperDialog } from '@/components/image-cropper-dialog';
 import { toast } from 'sonner';
-import html2canvas from 'html2canvas-pro';
+// import html2canvas from 'html2canvas-pro';
 import { QRCodeSVG } from 'qrcode.react';
 
 import { useCertificateHistory } from '@/features/certificates/hooks/use-history';
@@ -184,6 +184,7 @@ export function CertificateBuilderClient({
         await new Promise((r) => setTimeout(r, 50));
 
         try {
+          const html2canvas = (await import('html2canvas-pro')).default;
           const canvas = await html2canvas(canvasRef.current, {
             scale: 0.4, // Small scale for thumbnail
             useCORS: true,
@@ -226,6 +227,7 @@ export function CertificateBuilderClient({
       setSelectedId(null);
       await new Promise((r) => setTimeout(r, 100));
 
+      const html2canvas = (await import('html2canvas-pro')).default;
       const canvas = await html2canvas(canvasRef.current, {
         scale: 2,
         useCORS: true,
@@ -450,11 +452,10 @@ export function CertificateBuilderClient({
               return (
                 <div
                   key={el.id}
-                  className={`absolute cursor-move transition-shadow select-none ${
-                    isSelected
-                      ? 'ring-2 ring-primary ring-offset-2'
-                      : 'hover:ring-1 hover:ring-gray-300'
-                  }`}
+                  className={`absolute cursor-move transition-shadow select-none ${isSelected
+                    ? 'ring-2 ring-primary ring-offset-2'
+                    : 'hover:ring-1 hover:ring-gray-300'
+                    }`}
                   style={{
                     left: `${(el.x / template.width) * 100}%`,
                     top: `${(el.y / template.height) * 100}%`,

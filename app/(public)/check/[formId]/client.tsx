@@ -15,8 +15,8 @@ import { Label } from '@/components/ui/label';
 import { Award, Search, Download, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { checkCertificateByIC, CertificateCheckResult } from '@/actions/certificates';
 import { useRef } from 'react';
-import html2canvas from 'html2canvas-pro';
-import { jsPDF } from 'jspdf';
+// import html2canvas from 'html2canvas-pro';
+// import { jsPDF } from 'jspdf';
 import { CertificateTemplate } from '@/components/certificate-template';
 import { toast } from 'sonner';
 
@@ -65,6 +65,7 @@ export function CertificateCheckClient({
     if (!hiddenCertificateRef.current || !result?.name) return;
 
     try {
+      const html2canvas = (await import('html2canvas-pro')).default;
       // Capture the hidden full-size certificate directly (no cloning needed)
       const canvas = await html2canvas(hiddenCertificateRef.current, {
         scale: 2, // High quality
@@ -91,6 +92,9 @@ export function CertificateCheckClient({
     if (!hiddenCertificateRef.current || !result?.name) return;
 
     try {
+      const html2canvas = (await import('html2canvas-pro')).default;
+      const { jsPDF } = await import('jspdf');
+
       // Capture the hidden full-size certificate directly (no cloning needed)
       const canvas = await html2canvas(hiddenCertificateRef.current, {
         scale: 2, // Good balance of quality and size

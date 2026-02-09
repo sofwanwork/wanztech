@@ -20,7 +20,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { toast } from 'sonner';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Eye, EyeOff } from 'lucide-react';
 import { saveSettingsAction, getSettingsAction } from '@/actions/forms';
 
 import { useSearchParams } from 'next/navigation';
@@ -34,6 +34,7 @@ function SettingsContent() {
   const [personalEmail, setPersonalEmail] = useState('');
   const [key, setKey] = useState('');
   const [folderId, setFolderId] = useState('');
+  const [showPrivateKey, setShowPrivateKey] = useState(false);
   const hasShownError = useRef(false);
 
   useEffect(() => {
@@ -139,14 +140,50 @@ function SettingsContent() {
             </p>
           </div>
           <div className="space-y-2">
-            <Label>Google Private Key</Label>
-            <Textarea
-              placeholder="-----BEGIN PRIVATE KEY-----\n..."
-              className="font-mono text-xs min-h-[150px]"
-              value={key}
-              onChange={(e) => setKey(e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
+            <div className="flex justify-between items-center mb-1">
+              <Label>Google Private Key</Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => setShowPrivateKey(!showPrivateKey)}
+              >
+                {showPrivateKey ? (
+                  <>
+                    <EyeOff className="h-3 w-3 mr-1" /> Hide
+                  </>
+                ) : (
+                  <>
+                    <Eye className="h-3 w-3 mr-1" /> Show
+                  </>
+                )}
+              </Button>
+            </div>
+            {showPrivateKey ? (
+              <Textarea
+                placeholder="-----BEGIN PRIVATE KEY-----\n..."
+                className="font-mono text-xs min-h-[150px]"
+                value={key}
+                onChange={(e) => setKey(e.target.value)}
+              />
+            ) : (
+              <div className="relative">
+                <Input
+                  type="password"
+                  value={key ? 'FAKEPASSWORD' : ''}
+                  readOnly
+                  className="font-mono text-xs cursor-not-allowed bg-muted/50"
+                  placeholder="Private Key (Hidden)"
+                />
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <span className="text-xs text-muted-foreground bg-background/80 px-2 py-0.5 rounded border shadow-sm">
+                    {key ? 'Key is Set' : 'No Key Set'}
+                  </span>
+                </div>
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground mt-2">
               Copy the entire private key from your service account JSON file.
             </p>
           </div>
@@ -255,7 +292,7 @@ function SettingsContent() {
           </Accordion>
         </CardContent>
       </Card>
-    </div>
+    </div >
   );
 }
 
