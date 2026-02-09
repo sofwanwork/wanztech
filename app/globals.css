@@ -229,155 +229,42 @@
   font-weight: 700 !important;
 }
 
-/* CKEditor Theming */
-/* Apply styling to the top container to ensure it fills the width */
-.rich-text-editor .ck.ck-editor__top {
-  background: color-mix(in srgb, var(--muted) 30%, transparent) !important;
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 40%, transparent) !important;
-  backdrop-filter: blur(8px);
-  border-radius: 0 !important;
-}
-
-.rich-text-editor:focus-within .ck.ck-editor__top {
-  background: color-mix(in srgb, var(--muted) 50%, transparent) !important;
-  border-bottom-color: var(--border) !important;
-}
-
-/* Reset inner containers to be transparent */
-.rich-text-editor .ck.ck-sticky-panel__content,
-.rich-text-editor .ck.ck-toolbar {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
-.rich-text-editor .ck.ck-toolbar {
-  padding: 0.35rem 0.5rem !important;
-  width: 100% !important;
-}
-
-.rich-text-editor .ck.ck-toolbar .ck-button {
-  color: var(--muted-foreground);
-  background: transparent !important;
-  border: 1px solid transparent !important;
-  border-radius: 0.5rem !important;
-  padding: 0.25rem !important;
-  margin: 0.125rem !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.rich-text-editor .ck.ck-toolbar .ck-button:hover {
-  background: var(--background) !important;
-  color: var(--foreground);
-  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  transform: translateY(-1px);
-}
-
-.rich-text-editor .ck.ck-toolbar .ck-button.ck-on {
-  background: var(--background) !important;
-  color: var(--primary);
-  border-color: var(--border) !important;
-  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  font-weight: 500;
-}
-
-.rich-text-editor .ck.ck-toolbar .ck-button:focus-visible {
-  box-shadow: 0 0 0 2px var(--ring);
+/* Tiptap/ProseMirror Editor Styles */
+.rich-text-editor .tiptap {
   outline: none;
-}
-
-.rich-text-editor .ck.ck-content {
-  background: transparent !important;
-  color: var(--foreground);
-  border: none !important;
-  box-shadow: none !important;
-  padding: 0.5rem 0.75rem !important;
   min-height: 80px;
-  line-height: 1.5;
+  padding: 0.5rem 0.75rem;
+  line-height: 1.6;
 }
 
-/* Remove default prose margins that create extra space */
-.rich-text-editor .ck.ck-content> :first-child {
-  margin-top: 0 !important;
-  padding-top: 0 !important;
+/* Content first/last child margins */
+.rich-text-editor .tiptap> :first-child {
+  margin-top: 0;
 }
 
-.rich-text-editor .ck.ck-content> :last-child {
-  margin-bottom: 0 !important;
-  padding-bottom: 0 !important;
+.rich-text-editor .tiptap> :last-child {
+  margin-bottom: 0;
 }
 
-/* Tighter paragraph spacing */
-.rich-text-editor .ck.ck-content p {
-  margin-top: 0.25em !important;
-  margin-bottom: 0.25em !important;
+/* Paragraph spacing */
+.rich-text-editor .tiptap p {
+  margin: 0.25em 0;
 }
 
-/* Fix list styling in CKEditor */
-.rich-text-editor .ck.ck-content ul {
-  list-style-type: disc !important;
-  padding-left: 1.5rem !important;
-  margin-top: 0.5rem !important;
-  margin-bottom: 0.5rem !important;
+/* Blockquote styling */
+.rich-text-editor .tiptap blockquote {
+  border-left: 3px solid var(--primary);
+  padding-left: 1rem;
+  margin: 0.5rem 0;
+  color: var(--muted-foreground);
+  font-style: italic;
 }
 
-.rich-text-editor .ck.ck-content ol {
-  list-style-type: decimal !important;
-  padding-left: 1.5rem !important;
-  margin-top: 0.5rem !important;
-  margin-bottom: 0.5rem !important;
-}
-
-.rich-text-editor .ck.ck-content li {
-  margin-top: 0.25rem !important;
-  margin-bottom: 0.25rem !important;
-}
-
-.rich-text-editor .ck.ck-content li>p {
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
-}
-
-.rich-text-editor .ck.ck-content.ck-focused {
-  border: none !important;
-  box-shadow: none !important;
-}
-
-/* Hide the status bar if it appears */
-.rich-text-editor .ck.ck-editor__bottom {
-  display: none !important;
-}
-
-/* Dark mode adjustments */
-.dark .rich-text-editor .ck.ck-editor__top {
-  background: color-mix(in srgb, var(--muted) 20%, transparent) !important;
-  border-bottom-color: color-mix(in srgb, var(--border) 20%, transparent) !important;
-}
-
-.dark .rich-text-editor:focus-within .ck.ck-editor__top {
-  background: color-mix(in srgb, var(--muted) 30%, transparent) !important;
-  border-bottom-color: var(--border) !important;
-}
-
-.dark .rich-text-editor .ck.ck-toolbar {
-  background: transparent !important;
-  border: none !important;
-}
-
-.dark .rich-text-editor .ck.ck-toolbar .ck-button:hover,
-.dark .rich-text-editor .ck.ck-toolbar .ck-button.ck-on {
-  background: var(--muted) !important;
-  /* In dark mode, card bg might be too dark, use muted */
-  color: var(--foreground);
-  border-color: transparent !important;
-}
-
-.dark .rich-text-editor .ck.ck-toolbar .ck-button.ck-on {
-  color: var(--primary);
-  background: var(--secondary) !important;
-}
-
-.dark .rich-text-editor .ck.ck-content {
-  background: transparent !important;
-  color: var(--foreground);
+/* Placeholder styling */
+.rich-text-editor .tiptap p.is-editor-empty:first-child::before {
+  color: var(--muted-foreground);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
 }
