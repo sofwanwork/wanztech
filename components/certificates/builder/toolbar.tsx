@@ -12,6 +12,8 @@ import {
   Download,
   Eye,
   Save,
+  RectangleHorizontal,
+  RectangleVertical,
 } from 'lucide-react';
 
 interface CertificateEditorToolbarProps {
@@ -34,6 +36,8 @@ interface CertificateEditorToolbarProps {
   saving: boolean;
   onExport: () => void;
   exporting: boolean;
+  orientation: 'landscape' | 'portrait';
+  onOrientationChange: () => void;
 }
 
 export function CertificateEditorToolbar({
@@ -56,6 +60,8 @@ export function CertificateEditorToolbar({
   saving,
   onExport,
   exporting,
+  orientation,
+  onOrientationChange,
 }: CertificateEditorToolbarProps) {
   return (
     <div className="bg-white border-b px-4 py-3 flex items-center justify-between gap-4">
@@ -89,6 +95,22 @@ export function CertificateEditorToolbar({
             title="Ulang (Redo)"
           >
             <Redo className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Orientation Toggle */}
+        <div className="flex items-center gap-1 border-l pl-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onOrientationChange}
+            title={orientation === 'landscape' ? 'Tukar ke Potret' : 'Tukar ke Landskap'}
+          >
+            {orientation === 'landscape' ? (
+              <RectangleHorizontal className="h-4 w-4" />
+            ) : (
+              <RectangleVertical className="h-4 w-4" />
+            )}
           </Button>
         </div>
 

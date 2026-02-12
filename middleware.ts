@@ -76,30 +76,58 @@ export async function middleware(request: NextRequest) {
     );
 
     // Check authentication - handle refresh token errors gracefully
-    const { data: { user }, error } = await supabase.auth.getUser();
+    try {
+        const {
+            data: { user },
+            error,
+        } = await supabase.auth.getUser();
 
-    if (error || !user) {
-        // If there's a refresh token error, clear all Supabase auth cookies
-        // so the user can log in fresh without recurring errors
-        if (error?.message?.includes('Refresh Token') || error?.code === 'session_not_found') {
+        if (error || !user) {
+            // Check for specific error types that indicate session issues
+            const isAuthError =
+                error?.message?.includes('Refresh Token') ||
+                error?.code === 'session_not_found' ||
+                error?.message?.includes('JWT') ||
+                //If we have an error but no user, we should probably treat it as a session issue to be safe
+                (error && !user);
+
+            if (isAuthError) {
+                console.error('Middleware Auth Error:', error);
+                const loginUrl = new URL('/login', request.url);
+                loginUrl.searchParams.set('redirect', pathname);
+                const redirectResponse = NextResponse.redirect(loginUrl);
+
+                // Clear all Supabase auth cookies to prevent stale token loops
+                // This is a critical step to break out of the "Invalid Refresh Token" loop
+                request.cookies.getAll().forEach(cookie => {
+                    if (cookie.name.startsWith('sb-')) {
+                        redirectResponse.cookies.delete(cookie.name);
+                    }
+                });
+
+                return redirectResponse;
+            }
+
+            // Normal case: user not authenticated, redirect to login
             const loginUrl = new URL('/login', request.url);
             loginUrl.searchParams.set('redirect', pathname);
-            const redirectResponse = NextResponse.redirect(loginUrl);
-
-            // Clear all Supabase auth cookies to prevent stale token loops
-            request.cookies.getAll().forEach(cookie => {
-                if (cookie.name.startsWith('sb-')) {
-                    redirectResponse.cookies.delete(cookie.name);
-                }
-            });
-
-            return redirectResponse;
+            return NextResponse.redirect(loginUrl);
         }
-
-        // Normal case: user not authenticated, redirect to login
+    } catch (err) {
+        // Catch any unexpected errors during auth check
+        console.error('Middleware Unexpected Error:', err);
         const loginUrl = new URL('/login', request.url);
         loginUrl.searchParams.set('redirect', pathname);
-        return NextResponse.redirect(loginUrl);
+        const redirectResponse = NextResponse.redirect(loginUrl);
+
+        // Safety clear cookies here too
+        request.cookies.getAll().forEach(cookie => {
+            if (cookie.name.startsWith('sb-')) {
+                redirectResponse.cookies.delete(cookie.name);
+            }
+        });
+
+        return redirectResponse;
     }
 
     return response;

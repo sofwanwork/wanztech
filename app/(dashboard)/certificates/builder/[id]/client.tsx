@@ -411,6 +411,14 @@ export function CertificateBuilderClient({
         saving={saving}
         onExport={exportToPNG}
         exporting={exporting}
+        orientation={template.width >= template.height ? 'landscape' : 'portrait'}
+        onOrientationChange={() => {
+          setTemplate((prev) => ({
+            ...prev,
+            width: prev.height,
+            height: prev.width,
+          }));
+        }}
       />
 
       <div className="flex-1 flex overflow-hidden">
