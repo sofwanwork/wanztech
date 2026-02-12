@@ -40,7 +40,7 @@ export function VerifyClient({ certificateId, formData }: VerifyClientProps) {
               <p className="text-blue-600 mb-4">
                 Please verify your certificate by entering your IC number
               </p>
-              <Link href={`/ecert/check/${formData.id}`}>
+              <Link href={`/check/${formData.id}`}>
                 <Button className="w-full bg-blue-600 hover:bg-blue-700">
                   <Award className="mr-2 h-4 w-4" />
                   Verify My Certificate

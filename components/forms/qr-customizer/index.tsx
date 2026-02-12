@@ -20,7 +20,7 @@ import { createClient } from '@/utils/supabase/client';
 import { compressImage } from '@/utils/image-compression';
 import { v4 as uuidv4 } from 'uuid';
 
-interface QrSettings {
+export interface QrSettings {
   dotsColor?: string;
   dotsType?: string;
   cornersColor?: string;
@@ -29,7 +29,7 @@ interface QrSettings {
   logo?: string;
 }
 
-interface QrCustomizerProps {
+export interface QrCustomizerProps {
   url: string;
   settings?: QrSettings;
   onSettingsChange?: (settings: QrSettings) => void;

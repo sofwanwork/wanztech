@@ -44,7 +44,7 @@ export default async function EcertDashboard() {
             <p className="text-gray-500 mb-4">
               Enable e-certificate in form builder to start using the e-cert system
             </p>
-            <Link href="/">
+            <Link href="/forms">
               <Button>Go to Dashboard</Button>
             </Link>
           </CardContent>

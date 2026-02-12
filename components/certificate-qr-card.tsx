@@ -15,7 +15,7 @@ interface CertificateQrCardProps {
 
 export function CertificateQrCard({ formId, formTitle, templateName }: CertificateQrCardProps) {
   const [downloading, setDownloading] = useState(false);
-  const checkUrl = `/certificates/check/${formId}`;
+  const checkUrl = `/check/${formId}`;
 
   // High resolution QR (500x500)
   const qrUrlPreview = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(checkUrl)}`;

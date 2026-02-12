@@ -109,7 +109,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
                 <p className="text-gray-500 mb-8 text-center text-sm max-w-sm">
                   No forms found matching &quot;{query}&quot;. Try a different keyword.
                 </p>
-                <Link href="/" prefetch={false}>
+                <Link href="/forms" prefetch={false}>
                   <Button variant="outline">Clear Search</Button>
                 </Link>
               </>

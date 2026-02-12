@@ -139,7 +139,7 @@ export default async function PricingPage() {
                     </nav>
                     <div className="flex items-center gap-4">
                         <Button variant="ghost" size="sm" asChild>
-                            <Link href={user ? "/dashboard" : "/login"}>
+                            <Link href={user ? "/forms" : "/login"}>
                                 {user ? "Dashboard" : "Log Masuk"}
                             </Link>
                         </Button>

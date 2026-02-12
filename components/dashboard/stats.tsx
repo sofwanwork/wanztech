@@ -17,8 +17,8 @@ interface DashboardStatsProps {
 export function DashboardStats({ subscription, usage, totalForms }: DashboardStatsProps) {
   const limits = TIER_LIMITS[subscription.tier];
   const isUnlimited = limits.maxForms === -1;
-  const formProgress = isUnlimited ? 100 : (usage.formsCreated / limits.maxForms) * 100;
-  const formsRemaining = isUnlimited ? '∞' : limits.maxForms - usage.formsCreated;
+  const totalFormsProgress = isUnlimited ? 100 : (totalForms / limits.maxForms) * 100;
+  const totalFormsRemaining = isUnlimited ? '∞' : limits.maxForms - totalForms;
 
   const tierColors = {
     free: 'bg-slate-100 text-slate-700 border-slate-200',
@@ -70,22 +70,13 @@ export function DashboardStats({ subscription, usage, totalForms }: DashboardSta
       {/* Forms Created Card */}
       <Card className="border-0 shadow-sm bg-white overflow-hidden">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-gray-500">Forms This Month</CardTitle>
+          <CardTitle className="text-sm font-medium text-gray-500">New Forms (This Month)</CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
           <div className="flex items-end gap-2 mb-2">
             <span className="text-3xl font-bold text-gray-900">{usage.formsCreated}</span>
-            <span className="text-sm text-gray-400 mb-1">
-              / {isUnlimited ? '∞' : limits.maxForms}
-            </span>
           </div>
-          {!isUnlimited && (
-            <div className="space-y-1">
-              <Progress value={formProgress} className="h-1.5" />
-              <p className="text-xs text-gray-400">{formsRemaining} remaining</p>
-            </div>
-          )}
-          {isUnlimited && <p className="text-xs text-green-600 font-medium">Unlimited forms 🎉</p>}
+          <p className="text-xs text-gray-400">Forms created this month</p>
         </CardContent>
       </Card>
 
@@ -95,12 +86,19 @@ export function DashboardStats({ subscription, usage, totalForms }: DashboardSta
           <CardTitle className="text-sm font-medium text-gray-500">Total Forms</CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <FileText className="h-5 w-5 text-primary" />
-            </div>
+          <div className="flex items-end gap-2 mb-2">
             <span className="text-3xl font-bold text-gray-900">{totalForms}</span>
+            <span className="text-sm text-gray-400 mb-1">
+              / {isUnlimited ? '∞' : limits.maxForms}
+            </span>
           </div>
+          {!isUnlimited && (
+            <div className="space-y-1">
+              <Progress value={totalFormsProgress} className="h-1.5" />
+              <p className="text-xs text-gray-400">{totalFormsRemaining} remaining</p>
+            </div>
+          )}
+          {isUnlimited && <p className="text-xs text-green-600 font-medium">Unlimited forms 🎉</p>}
         </CardContent>
       </Card>
 

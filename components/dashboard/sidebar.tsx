@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
+  QrCode,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createFormAction } from '@/actions/forms';
@@ -53,9 +54,9 @@ export function DashboardSidebar({ profile, onNavigate, isMobile = false }: Side
   const navItems = [
     {
       title: 'Dashboard',
-      href: '/',
+      href: '/forms',
       icon: LayoutDashboard,
-      active: pathname === '/',
+      active: pathname === '/forms',
     },
     {
       title: 'Settings',
@@ -74,6 +75,12 @@ export function DashboardSidebar({ profile, onNavigate, isMobile = false }: Side
       href: '/certificates/builder',
       icon: FileText,
       active: pathname.startsWith('/certificates/builder'),
+    },
+    {
+      title: 'QR Builder',
+      href: '/qr-builder',
+      icon: QrCode,
+      active: pathname === '/qr-builder',
     },
   ];
 
@@ -219,7 +226,6 @@ export function DashboardSidebar({ profile, onNavigate, isMobile = false }: Side
             >
               <Link
                 href={item.href}
-                prefetch={false}
                 className={cn('flex items-center w-full', isCollapsed ? 'justify-center' : 'gap-3')}
                 onClick={(e) => {
                   if (pathname === item.href) {

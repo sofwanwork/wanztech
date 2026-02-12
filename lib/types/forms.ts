@@ -104,6 +104,7 @@ export interface FormTheme {
   backgroundPattern?: BackgroundPattern;
   headerAlignment?: 'left' | 'center';
   logo?: string;
+  logoAlignment?: 'left' | 'center' | 'right';
   headerFont?: HeaderFont;
 }
 
@@ -159,6 +160,8 @@ export interface Form {
   // E-Certificate settings
   eCertificateEnabled?: boolean;
   eCertificateTemplate?: string; // Template ID or custom URL
+  eCertificateExpiryDays?: number; // Number of days the certificate link is valid after submission
+  eCertificateExpiredMessage?: string; // Custom message to show when link is expired
   // Attendance Settings
   attendanceSettings?: AttendanceSettings;
   // QR Settings

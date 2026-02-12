@@ -163,7 +163,7 @@ export function PlanCard({ plan, user }: PlanCardProps) {
                         disabled={isDisabled}
                         asChild
                     >
-                        <Link href={user ? "/dashboard" : "/login?tab=signup"}>
+                        <Link href={user ? "/forms" : "/login?tab=signup"}>
                             {user ? "Go to Dashboard" : "Get Started for Free"}
                         </Link>
                     </Button>

@@ -98,6 +98,47 @@ export async function checkCertificateByIC(
     // Clean IC for comparison (remove dashes, spaces)
     const cleanIC = ic.replace(/[-\s]/g, '');
 
+    // Helper to parse date (Google Sheets usually sends d/m/yyyy or m/d/yyyy or yyyy-mm-dd)
+    const parseDate = (dateStr: string) => {
+      if (!dateStr) return null;
+
+      // prioritize DD/MM/YYYY or DD-MM-YYYY which is common in Malaysia
+      const parts = dateStr.split(/[/-]/);
+      if (parts.length === 3) {
+        const p0 = parseInt(parts[0]);
+        const p1 = parseInt(parts[1]);
+        const p2 = parseInt(parts[2]);
+
+        // Check if it looks like YYYY-MM-DD (ISO)
+        if (p0 > 1000) {
+          return new Date(`${p0}-${p1}-${p2}`);
+        }
+
+        // Check if day is clearly first (> 12)
+        if (p0 > 12) {
+          return new Date(`${p2}-${p1}-${p0}`); // yyyy-mm-dd
+        }
+
+        // AMBIGUOUS CASE: 01/02/2024.
+        // Google Sheets API v4 with 'formattedValue' usually respects the sheet's locale.
+        // But if we receive "01/02/2024", standard JS Date matches US (Feb 1st).
+        // Malaysia expects Jan 2nd.
+        // We will FORCE DD/MM/YYYY interpretation for 3-part dates that are not ISO.
+        return new Date(`${p2}-${p1}-${p0}`);
+      }
+
+      // Fallback for other formats (like "Jan 1, 2024")
+      const d = new Date(dateStr);
+      if (!isNaN(d.getTime())) return d;
+
+      return null;
+    };
+
+    // Helper to get Malaysia Time (UTC+8)
+    const getMalaysiaDate = (date: Date) => {
+      return new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }));
+    };
+
     for (const row of rows) {
       const rowIC = (row.get(headers[icColumnIndex]) || '').toString().replace(/[-\s]/g, '');
       if (rowIC === cleanIC) {
@@ -113,6 +154,46 @@ export async function checkCertificateByIC(
         );
         const date = dateColumnIndex !== -1 ? row.get(headers[dateColumnIndex]) : undefined;
 
+        // Expiration Check
+        if (form.eCertificateExpiryDays && form.eCertificateExpiryDays > 0) {
+          if (!date) {
+            return { found: false, error: 'Tarikh tidak dijumpai untuk pengesahan tarikh luput' };
+          }
+
+          const submissionDate = parseDate(date.toString());
+
+          if (!submissionDate || isNaN(submissionDate.getTime())) {
+            console.error(`Date parsing failed for: ${date}`);
+            return { found: false, error: 'Format tarikh tidak sah untuk pengesahan' };
+          }
+
+          // normalize submission date to start of day in Malaysia time (if it isn't already)
+          // actually parseDate returns a Date object.
+
+          const expiryDate = new Date(submissionDate);
+          expiryDate.setDate(expiryDate.getDate() + form.eCertificateExpiryDays);
+
+          // Compare against current Malaysia time
+          const nowUTC = new Date();
+          const nowMYT = getMalaysiaDate(nowUTC);
+
+          // Reset time part to ensure we are comparing dates only (if that is the intention of "days")
+          // If we want exact 24h * days, we keep time.
+          // Usually "valid for 1 day" means valid until the end of the next day?
+          // Let's assume strict 24h * days if time is present, or just date comparison.
+          // Since Google Sheet dates might not have time, let's strip time for robust "calendar days" comparison.
+
+          expiryDate.setHours(23, 59, 59, 999); // Expire at end of the target day
+          nowMYT.setHours(0, 0, 0, 0); // Compare against start of today? No, Compare now.
+
+          if (nowMYT > expiryDate) {
+            return {
+              found: false,
+              error: form.eCertificateExpiredMessage || 'Pautan sijil ini telah luput'
+            };
+          }
+        }
+
         return {
           found: true,
           name: name.toString(),
@@ -121,6 +202,7 @@ export async function checkCertificateByIC(
         };
       }
     }
+
 
     return { found: false, error: 'IC tidak dijumpai dalam rekod' };
   } catch (error) {

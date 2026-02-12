@@ -48,7 +48,7 @@ import {
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { QRCodeSVG } from 'qrcode.react';
-import { getProxiedImageUrl } from '@/lib/utils';
+import { getProxiedImageUrl, cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -127,7 +127,12 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
     try {
       await deleteFormAction(form.id);
       toast.success('Form deleted successfully');
-    } catch {
+    } catch (error: unknown) {
+      // Next.js redirect() throws a special error with digest 'NEXT_REDIRECT'
+      // We should re-throw it so the redirect actually works
+      if (error && typeof error === 'object' && 'digest' in error && typeof (error as Record<string, unknown>).digest === 'string' && ((error as Record<string, unknown>).digest as string).startsWith('NEXT_REDIRECT')) {
+        throw error;
+      }
       toast.error('Failed to delete form');
     } finally {
       setDeleting(false);
@@ -202,7 +207,7 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
               disabled={isNavigating}
               onClick={() => {
                 startTransition(() => {
-                  router.push('/');
+                  router.push('/forms');
                 });
               }}
             >
@@ -328,6 +333,33 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                   )}
                 </div>
 
+
+
+                <div className="space-y-2">
+                  <Label htmlFor="logo-alignment">Logo Alignment</Label>
+                  <Select
+                    value={form.theme?.logoAlignment || 'left'}
+                    onValueChange={(val) =>
+                      setForm((f) => ({
+                        ...f,
+                        theme: {
+                          ...f.theme,
+                          logoAlignment: val as 'left' | 'center' | 'right',
+                        },
+                      }))
+                    }
+                  >
+                    <SelectTrigger id="logo-alignment">
+                      <SelectValue placeholder="Alignment" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="left">Left</SelectItem>
+                      <SelectItem value="center">Center</SelectItem>
+                      <SelectItem value="right">Right</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="space-y-2">
                   <div className="flex justify-between items-baseline">
                     <Label htmlFor="logo-url">Logo URL (Optional)</Label>
@@ -346,12 +378,17 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                     }
                   />
                   {form.theme?.logo && (
-                    <div className="mt-2 h-16 w-auto inline-block border rounded bg-slate-50 p-1">
+                    <div className={cn(
+                      "mt-2 border rounded bg-slate-50 p-2 flex",
+                      form.theme?.logoAlignment === 'center' ? 'justify-center' :
+                        form.theme?.logoAlignment === 'right' ? 'justify-end' :
+                          'justify-start'
+                    )}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={form.theme.logo}
+                        src={getProxiedImageUrl(form.theme.logo)}
                         alt="Logo"
-                        className="h-full w-auto object-contain"
+                        className="h-16 w-auto object-contain"
                       />
                     </div>
                   )}
@@ -697,6 +734,44 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                     </div>
                   </div>
 
+                  <div className="space-y-2">
+                    <Label htmlFor="ecert-expiry">Link Expiration (Days)</Label>
+                    <Input
+                      id="ecert-expiry"
+                      type="number"
+                      min="0"
+                      placeholder="0 for no expiration"
+                      value={form.eCertificateExpiryDays || ''}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          eCertificateExpiryDays: parseInt(e.target.value) || undefined,
+                        }))
+                      }
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Number of days the certificate link is valid after the submission date. Leave
+                      blank or set to 0 for no expiration.
+                    </p>
+                  </div>
+
+                  {form.eCertificateExpiryDays && form.eCertificateExpiryDays > 0 && (
+                    <div className="space-y-2">
+                      <Label htmlFor="ecert-expired-msg">Custom Expiration Message</Label>
+                      <Textarea
+                        id="ecert-expired-msg"
+                        placeholder="Pautan sijil ini telah luput. Sila hubungi penganjur. / This certificate link has expired."
+                        value={form.eCertificateExpiredMessage || ''}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, eCertificateExpiredMessage: e.target.value }))
+                        }
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Message to display when a user tries to access an expired certificate.
+                      </p>
+                    </div>
+                  )}
+
                   {/* Template Gallery - User Created Certificates */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
@@ -772,14 +847,14 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                       </p>
                       <div className="flex items-center gap-2">
                         <code className="flex-1 text-xs bg-white p-2 rounded border text-green-700 break-all">
-                          {`${window.location.origin}/ecert/check/${form.id}`}
+                          {`${window.location.origin}/check/${form.id}`}
                         </code>
                         <Button
                           type="button"
                           size="sm"
                           variant="outline"
                           onClick={async () => {
-                            const url = `${window.location.origin}/ecert/check/${form.id}`;
+                            const url = `${window.location.origin}/check/${form.id}`;
                             const copied = await copyToClipboard(url);
                             if (copied) toast.success('Link disalin!');
                           }}
@@ -1088,7 +1163,7 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
             </Card>
           </div>
         </div>
-      </main>
-    </div>
+      </main >
+    </div >
   );
 }

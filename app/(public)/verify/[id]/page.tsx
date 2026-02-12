@@ -22,7 +22,7 @@ export default async function VerifyPage({ params }: PageProps) {
         <div className="text-center">
           <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
           <p className="text-gray-600">Redirecting to verification page...</p>
-          <meta httpEquiv="refresh" content={`0;url=/ecert/check/${id}`} />
+          <meta httpEquiv="refresh" content={`0;url=/check/${id}`} />
         </div>
       </div>
     );
@@ -38,10 +38,10 @@ export default async function VerifyPage({ params }: PageProps) {
       formData={
         form
           ? {
-              id: form.id,
-              title: form.title,
-              templateId: form.eCertificateTemplate,
-            }
+            id: form.id,
+            title: form.title,
+            templateId: form.eCertificateTemplate,
+          }
           : null
       }
     />

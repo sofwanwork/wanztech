@@ -35,7 +35,7 @@ export async function createFormAction(formData: Partial<Form>) {
   // Check tier limits
   const limitCheck = await canCreateForm();
   if (!limitCheck.allowed) {
-    redirect(`/?error=${encodeURIComponent(limitCheck.message || 'Form limit reached')}`);
+    redirect(`/forms?error=${encodeURIComponent(limitCheck.message || 'Form limit reached')}`);
   }
 
   const id = uuidv4();
@@ -71,7 +71,7 @@ export async function updateFormAction(form: Form) {
 
 export async function deleteFormAction(id: string) {
   await deleteForm(id);
-  redirect('/');
+  redirect('/forms');
 }
 
 // --- Public Submission ---

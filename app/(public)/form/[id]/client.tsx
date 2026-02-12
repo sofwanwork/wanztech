@@ -322,8 +322,37 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
 
   const isFormValid = visibleFields.every((field) => !validateField(field, formData[field.id]));
 
+  // Generate background pattern CSS
+  const getPatternCSS = (): React.CSSProperties => {
+    const pattern = form.theme?.backgroundPattern;
+    if (!pattern || pattern === 'none') return {};
+    const patternMap: Record<string, string> = {
+      dots: 'radial-gradient(circle, #00000040 1px, transparent 1px)',
+      grid: 'linear-gradient(#00000020 1px, transparent 1px), linear-gradient(90deg, #00000020 1px, transparent 1px)',
+      diagonal: 'repeating-linear-gradient(45deg, transparent, transparent 10px, #00000015 10px, #00000015 11px)',
+      waves: 'radial-gradient(circle at 50% 0, #00000040 10px, transparent 10.5px)',
+      circles: 'radial-gradient(circle at center, #00000040 2px, transparent 2px)',
+      triangles: 'linear-gradient(135deg, #00000020 25%, transparent 25%), linear-gradient(225deg, #00000020 25%, transparent 25%)',
+    };
+    const sizeMap: Record<string, string> = {
+      dots: '12px 12px',
+      grid: '20px 20px',
+      diagonal: 'auto',
+      waves: '20px 20px',
+      circles: '24px 24px',
+      triangles: '20px 20px',
+    };
+    return {
+      backgroundImage: patternMap[pattern] || undefined,
+      backgroundSize: sizeMap[pattern] || undefined,
+    };
+  };
+
   return (
-    <div className="min-h-screen py-8 sm:py-12 px-4 transition-colors duration-500 font-sans form-container">
+    <div
+      className="min-h-screen py-8 sm:py-12 px-4 transition-colors duration-500 font-sans form-container"
+      style={{ backgroundColor: backgroundColor || '#f9fafb', ...getPatternCSS() }}
+    >
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Lora:wght@400;600;700;900&family=Roboto:wght@400;500;700;900&display=swap');
 
@@ -367,13 +396,15 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
               {form.theme?.logo && (
                 <div
                   className={cn(
-                    'mb-6',
-                    form.theme?.headerAlignment === 'center' ? 'flex justify-center' : ''
+                    'mb-6 flex',
+                    (form.theme?.logoAlignment === 'center' || (!form.theme?.logoAlignment && form.theme?.headerAlignment === 'center')) ? 'justify-center' :
+                      form.theme?.logoAlignment === 'right' ? 'justify-end' :
+                        'justify-start'
                   )}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={form.theme.logo}
+                    src={getProxiedImageUrl(form.theme.logo)}
                     alt="Logo"
                     className="max-h-24 w-auto object-contain"
                   />

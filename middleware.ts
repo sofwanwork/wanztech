@@ -8,6 +8,7 @@ const protectedRoutes = [
     '/builder',
     '/settings',
     '/certificates',
+    '/qr-builder',
 ];
 
 // Routes that are always public
@@ -74,11 +75,28 @@ export async function middleware(request: NextRequest) {
         }
     );
 
-    // Check authentication
-    const { data: { user } } = await supabase.auth.getUser();
+    // Check authentication - handle refresh token errors gracefully
+    const { data: { user }, error } = await supabase.auth.getUser();
 
-    if (!user) {
-        // Redirect to login with return URL
+    if (error || !user) {
+        // If there's a refresh token error, clear all Supabase auth cookies
+        // so the user can log in fresh without recurring errors
+        if (error?.message?.includes('Refresh Token') || error?.code === 'session_not_found') {
+            const loginUrl = new URL('/login', request.url);
+            loginUrl.searchParams.set('redirect', pathname);
+            const redirectResponse = NextResponse.redirect(loginUrl);
+
+            // Clear all Supabase auth cookies to prevent stale token loops
+            request.cookies.getAll().forEach(cookie => {
+                if (cookie.name.startsWith('sb-')) {
+                    redirectResponse.cookies.delete(cookie.name);
+                }
+            });
+
+            return redirectResponse;
+        }
+
+        // Normal case: user not authenticated, redirect to login
         const loginUrl = new URL('/login', request.url);
         loginUrl.searchParams.set('redirect', pathname);
         return NextResponse.redirect(loginUrl);
