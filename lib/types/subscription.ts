@@ -42,4 +42,5 @@ export interface TierLimits {
   maxForms: number;
   maxSubmissionsPerForm: number;
   maxCertificates: number;
+  maxQRCodes: number;
 }

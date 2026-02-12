@@ -5,6 +5,8 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { QRSettings } from '@/lib/types/forms';
 
+import { canCreateQRCode } from '@/lib/storage/subscription';
+
 export async function createOrUpdateQRCode(
     id: string | undefined,
     title: string,
@@ -12,6 +14,14 @@ export async function createOrUpdateQRCode(
     settings: QRSettings
 ) {
     try {
+        // Enforce limit only for NEW creations
+        if (!id) {
+            const limitCheck = await canCreateQRCode();
+            if (!limitCheck.allowed) {
+                return { success: false, error: limitCheck.message || 'QR Code limit reached' };
+            }
+        }
+
         const newId = await saveQRCode({
             id,
             title,

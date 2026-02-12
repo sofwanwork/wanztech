@@ -89,8 +89,30 @@ export async function getQRCodeById(id: string): Promise<QRCode | undefined> {
     };
 }
 
+export async function getUserQRCodeCount(userId: string): Promise<number> {
+    const supabase = await createClient();
+    const { count, error } = await supabase
+        .from('qr_codes')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId);
+
+    if (error) {
+        console.error('Error getting QR code count:', error);
+        return 0;
+    }
+    return count || 0;
+}
+
 export async function saveQRCode(qr: Partial<QRCode> & { content: string; title: string }): Promise<string> {
     const { supabase, user } = await getUser();
+
+    // Input Validation
+    if (qr.title && qr.title.length > 100) {
+        throw new Error('Title is too long (max 100 characters)');
+    }
+    if (qr.content && qr.content.length > 2000) {
+        throw new Error('Content is too long (max 2000 characters)');
+    }
 
     const dataToSave = {
         user_id: user.id,

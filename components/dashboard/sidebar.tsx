@@ -125,7 +125,7 @@ export function DashboardSidebar({ profile, onNavigate, isMobile = false }: Side
               <img src="/logo.png?v=3" alt="KlikForm Logo" className="w-full h-full object-cover" />
             </div>
             <h1 className="text-xl font-bold text-gray-900 tracking-tight whitespace-nowrap">
-              KlikForm
+              <span className="text-primary">Klik</span>Form
             </h1>
           </div>
         )}

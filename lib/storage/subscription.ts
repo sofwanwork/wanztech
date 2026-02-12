@@ -501,6 +501,30 @@ export async function canUpdateCertificate(): Promise<{ allowed: boolean; messag
   return { allowed: true };
 }
 
+// Check if user can create a new QR code
+export async function canCreateQRCode(): Promise<{ allowed: boolean; message?: string }> {
+  const { user } = await getUser();
+  const subscription = await getSubscription();
+  const limits = TIER_LIMITS[subscription.tier];
+
+  // Unlimited QR codes
+  if (limits.maxQRCodes === -1) {
+    return { allowed: true };
+  }
+
+  const { getUserQRCodeCount } = await import('@/lib/storage/qr-codes');
+  const count = await getUserQRCodeCount(user.id);
+
+  if (count >= limits.maxQRCodes) {
+    return {
+      allowed: false,
+      message: `Anda telah mencapai had ${limits.maxQRCodes} QR code untuk plan Free. Upgrade ke Pro untuk QR code tanpa had!`,
+    };
+  }
+
+  return { allowed: true };
+}
+
 // Get dashboard stats
 export async function getDashboardStats(): Promise<{
   subscription: Subscription;
