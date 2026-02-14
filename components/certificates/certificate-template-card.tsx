@@ -57,7 +57,7 @@ export function CertificateTemplateCard({ template }: CertificateTemplateCardPro
               <FileImage className="h-12 w-12 text-gray-300" />
             </div>
           )}
-          
+
           {/* Loading Overlay */}
           {isLoading && (
             <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-20 flex flex-col items-center justify-center">

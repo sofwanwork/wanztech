@@ -12,7 +12,7 @@ export default function useLocalStorage<T>(
       const item = window.localStorage.getItem(key);
       if (item) {
         const parsed = JSON.parse(item);
-        // eslint-disable-next-line react-hooks/set-state-in-effect
+        // Update value if different
         setValue((prev) => {
           // Only update if value is different (string comparison as simple check)
           if (JSON.stringify(prev) !== item) {

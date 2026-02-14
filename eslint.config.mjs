@@ -2,6 +2,8 @@ import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { FlatCompat } from '@eslint/eslintrc';
 import tseslint from 'typescript-eslint';
+import nextPlugin from '@next/eslint-plugin-next';
+import reactHooksPlugin from 'eslint-plugin-react-hooks';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -26,9 +28,23 @@ const eslintConfig = [
         ],
     },
     // Extend next/core-web-vitals
-    ...compat.extends('next/core-web-vitals'),
+    // ...compat.extends('next/core-web-vitals'),
     // TypeScript ESLint recommended config
     ...tseslint.configs.recommended,
+
+    // Manual Plugins Configuration
+    {
+        plugins: {
+            '@next/next': nextPlugin,
+            'react-hooks': reactHooksPlugin,
+        },
+        rules: {
+            ...nextPlugin.configs.recommended.rules,
+            ...nextPlugin.configs['core-web-vitals'].rules,
+            ...reactHooksPlugin.configs.recommended.rules,
+        }
+    },
+
     // Custom rule overrides
     {
         rules: {

@@ -6,16 +6,7 @@ import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import { useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import {
-  Bold,
-  Italic,
-  Link as LinkIcon,
-  List,
-  ListOrdered,
-  Quote,
-  Undo,
-  Redo,
-} from 'lucide-react';
+import { Bold, Italic, Link as LinkIcon, List, ListOrdered, Quote, Undo, Redo } from 'lucide-react';
 
 interface RichTextEditorProps {
   value: string;
@@ -149,11 +140,7 @@ export function RichTextEditor({
 
         <ToolbarDivider />
 
-        <ToolbarButton
-          onClick={setLink}
-          isActive={editor.isActive('customLink')}
-          title="Add Link"
-        >
+        <ToolbarButton onClick={setLink} isActive={editor.isActive('customLink')} title="Add Link">
           <LinkIcon className="w-4 h-4" />
         </ToolbarButton>
 

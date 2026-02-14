@@ -189,7 +189,7 @@ export async function checkCertificateByIC(
           if (nowMYT > expiryDate) {
             return {
               found: false,
-              error: form.eCertificateExpiredMessage || 'Pautan sijil ini telah luput'
+              error: form.eCertificateExpiredMessage || 'Pautan sijil ini telah luput',
             };
           }
         }
@@ -202,7 +202,6 @@ export async function checkCertificateByIC(
         };
       }
     }
-
 
     return { found: false, error: 'IC tidak dijumpai dalam rekod' };
   } catch (error) {

@@ -6,7 +6,13 @@ import { Form, Settings } from '@/lib/types';
 import { appendToSheet } from '@/lib/api/google-sheets';
 import { uploadToDrive } from '@/lib/api/google-drive';
 import { redirect } from 'next/navigation';
-import { canCreateForm, incrementFormCount, canUpdateForm, canSubmitForm, incrementSubmissionCount } from '@/lib/storage/subscription';
+import {
+  canCreateForm,
+  incrementFormCount,
+  canUpdateForm,
+  canSubmitForm,
+  incrementSubmissionCount,
+} from '@/lib/storage/subscription';
 
 // --- Types ---
 // Re-exporting Form types for client use if needed, but usually we just use the lib/storage types.
@@ -58,15 +64,26 @@ export async function createFormAction(formData: Partial<Form>) {
 }
 
 export async function updateFormAction(form: Form) {
-  // Check limits before update
-  const { allowed, message } = await canUpdateForm();
-  if (!allowed) {
-    return { success: false, error: message || 'Limit exceeded' };
-  }
+  try {
+    // Check limits before update
+    const { allowed, message } = await canUpdateForm();
+    if (!allowed) {
+      return { success: false, error: message || 'Limit exceeded' };
+    }
 
-  await saveForm(form);
-  // No redirect, just save state
-  return { success: true };
+    await saveForm(form);
+    // No redirect, just save state
+    return { success: true };
+  } catch (error) {
+    console.error('Update Form Action Error:', error);
+    return {
+      success: false,
+      error:
+        typeof error === 'object' && error !== null && 'message' in error
+          ? (error as { message: string }).message
+          : 'Failed to save form changes',
+    };
+  }
 }
 
 export async function deleteFormAction(id: string) {
@@ -134,10 +151,10 @@ export async function submitFormAction(
 
     // Check Required
     if (field.required && !value && value !== 0) {
-      // Check if field is actually visible? 
+      // Check if field is actually visible?
       // For strict security we should, but for now let's assume if it's required it must be present unless we implement full server-side conditional logic.
       // Relaxed check: Only error if we are sure.
-      // To be safe against "bypass", we really should validate. 
+      // To be safe against "bypass", we really should validate.
       // For this task, let's enforce basic non-empty if present.
     }
 

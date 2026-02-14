@@ -38,10 +38,10 @@ export default async function VerifyPage({ params }: PageProps) {
       formData={
         form
           ? {
-            id: form.id,
-            title: form.title,
-            templateId: form.eCertificateTemplate,
-          }
+              id: form.id,
+              title: form.title,
+              templateId: form.eCertificateTemplate,
+            }
           : null
       }
     />

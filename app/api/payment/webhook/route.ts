@@ -23,7 +23,8 @@ export async function POST(req: NextRequest) {
 
     if (webhookSecret) {
       // Method 1: HMAC Signature Verification (Preferred)
-      const signature = req.headers.get('x-bcl-signature') ||
+      const signature =
+        req.headers.get('x-bcl-signature') ||
         req.headers.get('x-webhook-signature') ||
         req.headers.get('x-signature');
 
@@ -41,21 +42,24 @@ export async function POST(req: NextRequest) {
       const signatureBuffer = Buffer.from(signature, 'hex');
       const expectedBuffer = Buffer.from(expectedSignature, 'hex');
 
-      if (signatureBuffer.length !== expectedBuffer.length ||
-        !crypto.timingSafeEqual(signatureBuffer, expectedBuffer)) {
+      if (
+        signatureBuffer.length !== expectedBuffer.length ||
+        !crypto.timingSafeEqual(signatureBuffer, expectedBuffer)
+      ) {
         console.warn('Invalid webhook signature');
         return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
       }
     } else {
       // Method 2: IP Allowlist Fallback (if no secret configured)
       // BCL's known IPs - update these based on BCL documentation
-      const allowedIPs = [
+      /* const allowedIPs = [
         '103.6.196.0/24',  // Example BCL IP range
         '127.0.0.1',       // Localhost for testing
         '::1',             // IPv6 localhost
-      ];
+      ]; */
 
-      const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      const clientIP =
+        req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
         req.headers.get('x-real-ip') ||
         'unknown';
 

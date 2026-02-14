@@ -292,7 +292,7 @@ function SettingsContent() {
           </Accordion>
         </CardContent>
       </Card>
-    </div >
+    </div>
   );
 }
 

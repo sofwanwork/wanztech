@@ -460,10 +460,11 @@ export function CertificateBuilderClient({
               return (
                 <div
                   key={el.id}
-                  className={`absolute cursor-move transition-shadow select-none ${isSelected
-                    ? 'ring-2 ring-primary ring-offset-2'
-                    : 'hover:ring-1 hover:ring-gray-300'
-                    }`}
+                  className={`absolute cursor-move transition-shadow select-none ${
+                    isSelected
+                      ? 'ring-2 ring-primary ring-offset-2'
+                      : 'hover:ring-1 hover:ring-gray-300'
+                  }`}
                   style={{
                     left: `${(el.x / template.width) * 100}%`,
                     top: `${(el.y / template.height) * 100}%`,

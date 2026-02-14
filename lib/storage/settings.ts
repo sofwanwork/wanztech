@@ -68,7 +68,9 @@ export async function saveSettings(settings: Settings): Promise<void> {
     user_id: user.id,
     google_client_email: settings.googleClientEmail ? encrypt(settings.googleClientEmail) : null,
     google_private_key: settings.googlePrivateKey ? encrypt(settings.googlePrivateKey) : null,
-    google_drive_folder_id: settings.googleDriveFolderId ? encrypt(settings.googleDriveFolderId) : null,
+    google_drive_folder_id: settings.googleDriveFolderId
+      ? encrypt(settings.googleDriveFolderId)
+      : null,
     user_personal_email: settings.userPersonalEmail || null,
   };
 

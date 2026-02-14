@@ -226,8 +226,6 @@
   cursor: pointer;
 }
 
-
-
 .ProseMirror strong,
 .ProseMirror b {
   font-weight: 700 !important;
@@ -242,11 +240,11 @@
 }
 
 /* Content first/last child margins */
-.rich-text-editor .tiptap> :first-child {
+.rich-text-editor .tiptap > :first-child {
   margin-top: 0;
 }
 
-.rich-text-editor .tiptap> :last-child {
+.rich-text-editor .tiptap > :last-child {
   margin-bottom: 0;
 }
 

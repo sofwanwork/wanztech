@@ -55,7 +55,9 @@ export async function getCertificateTemplate(id: string): Promise<CertificateTem
     .single();
 
   if (error || !data) {
-    console.error('Error fetching certificate template:', error);
+    if (error?.code !== 'PGRST116' && error?.code !== '22P02') {
+      console.error('Error fetching certificate template:', error);
+    }
     return null;
   }
 

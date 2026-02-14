@@ -226,7 +226,9 @@ function SortableField({
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor={`rating-min-label-${field.id}`}>Label for Min ({field.ratingConfig?.min || 1})</Label>
+                  <Label htmlFor={`rating-min-label-${field.id}`}>
+                    Label for Min ({field.ratingConfig?.min || 1})
+                  </Label>
                   <Input
                     id={`rating-min-label-${field.id}`}
                     placeholder="e.g. Poor"
@@ -244,7 +246,9 @@ function SortableField({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`rating-max-label-${field.id}`}>Label for Max ({field.ratingConfig?.max || 5})</Label>
+                  <Label htmlFor={`rating-max-label-${field.id}`}>
+                    Label for Max ({field.ratingConfig?.max || 5})
+                  </Label>
                   <Input
                     id={`rating-max-label-${field.id}`}
                     placeholder="e.g. Excellent"
@@ -268,7 +272,9 @@ function SortableField({
           {field.type === 'product' && (
             <div className="space-y-4 p-4 bg-slate-50 rounded-lg border border-slate-100">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Products</p>
+                <p className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  Products
+                </p>
                 <Button
                   variant="outline"
                   size="sm"
@@ -323,7 +329,12 @@ function SortableField({
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label htmlFor={`product-name-${product.id}`} className="text-xs text-slate-500">Product Name</Label>
+                        <Label
+                          htmlFor={`product-name-${product.id}`}
+                          className="text-xs text-slate-500"
+                        >
+                          Product Name
+                        </Label>
                         <Input
                           id={`product-name-${product.id}`}
                           value={product.name}
@@ -337,7 +348,12 @@ function SortableField({
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label htmlFor={`product-price-${product.id}`} className="text-xs text-slate-500">Price (MYR)</Label>
+                        <Label
+                          htmlFor={`product-price-${product.id}`}
+                          className="text-xs text-slate-500"
+                        >
+                          Price (MYR)
+                        </Label>
                         <Input
                           id={`product-price-${product.id}`}
                           type="number"
@@ -358,7 +374,12 @@ function SortableField({
 
                     <div className="space-y-1">
                       <div className="flex justify-between items-baseline">
-                        <Label htmlFor={`product-image-${product.id}`} className="text-xs text-slate-500">Image URL</Label>
+                        <Label
+                          htmlFor={`product-image-${product.id}`}
+                          className="text-xs text-slate-500"
+                        >
+                          Image URL
+                        </Label>
                         <span className="text-[10px] text-muted-foreground">
                           Rec: 4:3 Ratio (e.g. 800x600px)
                         </span>
@@ -397,80 +418,90 @@ function SortableField({
             field.type === 'textarea' ||
             field.type === 'email' ||
             field.type === 'number') && (
-              <div className="pt-4 border-t space-y-3">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Validation Rules
-                </p>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor={`validation-min-${field.id}`} className="text-sm">Min Length</Label>
-                    <Input
-                      id={`validation-min-${field.id}`}
-                      type="number"
-                      placeholder="0"
-                      value={field.validation?.minLength || ''}
-                      onChange={(e) =>
-                        updateField(index, {
-                          validation: {
-                            ...field.validation,
-                            minLength: e.target.value ? parseInt(e.target.value) : undefined,
-                          },
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`validation-max-${field.id}`} className="text-sm">Max Length</Label>
-                    <Input
-                      id={`validation-max-${field.id}`}
-                      type="number"
-                      placeholder="255"
-                      value={field.validation?.maxLength || ''}
-                      onChange={(e) =>
-                        updateField(index, {
-                          validation: {
-                            ...field.validation,
-                            maxLength: e.target.value ? parseInt(e.target.value) : undefined,
-                          },
-                        })
-                      }
-                    />
-                  </div>
+            <div className="pt-4 border-t space-y-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Validation Rules
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor={`validation-min-${field.id}`} className="text-sm">
+                    Min Length
+                  </Label>
+                  <Input
+                    id={`validation-min-${field.id}`}
+                    type="number"
+                    placeholder="0"
+                    value={field.validation?.minLength || ''}
+                    onChange={(e) =>
+                      updateField(index, {
+                        validation: {
+                          ...field.validation,
+                          minLength: e.target.value ? parseInt(e.target.value) : undefined,
+                        },
+                      })
+                    }
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`validation-pattern-${field.id}`} className="text-sm">Regex Pattern (Advanced)</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id={`validation-pattern-${field.id}`}
-                      placeholder="e.g. ^[0-9]+$"
-                      value={field.validation?.pattern || ''}
-                      onChange={(e) =>
-                        updateField(index, {
-                          validation: { ...field.validation, pattern: e.target.value },
-                        })
-                      }
-                    />
-                    <Select
-                      onValueChange={(val) =>
-                        updateField(index, {
-                          validation: { ...field.validation, pattern: val },
-                        })
-                      }
-                    >
-                      <SelectTrigger id={`validation-pattern-preset-${field.id}`} className="w-[130px]" aria-label="Regex Pattern Presets">
-                        <SelectValue placeholder="Presets" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="^[0-9]+$">Numbers</SelectItem>
-                        <SelectItem value="^[a-zA-Z]+$">Letters</SelectItem>
-                        <SelectItem value="^[^@]+@[^@]+\.[^@]+$">Email</SelectItem>
-                        <SelectItem value="^(\+?6?01)[0-46-9]-*[0-9]{7,8}$">Phone (MY)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Label htmlFor={`validation-max-${field.id}`} className="text-sm">
+                    Max Length
+                  </Label>
+                  <Input
+                    id={`validation-max-${field.id}`}
+                    type="number"
+                    placeholder="255"
+                    value={field.validation?.maxLength || ''}
+                    onChange={(e) =>
+                      updateField(index, {
+                        validation: {
+                          ...field.validation,
+                          maxLength: e.target.value ? parseInt(e.target.value) : undefined,
+                        },
+                      })
+                    }
+                  />
                 </div>
               </div>
-            )}
+              <div className="space-y-2">
+                <Label htmlFor={`validation-pattern-${field.id}`} className="text-sm">
+                  Regex Pattern (Advanced)
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    id={`validation-pattern-${field.id}`}
+                    placeholder="e.g. ^[0-9]+$"
+                    value={field.validation?.pattern || ''}
+                    onChange={(e) =>
+                      updateField(index, {
+                        validation: { ...field.validation, pattern: e.target.value },
+                      })
+                    }
+                  />
+                  <Select
+                    onValueChange={(val) =>
+                      updateField(index, {
+                        validation: { ...field.validation, pattern: val },
+                      })
+                    }
+                  >
+                    <SelectTrigger
+                      id={`validation-pattern-preset-${field.id}`}
+                      className="w-[130px]"
+                      aria-label="Regex Pattern Presets"
+                    >
+                      <SelectValue placeholder="Presets" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="^[0-9]+$">Numbers</SelectItem>
+                      <SelectItem value="^[a-zA-Z]+$">Letters</SelectItem>
+                      <SelectItem value="^[^@]+@[^@]+\.[^@]+$">Email</SelectItem>
+                      <SelectItem value="^(\+?6?01)[0-46-9]-*[0-9]{7,8}$">Phone (MY)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Conditional Logic Section */}
           {field.type !== 'separator' && (
@@ -492,7 +523,12 @@ function SortableField({
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center p-3 bg-slate-50 rounded-md border border-slate-100">
-                <span id={`condition-label-${field.id}`} className="text-sm text-slate-600 whitespace-nowrap">Show this field if</span>
+                <span
+                  id={`condition-label-${field.id}`}
+                  className="text-sm text-slate-600 whitespace-nowrap"
+                >
+                  Show this field if
+                </span>
                 <Select
                   value={field.conditional?.fieldId || 'none'}
                   onValueChange={(val) => {
@@ -505,7 +541,10 @@ function SortableField({
                     }
                   }}
                 >
-                  <SelectTrigger className="w-full sm:w-[180px] h-9 text-sm" aria-labelledby={`condition-label-${field.id}`}>
+                  <SelectTrigger
+                    className="w-full sm:w-[180px] h-9 text-sm"
+                    aria-labelledby={`condition-label-${field.id}`}
+                  >
                     <SelectValue placeholder="Select Question..." />
                   </SelectTrigger>
                   <SelectContent>

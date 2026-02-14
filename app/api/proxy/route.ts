@@ -19,16 +19,16 @@ export async function GET(request: NextRequest) {
     // Fetch the image
     const response = await fetch(url);
     if (!response.ok) {
-      return new NextResponse(`Failed to user fetch image: ${response.statusText}`, {
+      console.error(`Proxy fetch failed for ${url}: ${response.status} ${response.statusText}`);
+      return new NextResponse(`Failed to fetch image: ${response.statusText}`, {
         status: response.status,
       });
     }
 
     const contentType = response.headers.get('content-type') || 'application/octet-stream';
-    const buffer = await response.arrayBuffer();
 
-    // Return the image
-    return new NextResponse(Buffer.from(buffer), {
+    // Stream the response body directly
+    return new NextResponse(response.body, {
       headers: {
         'Content-Type': contentType,
         'Cache-Control': 'public, max-age=3600',

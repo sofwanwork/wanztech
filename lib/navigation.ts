@@ -15,21 +15,21 @@ export async function safeNavigate(
 ): Promise<void> {
   const now = Date.now();
   const timeSinceLastNavigation = now - lastNavigationTime;
-  
+
   // Rate limit: prevent rapid successive navigations
   if (timeSinceLastNavigation < MIN_NAVIGATION_INTERVAL) {
     console.debug('Navigation rate limited:', url);
     return;
   }
-  
+
   // Clear any pending navigation
   if (navigationTimeout) {
     clearTimeout(navigationTimeout);
     navigationTimeout = null;
   }
-  
+
   lastNavigationTime = now;
-  
+
   try {
     if (options?.replace) {
       router.replace(url, { scroll: options?.scroll !== false });
@@ -57,7 +57,7 @@ export function debouncedNavigate(
   if (navigationTimeout) {
     clearTimeout(navigationTimeout);
   }
-  
+
   navigationTimeout = setTimeout(() => {
     safeNavigate(router, url, { replace: true });
   }, delay);

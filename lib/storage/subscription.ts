@@ -408,9 +408,7 @@ export async function canAcceptSubmission(
 }
 
 // Check if form can accept more submissions
-export async function canSubmitForm(
-  formOwnerId: string
-): Promise<boolean> {
+export async function canSubmitForm(formOwnerId: string): Promise<boolean> {
   const supabase = await createClient();
 
   // Get form owner's subscription

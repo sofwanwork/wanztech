@@ -3,49 +3,32 @@ import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
 // Routes that require authentication
-const protectedRoutes = [
-    '/dashboard',
-    '/builder',
-    '/settings',
-    '/certificates',
-    '/qr-builder',
-];
+const protectedRoutes = ['/dashboard', '/builder', '/settings', '/certificates', '/qr-builder'];
 
 // Routes that are always public
-const publicRoutes = [
-    '/login',
-    '/form',
-    '/s',
-    '/check',
-    '/verify',
-    '/api',
-];
+const publicRoutes = ['/login', '/form', '/s', '/check', '/verify', '/api'];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // Skip public routes
-    if (publicRoutes.some(route => pathname.startsWith(route))) {
+    if (publicRoutes.some((route) => pathname.startsWith(route))) {
         return NextResponse.next();
     }
 
     // Skip static files and images
-    if (
-        pathname.startsWith('/_next') ||
-        pathname.startsWith('/favicon') ||
-        pathname.includes('.')
-    ) {
+    if (pathname.startsWith('/_next') || pathname.startsWith('/favicon') || pathname.includes('.')) {
         return NextResponse.next();
     }
 
     // Check if route requires authentication
-    const isProtected = protectedRoutes.some(route => pathname.startsWith(route));
+    const isProtected = protectedRoutes.some((route) => pathname.startsWith(route));
 
     if (!isProtected) {
         return NextResponse.next();
     }
 
-    // Create Supabase client for middleware
+    // Create Supabase client for proxy
     let response = NextResponse.next({
         request: {
             headers: request.headers,
@@ -61,9 +44,7 @@ export async function middleware(request: NextRequest) {
                     return request.cookies.getAll();
                 },
                 setAll(cookiesToSet) {
-                    cookiesToSet.forEach(({ name, value }) =>
-                        request.cookies.set(name, value)
-                    );
+                    cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
                     response = NextResponse.next({
                         request,
                     });
@@ -92,14 +73,18 @@ export async function middleware(request: NextRequest) {
                 (error && !user);
 
             if (isAuthError) {
-                console.error('Middleware Auth Error:', error);
+                // Suppress expected auth errors (like session expiry) from console.error
+                // Only log if it's an unusual error or for debugging
+                // console.log('Proxy: Redirecting to login due to auth error:', error.message);
+
                 const loginUrl = new URL('/login', request.url);
                 loginUrl.searchParams.set('redirect', pathname);
                 const redirectResponse = NextResponse.redirect(loginUrl);
 
                 // Clear all Supabase auth cookies to prevent stale token loops
                 // This is a critical step to break out of the "Invalid Refresh Token" loop
-                request.cookies.getAll().forEach(cookie => {
+                // This is a critical step to break out of the "Invalid Refresh Token" loop
+                request.cookies.getAll().forEach((cookie) => {
                     if (cookie.name.startsWith('sb-')) {
                         redirectResponse.cookies.delete(cookie.name);
                     }
@@ -113,15 +98,16 @@ export async function middleware(request: NextRequest) {
             loginUrl.searchParams.set('redirect', pathname);
             return NextResponse.redirect(loginUrl);
         }
-    } catch (err) {
+    } catch {
         // Catch any unexpected errors during auth check
-        console.error('Middleware Unexpected Error:', err);
+        // Only log truly unexpected errors
+        // console.error('Proxy Unexpected Error:', err);
         const loginUrl = new URL('/login', request.url);
         loginUrl.searchParams.set('redirect', pathname);
         const redirectResponse = NextResponse.redirect(loginUrl);
 
         // Safety clear cookies here too
-        request.cookies.getAll().forEach(cookie => {
+        request.cookies.getAll().forEach((cookie) => {
             if (cookie.name.startsWith('sb-')) {
                 redirectResponse.cookies.delete(cookie.name);
             }

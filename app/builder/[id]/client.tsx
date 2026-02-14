@@ -95,11 +95,16 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
         updateFormAction(form)
           .then((result) => {
             if (!result.success) {
-              console.error('Auto-save failed:', result.error);
+              console.warn('Auto-save failed:', result.error);
+              // Optional: Toast might be too aggressive if it happens frequently.
+              // keeping it for now but user can decide to remove it.
               toast.error(`Auto-save failed: ${result.error}`);
             }
           })
-          .catch((err) => console.error('Auto-save network error', err));
+          .catch((err) => {
+            // Log as warning to avoid console noise, as it will likely retry or be transient
+            console.warn('Auto-save network error (retrying...):', err);
+          });
       }
     }, 1000);
 
@@ -130,7 +135,13 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
     } catch (error: unknown) {
       // Next.js redirect() throws a special error with digest 'NEXT_REDIRECT'
       // We should re-throw it so the redirect actually works
-      if (error && typeof error === 'object' && 'digest' in error && typeof (error as Record<string, unknown>).digest === 'string' && ((error as Record<string, unknown>).digest as string).startsWith('NEXT_REDIRECT')) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'digest' in error &&
+        typeof (error as Record<string, unknown>).digest === 'string' &&
+        ((error as Record<string, unknown>).digest as string).startsWith('NEXT_REDIRECT')
+      ) {
         throw error;
       }
       toast.error('Failed to delete form');
@@ -305,7 +316,12 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                   />
                 </div>
                 <div className="space-y-2">
-                  <p id="form-description-label" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Description</p>
+                  <p
+                    id="form-description-label"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Description
+                  </p>
                   <RichTextEditor
                     id="form-description"
                     value={form.description || ''}
@@ -332,8 +348,6 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                     />
                   )}
                 </div>
-
-
 
                 <div className="space-y-2">
                   <Label htmlFor="logo-alignment">Logo Alignment</Label>
@@ -378,12 +392,16 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                     }
                   />
                   {form.theme?.logo && (
-                    <div className={cn(
-                      "mt-2 border rounded bg-slate-50 p-2 flex",
-                      form.theme?.logoAlignment === 'center' ? 'justify-center' :
-                        form.theme?.logoAlignment === 'right' ? 'justify-end' :
-                          'justify-start'
-                    )}>
+                    <div
+                      className={cn(
+                        'mt-2 border rounded bg-slate-50 p-2 flex',
+                        form.theme?.logoAlignment === 'center'
+                          ? 'justify-center'
+                          : form.theme?.logoAlignment === 'right'
+                            ? 'justify-end'
+                            : 'justify-start'
+                      )}
+                    >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={getProxiedImageUrl(form.theme.logo)}
@@ -614,7 +632,9 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                 </div>
 
                 <div className="space-y-2 sm:col-span-2">
-                  <p className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Background Pattern</p>
+                  <p className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Background Pattern
+                  </p>
                   <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
                     {[
                       { id: 'none', label: 'None', pattern: 'bg-gray-100' },
@@ -674,10 +694,11 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                             },
                           }))
                         }
-                        className={`flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all ${(form.theme?.backgroundPattern || 'none') === p.id
-                          ? 'border-primary bg-primary/5'
-                          : 'border-gray-200 hover:border-gray-300'
-                          }`}
+                        className={`flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all ${
+                          (form.theme?.backgroundPattern || 'none') === p.id
+                            ? 'border-primary bg-primary/5'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
                       >
                         <div className={`w-10 h-10 rounded-md ${p.pattern} border`} />
                         <span className="text-xs font-medium">{p.label}</span>
@@ -775,7 +796,9 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                   {/* Template Gallery - User Created Certificates */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Select Certificate Template</p>
+                      <p className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                        Select Certificate Template
+                      </p>
                       <Link href="/ecert/builder">
                         <Button variant="outline" size="sm" className="gap-1">
                           <Plus className="h-4 w-4" />
@@ -805,10 +828,11 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                             onClick={() =>
                               setForm((f) => ({ ...f, eCertificateTemplate: cert.id }))
                             }
-                            className={`cursor-pointer rounded-lg border-2 overflow-hidden transition-all relative group ${form.eCertificateTemplate === cert.id
-                              ? 'border-primary ring-2 ring-primary/20'
-                              : 'border-gray-200 hover:border-gray-300'
-                              }`}
+                            className={`cursor-pointer rounded-lg border-2 overflow-hidden transition-all relative group ${
+                              form.eCertificateTemplate === cert.id
+                                ? 'border-primary ring-2 ring-primary/20'
+                                : 'border-gray-200 hover:border-gray-300'
+                            }`}
                           >
                             {/* Thumbnail */}
                             <div
@@ -942,7 +966,9 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
 
                   <div className="space-y-4 pt-4 border-t">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="geofencing-enabled" className="text-base">Geofencing (Location Lock)</Label>
+                      <Label htmlFor="geofencing-enabled" className="text-base">
+                        Geofencing (Location Lock)
+                      </Label>
                       <Switch
                         id="geofencing-enabled"
                         checked={form.attendanceSettings?.geofence?.enabled || false}
@@ -1163,7 +1189,7 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
             </Card>
           </div>
         </div>
-      </main >
-    </div >
+      </main>
+    </div>
   );
 }

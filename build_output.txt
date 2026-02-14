@@ -1,0 +1,59 @@
+
+> klikform@0.1.0 build
+> next build
+
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+✓ Compiled successfully in 70s
+  Running next.config.js provided runAfterProductionCompile ...
+✓ Completed runAfterProductionCompile in 2120ms
+  Running TypeScript ...
+  Collecting page data using 3 workers ...
+⚠ Using edge runtime on a page currently disables static generation for that page
+  Generating static pages using 3 workers (0/17) ...
+  Generating static pages using 3 workers (4/17) 
+  Generating static pages using 3 workers (8/17) 
+  Generating static pages using 3 workers (12/17) 
+✓ Generating static pages using 3 workers (17/17) in 931.1ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ○ /_not-found
+├ ƒ /api/cron/subscription-check
+├ ƒ /api/payment/initiate
+├ ƒ /api/payment/webhook
+├ ƒ /api/proxy
+├ ƒ /api/service-email
+├ ƒ /auth/callback
+├ ƒ /builder/[id]
+├ ƒ /certificates
+├ ƒ /certificates/builder
+├ ƒ /certificates/builder/[id]
+├ ƒ /certificates/builder/[id]/preview
+├ ƒ /check/[formId]
+├ ƒ /form/[id]
+├ ƒ /forms
+├ ƒ /icon
+├ ○ /login
+├ ƒ /pricing
+├ ƒ /qr-builder
+├ ƒ /qr-builder/[id]
+├ ○ /reset-password
+├ ○ /robots.txt
+├ ƒ /s/[code]
+├ ƒ /settings
+├ ○ /sitemap.xml
+└ ƒ /verify/[id]
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

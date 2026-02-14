@@ -14,7 +14,7 @@ export function DashboardSearch() {
 
   const applySearch = (nextTerm: string) => {
     if (isSubmitting) return; // Prevent overlapping requests
-    
+
     const params = new URLSearchParams(searchParams);
     if (nextTerm) {
       params.set('q', nextTerm);

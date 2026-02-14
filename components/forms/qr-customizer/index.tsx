@@ -355,7 +355,9 @@ export function QrCustomizer({ url, settings, onSettingsChange }: QrCustomizerPr
           {/* Logo Tab */}
           <TabsContent value="logo" className="space-y-4 pt-4">
             <div className="space-y-2">
-              <p className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Upload Logo (Optional)</p>
+              <p className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                Upload Logo (Optional)
+              </p>
               <div className="flex gap-2 items-center">
                 <div className="relative">
                   <Input

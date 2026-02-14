@@ -4,7 +4,7 @@ import { Subscription, Usage, TIER_LIMITS } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { FileText, Users, Crown, Zap, TrendingUp } from 'lucide-react';
+import { Users, Crown, Zap, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PricingModal } from '@/components/pricing-modal';
 
@@ -70,7 +70,9 @@ export function DashboardStats({ subscription, usage, totalForms }: DashboardSta
       {/* Forms Created Card */}
       <Card className="border-0 shadow-sm bg-white overflow-hidden">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-gray-500">New Forms (This Month)</CardTitle>
+          <CardTitle className="text-sm font-medium text-gray-500">
+            New Forms (This Month)
+          </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
           <div className="flex items-end gap-2 mb-2">

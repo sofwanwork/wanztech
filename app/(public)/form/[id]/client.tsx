@@ -329,10 +329,12 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
     const patternMap: Record<string, string> = {
       dots: 'radial-gradient(circle, #00000040 1px, transparent 1px)',
       grid: 'linear-gradient(#00000020 1px, transparent 1px), linear-gradient(90deg, #00000020 1px, transparent 1px)',
-      diagonal: 'repeating-linear-gradient(45deg, transparent, transparent 10px, #00000015 10px, #00000015 11px)',
+      diagonal:
+        'repeating-linear-gradient(45deg, transparent, transparent 10px, #00000015 10px, #00000015 11px)',
       waves: 'radial-gradient(circle at 50% 0, #00000040 10px, transparent 10.5px)',
       circles: 'radial-gradient(circle at center, #00000040 2px, transparent 2px)',
-      triangles: 'linear-gradient(135deg, #00000020 25%, transparent 25%), linear-gradient(225deg, #00000020 25%, transparent 25%)',
+      triangles:
+        'linear-gradient(135deg, #00000020 25%, transparent 25%), linear-gradient(225deg, #00000020 25%, transparent 25%)',
     };
     const sizeMap: Record<string, string> = {
       dots: '12px 12px',
@@ -397,9 +399,12 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
                 <div
                   className={cn(
                     'mb-6 flex',
-                    (form.theme?.logoAlignment === 'center' || (!form.theme?.logoAlignment && form.theme?.headerAlignment === 'center')) ? 'justify-center' :
-                      form.theme?.logoAlignment === 'right' ? 'justify-end' :
-                        'justify-start'
+                    form.theme?.logoAlignment === 'center' ||
+                      (!form.theme?.logoAlignment && form.theme?.headerAlignment === 'center')
+                      ? 'justify-center'
+                      : form.theme?.logoAlignment === 'right'
+                        ? 'justify-end'
+                        : 'justify-start'
                   )}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}

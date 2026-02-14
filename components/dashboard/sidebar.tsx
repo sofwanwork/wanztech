@@ -32,7 +32,10 @@ interface SidebarProps {
 export function DashboardSidebar({ profile, onNavigate, isMobile = false }: SidebarProps) {
   const pathname = usePathname();
   // Initialize with false (expanded) by default
-  const [storedCollapsed, setStoredCollapsed] = useLocalStorage<boolean>('sidebar-collapsed', false);
+  const [storedCollapsed, setStoredCollapsed] = useLocalStorage<boolean>(
+    'sidebar-collapsed',
+    false
+  );
   const isCollapsed = isMobile ? false : storedCollapsed;
   const setIsCollapsed = setStoredCollapsed;
 
@@ -43,7 +46,7 @@ export function DashboardSidebar({ profile, onNavigate, isMobile = false }: Side
 
   // Prevent hydration mismatch
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // Set mounted to true on client side
     setMounted(true);
   }, []);
 

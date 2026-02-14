@@ -14,7 +14,7 @@ export function getProxiedImageUrl(url: string) {
     // Use our own proxy to bypass CORS/Hotlinking issues
     // Format: https://lh3.googleusercontent.com/d/FILE_ID
     const directUrl = `https://lh3.googleusercontent.com/d/${match[1]}`;
-    return `/api/proxy-image?url=${encodeURIComponent(directUrl)}`;
+    return `/api/proxy?url=${encodeURIComponent(directUrl)}`;
   }
   return url;
 }
