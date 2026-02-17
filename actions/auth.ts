@@ -22,7 +22,7 @@ export async function resetPasswordAction(email: string) {
   // However, usually headers().get('origin') works.
 
   const headers = await import('next/headers');
-  const origin = (await headers.headers()).get('origin') || 'http://localhost:3000'; // Fallback for dev
+  const origin = (await headers.headers()).get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'https://www.klikform.com';
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${origin}/auth/callback?next=/auth/reset-password`,
