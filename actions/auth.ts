@@ -25,7 +25,7 @@ export async function resetPasswordAction(email: string) {
   const origin = (await headers.headers()).get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'https://www.klikform.com';
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${origin}/auth/callback?next=/auth/reset-password`,
+    redirectTo: `${origin}/auth/callback?next=/reset-password`,
   });
 
   if (error) {
