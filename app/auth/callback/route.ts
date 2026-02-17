@@ -8,6 +8,11 @@ export async function GET(request: Request) {
   const type = searchParams.get('type');
   const next = searchParams.get('next') ?? '/';
 
+  // Check for error params from Supabase (e.g. expired link, access denied)
+  const error = searchParams.get('error');
+  const errorDescription = searchParams.get('error_description');
+  const errorCode = searchParams.get('error_code');
+
   function getRedirectUrl(path: string) {
     const forwardedHost = request.headers.get('x-forwarded-host');
     const isLocalEnv = process.env.NODE_ENV === 'development';
@@ -18,6 +23,12 @@ export async function GET(request: Request) {
     } else {
       return `${origin}${path}`;
     }
+  }
+
+  // If Supabase returned an error (e.g. expired link), redirect with a clear message
+  if (error || errorCode) {
+    const message = errorDescription || error || 'Authentication failed';
+    return NextResponse.redirect(getRedirectUrl(`/login?error=${encodeURIComponent(message)}`));
   }
 
   const supabase = await createClient();
