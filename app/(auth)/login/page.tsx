@@ -115,14 +115,17 @@ export default function LoginPage() {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-      redirectTo: `${location.origin}/auth/callback?next=/reset-password`,
-    });
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success('Check your email for the password reset link');
-      setShowForgotPassword(false);
+    try {
+      const { resetPasswordAction } = await import('@/actions/auth');
+      const result = await resetPasswordAction(resetEmail);
+      if (result?.error) {
+        toast.error(result.error);
+      } else {
+        toast.success('Check your email for the password reset link');
+        setShowForgotPassword(false);
+      }
+    } catch {
+      toast.error('Failed to send reset link. Please try again.');
     }
     setLoading(false);
   }

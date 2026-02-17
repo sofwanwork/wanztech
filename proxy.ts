@@ -5,11 +5,8 @@ import { createServerClient } from '@supabase/ssr';
 // Routes that require authentication
 const protectedRoutes = ['/dashboard', '/builder', '/settings', '/certificates', '/qr-builder'];
 
-// Routes that are always public (no cookie refresh needed)
+// Routes that are always public
 const publicRoutes = ['/login', '/form', '/s', '/check', '/verify', '/api'];
-
-// Routes that are public but need cookie refresh (e.g. for PKCE code verifier)
-const publicRoutesWithCookieRefresh = ['/auth/callback'];
 
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
@@ -19,18 +16,22 @@ export async function proxy(request: NextRequest) {
         return NextResponse.next();
     }
 
-    // Check if this is an auth callback route that needs cookie handling
-    const needsCookieRefreshOnly = publicRoutesWithCookieRefresh.some((route) => pathname.startsWith(route));
+    // Auth callback needs to pass through WITHOUT any Supabase client interaction.
+    // Creating a Supabase client or calling getUser() here would consume the PKCE
+    // code verifier cookie before the route handler can use it.
+    if (pathname.startsWith('/auth/callback')) {
+        return NextResponse.next();
+    }
 
-    // Skip public routes that don't need cookie refresh
-    if (!needsCookieRefreshOnly && publicRoutes.some((route) => pathname.startsWith(route))) {
+    // Skip public routes
+    if (publicRoutes.some((route) => pathname.startsWith(route))) {
         return NextResponse.next();
     }
 
     // Check if route requires authentication
     const isProtected = protectedRoutes.some((route) => pathname.startsWith(route));
 
-    if (!isProtected && !needsCookieRefreshOnly) {
+    if (!isProtected) {
         return NextResponse.next();
     }
 
@@ -68,12 +69,6 @@ export async function proxy(request: NextRequest) {
             data: { user },
             error,
         } = await supabase.auth.getUser();
-
-        // For routes that only need cookie refresh (like auth/callback),
-        // return response with refreshed cookies without checking auth
-        if (needsCookieRefreshOnly) {
-            return response;
-        }
 
         if (error || !user) {
             // Check for specific error types that indicate session issues
