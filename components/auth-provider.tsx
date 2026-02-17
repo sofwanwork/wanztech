@@ -17,7 +17,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // handle token refresh or any other logic if needed
       }
 
-      if (event === 'SIGNED_OUT') {
+      if (event === 'PASSWORD_RECOVERY') {
+        // User clicked the password reset link from email
+        router.push('/reset-password');
+      } else if (event === 'SIGNED_OUT') {
         router.refresh();
         router.push('/login');
       } else if (event === 'SIGNED_IN') {
