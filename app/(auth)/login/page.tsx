@@ -121,7 +121,7 @@ export default function LoginPage() {
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success('Check your email for the password reset link');
+      toast.success('Check your email and click the reset link');
       setShowForgotPassword(false);
     }
     setLoading(false);
