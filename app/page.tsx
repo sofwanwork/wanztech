@@ -14,6 +14,7 @@ import {
   Users,
   ArrowRight,
 } from 'lucide-react';
+import { LandingMobileMenu } from '@/components/landing-mobile-menu';
 
 export default async function LandingPage() {
   const cookieStore = await cookies();
@@ -76,14 +77,17 @@ export default async function LandingPage() {
             </Link>
           </nav>
           <div className="flex items-center gap-4">
-            <Link href="/login">
-              <Button variant="ghost" size="sm">
-                Log Masuk
-              </Button>
-            </Link>
-            <Link href="/login?tab=signup">
-              <Button size="sm">Daftar Percuma</Button>
-            </Link>
+            <div className="hidden md:flex items-center gap-4">
+              <Link href="/login">
+                <Button variant="ghost" size="sm">
+                  Log Masuk
+                </Button>
+              </Link>
+              <Link href="/login?tab=signup">
+                <Button size="sm">Daftar Percuma</Button>
+              </Link>
+            </div>
+            <LandingMobileMenu />
           </div>
         </div>
       </header>

@@ -8,7 +8,7 @@ const protectedRoutes = ['/dashboard', '/builder', '/settings', '/certificates',
 // Routes that are always public
 const publicRoutes = ['/login', '/form', '/s', '/check', '/verify', '/api'];
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // Skip static files and images

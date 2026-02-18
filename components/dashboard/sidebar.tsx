@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Loader2,
   QrCode,
+  Link as LinkIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createFormAction } from '@/actions/forms';
@@ -84,6 +85,12 @@ export function DashboardSidebar({ profile, onNavigate, isMobile = false }: Side
       href: '/qr-builder',
       icon: QrCode,
       active: pathname === '/qr-builder',
+    },
+    {
+      title: 'URL Shortener',
+      href: '/shortener',
+      icon: LinkIcon,
+      active: pathname === '/shortener',
     },
   ];
 

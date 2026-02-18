@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, Download, Loader2 } from 'lucide-react';
@@ -15,11 +15,19 @@ interface CertificateQrCardProps {
 
 export function CertificateQrCard({ formId, formTitle, templateName }: CertificateQrCardProps) {
   const [downloading, setDownloading] = useState(false);
-  const checkUrl = `/check/${formId}`;
+  const [origin, setOrigin] = useState('');
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
+
+  const checkUrl = `${origin}/check/${formId}`;
 
   // High resolution QR (500x500)
-  const qrUrlPreview = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(checkUrl)}`;
-  const qrUrlHighRes = `https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data=${encodeURIComponent(checkUrl)}`;
+  // Only generate QR if origin is available to avoid relative URLs
+  const qrData = origin ? encodeURIComponent(checkUrl) : '';
+  const qrUrlPreview = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrData}`;
+  const qrUrlHighRes = `https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data=${qrData}`;
 
   const handleDownload = async () => {
     try {

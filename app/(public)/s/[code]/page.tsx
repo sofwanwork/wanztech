@@ -1,5 +1,6 @@
 import { getFormByShortCode } from '@/lib/storage/forms';
-import { notFound } from 'next/navigation';
+import { getShortLinkBySlug, incrementShortLinkClicks } from '@/lib/storage/short-links';
+import { notFound, redirect } from 'next/navigation';
 import { PublicFormClient } from '@/app/(public)/form/[id]/client'; // Import the client component
 import type { Metadata } from 'next';
 
@@ -66,6 +67,21 @@ export default async function ShortLinkPage({ params }: ShortLinkPageProps) {
 
   if (!code) notFound();
 
+  // 1. Check for URL Shortener link first
+  const shortLink = await getShortLinkBySlug(code);
+  if (shortLink) {
+    // Increment clicks (fire and forget to not block redirect speed)
+    // In serverless, we should await or use waitUntil if available, but for now await is safer to ensure it runs
+    try {
+      await incrementShortLinkClicks(shortLink.id);
+    } catch (e) {
+      console.error('Failed to increment clicks', e);
+    }
+
+    redirect(shortLink.original_url);
+  }
+
+  // 2. Fallback to Form Short Code
   const form = await getFormByShortCode(code);
 
   if (!form) {

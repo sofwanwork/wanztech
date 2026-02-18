@@ -251,9 +251,9 @@ function SettingsContent() {
 
               {subscription?.currentPeriodEnd && (
                 <div>
-                  <Label>Renewal Date</Label>
+                  <Label>Expiry Date</Label>
                   <p className="text-sm text-gray-600 mt-1">
-                    Your plan renews on {new Date(subscription.currentPeriodEnd).toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    Valid until {new Date(subscription.currentPeriodEnd).toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' })}
                   </p>
                 </div>
               )}

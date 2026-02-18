@@ -5,6 +5,7 @@ import { Crown, Zap, Users } from 'lucide-react';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { PlanCard } from '@/components/pricing/plan-card';
+import { LandingMobileMenu } from '@/components/landing-mobile-menu';
 
 export default async function PricingPage() {
   // Check auth status for header button
@@ -145,14 +146,17 @@ export default async function PricingPage() {
             </Link>
           </nav>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" asChild>
-              <Link href={user ? '/forms' : '/login'}>{user ? 'Dashboard' : 'Log Masuk'}</Link>
-            </Button>
-            {!user && (
-              <Button size="sm" asChild>
-                <Link href="/login?tab=signup">Daftar Percuma</Link>
+            <div className="hidden md:flex items-center gap-4">
+              <Button variant="ghost" size="sm" asChild>
+                <Link href={user ? '/forms' : '/login'}>{user ? 'Dashboard' : 'Log Masuk'}</Link>
               </Button>
-            )}
+              {!user && (
+                <Button size="sm" asChild>
+                  <Link href="/login?tab=signup">Daftar Percuma</Link>
+                </Button>
+              )}
+            </div>
+            <LandingMobileMenu />
           </div>
         </div>
       </header>

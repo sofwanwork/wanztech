@@ -18,15 +18,16 @@ export default function Icon() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #451263 0%, #6b21a8 100%)',
-        borderRadius: '22%',
+        background: '#ffffff', // White background
+        borderRadius: '20%', // Rounded square (squircle)
+        border: '1px solid #f3f4f6', // Subtle border for visibility on light mode
       }}
     >
-      <svg width="24" height="24" viewBox="0 0 100 100" fill="none" style={{ color: 'white' }}>
+      <svg width="24" height="24" viewBox="0 0 100 100" fill="none" style={{ color: '#7c3aed' }}>
         {/* Simplified KlikForm logo - two interlocking circles */}
-        <circle cx="35" cy="50" r="25" stroke="white" strokeWidth="6" fill="none" />
-        <circle cx="65" cy="50" r="25" stroke="white" strokeWidth="6" fill="none" />
-        <ellipse cx="50" cy="50" rx="12" ry="20" stroke="white" strokeWidth="5" fill="none" />
+        <circle cx="35" cy="50" r="25" stroke="#7c3aed" strokeWidth="6" fill="none" />
+        <circle cx="65" cy="50" r="25" stroke="#7c3aed" strokeWidth="6" fill="none" />
+        <ellipse cx="50" cy="50" rx="12" ry="20" stroke="#7c3aed" strokeWidth="5" fill="none" />
       </svg>
     </div>,
     {

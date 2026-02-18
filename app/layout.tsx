@@ -76,14 +76,15 @@ export const metadata: Metadata = {
     images: ['/og-image.png'],
     creator: '@klikform',
   },
-  icons: {
-    icon: [
-      { url: '/favicon.ico' },
-      { url: '/logo.png', sizes: '192x192', type: 'image/png' },
-      { url: '/logo.png', sizes: '512x512', type: 'image/png' },
-    ],
-    apple: [{ url: '/logo.png' }],
-  },
+  // icons removed to allow app/icon.tsx to take precedence
+  // icons: {
+  //   icon: [
+  //     { url: '/favicon.ico' },
+  //     { url: '/logo.png', sizes: '192x192', type: 'image/png' },
+  //     { url: '/logo.png', sizes: '512x512', type: 'image/png' },
+  //   ],
+  //   apple: [{ url: '/logo.png' }],
+  // },
   manifest: '/site.webmanifest',
   alternates: {
     canonical: 'https://klikform.com',

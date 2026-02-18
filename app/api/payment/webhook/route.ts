@@ -50,25 +50,25 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
       }
     } else {
-      // Method 2: IP Allowlist Fallback (if no secret configured)
-      // BCL's known IPs - update these based on BCL documentation
-      /* const allowedIPs = [
-        '103.6.196.0/24',  // Example BCL IP range
-        '127.0.0.1',       // Localhost for testing
-        '::1',             // IPv6 localhost
-      ]; */
+      // CRITICAL SECURITY FIX:
+      // In production, we MUST have a secret configured.
+      if (process.env.NODE_ENV === 'production') {
+        console.error('CRITICAL: BCL_WEBHOOK_SECRET is not set in production environment.');
+        return NextResponse.json(
+          { error: 'Server misconfiguration: Webhook secret missing' },
+          { status: 500 }
+        );
+      }
 
+      // Method 2: IP Allowlist Fallback (Development Only)
       const clientIP =
         req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
         req.headers.get('x-real-ip') ||
         'unknown';
 
-      // In production without webhook secret, log warning but allow
-      // This is a fallback - you should configure BCL_WEBHOOK_SECRET
-      if (process.env.NODE_ENV === 'production') {
-        console.warn(`⚠️ Webhook received without BCL_WEBHOOK_SECRET configured. IP: ${clientIP}`);
-        console.warn('Configure BCL_WEBHOOK_SECRET for proper security.');
-      }
+      console.warn(
+        `⚠️ Development Mode: Webhook received without secret. Allowlisting IP: ${clientIP}`
+      );
     }
 
     // Parse the verified body

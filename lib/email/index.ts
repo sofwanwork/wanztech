@@ -29,7 +29,7 @@ export async function sendEmail({ to, subject, html }: EmailOptions) {
 
   try {
     const { data, error } = await client.emails.send({
-      from: 'KlikForm <noreply@klikform.com>',
+      from: process.env.RESEND_FROM_EMAIL || 'KlikForm <noreply@klikform.com>',
       to,
       subject,
       html,
