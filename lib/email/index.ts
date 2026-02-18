@@ -453,3 +453,137 @@ export function getPaymentSuccessEmail(
     html: emailWrapper(content, '#10b981'),
   };
 }
+
+// Re-engagement email for inactive users (2 weeks)
+export function getInactivityReminderEmail(userName: string, loginUrl: string) {
+  const content = `
+        <!-- Header -->
+        <tr>
+          <td style="background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%); padding: 40px 40px 30px; text-align: center;">
+            <div style="font-size: 56px; margin-bottom: 16px;">👋</div>
+            <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 700;">Kami Rindu Anda!</h1>
+            <p style="margin: 12px 0 0 0; color: rgba(255,255,255,0.9); font-size: 15px;">Dah lama tak nampak anda di KlikForm</p>
+          </td>
+        </tr>
+        
+        <!-- Body -->
+        <tr>
+          <td style="padding: 40px;">
+            <p style="margin: 0 0 20px 0; color: #1f2937; font-size: 16px; line-height: 1.6;">
+              Hai <strong>${userName}</strong> 👋
+            </p>
+            
+            <p style="margin: 0 0 24px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+              Anda belum log masuk ke KlikForm selama 2 minggu. Jangan biarkan borang dan data anda terbiar!
+            </p>
+            
+            <!-- Feature reminder -->
+            <div style="background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); border-radius: 16px; padding: 24px; margin: 24px 0;">
+              <p style="margin: 0 0 16px 0; color: #5b21b6; font-size: 15px; font-weight: 600;">Apa yang menunggu anda:</p>
+              <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                <span style="color: #7C3AED; margin-right: 12px;">📋</span>
+                <span style="color: #4b5563; font-size: 14px;">Semak responses borang anda</span>
+              </div>
+              <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                <span style="color: #7C3AED; margin-right: 12px;">📊</span>
+                <span style="color: #4b5563; font-size: 14px;">Lihat statistik terkini</span>
+              </div>
+              <div style="display: flex; align-items: center;">
+                <span style="color: #7C3AED; margin-right: 12px;">🏆</span>
+                <span style="color: #4b5563; font-size: 14px;">Hantar sijil digital kepada peserta</span>
+              </div>
+            </div>
+            
+            <!-- CTA Button -->
+            <div style="text-align: center; margin: 32px 0;">
+              <a href="${loginUrl}" style="display: inline-block; background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%); color: white; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 14px rgba(124, 58, 237, 0.4);">
+                Log Masuk Sekarang →
+              </a>
+            </div>
+            
+            <p style="margin: 24px 0 0 0; color: #9ca3af; font-size: 13px; text-align: center;">
+              Jika anda tidak mahu menerima email ini, anda boleh abaikannya.
+            </p>
+          </td>
+        </tr>
+    `;
+
+  return {
+    subject: `👋 Kami rindu anda, ${userName}! Log masuk ke KlikForm`,
+    html: emailWrapper(content, '#7C3AED'),
+  };
+}
+
+// Deletion warning email (3 days before auto-delete)
+export function getAccountDeletionWarningEmail(
+  userName: string,
+  deletionDate: string,
+  loginUrl: string
+) {
+  const content = `
+        <!-- Header -->
+        <tr>
+          <td style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); padding: 40px 40px 30px; text-align: center;">
+            <div style="font-size: 56px; margin-bottom: 16px;">⚠️</div>
+            <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 700;">Akaun Akan Dipadam!</h1>
+            <p style="margin: 12px 0 0 0; color: rgba(255,255,255,0.9); font-size: 15px;">Tindakan diperlukan dalam masa 3 hari</p>
+          </td>
+        </tr>
+        
+        <!-- Body -->
+        <tr>
+          <td style="padding: 40px;">
+            <p style="margin: 0 0 20px 0; color: #1f2937; font-size: 16px; line-height: 1.6;">
+              Hai <strong>${userName}</strong>,
+            </p>
+            
+            <!-- Alert Box -->
+            <div style="background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-radius: 16px; padding: 24px; margin: 24px 0; border-left: 4px solid #dc2626;">
+              <p style="margin: 0 0 8px 0; color: #991b1b; font-size: 15px; font-weight: 600;">
+                🗑️ Akaun anda dijadualkan untuk dipadam pada:
+              </p>
+              <p style="margin: 0; color: #b91c1c; font-size: 20px; font-weight: 800;">
+                ${deletionDate}
+              </p>
+            </div>
+            
+            <p style="margin: 0 0 24px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+              Akaun anda telah <strong>tidak aktif selama 1 bulan</strong> dan tiada sebarang borang yang dicipta. Untuk mengelakkan pemadaman, sila log masuk sekarang.
+            </p>
+            
+            <!-- What will be lost -->
+            <div style="background: #f9fafb; border-radius: 12px; padding: 20px; margin: 24px 0;">
+              <p style="margin: 0 0 12px 0; color: #374151; font-size: 14px; font-weight: 600;">Jika dipadam, anda akan kehilangan:</p>
+              <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                <span style="color: #ef4444; margin-right: 12px;">✕</span>
+                <span style="color: #4b5563; font-size: 14px;">Semua data akaun anda</span>
+              </div>
+              <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                <span style="color: #ef4444; margin-right: 12px;">✕</span>
+                <span style="color: #4b5563; font-size: 14px;">Semua borang (jika ada)</span>
+              </div>
+              <div style="display: flex; align-items: center;">
+                <span style="color: #ef4444; margin-right: 12px;">✕</span>
+                <span style="color: #4b5563; font-size: 14px;">Semua responses dan data</span>
+              </div>
+            </div>
+            
+            <!-- CTA Button -->
+            <div style="text-align: center; margin: 32px 0;">
+              <a href="${loginUrl}" style="display: inline-block; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4);">
+                🔓 Log Masuk & Simpan Akaun
+              </a>
+            </div>
+            
+            <p style="margin: 24px 0 0 0; color: #9ca3af; font-size: 13px; text-align: center;">
+              Log masuk sebelum ${deletionDate} untuk mengelakkan pemadaman akaun.
+            </p>
+          </td>
+        </tr>
+    `;
+
+  return {
+    subject: `⚠️ URGENT: Akaun KlikForm anda akan dipadam pada ${deletionDate}`,
+    html: emailWrapper(content, '#dc2626'),
+  };
+}
