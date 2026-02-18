@@ -258,11 +258,13 @@ export function DashboardSidebar({ profile, onNavigate, isMobile = false }: Side
 
       {/* Footer / User Profile */}
       <div className="p-3 border-t border-gray-100 bg-gray-50/50">
-        <div
+        <Link
+          href="/settings"
           className={cn(
-            'flex items-center gap-3 mb-2 px-1 transition-all',
+            'flex items-center gap-3 mb-2 px-1 py-1 rounded-md transition-all hover:bg-gray-100 cursor-pointer',
             isCollapsed ? 'justify-center flex-col' : 'justify-start'
           )}
+          title="View Profile"
         >
           <Avatar className="h-9 w-9 border border-gray-200 shrink-0">
             <AvatarImage src={profile?.avatar_url || ''} />
@@ -276,10 +278,10 @@ export function DashboardSidebar({ profile, onNavigate, isMobile = false }: Side
               <p className="text-sm font-medium text-gray-900 truncate">
                 {profile?.full_name || profile?.username || 'User'}
               </p>
-              <p className="text-xs text-gray-500 truncate">Dashboard User</p>
+              <p className="text-xs text-gray-500 truncate">View Profile & Settings</p>
             </div>
           )}
-        </div>
+        </Link>
         <form
           action={() => {
             startLogout(async () => {
