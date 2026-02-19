@@ -111,13 +111,19 @@ export async function getFormById(id: string): Promise<Form | undefined> {
   if (error || !data) return undefined;
 
   // Fetch subscription tier using Admin Client
-  // Safest approach to ensure we always get the tier regardless of current user context
-  const adminSupabase = createAdminClient();
-  const { data: subscription } = await adminSupabase
-    .from('subscriptions')
-    .select('tier')
-    .eq('user_id', data.user_id)
-    .single();
+  // Wrapped in try-catch: if SUPABASE_SERVICE_ROLE_KEY is not configured, degrade gracefully.
+  let subscription: { tier: string } | null = null;
+  try {
+    const adminSupabase = createAdminClient();
+    const { data: sub } = await adminSupabase
+      .from('subscriptions')
+      .select('tier')
+      .eq('user_id', data.user_id)
+      .single();
+    subscription = sub;
+  } catch {
+    // Admin client unavailable (e.g. missing SUPABASE_SERVICE_ROLE_KEY) — default to 'free'
+  }
 
   return {
     id: data.id,
@@ -147,13 +153,19 @@ export async function getFormByShortCode(code: string): Promise<Form | undefined
   if (error || !data) return undefined;
 
   // Fetch subscription tier using Admin Client strictly for this check
-  // This is because the public user visiting the form might not have permissions to read the subscriptions table
-  const adminSupabase = createAdminClient();
-  const { data: subscription } = await adminSupabase
-    .from('subscriptions')
-    .select('tier')
-    .eq('user_id', data.user_id)
-    .single();
+  // Wrapped in try-catch: if SUPABASE_SERVICE_ROLE_KEY is not configured, degrade gracefully.
+  let subscription: { tier: string } | null = null;
+  try {
+    const adminSupabase = createAdminClient();
+    const { data: sub } = await adminSupabase
+      .from('subscriptions')
+      .select('tier')
+      .eq('user_id', data.user_id)
+      .single();
+    subscription = sub;
+  } catch {
+    // Admin client unavailable (e.g. missing SUPABASE_SERVICE_ROLE_KEY) — default to 'free'
+  }
 
   return {
     id: data.id,
