@@ -35,32 +35,20 @@ export async function GET(request: NextRequest) {
         const userEmail = userInfo.data.email;
 
         // 4. Save tokens to DB
-        const updateData = {
+        // 4. Save tokens to DB
+        const updateData: any = {
             user_id: user.id,
             google_access_token: tokens.access_token ? encrypt(tokens.access_token) : null,
-            google_refresh_token: tokens.refresh_token ? encrypt(tokens.refresh_token) : null, // Refresh token is only returned on first consent!
             google_token_expiry: tokens.expiry_date,
-            // If we got an email, save it as "Client Email" for display consistency, 
-            // or we can use a new field. For now, let's reuse google_client_email if empty, 
-            // or just rely on the UI checking tokens.
-            // But typically we want to show "Connected as..."
-            // Let's UPDATE google_client_email so the UI shows it, 
-            // even though it's technically a User Email not a Service Account Email.
             google_client_email: userEmail ? encrypt(userEmail) : undefined,
         };
 
-        // Note: If refresh_token is missing (user re-authed without prompt='consent'), 
-        // we should NOT overwrite the existing one with null.
-        // However, our getAuthUrl forces prompt='consent', so we should get it.
-        // But just in case:
-        if (!tokens.refresh_token) {
-            delete updateData.google_refresh_token;
+        // Only update refresh token if we got a new one!
+        if (tokens.refresh_token) {
+            updateData.google_refresh_token = encrypt(tokens.refresh_token);
         }
 
         const { error: dbError } = await supabase.from('settings').upsert(updateData, { onConflict: 'user_id' }); // Upsert by user_id
-        // Note: upsert might require all non-null fields if row doesn't exist. 
-        // But since we are likely updating, it should be fine. 
-        // If it's a new row, user_id is enough.
 
         if (dbError) {
             console.error('Database save error:', dbError);
