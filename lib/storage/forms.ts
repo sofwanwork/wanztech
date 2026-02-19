@@ -1,4 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@/utils/supabase/admin';
 import { Form, Profile } from '@/lib/types';
 
 // Helper to get user ID
@@ -109,8 +110,10 @@ export async function getFormById(id: string): Promise<Form | undefined> {
 
   if (error || !data) return undefined;
 
-  // Fetch subscription tier
-  const { data: subscription } = await supabase
+  // Fetch subscription tier using Admin Client
+  // Safest approach to ensure we always get the tier regardless of current user context
+  const adminSupabase = createAdminClient();
+  const { data: subscription } = await adminSupabase
     .from('subscriptions')
     .select('tier')
     .eq('user_id', data.user_id)
@@ -143,8 +146,10 @@ export async function getFormByShortCode(code: string): Promise<Form | undefined
 
   if (error || !data) return undefined;
 
-  // Fetch subscription tier
-  const { data: subscription } = await supabase
+  // Fetch subscription tier using Admin Client strictly for this check
+  // This is because the public user visiting the form might not have permissions to read the subscriptions table
+  const adminSupabase = createAdminClient();
+  const { data: subscription } = await adminSupabase
     .from('subscriptions')
     .select('tier')
     .eq('user_id', data.user_id)

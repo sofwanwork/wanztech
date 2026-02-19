@@ -1,4 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@/utils/supabase/admin';
 import { Subscription, Usage, SubscriptionTier } from '@/lib/types';
 import { TIER_LIMITS } from '@/lib/constants/subscription-tiers';
 
@@ -247,7 +248,8 @@ export async function incrementFormCount(): Promise<void> {
 
 // Increment submission count
 export async function incrementSubmissionCount(formOwnerId: string): Promise<void> {
-  const supabase = await createClient();
+  // Use Admin Client safely because this runs on public form submission
+  const supabase = createAdminClient();
   const month = getCurrentMonth();
 
   const { data: existing } = await supabase
@@ -409,11 +411,10 @@ export async function canAcceptSubmission(
 
 // Check if form can accept more submissions
 export async function canSubmitForm(formOwnerId: string): Promise<boolean> {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
-  // Get form owner's subscription
-  // We can't use getUser() because this runs for public submissions (no auth)
-  // We need to fetch subscription by userId directly.
+  // Get form owner's subscription using Admin Client
+  // This runs for public submissions (no auth), so we must bypass RLS
   const { data: sub } = await supabase
     .from('subscriptions')
     .select('tier')

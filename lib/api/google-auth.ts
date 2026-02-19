@@ -14,11 +14,12 @@ const SCOPES = [
 
 export const oauth2Client = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 
-export function getAuthUrl() {
+export function getAuthUrl(state?: string) {
     return oauth2Client.generateAuthUrl({
         access_type: 'offline', // Critical for refresh token
         scope: SCOPES,
         prompt: 'consent', // Force consent to ensure refresh token is returned
+        ...(state ? { state } : {}),
     });
 }
 

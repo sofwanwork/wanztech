@@ -30,10 +30,31 @@ const nextConfig: NextConfig = {
     ];
   },
   async headers() {
+    // Security: Content-Security-Policy tuned for KlikForm stack
+    // (Next.js inline scripts, Google Fonts, Supabase, Sentry, BCL.my)
+    const cspDirectives = [
+      `default-src 'self'`,
+      // Next.js requires unsafe-inline for its runtime scripts & styles
+      `script-src 'self' 'unsafe-inline' 'unsafe-eval' *.vercel-scripts.com`,
+      `style-src 'self' 'unsafe-inline' fonts.googleapis.com`,
+      `font-src 'self' fonts.gstatic.com`,
+      // Allow images from any HTTPS source (cover images, avatars, etc.)
+      `img-src 'self' data: blob: https:`,
+      // Allow connections to Supabase, Sentry tunnel, and BCL.my payment API
+      `connect-src 'self' *.supabase.co *.supabase.in *.sentry.io wss://*.supabase.co https://bcl.my`,
+      `frame-ancestors 'none'`,
+      `base-uri 'self'`,
+      `form-action 'self'`,
+    ].join('; ');
+
     return [
       {
         source: '/(.*)',
         headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: cspDirectives,
+          },
           {
             key: 'X-Frame-Options',
             value: 'DENY',

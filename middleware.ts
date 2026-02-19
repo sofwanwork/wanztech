@@ -2,8 +2,17 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
+// Security: Prevent open redirect attacks by ensuring redirect path is always
+// a relative path (starts with / but not //) and not a full external URL.
+function getSafeRedirectPath(path: string, fallback = '/forms'): string {
+    if (path.startsWith('/') && !path.startsWith('//')) {
+        return path;
+    }
+    return fallback;
+}
+
 // Routes that require authentication
-const protectedRoutes = ['/dashboard', '/builder', '/settings', '/certificates', '/qr-builder'];
+const protectedRoutes = ['/dashboard', '/builder', '/settings', '/certificates', '/qr-builder', '/forms', '/shortener'];
 
 // Routes that are always public
 const publicRoutes = ['/login', '/form', '/s', '/check', '/verify', '/api'];
@@ -85,7 +94,7 @@ export async function middleware(request: NextRequest) {
                 // console.log('Proxy: Redirecting to login due to auth error:', error.message);
 
                 const loginUrl = new URL('/login', request.url);
-                loginUrl.searchParams.set('redirect', pathname);
+                loginUrl.searchParams.set('redirect', getSafeRedirectPath(pathname));
                 const redirectResponse = NextResponse.redirect(loginUrl);
 
                 // Clear all Supabase auth cookies to prevent stale token loops
@@ -102,7 +111,7 @@ export async function middleware(request: NextRequest) {
 
             // Normal case: user not authenticated, redirect to login
             const loginUrl = new URL('/login', request.url);
-            loginUrl.searchParams.set('redirect', pathname);
+            loginUrl.searchParams.set('redirect', getSafeRedirectPath(pathname));
             return NextResponse.redirect(loginUrl);
         }
     } catch {
@@ -110,7 +119,7 @@ export async function middleware(request: NextRequest) {
         // Only log truly unexpected errors
         // console.error('Proxy Unexpected Error:', err);
         const loginUrl = new URL('/login', request.url);
-        loginUrl.searchParams.set('redirect', pathname);
+        loginUrl.searchParams.set('redirect', getSafeRedirectPath(pathname));
         const redirectResponse = NextResponse.redirect(loginUrl);
 
         // Safety clear cookies here too

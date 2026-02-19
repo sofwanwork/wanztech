@@ -24,3 +24,29 @@ export function stripHtml(html: string): string {
   if (!html) return '';
   return html.replace(/<[^>]*>/g, '').trim();
 }
+
+// Basic sanitization for Rich Text to prevent XSS
+// Blocks common XSS vectors from Tiptap/ProseMirror rich text output.
+// Note: For maximum security, consider DOMPurify on client or isomorphic-dompurify on server.
+export function sanitizeHtml(html: string): string {
+  if (!html) return '';
+  return html
+    // Remove script/iframe/object/embed tags entirely (with content)
+    .replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, '')
+    .replace(/<iframe\b[^>]*>([\s\S]*?)<\/iframe>/gim, '')
+    .replace(/<object\b[^>]*>([\s\S]*?)<\/object>/gim, '')
+    .replace(/<embed\b[^>]*\/?>/gim, '')
+    // Remove inline event handlers (onclick, onload, onerror, etc.)
+    .replace(/\bon\w+\s*=\s*"[^"]*"/gim, '')
+    .replace(/\bon\w+\s*=\s*'[^']*'/gim, '')
+    .replace(/\bon\w+\s*=[^\s>]*/gim, '')
+    // Block javascript: and vbscript: in href/src/action attributes
+    .replace(/\bhref\s*=\s*["']?\s*javascript:/gim, 'href="about:blank" data-blocked="')
+    .replace(/\bhref\s*=\s*["']?\s*vbscript:/gim, 'href="about:blank" data-blocked="')
+    .replace(/\bsrc\s*=\s*["']?\s*javascript:/gim, 'src="" data-blocked="')
+    // Block data: URLs in src (can execute scripts in some browsers)
+    .replace(/\bsrc\s*=\s*["']?\s*data:/gim, 'src="" data-blocked="')
+    // Catch any remaining bare javascript: references
+    .replace(/javascript:/gim, '')
+    .replace(/vbscript:/gim, '');
+}

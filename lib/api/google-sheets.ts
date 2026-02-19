@@ -68,7 +68,17 @@ export async function appendToSheet(
       if (value === null || value === undefined) {
         sanitizedData[key] = '';
       } else {
-        sanitizedData[key] = value;
+        // Prevent CSV Injection / Formula Injection
+        let stringValue = String(value);
+        if (
+          stringValue.startsWith('=') ||
+          stringValue.startsWith('+') ||
+          stringValue.startsWith('-') ||
+          stringValue.startsWith('@')
+        ) {
+          stringValue = "'" + stringValue;
+        }
+        sanitizedData[key] = stringValue;
       }
     });
 

@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { cn, getProxiedImageUrl } from '@/lib/utils';
+import { cn, getProxiedImageUrl, sanitizeHtml } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Loader2, CheckCircle2, List } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -433,7 +433,7 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
               {form.description && (
                 <div
                   className="ProseMirror text-gray-600 mt-2 [&>p]:mb-0 [&>p:empty]:h-3 [&_strong]:font-bold [&_b]:font-bold font-sans"
-                  dangerouslySetInnerHTML={{ __html: form.description }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(form.description) }}
                 />
               )}
             </CardHeader>

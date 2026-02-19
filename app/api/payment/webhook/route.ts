@@ -76,8 +76,6 @@ export async function POST(req: NextRequest) {
     const supabase = await createClient();
     const { id: transactionId } = Object.fromEntries(req.nextUrl.searchParams);
 
-    console.log('BCL Webhook received (verified):', body);
-
     // Verify payment status
     const isSuccessful =
       body.status === 'paid' ||

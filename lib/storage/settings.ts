@@ -1,4 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@/utils/supabase/admin';
 import { Settings } from '@/lib/types';
 import { encrypt, decrypt } from '@/lib/encryption';
 
@@ -34,11 +35,12 @@ export async function getSettings(): Promise<Settings | undefined> {
   };
 }
 
-// Get settings by form ID (for public form submission - doesn't require auth)
+// Get settings by form ID (for public form submission - using admin client to bypass RLS)
 export async function getSettingsByFormId(formId: string): Promise<Settings | undefined> {
   const supabase = await createClient();
 
   // First, get the form to find the owner (user_id)
+  // Forms are public readable, so standard client is fine here.
   const { data: formData, error: formError } = await supabase
     .from('forms')
     .select('user_id')
@@ -47,8 +49,10 @@ export async function getSettingsByFormId(formId: string): Promise<Settings | un
 
   if (formError || !formData) return undefined;
 
-  // Then get the settings for that user
-  const { data, error } = await supabase
+  // Then get the settings for that user using Admin Client
+  // Public users strictly cannot read settings table via RLS
+  const adminSupabase = createAdminClient();
+  const { data, error } = await adminSupabase
     .from('settings')
     .select('*')
     .eq('user_id', formData.user_id)

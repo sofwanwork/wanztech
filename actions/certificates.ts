@@ -4,6 +4,26 @@ import { GoogleSpreadsheet } from 'google-spreadsheet';
 import { JWT } from 'google-auth-library';
 import { getFormById } from '@/lib/storage/forms';
 import { getSettingsByFormId } from '@/lib/storage/settings';
+import { headers as getNextHeaders } from 'next/headers';
+
+// ─── Simple In-Memory Rate Limiter ──────────────────────────────────────────────
+// Resets on server cold start (per-instance). Good enough for MVP.
+// For distributed deployments, replace with Redis-based rate limiting.
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 10;          // max requests per window
+const RATE_WINDOW_MS = 60_000;  // 1 minute
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return false;
+  }
+  if (entry.count >= RATE_LIMIT) return true;
+  entry.count++;
+  return false;
+}
 
 export interface CertificateCheckResult {
   found: boolean;
@@ -25,6 +45,15 @@ export async function checkCertificateByIC(
   ic: string
 ): Promise<CertificateCheckResult> {
   try {
+    // --- Rate Limiting (Security: Prevent IC Enumeration / Bruteforce) ---
+    const headersList = await getNextHeaders();
+    const forwarded = headersList.get('x-forwarded-for');
+    const ip = forwarded ? forwarded.split(',')[0].trim() : 'unknown';
+
+    if (isRateLimited(ip)) {
+      return { found: false, error: 'Terlalu banyak percubaan. Sila cuba lagi selepas 1 minit.' };
+    }
+
     // Get form and settings
     const form = await getFormById(formId);
     if (!form) {

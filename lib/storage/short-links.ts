@@ -1,4 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@/utils/supabase/admin';
 import { TIER_LIMITS } from '@/lib/constants/subscription-tiers';
 import { getSubscription } from '@/lib/storage/subscription';
 
@@ -45,10 +46,29 @@ export async function createShortLink(slug: string, originalUrl: string): Promis
     // Basic validation
     if (!slug || !originalUrl) throw new Error('Missing fields');
 
-    // Ensure originalUrl has protocol
-    let url = originalUrl.trim();
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        url = 'https://' + url;
+    // Validate slug format — only allow safe alphanumeric slugs
+    const SLUG_REGEX = /^[a-zA-Z0-9-_]{3,50}$/;
+    if (!SLUG_REGEX.test(slug)) {
+        throw new Error('Slug mesti 3-50 aksara. Hanya huruf, nombor, "-" dan "_" dibenarkan.');
+    }
+
+    // Validate URL — use URL constructor to ensure only http/https are accepted
+    let url: string;
+    try {
+        let rawUrl = originalUrl.trim();
+        // Prepend https if missing a scheme
+        if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
+            rawUrl = 'https://' + rawUrl;
+        }
+        const parsed = new URL(rawUrl);
+        // Security: Only allow http and https to prevent javascript:, data:, etc.
+        if (!['http:', 'https:'].includes(parsed.protocol)) {
+            throw new Error('URL mesti bermula dengan http:// atau https://');
+        }
+        url = parsed.toString();
+    } catch (e) {
+        if (e instanceof Error && e.message.includes('mesti')) throw e;
+        throw new Error('URL tidak sah. Sila masukkan URL yang betul.');
     }
 
     // Check limits
@@ -126,32 +146,21 @@ export async function getShortLinkBySlug(slug: string): Promise<ShortLink | unde
 }
 
 export async function incrementShortLinkClicks(id: string): Promise<void> {
-    const supabase = await createClient();
+    // Use adminClient to bypass RLS — public visitors don't have auth,
+    // so the regular anon client cannot UPDATE the row. Same pattern as incrementSubmissionCount().
+    const supabase = createAdminClient();
 
-    // Use rpc if safe, or verify logic. 
-    // For simplicity and since RLS allows update if we set it up, but strictly we only allowed users to manage their own links.
-    // We need a way to increment clicks publicly.
-    // The 'Public can view links by slug' policy exists.
-    // If we want public to increment clicks, we need an RLS policy for UPDATE (clicks only) or use a secure rpc/service role.
-    // Since we are using server actions/functions, createClient() uses standard anon key.
-    // We probably need to use a Service Role client or an RPC for incrementing clicks if RLS restricts updates.
-    // OR, we can just leave it for now or assume user can't update.
-    // Wait, if I'm the owner I can update. If I'm a visitor, I can't.
-    // FOR NOW: Let's skip incrementing if it fails, or rely on service role if strictly needed.
-    // actually, let's try to update and ignore error for MVP or use RPC.
+    const { data: existing } = await supabase
+        .from('short_links')
+        .select('clicks')
+        .eq('id', id)
+        .single();
 
-    // Correction: To properly increment clicks reliably without exposing full update access to public, 
-    // usually we'd use an Postgres RPC function `increment_clicks(row_id)`.
-    // But to avoid complex SQL setup for the user right now, I will use a Service Role client HERE if possible,
-    // OR just skip the increment for non-owners for now (MVP).
-    // Actually, standard practice for simple apps: just allow public update on 'clicks' column? unsafe.
-    // Best bet: RPC.
-    // Fallback since I can't easily ask user to create RPC: 
-    // I will TRY to update. If it fails due to RLS, so be it (analytics will be owner-only or broken).
-    // Alternative: Use Supabase Service Role Key if available in env (often SUPABASE_SERVICE_ROLE_KEY).
+    if (!existing) return;
 
-    // Let's implement the update logic. If it fails, we catch and ignore.
-    /*
-    await supabase.rpc('increment_clicks', { row_id: id });
-    */
+    await supabase
+        .from('short_links')
+        .update({ clicks: (existing.clicks || 0) + 1 })
+        .eq('id', id);
 }
+

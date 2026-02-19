@@ -81,9 +81,6 @@ export async function POST(req: NextRequest) {
       // Optional: let_user_choose_payment: true // Allow user to choose payment method
     };
 
-    console.log('BCL Request URL:', `${bclUrl}/payment-link`);
-    console.log('BCL Request Payload:', JSON.stringify(payload, null, 2));
-
     // Call BCL.my API
     const response = await fetch(`${bclUrl}/payment-link`, {
       method: 'POST',
@@ -96,7 +93,6 @@ export async function POST(req: NextRequest) {
     });
 
     const data = await response.json();
-    console.log('BCL API Response:', JSON.stringify(data, null, 2));
 
     if (!response.ok || !data.success) {
       console.error('BCL API Error:', data);

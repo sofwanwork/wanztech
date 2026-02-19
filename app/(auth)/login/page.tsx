@@ -42,6 +42,16 @@ export default function LoginPage() {
       setActiveTab('signup');
     }
   }, []);
+
+  // Security: Only allow safe relative redirect paths (never external URLs)
+  function getSafeLoginRedirect(): string {
+    const params = new URLSearchParams(window.location.search);
+    const redirectTo = params.get('redirect') || '';
+    if (redirectTo.startsWith('/') && !redirectTo.startsWith('//')) {
+      return redirectTo;
+    }
+    return '/forms';
+  }
   const [signupSuccess, setSignupSuccess] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
@@ -80,7 +90,8 @@ export default function LoginPage() {
       setLoading(false);
     } else {
       toast.success('Welcome back!');
-      router.push('/');
+      const redirectTo = getSafeLoginRedirect();
+      router.push(redirectTo);
       router.refresh();
       setLoading(false);
     }

@@ -9,24 +9,34 @@ function formatPrivateKey(key: string): string {
   return clean;
 }
 
-export async function uploadToDrive(file: File, folderId?: string) {
+// Define auth type
+type GoogleAuthSettings = {
+  googleAccessToken?: string;
+  googleClientEmail?: string;
+  googlePrivateKey?: string;
+};
+
+export async function uploadToDrive(
+  file: File,
+  folderId?: string,
+  authSettings?: GoogleAuthSettings
+) {
   try {
-    const settings = await getSettings();
+    let settings: GoogleAuthSettings | undefined = authSettings;
+
+    // If no auth provided, try to fetch from current user context (requires auth)
     if (!settings) {
-      throw new Error('Settings not found');
+      const dbSettings = await getSettings();
+      if (!dbSettings) {
+        throw new Error('Settings not found');
+      }
+      settings = dbSettings;
     }
 
     let auth;
 
     // Check for OAuth first
     if (settings.googleAccessToken) {
-      // We should really handle token refresh here too, but for now assuming valid or relying on upper layer to refresh?
-      // Actually, uploadToDrive is usually called from actions/forms.ts right before appendToSheet.
-      // If we handle refresh in actions/forms.ts (which we plan to), we can pass the VALID token here?
-      // But uploadToDrive currently fetches settings internally.
-      // We should PROBABLY allow passing settings or token optionally, or refreshing here.
-      // Let's implement basic check and usage here. Ideally we should centralize the "get valid token" logic.
-      // But for now:
       const { google } = await import('googleapis');
       const oauth2Client = new google.auth.OAuth2();
       oauth2Client.setCredentials({ access_token: settings.googleAccessToken });
