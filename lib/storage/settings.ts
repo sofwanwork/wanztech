@@ -28,6 +28,9 @@ export async function getSettings(): Promise<Settings | undefined> {
     googlePrivateKey: decrypt(data.google_private_key),
     googleDriveFolderId: decrypt(data.google_drive_folder_id),
     userPersonalEmail: data.user_personal_email,
+    googleAccessToken: decrypt(data.google_access_token),
+    googleRefreshToken: decrypt(data.google_refresh_token),
+    googleTokenExpiry: data.google_token_expiry,
   };
 }
 
@@ -58,6 +61,9 @@ export async function getSettingsByFormId(formId: string): Promise<Settings | un
     googlePrivateKey: decrypt(data.google_private_key),
     googleDriveFolderId: decrypt(data.google_drive_folder_id),
     userPersonalEmail: data.user_personal_email,
+    googleAccessToken: decrypt(data.google_access_token),
+    googleRefreshToken: decrypt(data.google_refresh_token),
+    googleTokenExpiry: data.google_token_expiry,
   };
 }
 
@@ -72,7 +78,41 @@ export async function saveSettings(settings: Settings): Promise<void> {
       ? encrypt(settings.googleDriveFolderId)
       : null,
     user_personal_email: settings.userPersonalEmail || null,
+    // OAuth Fields - preserve existing if not provided (though usually we save what we have)
+    // Actually, saveSettings usually receives a full object from the form.
+    // But for OAuth, the callback updates these fields directly in DB.
+    // If we save from the Settings form, we might overwrite them with undefined if the form doesn't include them?
+    // The Settings form (client side) calls `getSettings` which returns them.
+    // So if we pass them back, we should save them.
+    google_access_token: settings.googleAccessToken ? encrypt(settings.googleAccessToken) : undefined, // undefined to skip update if missing? No, standard upsert replaces.
+    // Wait, the Settings page form DOES NOT have fields for tokens.
+    // So if users click "Save Settings", `settings.googleAccessToken` will be undefined.
+    // If we send `null` or `undefined` to upsert, it might overwrite existing tokens!
+    // We should NOT update tokens here if they are undefined, 
+    // OR we must ensure getSettings returns them and the form retains them.
+    // Strategy: Only update fields that are explicitly in the `settings` object AND relevant for the form.
+    // Since `saveSettingsAction` takes a `Settings` object, let's look at `actions/forms.ts`.
+    // It passes strict structure.
   };
+
+  // Filter out undefined keys to avoid overwriting with null if we don't want to?
+  // Supabase upsert: if value is missing from object, it doesn't touch the column? No, that's 'update'.
+  // 'upsert' requires a full row usually or defaults?
+  // Actually, supabase-js `upsert`... if we omit a key, does it set to null or keep existing?
+  // It effectively REPLACES the row if it exists (update).
+  // If we omit a column in the `updates` object, it SHOULD keep the existing value for that column (partial update).
+  // Let's verify: "Performing an UPSERT... If the row exists, the columns included in the object are updated."
+  // So omitting them is safer if the frontend doesn't send them.
+
+  if (settings.googleAccessToken !== undefined) {
+    (settingsData as any).google_access_token = settings.googleAccessToken ? encrypt(settings.googleAccessToken) : null;
+  }
+  if (settings.googleRefreshToken !== undefined) {
+    (settingsData as any).google_refresh_token = settings.googleRefreshToken ? encrypt(settings.googleRefreshToken) : null;
+  }
+  if (settings.googleTokenExpiry !== undefined) {
+    (settingsData as any).google_token_expiry = settings.googleTokenExpiry;
+  }
 
   const { error } = await supabase.from('settings').upsert(settingsData);
 

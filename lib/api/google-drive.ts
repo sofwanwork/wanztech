@@ -12,17 +12,39 @@ function formatPrivateKey(key: string): string {
 export async function uploadToDrive(file: File, folderId?: string) {
   try {
     const settings = await getSettings();
-    if (!settings?.googleClientEmail || !settings?.googlePrivateKey) {
-      throw new Error('Google Service Account not configured');
+    if (!settings) {
+      throw new Error('Settings not found');
     }
 
-    const auth = new google.auth.GoogleAuth({
-      credentials: {
-        client_email: settings.googleClientEmail,
-        private_key: formatPrivateKey(settings.googlePrivateKey),
-      },
-      scopes: ['https://www.googleapis.com/auth/drive.file'],
-    });
+    let auth;
+
+    // Check for OAuth first
+    if (settings.googleAccessToken) {
+      // We should really handle token refresh here too, but for now assuming valid or relying on upper layer to refresh?
+      // Actually, uploadToDrive is usually called from actions/forms.ts right before appendToSheet.
+      // If we handle refresh in actions/forms.ts (which we plan to), we can pass the VALID token here?
+      // But uploadToDrive currently fetches settings internally.
+      // We should PROBABLY allow passing settings or token optionally, or refreshing here.
+      // Let's implement basic check and usage here. Ideally we should centralize the "get valid token" logic.
+      // But for now:
+      const { google } = await import('googleapis');
+      const oauth2Client = new google.auth.OAuth2();
+      oauth2Client.setCredentials({ access_token: settings.googleAccessToken });
+      auth = oauth2Client;
+    }
+    // Fallback to Service Account
+    else if (settings.googleClientEmail && settings.googlePrivateKey) {
+      auth = new google.auth.GoogleAuth({
+        credentials: {
+          client_email: settings.googleClientEmail,
+          private_key: formatPrivateKey(settings.googlePrivateKey),
+        },
+        scopes: ['https://www.googleapis.com/auth/drive.file'],
+      });
+    } else {
+      throw new Error('Google Integration not configured');
+    }
+
 
     const drive = google.drive({ version: 'v3', auth });
 

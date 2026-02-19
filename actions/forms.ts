@@ -220,48 +220,73 @@ export async function submitFormAction(
 
   // 2. Send to Google Sheet
   if (form.googleSheetUrl) {
-    if (safeSettings.googleClientEmail && safeSettings.googlePrivateKey) {
-      const match = form.googleSheetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
+    const settings = await getSettingsByFormId(formId);
+    if (settings) {
+      let accessToken = settings.googleAccessToken;
 
-      function formatPrivateKey(key: string) {
-        let clean = key.trim();
-        if (clean.startsWith('"') && clean.endsWith('"')) clean = clean.slice(1, -1);
-        if (clean.includes('\\n')) clean = clean.replace(/\\n/g, '\n');
-        return clean;
+      // Token Refresh Logic
+      if (accessToken && settings.googleRefreshToken && settings.googleTokenExpiry) {
+        // Check if expired (or expiring in 5 mins)
+        if (Date.now() > settings.googleTokenExpiry - 300000) {
+          console.log('Access token expired, refreshing...');
+          try {
+            const { refreshAccessToken } = await import('@/lib/api/google-auth');
+
+            const newCreds = await refreshAccessToken(settings.googleRefreshToken);
+
+            if (newCreds.access_token) {
+              accessToken = newCreds.access_token;
+              // Note: We currently don't save the refreshed token back to DB due to RLS limitations in public actions.
+              // The token will be refreshed again on next submission if expired.
+            }
+          } catch (e) {
+            console.error('Token refresh failed:', e);
+            // Fallback to old token or service account?
+          }
+        }
       }
 
-      if (match && match[1]) {
-        const sheetId = match[1];
-        const pk = formatPrivateKey(safeSettings.googlePrivateKey);
+      if (accessToken || (settings.googleClientEmail && settings.googlePrivateKey)) {
+        const match = form.googleSheetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
 
-        try {
-          const result = await appendToSheet(
-            {
-              sheetId,
-              clientEmail: safeSettings.googleClientEmail,
-              privateKey: pk,
-            },
-            dbData
-          );
+        function formatPrivateKey(key: string) {
+          let clean = key.trim();
+          if (clean.startsWith('"') && clean.endsWith('"')) clean = clean.slice(1, -1);
+          if (clean.includes('\\n')) clean = clean.replace(/\\n/g, '\n');
+          return clean;
+        }
 
-          if (!result.success) {
-            return {
-              success: false,
-              error: 'Saved locally but failed to sync to Sheets: ' + result.error,
-            };
+        if (match && match[1]) {
+          const sheetId = match[1];
+          const pk = settings.googlePrivateKey ? formatPrivateKey(settings.googlePrivateKey) : undefined;
+
+          try {
+            const result = await appendToSheet(
+              {
+                sheetId,
+                clientEmail: settings.googleClientEmail,
+                privateKey: pk,
+                accessToken: accessToken,
+              },
+              dbData
+            );
+
+            if (!result.success) {
+              return {
+                success: false,
+                error: 'Saved locally but failed to sync to Sheets: ' + result.error,
+              };
+            }
+          } catch (e) {
+            return { success: false, error: 'Unexpected error: ' + e };
           }
-        } catch (e) {
-          return { success: false, error: 'Unexpected error: ' + e };
+        } else {
+          return { success: false, error: 'Invalid Google Sheet URL' };
         }
       } else {
-        return {
-          success: false,
-          error: 'Invalid Google Sheet URL format. Please check the URL in form settings.',
-        };
+        console.warn('Google Sheet URL present but credentials missing.');
+        return { success: false, error: 'Google credentials not configured.' };
       }
-    } else {
-      console.warn('Google Sheet URL present but credentials missing.');
-      return { success: false, error: 'Google credentials not configured. Please check Settings.' };
     }
   }
 

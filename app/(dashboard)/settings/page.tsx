@@ -40,6 +40,7 @@ function SettingsContent() {
   const [key, setKey] = useState('');
   const [folderId, setFolderId] = useState('');
   const [showPrivateKey, setShowPrivateKey] = useState(false);
+  const [isConnected, setIsConnected] = useState(false); // New state for OAuth status
   const hasShownError = useRef(false);
 
   // User Profile & Subscription State
@@ -52,7 +53,13 @@ function SettingsContent() {
       toast.error('Please configure your settings first before creating a form.');
       hasShownError.current = true;
     }
-  }, [errorParam]);
+    if (searchParams.get('success') === 'google_connected' && !hasShownError.current) {
+      toast.success('Successfully connected to Google Drive!');
+      hasShownError.current = true;
+      // Clean URL
+      window.history.replaceState({}, '', '/settings');
+    }
+  }, [errorParam, searchParams]);
 
   useEffect(() => {
     let active = true;
@@ -73,6 +80,7 @@ function SettingsContent() {
           if (settings.userPersonalEmail) setPersonalEmail(settings.userPersonalEmail);
           if (settings.googlePrivateKey) setKey(settings.googlePrivateKey);
           if (settings.googleDriveFolderId) setFolderId(settings.googleDriveFolderId);
+          if (settings.googleAccessToken) setIsConnected(true); // Check token presence
         }
 
         if (userProfile) setProfile(userProfile);
@@ -279,11 +287,31 @@ function SettingsContent() {
             <CardContent className="space-y-4 pt-6">
               <div className="space-y-2">
                 <Label>Google Service Account Email</Label>
-                <Input
-                  placeholder="example@project-id.iam.gserviceaccount.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="example@project-id.iam.gserviceaccount.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                  {/* OAuth Connect Button */}
+                  {isConnected ? (
+                    <Button variant="outline" className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100 cursor-default">
+                      <span className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-green-500" />
+                        Connected with Google
+                      </span>
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        window.location.href = '/api/auth/google/login';
+                      }}
+                    >
+                      Connect with Google (Easy)
+                    </Button>
+                  )}
+                </div>
               </div>
               <div className="space-y-2">
                 <Label>Your Personal Email (For Auto-Share)</Label>

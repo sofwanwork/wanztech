@@ -3,9 +3,10 @@ import { JWT } from 'google-auth-library';
 
 export interface SheetConfig {
   sheetId: string;
-  clientEmail: string;
-  privateKey: string;
+  clientEmail?: string;
+  privateKey?: string;
   folderId?: string;
+  accessToken?: string;
 }
 
 export async function appendToSheet(
@@ -13,16 +14,28 @@ export async function appendToSheet(
   data: Record<string, string | number | boolean | null | undefined>
 ) {
   try {
-    const serviceAccountAuth = new JWT({
-      email: config.clientEmail,
-      key: config.privateKey,
-      scopes: [
-        'https://www.googleapis.com/auth/spreadsheets',
-        'https://www.googleapis.com/auth/drive',
-      ],
-    });
+    let auth;
+    if (config.accessToken) {
+      // OAuth Strategy
+      const { google } = await import('googleapis');
+      const oauth2Client = new google.auth.OAuth2();
+      oauth2Client.setCredentials({ access_token: config.accessToken });
+      auth = oauth2Client;
+    } else if (config.clientEmail && config.privateKey) {
+      // Service Account Strategy
+      auth = new JWT({
+        email: config.clientEmail,
+        key: config.privateKey,
+        scopes: [
+          'https://www.googleapis.com/auth/spreadsheets',
+          'https://www.googleapis.com/auth/drive',
+        ],
+      });
+    } else {
+      throw new Error("Missing credentials (either Access Token or Service Account)");
+    }
 
-    const doc = new GoogleSpreadsheet(config.sheetId, serviceAccountAuth);
+    const doc = new GoogleSpreadsheet(config.sheetId, auth);
 
     await doc.loadInfo();
 

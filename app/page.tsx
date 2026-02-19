@@ -330,6 +330,14 @@ export default async function LandingPage() {
             <p className="text-sm text-gray-500 max-w-md mb-8">
               Platform automasi borang dan dokumen pilihan Malaysia.
             </p>
+            <div className="flex gap-6 text-sm font-medium text-gray-600 mb-8">
+              <Link href="/privacy" className="hover:text-primary transition-colors">
+                Polisi Privasi
+              </Link>
+              <Link href="/terms" className="hover:text-primary transition-colors">
+                Terma & Syarat
+              </Link>
+            </div>
           </div>
           <div className="flex flex-col items-center justify-center pt-8 border-t border-gray-100 text-sm text-gray-400 gap-2">
             <p>© {new Date().getFullYear()} KlikForm. Hak Cipta Terpelihara.</p>

@@ -21,11 +21,19 @@ export async function getUserProfile() {
 
     if (!user) return null;
 
+    // Fetch from profiles table to match sidebar/layout
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, avatar_url, username')
+        .eq('id', user.id)
+        .single();
+
     return {
         id: user.id,
         email: user.email || '',
-        fullName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-        avatarUrl: user.user_metadata?.avatar_url,
+        // Use profile data if available, otherwise fallback to auth metadata
+        fullName: profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+        avatarUrl: profile?.avatar_url || user.user_metadata?.avatar_url,
     } as UserProfile;
 }
 

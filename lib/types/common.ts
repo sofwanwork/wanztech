@@ -20,4 +20,8 @@ export interface Settings {
   googlePrivateKey?: string;
   googleDriveFolderId?: string;
   userPersonalEmail?: string;
+  // OAuth Tokens
+  googleAccessToken?: string;
+  googleRefreshToken?: string;
+  googleTokenExpiry?: number;
 }
