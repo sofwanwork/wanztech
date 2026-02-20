@@ -115,7 +115,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
               </>
             ) : (
               <>
-                <div className="h-20 w-20 bg-white rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-gray-100 transform rotate-3 transition-transform hover:rotate-6">
+                <div className="h-20 w-20 bg-white rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-gray-100 transition-transform hover:scale-105">
                   <FileText className="h-10 w-10 text-primary/60" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2 text-gray-900">No forms created yet</h3>
