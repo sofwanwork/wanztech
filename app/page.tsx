@@ -13,6 +13,12 @@ import {
   ShieldCheck,
   Users,
   ArrowRight,
+  Link as LinkIcon,
+  Award,
+  Facebook,
+  Twitter,
+  Instagram,
+  Mail,
 } from 'lucide-react';
 import { LandingMobileMenu } from '@/components/landing-mobile-menu';
 
@@ -55,7 +61,7 @@ export default async function LandingPage() {
       <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
         <div className="container mx-auto px-4 md:px-6 flex h-16 items-center justify-between">
           <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-            <div className="relative h-8 w-8">
+            <div className="relative h-8 w-8 rounded-lg overflow-hidden">
               <Image
                 src="/logo.png"
                 alt="KlikForm Logo"
@@ -97,9 +103,12 @@ export default async function LandingPage() {
         <section className="relative overflow-hidden pt-16 md:pt-24 lg:pt-32 pb-16">
           <div className="container mx-auto px-4 md:px-6 text-center">
             <div className="mx-auto max-w-3xl space-y-6">
-              <div className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-sm text-gray-900 mb-4">
-                <span className="flex h-2 w-2 rounded-full bg-green-500 mr-2"></span>
-                Baru: Jana Sijil Digital Automatik 🚀
+              <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm font-medium text-primary shadow-sm ring-1 ring-inset ring-primary/10 transition-all hover:bg-primary/10 hover:shadow-md mb-8">
+                <span className="relative flex h-2 w-2 mr-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                </span>
+                Jana Sijil Digital Automatik <span className="ml-1.5 hidden sm:inline">🚀</span>
               </div>
               <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
                 Borang Online & <br className="hidden sm:inline" />
@@ -157,44 +166,44 @@ export default async function LandingPage() {
                 </div>
                 <h3 className="text-xl font-bold mb-3">Integrasi Google Sheets</h3>
                 <p className="text-gray-500 leading-relaxed">
-                  Data yang diisi akan terus masuk ke Google Sheets anda secara real-time. Mudah
-                  untuk analisis dan rekod.
+                  Data dari borang anda akan terus masuk ke Google Sheets secara real-time. Mudah
+                  untuk diuruskan.
                 </p>
               </div>
 
               {/* Feature 2 */}
               <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 transition-all hover:shadow-md">
                 <div className="h-12 w-12 bg-purple-100 rounded-xl flex items-center justify-center mb-6 text-purple-600">
-                  <Zap className="h-6 w-6" />
+                  <Award className="h-6 w-6" />
                 </div>
-                <h3 className="text-xl font-bold mb-3">Sijil Digital Automatik</h3>
+                <h3 className="text-xl font-bold mb-3">Pencipta E-Sijil Digital</h3>
                 <p className="text-gray-500 leading-relaxed">
-                  Peserta akan menerima e-sijil (PDF) melalui email/WhatsApp sejurus selepas mengisi
-                  borang kehadiran/kuiz.
+                  Reka sijil digital anda sendiri. E-Sijil akan dijana dan diemel terus kepada
+                  peserta secara automatik.
                 </p>
               </div>
 
               {/* Feature 3 */}
               <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 transition-all hover:shadow-md">
-                <div className="h-12 w-12 bg-green-100 rounded-xl flex items-center justify-center mb-6 text-green-600">
-                  <QrCode className="h-6 w-6" />
+                <div className="h-12 w-12 bg-orange-100 rounded-xl flex items-center justify-center mb-6 text-orange-600">
+                  <LinkIcon className="h-6 w-6" />
                 </div>
-                <h3 className="text-xl font-bold mb-3">QR Code Generator</h3>
+                <h3 className="text-xl font-bold mb-3">Pemendek URL</h3>
                 <p className="text-gray-500 leading-relaxed">
-                  Jana QR code unik untuk setiap borang anda. Imbas dan isi - sangat mudah untuk
-                  event fizikal.
+                  Pendekkan dan jejak pautan anda. Jadikan URL lebih kemas dan profesional untuk
+                  dikongsi.
                 </p>
               </div>
 
               {/* Feature 4 */}
               <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 transition-all hover:shadow-md">
-                <div className="h-12 w-12 bg-orange-100 rounded-xl flex items-center justify-center mb-6 text-orange-600">
-                  <Files className="h-6 w-6" />
+                <div className="h-12 w-12 bg-green-100 rounded-xl flex items-center justify-center mb-6 text-green-600">
+                  <QrCode className="h-6 w-6" />
                 </div>
-                <h3 className="text-xl font-bold mb-3">Template Borang Siap</h3>
+                <h3 className="text-xl font-bold mb-3">Penjana Kod QR Dinamik</h3>
                 <p className="text-gray-500 leading-relaxed">
-                  Jimat masa dengan template borang pendaftaran, kehadiran, maklum balas, dan banyak
-                  lagi.
+                  Jana QR code dinamik untuk borang, pautan atau fail. Boleh ubah rekaan sesuai
+                  dengan jenama anda.
                 </p>
               </div>
 
@@ -203,20 +212,22 @@ export default async function LandingPage() {
                 <div className="h-12 w-12 bg-red-100 rounded-xl flex items-center justify-center mb-6 text-red-600">
                   <ShieldCheck className="h-6 w-6" />
                 </div>
-                <h3 className="text-xl font-bold mb-3">Sistem Pengesahan</h3>
+                <h3 className="text-xl font-bold mb-3">Sistem Pengesahan Sijil</h3>
                 <p className="text-gray-500 leading-relaxed">
-                  Sistem semakan ketulenan sijil (Verify) untuk mengelakkan penipuan sijil digital.
+                  Setiap E-Sijil didatangkan dengan nombor siri unik dan kod QR terbina untuk
+                  disahkan ketulenannya.
                 </p>
               </div>
 
               {/* Feature 6 */}
               <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 transition-all hover:shadow-md">
                 <div className="h-12 w-12 bg-cyan-100 rounded-xl flex items-center justify-center mb-6 text-cyan-600">
-                  <Users className="h-6 w-6" />
+                  <Zap className="h-6 w-6" />
                 </div>
-                <h3 className="text-xl font-bold mb-3">Tanpa Had (Pro)</h3>
+                <h3 className="text-xl font-bold mb-3">Automasi Asas & Pro</h3>
                 <p className="text-gray-500 leading-relaxed">
-                  Naik taraf ke Pro untuk bina borang tanpa had dan terima respons tanpa had.
+                  Bermula percuma dengan fungsi premium. Naik taraf ke Pro untuk borang, sijil,
+                  pautan dan QR tanpa had cap.
                 </p>
               </div>
             </div>
@@ -310,38 +321,79 @@ export default async function LandingPage() {
         </section>
       </main>
 
-      <footer className="bg-white border-t border-gray-100 py-12">
+      <footer className="bg-white border-t border-gray-100 py-16 text-gray-500">
         <div className="container mx-auto px-4 md:px-6">
-          <div className="flex flex-col items-center text-center">
-            <Link href="/" className="flex items-center gap-2 font-bold text-xl mb-4">
-              <div className="relative h-8 w-8">
-                <Image
-                  src="/logo.png"
-                  alt="KlikForm Logo"
-                  fill
-                  className="object-contain"
-                  sizes="32px"
-                />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 lg:gap-8 mb-12">
+
+            {/* Brand & Description */}
+            <div className="col-span-1 md:col-span-2 lg:col-span-1 flex flex-col items-start text-left">
+              <Link href="/" className="flex items-center gap-2 font-bold text-xl mb-6">
+                <div className="relative h-8 w-8 rounded-lg overflow-hidden">
+                  <Image
+                    src="/logo.png"
+                    alt="KlikForm Logo"
+                    fill
+                    className="object-contain"
+                    sizes="32px"
+                  />
+                </div>
+                <span className="text-gray-900">
+                  <span className="text-primary">Klik</span>Form
+                </span>
+              </Link>
+              <p className="text-sm text-gray-500 leading-relax max-w-sm mb-8">
+                Platform automasi borang dan dokumen pilihan Malaysia. Memudahkan pengurusan data harian anda.
+              </p>
+
+              {/* Social Links */}
+              <div className="flex gap-4">
+                <a href="#" className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-primary hover:text-white transition-all">
+                  <Facebook className="h-5 w-5" />
+                </a>
+                <a href="#" className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-primary hover:text-white transition-all">
+                  <Twitter className="h-5 w-5" />
+                </a>
+                <a href="#" className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-primary hover:text-white transition-all">
+                  <Instagram className="h-5 w-5" />
+                </a>
               </div>
-              <span>
-                <span className="text-primary">Klik</span>Form
-              </span>
-            </Link>
-            <p className="text-sm text-gray-500 max-w-md mb-8">
-              Platform automasi borang dan dokumen pilihan Malaysia.
-            </p>
-            <div className="flex gap-6 text-sm font-medium text-gray-600 mb-8">
-              <Link href="/privacy" className="hover:text-primary transition-colors">
-                Polisi Privasi
-              </Link>
-              <Link href="/terms" className="hover:text-primary transition-colors">
-                Terma & Syarat
-              </Link>
             </div>
+
+            {/* Links Columns */}
+            <div>
+              <h4 className="text-gray-900 font-semibold mb-6">Produk</h4>
+              <ul className="space-y-4 text-sm font-medium text-gray-600">
+                <li><Link href="#features" className="hover:text-primary transition-colors">Borang Online</Link></li>
+                <li><Link href="#features" className="hover:text-primary transition-colors">Sijil Digital</Link></li>
+                <li><Link href="#features" className="hover:text-primary transition-colors">Penjana QR</Link></li>
+                <li><Link href="/pricing" className="hover:text-primary transition-colors">Harga & Pakej</Link></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="text-gray-900 font-semibold mb-6">Sokongan</h4>
+              <ul className="space-y-4 text-sm font-medium text-gray-600">
+                <li><a href="#" className="hover:text-primary transition-colors">Pusat Bantuan</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Tutorial Video</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Hubungi Kami</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="text-gray-900 font-semibold mb-6">Perundangan</h4>
+              <ul className="space-y-4 text-sm font-medium text-gray-600">
+                <li><Link href="/terms" className="hover:text-primary transition-colors">Terma & Syarat</Link></li>
+                <li><Link href="/privacy" className="hover:text-primary transition-colors">Polisi Privasi</Link></li>
+                <li><Link href="/refund" className="hover:text-primary transition-colors">Polisi Bayaran Balik</Link></li>
+              </ul>
+            </div>
+
           </div>
-          <div className="flex flex-col items-center justify-center pt-8 border-t border-gray-100 text-sm text-gray-400 gap-2">
+
+          {/* Bottom Bar */}
+          <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-gray-100 text-sm gap-4">
             <p>© {new Date().getFullYear()} KlikForm. Hak Cipta Terpelihara.</p>
-            <p>Made with ❤️ in Malaysia</p>
+            <p className="flex items-center gap-1">Made with <span className="text-red-500">❤️</span> in Malaysia</p>
           </div>
         </div>
       </footer>

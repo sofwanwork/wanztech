@@ -33,7 +33,7 @@ export function LandingMobileMenu() {
                     {/* Header */}
                     <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                         <div className="flex items-center gap-2 font-bold text-xl">
-                            <div className="relative h-8 w-8">
+                            <div className="relative h-8 w-8 rounded-lg overflow-hidden">
                                 <Image
                                     src="/logo.png"
                                     alt="KlikForm Logo"
