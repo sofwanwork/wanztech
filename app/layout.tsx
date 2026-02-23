@@ -35,6 +35,11 @@ export const metadata: Metadata = {
     'form builder percuma',
     'whatsapp form',
     'sistem e-cert',
+    'sistem pendaftaran percuma',
+    'buat e-cert',
+    'borang order whatsapp',
+    'bina borang mudah',
+    'sistem kehadiran QR',
   ],
   authors: [{ name: 'KlikForm Team', url: 'https://klikform.com' }],
   creator: 'KlikForm',
@@ -91,7 +96,7 @@ export const metadata: Metadata = {
   },
   category: 'productivity',
   verification: {
-    google: 'YOUR_GOOGLE_VERIFICATION_CODE', // User to update this
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || '',
   },
 };
 

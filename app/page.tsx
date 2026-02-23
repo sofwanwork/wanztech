@@ -4,6 +4,15 @@ import { Button } from '@/components/ui/button';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'KlikForm - Borang Online & Sijil Digital Automatik #1 Malaysia',
+  description: 'Cipta borang pendaftaran, kutip data ke Google Sheets, dan hantar e-sijil automatik. Percuma, mudah & pantas untuk event, kelas dan borang WhatsApp.',
+  alternates: {
+    canonical: 'https://klikform.com',
+  }
+};
 import {
   CheckCircle2,
   FileSpreadsheet,

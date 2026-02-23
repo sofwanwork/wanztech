@@ -6,6 +6,15 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { PlanCard } from '@/components/pricing/plan-card';
 import { LandingMobileMenu } from '@/components/landing-mobile-menu';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Harga & Pakej | KlikForm',
+  description: 'Pilih pelan KlikForm yang sesuai untuk keperluan anda. Bermula secara percuma atau naik taraf ke Pro untuk ciri tanpa had.',
+  alternates: {
+    canonical: 'https://klikform.com/pricing',
+  }
+};
 
 export default async function PricingPage() {
   // Check auth status for header button
