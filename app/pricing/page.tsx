@@ -6,11 +6,12 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { PlanCard } from '@/components/pricing/plan-card';
 import { LandingMobileMenu } from '@/components/landing-mobile-menu';
+import { LandingNavbar } from '@/components/landing-navbar';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Harga & Pakej | KlikForm',
-  description: 'Pilih pelan KlikForm yang sesuai untuk keperluan anda. Bermula secara percuma atau naik taraf ke Pro untuk ciri tanpa had.',
+  title: 'Pricing & Plans | KlikForm',
+  description: 'Choose the right KlikForm plan for your needs. Start for free or upgrade to Pro for unlimited features.',
   alternates: {
     canonical: 'https://klikform.com/pricing',
   }
@@ -146,22 +147,17 @@ export default async function PricingPage() {
               <span className="text-primary">Klik</span>Form
             </span>
           </Link>
-          <nav className="hidden md:flex gap-6 text-sm font-medium">
-            <Link href="/#features" className="hover:text-primary transition-colors">
-              Ciri-ciri
-            </Link>
-            <Link href="/pricing" className="text-primary font-semibold transition-colors">
-              Harga
-            </Link>
-          </nav>
+          <div className="hidden md:flex flex-1 justify-center ml-8">
+            <LandingNavbar />
+          </div>
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center gap-4">
               <Button variant="ghost" size="sm" asChild>
-                <Link href={user ? '/forms' : '/login'}>{user ? 'Dashboard' : 'Log Masuk'}</Link>
+                <Link href={user ? '/forms' : '/login'}>{user ? 'Dashboard' : 'Login'}</Link>
               </Button>
               {!user && (
                 <Button size="sm" asChild>
-                  <Link href="/login?tab=signup">Daftar Percuma</Link>
+                  <Link href="/login?tab=signup">Sign Up Free</Link>
                 </Button>
               )}
             </div>
@@ -174,10 +170,10 @@ export default async function PricingPage() {
         <div className="container mx-auto px-4 md:px-6">
           <div className="text-center mb-16">
             <h1 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl text-gray-900 mb-4">
-              Pelan Harga Mudah & Telus
+              Simple & Transparent Pricing
             </h1>
             <p className="text-lg text-gray-500 max-w-2xl mx-auto">
-              Pilih pelan yang sesuai untuk keperluan anda. Tiada caj tersembunyi.
+              Choose the right plan for your needs. No hidden charges.
             </p>
           </div>
 

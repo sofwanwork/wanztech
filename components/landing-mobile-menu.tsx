@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Menu, Sparkles, CreditCard, LogIn, UserPlus } from 'lucide-react';
+import { Menu, Sparkles, CreditCard, LogIn, UserPlus, Users, FileSpreadsheet, Award, Link as LinkIcon, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     Sheet,
@@ -25,9 +25,9 @@ export function LandingMobileMenu() {
                     </Button>
                 </SheetTrigger>
                 <SheetContent side="right" className="w-[85vw] sm:w-[350px] p-0 flex flex-col h-full bg-white border-l border-gray-100 shadow-2xl">
-                    <SheetTitle className="sr-only">Menu Navigasi</SheetTitle>
+                    <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                     <SheetDescription className="sr-only">
-                        Menu utama untuk KlikForm
+                        Main menu for KlikForm
                     </SheetDescription>
 
                     {/* Header */}
@@ -51,16 +51,50 @@ export function LandingMobileMenu() {
                     {/* Menu Items */}
                     <div className="flex-1 overflow-y-auto py-6 px-6">
                         <nav className="flex flex-col gap-2">
+                            <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Products</p>
                             <Link
-                                href="#features"
+                                href="/products/forms"
+                                className="flex items-center gap-4 p-3 text-lg font-medium text-gray-600 hover:text-primary hover:bg-primary/5 rounded-xl transition-all group"
+                                onClick={() => setOpen(false)}
+                            >
+                                <div className="h-10 w-10 rounded-lg bg-blue-100/50 text-blue-600 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                                    <FileSpreadsheet className="h-5 w-5" />
+                                </div>
+                                Online Forms
+                            </Link>
+                            <Link
+                                href="/products/certificates"
                                 className="flex items-center gap-4 p-3 text-lg font-medium text-gray-600 hover:text-primary hover:bg-primary/5 rounded-xl transition-all group"
                                 onClick={() => setOpen(false)}
                             >
                                 <div className="h-10 w-10 rounded-lg bg-purple-100/50 text-purple-600 flex items-center justify-center group-hover:bg-purple-100 transition-colors">
-                                    <Sparkles className="h-5 w-5" />
+                                    <Award className="h-5 w-5" />
                                 </div>
-                                Ciri-ciri
+                                Digital Certificates
                             </Link>
+                            <Link
+                                href="/products/shortener"
+                                className="flex items-center gap-4 p-3 text-lg font-medium text-gray-600 hover:text-primary hover:bg-primary/5 rounded-xl transition-all group"
+                                onClick={() => setOpen(false)}
+                            >
+                                <div className="h-10 w-10 rounded-lg bg-orange-100/50 text-orange-600 flex items-center justify-center group-hover:bg-orange-100 transition-colors">
+                                    <LinkIcon className="h-5 w-5" />
+                                </div>
+                                URL Shortener
+                            </Link>
+                            <Link
+                                href="/products/qr-codes"
+                                className="flex items-center gap-4 p-3 text-lg font-medium text-gray-600 hover:text-primary hover:bg-primary/5 rounded-xl transition-all group"
+                                onClick={() => setOpen(false)}
+                            >
+                                <div className="h-10 w-10 rounded-lg bg-green-100/50 text-green-600 flex items-center justify-center group-hover:bg-green-100 transition-colors">
+                                    <QrCode className="h-5 w-5" />
+                                </div>
+                                QR Code Generator
+                            </Link>
+
+                            <div className="border-t border-gray-100 my-2" />
+
                             <Link
                                 href="/pricing"
                                 className="flex items-center gap-4 p-3 text-lg font-medium text-gray-600 hover:text-primary hover:bg-primary/5 rounded-xl transition-all group"
@@ -69,7 +103,17 @@ export function LandingMobileMenu() {
                                 <div className="h-10 w-10 rounded-lg bg-blue-100/50 text-blue-600 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
                                     <CreditCard className="h-5 w-5" />
                                 </div>
-                                Harga
+                                Pricing
+                            </Link>
+                            <Link
+                                href="/about"
+                                className="flex items-center gap-4 p-3 text-lg font-medium text-gray-600 hover:text-primary hover:bg-primary/5 rounded-xl transition-all group"
+                                onClick={() => setOpen(false)}
+                            >
+                                <div className="h-10 w-10 rounded-lg bg-green-100/50 text-green-600 flex items-center justify-center group-hover:bg-green-100 transition-colors">
+                                    <Users className="h-5 w-5" />
+                                </div>
+                                About Us
                             </Link>
                         </nav>
                     </div>
@@ -78,12 +122,12 @@ export function LandingMobileMenu() {
                     <div className="p-6 border-t border-gray-100 bg-gray-50/30 space-y-3">
                         <Link href="/login" onClick={() => setOpen(false)} className="block w-full">
                             <Button variant="outline" className="w-full justify-center h-12 text-base font-medium border-gray-200 hover:bg-white hover:text-primary shadow-sm">
-                                <LogIn className="mr-2 h-4 w-4" /> Log Masuk
+                                <LogIn className="mr-2 h-4 w-4" /> Login
                             </Button>
                         </Link>
                         <Link href="/login?tab=signup" onClick={() => setOpen(false)} className="block w-full">
                             <Button className="w-full justify-center h-12 text-base font-medium shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90">
-                                <UserPlus className="mr-2 h-4 w-4" /> Daftar Percuma
+                                <UserPlus className="mr-2 h-4 w-4" /> Sign Up Free
                             </Button>
                         </Link>
                         <p className="text-xs text-center text-gray-400 mt-4">

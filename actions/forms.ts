@@ -13,6 +13,7 @@ import {
   canSubmitForm,
   incrementSubmissionCount,
 } from '@/lib/storage/subscription';
+import { sendEmail, getNewSubmissionEmail } from '@/lib/email';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { encrypt } from '@/lib/encryption';
 import { sanitizeHtml } from '@/lib/utils'; // Import sanitization
@@ -374,6 +375,39 @@ export async function submitFormAction(
   // Increment Usage Stats if successful
   if (form.userId) {
     await incrementSubmissionCount(form.userId);
+
+    // Fire-and-forget email notification (don't block submission response)
+    (async () => {
+      try {
+        const admin = createAdminClient();
+        const { data: userData } = await admin.auth.admin.getUserById(form.userId!);
+        const ownerEmail = userData?.user?.email;
+        const ownerName = userData?.user?.user_metadata?.full_name || userData?.user?.user_metadata?.username || 'User';
+
+        if (ownerEmail) {
+          const submissionSummary: Record<string, string> = {};
+          for (const [key, val] of Object.entries(dbData)) {
+            if (val !== null && val !== undefined) {
+              submissionSummary[key] = String(val);
+            }
+          }
+          const emailContent = getNewSubmissionEmail(
+            ownerName,
+            form.title,
+            submissionSummary,
+            form.googleSheetUrl
+          );
+          await sendEmail({
+            to: ownerEmail,
+            subject: emailContent.subject,
+            html: emailContent.html,
+          });
+        }
+      } catch (emailErr) {
+        // Never fail submission because of email
+        console.warn('Submission email notification failed:', emailErr);
+      }
+    })();
   }
 
   return { success: true };

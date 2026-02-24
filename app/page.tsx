@@ -1,3 +1,4 @@
+import * as React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -7,8 +8,8 @@ import { redirect } from 'next/navigation';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'KlikForm - Borang Online & Sijil Digital Automatik #1 Malaysia',
-  description: 'Cipta borang pendaftaran, kutip data ke Google Sheets, dan hantar e-sijil automatik. Percuma, mudah & pantas untuk event, kelas dan borang WhatsApp.',
+  title: 'KlikForm - Malaysia\'s #1 Online Forms & Automated Digital Certificates',
+  description: 'Create registration forms, collect data to Google Sheets, and send automated e-certificates. Free, easy & fast for events, classes, and WhatsApp forms.',
   alternates: {
     canonical: 'https://klikform.com',
   }
@@ -28,8 +29,10 @@ import {
   Twitter,
   Instagram,
   Mail,
+  ChevronDown,
 } from 'lucide-react';
 import { LandingMobileMenu } from '@/components/landing-mobile-menu';
+import { LandingNavbar } from '@/components/landing-navbar';
 
 export default async function LandingPage() {
   const cookieStore = await cookies();
@@ -83,23 +86,18 @@ export default async function LandingPage() {
               <span className="text-primary">Klik</span>Form
             </span>
           </Link>
-          <nav className="hidden md:flex gap-6 text-sm font-medium">
-            <Link href="#features" className="hover:text-primary transition-colors">
-              Ciri-ciri
-            </Link>
-            <Link href="/pricing" className="hover:text-primary transition-colors">
-              Harga
-            </Link>
-          </nav>
+          <div className="hidden md:flex flex-1 justify-center ml-8">
+            <LandingNavbar />
+          </div>
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center gap-4">
               <Link href="/login">
                 <Button variant="ghost" size="sm">
-                  Log Masuk
+                  Login
                 </Button>
               </Link>
               <Link href="/login?tab=signup">
-                <Button size="sm">Daftar Percuma</Button>
+                <Button size="sm">Sign Up Free</Button>
               </Link>
             </div>
             <LandingMobileMenu />
@@ -117,32 +115,30 @@ export default async function LandingPage() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                 </span>
-                Jana Sijil Digital Automatik <span className="ml-1.5 hidden sm:inline">🚀</span>
+                Automated Digital Certificates <span className="ml-1.5 hidden sm:inline">🚀</span>
               </div>
-              <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
-                Borang Online & <br className="hidden sm:inline" />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#451263] via-[#9333ea] to-[#451263] animate-gradient-xy">
-                  Sijil Digital Automatik
-                </span>
+              <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl text-transparent bg-clip-text bg-gradient-to-r from-[#451263] via-[#9333ea] to-[#451263] animate-gradient-xy pb-4">
+                Online Forms & <br className="hidden sm:inline" />
+                Automated Digital Certificates
               </h1>
               <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed dark:text-gray-400">
-                Cipta borang pendaftaran, kutip data terus ke Google Sheets, dan hantar e-sijil
-                kepada peserta secara automatik. Percuma untuk permulaan.
+                Create registration forms, collect data directly to Google Sheets, and send e-certificates
+                to participants automatically. Free to start.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
                 <Link href="/login?tab=signup">
                   <Button size="lg" className="h-12 px-8 text-base w-full sm:w-auto">
-                    Mula Guna Percuma <ArrowRight className="ml-2 h-4 w-4" />
+                    Start for Free <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
               </div>
 
               <div className="mt-8 flex justify-center items-center gap-8 text-sm text-gray-500">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" /> Tiada Kad Kredit Diperlukan
+                  <CheckCircle2 className="h-4 w-4 text-green-500" /> No Credit Card Required
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" /> Data Selamat & Sulit
+                  <CheckCircle2 className="h-4 w-4 text-green-500" /> Secure & Private Data
                 </div>
               </div>
             </div>
@@ -160,10 +156,10 @@ export default async function LandingPage() {
           <div className="container mx-auto px-4 md:px-6">
             <div className="text-center mb-16">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl text-gray-900">
-                Satu Platform, Pelbagai Kegunaan
+                One Platform, Multiple Uses
               </h2>
               <p className="mt-4 text-lg text-gray-500">
-                KlikForm memudahkan pengurusan data dan automasi dokumen anda.
+                KlikForm simplifies your data management and document automation.
               </p>
             </div>
 
@@ -173,10 +169,10 @@ export default async function LandingPage() {
                 <div className="h-12 w-12 bg-blue-100 rounded-xl flex items-center justify-center mb-6 text-blue-600">
                   <FileSpreadsheet className="h-6 w-6" />
                 </div>
-                <h3 className="text-xl font-bold mb-3">Integrasi Google Sheets</h3>
+                <h3 className="text-xl font-bold mb-3">Google Sheets Integration</h3>
                 <p className="text-gray-500 leading-relaxed">
-                  Data dari borang anda akan terus masuk ke Google Sheets secara real-time. Mudah
-                  untuk diuruskan.
+                  Data from your forms flows directly into Google Sheets in real-time. Easy
+                  to manage.
                 </p>
               </div>
 
@@ -185,10 +181,10 @@ export default async function LandingPage() {
                 <div className="h-12 w-12 bg-purple-100 rounded-xl flex items-center justify-center mb-6 text-purple-600">
                   <Award className="h-6 w-6" />
                 </div>
-                <h3 className="text-xl font-bold mb-3">Pencipta E-Sijil Digital</h3>
+                <h3 className="text-xl font-bold mb-3">Digital E-Certificate Creator</h3>
                 <p className="text-gray-500 leading-relaxed">
-                  Reka sijil digital anda sendiri. E-Sijil akan dijana dan diemel terus kepada
-                  peserta secara automatik.
+                  Design your own digital certificate. E-Certificates will be generated and emailed directly
+                  to participants automatically.
                 </p>
               </div>
 
@@ -197,10 +193,10 @@ export default async function LandingPage() {
                 <div className="h-12 w-12 bg-orange-100 rounded-xl flex items-center justify-center mb-6 text-orange-600">
                   <LinkIcon className="h-6 w-6" />
                 </div>
-                <h3 className="text-xl font-bold mb-3">Pemendek URL</h3>
+                <h3 className="text-xl font-bold mb-3">URL Shortener</h3>
                 <p className="text-gray-500 leading-relaxed">
-                  Pendekkan dan jejak pautan anda. Jadikan URL lebih kemas dan profesional untuk
-                  dikongsi.
+                  Shorten and track your links. Make URLs cleaner and more professional to
+                  share.
                 </p>
               </div>
 
@@ -209,10 +205,10 @@ export default async function LandingPage() {
                 <div className="h-12 w-12 bg-green-100 rounded-xl flex items-center justify-center mb-6 text-green-600">
                   <QrCode className="h-6 w-6" />
                 </div>
-                <h3 className="text-xl font-bold mb-3">Penjana Kod QR Dinamik</h3>
+                <h3 className="text-xl font-bold mb-3">Dynamic QR Code Generator</h3>
                 <p className="text-gray-500 leading-relaxed">
-                  Jana QR code dinamik untuk borang, pautan atau fail. Boleh ubah rekaan sesuai
-                  dengan jenama anda.
+                  Generate dynamic QR codes for forms, links, or files. Customizable designs
+                  to match your brand.
                 </p>
               </div>
 
@@ -221,10 +217,10 @@ export default async function LandingPage() {
                 <div className="h-12 w-12 bg-red-100 rounded-xl flex items-center justify-center mb-6 text-red-600">
                   <ShieldCheck className="h-6 w-6" />
                 </div>
-                <h3 className="text-xl font-bold mb-3">Sistem Pengesahan Sijil</h3>
+                <h3 className="text-xl font-bold mb-3">Certificate Verification System</h3>
                 <p className="text-gray-500 leading-relaxed">
-                  Setiap E-Sijil didatangkan dengan nombor siri unik dan kod QR terbina untuk
-                  disahkan ketulenannya.
+                  Each E-Certificate comes with a unique serial number and a built-in QR code
+                  to verify its authenticity.
                 </p>
               </div>
 
@@ -233,10 +229,10 @@ export default async function LandingPage() {
                 <div className="h-12 w-12 bg-cyan-100 rounded-xl flex items-center justify-center mb-6 text-cyan-600">
                   <Zap className="h-6 w-6" />
                 </div>
-                <h3 className="text-xl font-bold mb-3">Automasi Asas & Pro</h3>
+                <h3 className="text-xl font-bold mb-3">Basic & Pro Automation</h3>
                 <p className="text-gray-500 leading-relaxed">
-                  Bermula percuma dengan fungsi premium. Naik taraf ke Pro untuk borang, sijil,
-                  pautan dan QR tanpa had cap.
+                  Start free with premium features. Upgrade to Pro for unlimited forms, certificates,
+                  links, and QR codes.
                 </p>
               </div>
             </div>
@@ -249,15 +245,15 @@ export default async function LandingPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div>
                 <h2 className="text-3xl font-bold tracking-tight sm:text-4xl text-gray-900 mb-6">
-                  Sesuai Untuk Pelbagai Organisasi
+                  Perfect for Various Organizations
                 </h2>
                 <div className="space-y-4">
                   {[
-                    'Guru & Sekolah - Borang kehadiran & sijil penyertaan murid',
-                    'Penganjur Event - Pendaftaran peserta & tiket QR',
-                    'HR & Syarikat - Borang cuti, claim, & penilaian staf',
-                    'Peniaga Online - Borang tempahan produk (WhatsApp link)',
-                    'Webinar & Kursus - E-sijil automatik selepas tamat sesi',
+                    'Teachers & Schools - Attendance forms & student participation certificates',
+                    'Event Organizers - Participant registration & QR tickets',
+                    'HR & Companies - Leave, claim, & staff evaluation forms',
+                    'Online Sellers - Product order forms (WhatsApp link)',
+                    'Webinars & Courses - Automated E-certificates after sessions end',
                   ].map((item, i) => (
                     <div key={i} className="flex items-start gap-3">
                       <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center mt-0.5">
@@ -269,7 +265,7 @@ export default async function LandingPage() {
                 </div>
                 <div className="mt-8">
                   <Link href="/login?tab=signup">
-                    <Button size="lg">Cipta Akaun Sekarang</Button>
+                    <Button size="lg">Create Account Now</Button>
                   </Link>
                 </div>
               </div>
@@ -311,21 +307,21 @@ export default async function LandingPage() {
 
           <div className="container mx-auto px-4 md:px-6 relative z-10 text-center">
             <h2 className="text-3xl font-bold tracking-tight sm:text-5xl mb-6">
-              Mula Mengurus Borang & Sijil Hari Ini
+              Start Managing Forms & Certificates Today
             </h2>
             <p className="text-lg text-gray-300 max-w-2xl mx-auto mb-10">
-              Sertai ribuan pengguna yang telah memudahkan urusan kerja mereka dengan KlikForm.
-              Percuma selama-lamanya untuk ciri asas.
+              Join thousands of users who have simplified their workflow with KlikForm.
+              Free forever for basic features.
             </p>
             <Link href="/login?tab=signup">
               <Button
                 size="lg"
                 className="h-14 px-10 text-lg bg-white text-gray-900 hover:bg-gray-100"
               >
-                Daftar Akaun Percuma
+                Create Free Account
               </Button>
             </Link>
-            <p className="mt-4 text-sm text-gray-400">Tiada kad kredit diperlukan.</p>
+            <p className="mt-4 text-sm text-gray-400">No credit card required.</p>
           </div>
         </section>
       </main>
@@ -351,7 +347,7 @@ export default async function LandingPage() {
                 </span>
               </Link>
               <p className="text-sm text-gray-500 leading-relax max-w-sm mb-8">
-                Platform automasi borang dan dokumen pilihan Malaysia. Memudahkan pengurusan data harian anda.
+                Malaysia's preferred form and document automation platform. Simplifying your daily data management.
               </p>
 
               {/* Social Links */}
@@ -370,30 +366,30 @@ export default async function LandingPage() {
 
             {/* Links Columns */}
             <div>
-              <h4 className="text-gray-900 font-semibold mb-6">Produk</h4>
+              <h4 className="text-gray-900 font-semibold mb-6">Products</h4>
               <ul className="space-y-4 text-sm font-medium text-gray-600">
-                <li><Link href="#features" className="hover:text-primary transition-colors">Borang Online</Link></li>
-                <li><Link href="#features" className="hover:text-primary transition-colors">Sijil Digital</Link></li>
-                <li><Link href="#features" className="hover:text-primary transition-colors">Penjana QR</Link></li>
-                <li><Link href="/pricing" className="hover:text-primary transition-colors">Harga & Pakej</Link></li>
+                <li><Link href="#features" className="hover:text-primary transition-colors">Online Forms</Link></li>
+                <li><Link href="#features" className="hover:text-primary transition-colors">Digital Certificates</Link></li>
+                <li><Link href="#features" className="hover:text-primary transition-colors">QR Generator</Link></li>
+                <li><Link href="/pricing" className="hover:text-primary transition-colors">Pricing & Plans</Link></li>
               </ul>
             </div>
 
             <div>
-              <h4 className="text-gray-900 font-semibold mb-6">Sokongan</h4>
+              <h4 className="text-gray-900 font-semibold mb-6">Support</h4>
               <ul className="space-y-4 text-sm font-medium text-gray-600">
-                <li><a href="#" className="hover:text-primary transition-colors">Pusat Bantuan</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Tutorial Video</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Hubungi Kami</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Help Center</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Video Tutorials</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Contact Us</a></li>
               </ul>
             </div>
 
             <div>
-              <h4 className="text-gray-900 font-semibold mb-6">Perundangan</h4>
+              <h4 className="text-gray-900 font-semibold mb-6">Legal</h4>
               <ul className="space-y-4 text-sm font-medium text-gray-600">
-                <li><Link href="/terms" className="hover:text-primary transition-colors">Terma & Syarat</Link></li>
-                <li><Link href="/privacy" className="hover:text-primary transition-colors">Polisi Privasi</Link></li>
-                <li><Link href="/refund" className="hover:text-primary transition-colors">Polisi Bayaran Balik</Link></li>
+                <li><Link href="/terms" className="hover:text-primary transition-colors">Terms & Conditions</Link></li>
+                <li><Link href="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
+                <li><Link href="/refund" className="hover:text-primary transition-colors">Refund Policy</Link></li>
               </ul>
             </div>
 
@@ -401,7 +397,7 @@ export default async function LandingPage() {
 
           {/* Bottom Bar */}
           <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-gray-100 text-sm gap-4">
-            <p>© {new Date().getFullYear()} KlikForm. Hak Cipta Terpelihara.</p>
+            <p>© {new Date().getFullYear()} KlikForm. All Rights Reserved.</p>
             <p className="flex items-center gap-1">Made with <span className="text-red-500">❤️</span> in Malaysia</p>
           </div>
         </div>

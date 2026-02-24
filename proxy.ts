@@ -12,12 +12,12 @@ function getSafeRedirectPath(path: string, fallback = '/forms'): string {
 }
 
 // Routes that require authentication
-const protectedRoutes = ['/dashboard', '/builder', '/settings', '/certificates', '/qr-builder', '/forms', '/shortener'];
+const protectedRoutes = ['/dashboard', '/builder', '/settings', '/certificates', '/qr-builder', '/forms', '/shortener', '/responses'];
 
 // Routes that are always public
 const publicRoutes = ['/login', '/form', '/s', '/check', '/verify', '/api'];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // Skip static files and images

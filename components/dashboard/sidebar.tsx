@@ -15,6 +15,7 @@ import {
   Loader2,
   QrCode,
   Link as LinkIcon,
+  ClipboardList,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createFormAction } from '@/actions/forms';
@@ -61,6 +62,12 @@ export function DashboardSidebar({ profile, onNavigate, isMobile = false }: Side
       href: '/forms',
       icon: LayoutDashboard,
       active: pathname === '/forms',
+    },
+    {
+      title: 'Responses',
+      href: '/responses',
+      icon: ClipboardList,
+      active: pathname === '/responses',
     },
     {
       title: 'Settings',

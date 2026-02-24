@@ -1,5 +1,61 @@
 # Project Memory
 
+## System Overview
+
+**KlikForm** — SaaS form builder platform (Malaysian market). Users create forms, collect responses, generate e-certificates, build QR codes, and shorten URLs.
+
+### Tech Stack
+- **Framework**: Next.js 16.1.6 (App Router, Turbopack)
+- **Database**: Supabase (PostgreSQL + Auth + RLS)
+- **Google Integration**: OAuth ("Connect with Google") + Manual Service Account keys
+- **Payments**: Custom webhook-based payment system
+- **Styling**: Tailwind CSS + shadcn/ui components
+- **Deployment**: Vercel
+
+### App Routes
+| Route Group | Path | Purpose |
+|---|---|---|
+| `(auth)` | `/login`, `/register` | Auth pages |
+| `(dashboard)` | `/forms`, `/responses`, `/settings`, `/certificates`, `/certificates/builder`, `/qr-builder`, `/shortener` | Main dashboard (sidebar layout) |
+| `(public)` | `/form/[id]`, `/check/[formId]`, `/verify/[id]`, `/s/[code]`, `/privacy`, `/terms`, `/about` | Public-facing (no auth) |
+| `api` | `/api/auth/google/*`, `/api/cron/*`, `/api/payment/webhook`, `/api/proxy`, `/api/service-email` | API routes |
+| `builder` | `/builder/[id]` | Form builder (outside dashboard layout) |
+| Root | `/`, `/pricing`, `/refund` | Landing, pricing, refund pages |
+| `products` | `/products/forms`, `/products/certificates`, `/products/shortener`, `/products/qr-codes` | Individual product feature pages |
+
+### Key Folders
+- **`actions/`** — Server actions: `forms.ts`, `certificates.ts`, `certificate-template.ts`, `qr-codes.ts`, `short-links.ts`, `auth.ts`, `user.ts`
+- **`lib/storage/`** — Supabase CRUD: `forms.ts`, `settings.ts`, `certificates.ts`, `qr-codes.ts`, `short-links.ts`, `subscription.ts`
+- **`lib/types/`** — TypeScript interfaces: `forms.ts`, `certificates.ts`, `qr-codes.ts`, `subscription.ts`, `common.ts`, `index.ts`
+- **`lib/`** — Utilities: `encryption.ts`, `rate-limit.ts`, `navigation.ts`, `email/`, `constants/`, `api/`
+- **`components/`** — UI components: `dashboard/` (sidebar, form-card), `ui/` (shadcn), `pricing/`, `pricing-modal.tsx`
+- **`utils/supabase/`** — Supabase clients: `client.ts` (browser), `server.ts` (SSR), `admin.ts` (service role)
+
+### Database Tables (Supabase)
+| Table | Purpose |
+|---|---|
+| `forms` | Form definitions (fields, settings, theme) |
+| `settings` | Google credentials per user (encrypted) |
+| `subscriptions` | User tier (free/pro/enterprise), status, period |
+| `usage` | Monthly usage tracking (forms created, submissions count) |
+| `certificate_templates` | E-cert builder templates |
+| `qr_codes` | QR code designs |
+| `short_links` | URL shortener data |
+
+### Google Auth — Dual Method
+1. **OAuth ("Connect with Google")** — Recommended. One-click auth, stores `googleAccessToken` + `googleRefreshToken` in settings. Auto-refreshes expired tokens.
+2. **Manual Service Account** — Advanced. User configures `googleClientEmail` + `googlePrivateKey` in Settings → Service Account tab. Requires manual Google Sheet sharing.
+- **Builder logic**: `useManualKeys = !!settings?.googleClientEmail` determines which UI to show.
+- **Google Sheet URL input**: Always visible in builder if form has one.
+- **Blue instruction box**: Hidden for manual key users (they already configured in Settings).
+
+### Form Submission Flow (`submitFormAction`)
+1. Rate limiting check
+2. Server-side validation
+3. File uploads → Google Drive (if configured)
+4. Send data → Google Sheets (if `googleSheetUrl` set AND credentials exist)
+5. Increment `usage.total_submissions` counter
+
 ## Core Features & Fixes
 - **Certificate Verification (e-Sijil)**: Fixed a bug where certificate verification threw an `invalid_grant` exception when checking records from Google Sheets. The root cause was that `checkCertificateByIC` strictly assumed a Google Service Account (`googleClientEmail` & `googlePrivateKey`) was in use. It was updated to check for `googleAccessToken` (Google OAuth "Connect with Google" flow) first, with an auto-refresh mechanism if the token is expired.
 - **Service Account Google Credentials parsing**: Implemented `.trim()` and `formatPrivateKey()` when building the service account parameter to prevent trailing space errors.
@@ -18,3 +74,50 @@
 ## Builder Interface
 - **NaN Input Prevention**: React UI crashes regarding `Received NaN for the value attribute` happening in the Certificate Editor properties panel were safely resolved. Number inputs (`x, y, width, height, offsets`) were updated to use strictly casted values and logical fallbacks (`Number(val) || 0`) preventing blank text boxes from propagating `parseInt("") => NaN` state exceptions.
 - **Orientation Persistence**: The builder allowed users to flip to Portrait mode, but the `handleSave` dispatcher in `client.tsx` silently stripped `width` and `height` from the payload, meaning the database eternally reset the template back to Landscape on refresh. `width` and `height` were added to the payload block to successfully lock horizontal/vertical ratios into persistence.
+
+## Dashboard — Responses Tab
+- **Responses Page** (`app/(dashboard)/responses/`): New sidebar tab "Responses" that lists all user forms with their Google Sheet links. Each form card shows the linked Google Sheet URL with an "Open Sheet" button to directly open the spreadsheet. Forms without a linked sheet show a message prompting users to add one via the Form Builder.
+- **Google Sheet Section (Builder)**: The blue instruction box ("How to link your Google Sheet" + "Copy Service Email" button) in `app/builder/[id]/client.tsx` is conditionally hidden for manual Service Account key users (`useManualKeys` prop from `page.tsx`). The Google Sheet URL input remains visible for all users. The `useManualKeys` flag is set based on `!!settings?.googleClientEmail`.
+- **Turbopack Cache Corruption (Resolved):** Encountered a fatal "module factory is not available" error for `client.tsx` under Next.js 16 / Turbopack. This was diagnosed as a corrupted `.next` cache retaining stale dependency trees after migrating middleware and Server Actions. A total cache wipe (`Remove-Item -Recurse -Force .next`) successfully resolved the issue.
+
+## Login Page
+- **Hydration Mismatch Fix**: Radix UI Tabs on `app/(auth)/login/page.tsx` caused a hydration warning because `activeTab` was set via `useEffect` (reading URL `?tab=signup`) which differs between server and client render. Fixed by adding a `mounted` state and using `value={mounted ? activeTab : 'login'}` so server and client both render `'login'` initially.
+
+## Security Audit (2026-02-24)
+- All dashboard routes: auth-gated via `getUser()` + RLS (`user_id` filter) ✅
+- `/api/service-email`: requires authentication, returns 401 if not logged in ✅
+- `submitFormAction`: IP-based rate limiting + server-side validation + quota check ✅
+- `/api/proxy`: domain whitelist (Google domains only) ✅
+- Builder page: ownership check (`user.id !== form.userId`) ✅
+- **Public Data Integrity**: SSR hydration safely strips sensitive tokens (`googleSheetUrl: undefined`) before pushing payloads to public clients. ✅
+- **Sheet Injection Shield**: Active mitigation against arbitrary CSV/formula injections (`=`, `+`, `-`, `@`) forced to plaintext format via `lib/api/google-sheets.ts`. ✅
+- **ReDoS Protection**: Submission text strings are natively chopped at a 1000-character max before attempting RegExp validation to prevent CPU locks. ✅
+- Production build: clean (exit code 0), all routes compile successfully ✅
+- **Public Data Stripping**: `getCertificateTemplatePublic` intentionally omits `userId` from response to prevent user ID enumeration attacks. `CertificateTemplate.userId` made optional in type definition. ✅
+- **ilike Wildcard Escape**: `qr-codes.ts` search query escapes `%`, `_`, `\` characters before passing to `.ilike()` to prevent unintended pattern matching. ✅
+- **Cron Error Response Hardened**: `inactivity-check/route.ts` no longer leaks `String(error)` details in JSON response; error details logged server-side only. ✅
+- **Auth Callback Open Redirect Fix**: `app/api/auth/callback/route.ts` `next` query parameter now validated to prevent open redirect attacks (`//evil.com` style). Only safe relative paths (`/path`) are accepted. ✅
+- **Short-Link Limit Logic Fix**: `lib/storage/short-links.ts` was incorrectly using `limits.maxQRCodes` and a hardcoded `5` to gate short-link creation. Added `maxShortLinks` to `TierLimits` type and `TIER_LIMITS` constants (free: 5, pro: -1, enterprise: -1). ✅
+- **Certificate QR Client-Side Migration**: `components/certificate-qr-card.tsx` migrated from external `api.qrserver.com` API to client-side `qrcode.react` (QRCodeCanvas). QR codes now generated entirely in-browser — zero external API dependency. ✅
+- Production build: clean (exit code 0), all 40 routes compile successfully (2026-02-25) ✅
+
+## System Improvements (2026-02-24)
+- **Loading Skeletons (UI/UX)**: Replaced standard spinners with layout-specific skeleton loaders (`loading.tsx`) across all dashboard tabs (`forms`, `responses`, `settings`, `shortener`, `qr-builder`, `certificates`) for immediate visual feedback. These skeletons perfectly mimic the structure of their respective pages, eliminating layout shift during data fetching.m card placeholders with `animate-pulse`.
+- **Email Notification on Submission**: Added `getNewSubmissionEmail()` template in `lib/email/index.ts` — shows form name, data table (max 10 fields), and Google Sheet button. Integrated into `submitFormAction` as fire-and-forget (non-blocking) using admin client to fetch owner email.
+- **Auto-Create Google Sheet**: New server action `actions/sheets.ts` → `createSheetForFormAction`. Uses OAuth access token to create Google Sheet via Sheets API, handles token refresh, auto-links URL to form. "Create Sheet" button visible on Responses page for OAuth-connected users only (`hasGoogleOAuth` prop).
+- **Responses Page Enhanced**: `app/(dashboard)/responses/page.tsx` now fetches settings to determine OAuth status. Client shows "Create Sheet" button for unlinked forms when OAuth is connected. Adjustments made for responsive layout stacking strictly on smaller screens.
+- **QR Code Bad Request Fix**: Addressed an issue in `components/certificate-qr-card.tsx` where an empty `window.location.origin` during Server-Side Rendering (SSR) caused an incomplete request to `api.qrserver.com` (400 Bad Request). The `<img src={qrUrlPreview} />` is now conditionally rendered only after the component is mounted, displaying a skeleton loader in the interim.
+- **Settings Mobile View Override**: Fixed an interface overflow bug on the Settings (`/settings`) page under the "Integrations" tab. The Google connection toggle buttons (`TabsTrigger`) were overlapping on mobile devices. Replaced the rigid 2-column grid with a responsive stack (`grid-cols-1 sm:grid-cols-2`) and enabled `h-auto whitespace-normal` text wrapping to ensure readability on narrow screens.
+- **Shortener Mobile View Padding Fix**: Fixed a visual issue in `app/(dashboard)/shortener/page.tsx` where content was glued to the edges of the screen on mobile devices. Added `px-4 md:px-8` to the main container and wrapped the links table in an `overflow-x-auto` div with `min-w-[600px]` to allow horizontal scrolling instead of squishing columns.
+- **Responsive Architecture (Desktop & Mobile Sync)**: Clarified that the application natively "syncs" across Desktop and Mobile without parallel codebases. It utilizes Responsive Web Design (Tailwind media queries like `sm:`, `md:`) to adapt a single, unified codebase to any screen size automatically while sharing the same real-time backend and database.
+- **Middleware → Proxy Migration**: Next.js 16 requirement. Renamed `middleware.ts` to `proxy.ts` and default function. Included `/responses` in the `protectedRoutes` list.
+- **Mobile Responsive Audit**: Screen-tested application with subagent. 5/5 score. Minimal styling changes required on Response Client container.
+- **Hydration Mismatch Fix**: Added `suppressHydrationWarning` to `<html>` and `<body>` tags in `app/layout.tsx` to prevent React hydration errors caused by browser extensions (e.g., extensions injecting `data-jetski-tab-id`).
+- **Landing Page Enhancements**: Completely translated `app/page.tsx` and `app/pricing/page.tsx` from Malay to English. Upgraded the basic desktop navigation to a premium `NavigationMenu` (mega-menu style) and extracted it into a strictly isolated `"use client"` boundary (`components/landing-navbar.tsx`) to resolve complex Radix UI hydration mismatches.
+
+## System Improvements (2026-02-25)
+- **Corporate About Page**: Created a new robust `/about` route (`app/about/page.tsx`) styled precisely to the theme of top-tier SaaS landing pages to increase brand trust.
+- **Individual Product Pages**: Created 4 dedicated product pages (`/products/forms`, `/products/certificates`, `/products/shortener`, `/products/qr-codes`) each showcasing 6 unique features, use cases, and CTAs with per-product color themes (blue, purple, orange, green). Updated `LandingNavbar` dropdown and `LandingMobileMenu` to link to these pages.
+- **Gradient Animation Slowmo**: Changed `animate-gradient-xy` duration from 3s to 8s in `globals.css` for a smoother, more premium feel.
+- **Descender Clipping Fix**: Added `pb-4` padding to all `bg-clip-text` gradient headings to prevent letters like "g", "y", "p" from being clipped by the CSS `background-clip: text` property.
+- **LandingNavbar Hydration Guard**: Added `mounted` state guard to `LandingNavbar` so Radix UI `NavigationMenu` only renders client-side. SSR placeholder with matching dimensions prevents layout shift while eliminating `useId()` hydration mismatches.

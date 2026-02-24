@@ -160,7 +160,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ms" data-scroll-behavior="smooth">
+    <html lang="ms" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         {/* JSON-LD Structured Data */}
         <script
@@ -176,7 +176,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`} suppressHydrationWarning>
         <AuthProvider>{children}</AuthProvider>
         <Toaster />
       </body>

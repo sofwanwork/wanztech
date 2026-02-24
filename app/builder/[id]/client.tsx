@@ -64,9 +64,10 @@ import { QrCustomizer } from '@/components/forms/qr-customizer';
 interface BuilderClientProps {
   initialForm: Form;
   userCertificates: CertificateTemplateType[];
+  useManualKeys?: boolean;
 }
 
-export function BuilderClient({ initialForm, userCertificates }: BuilderClientProps) {
+export function BuilderClient({ initialForm, userCertificates, useManualKeys }: BuilderClientProps) {
   const router = useRouter();
   const [form, setForm] = useState<Form>(initialForm);
   const [saving, setSaving] = useState(false);
@@ -472,51 +473,53 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                     value={form.googleSheetUrl || ''}
                     onChange={(e) => setForm((f) => ({ ...f, googleSheetUrl: e.target.value }))}
                   />
-                  <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-sm">
-                    <p className="font-medium text-blue-800 dark:text-blue-200 mb-2">
-                      How to link your Google Sheet:
-                    </p>
-                    <ol className="list-decimal list-inside space-y-1 text-blue-700 dark:text-blue-300 text-xs">
-                      <li>Create a new Google Sheet.</li>
-                      <li>
-                        Click <strong>Share</strong> &gt; Add the Service Account email below as{' '}
-                        <strong>Editor</strong>.
-                      </li>
-                      <li>Copy and paste the Google Sheet URL above.</li>
-                    </ol>
-                    <div className="mt-3 flex items-center gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="bg-white dark:bg-gray-800"
-                        onClick={async () => {
-                          try {
-                            const res = await fetch('/api/service-email');
-                            if (res.ok) {
-                              const { email } = await res.json();
-                              const copied = await copyToClipboard(email);
-                              if (copied) {
-                                toast.success('Service Account Email copied!');
+                  {!useManualKeys && (
+                    <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-sm">
+                      <p className="font-medium text-blue-800 dark:text-blue-200 mb-2">
+                        How to link your Google Sheet:
+                      </p>
+                      <ol className="list-decimal list-inside space-y-1 text-blue-700 dark:text-blue-300 text-xs">
+                        <li>Create a new Google Sheet.</li>
+                        <li>
+                          Click <strong>Share</strong> &gt; Add the Service Account email below as{' '}
+                          <strong>Editor</strong>.
+                        </li>
+                        <li>Copy and paste the Google Sheet URL above.</li>
+                      </ol>
+                      <div className="mt-3 flex items-center gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="bg-white dark:bg-gray-800"
+                          onClick={async () => {
+                            try {
+                              const res = await fetch('/api/service-email');
+                              if (res.ok) {
+                                const { email } = await res.json();
+                                const copied = await copyToClipboard(email);
+                                if (copied) {
+                                  toast.success('Service Account Email copied!');
+                                } else {
+                                  toast.info(`Email: ${email}`, { duration: 10000 });
+                                }
                               } else {
-                                toast.info(`Email: ${email}`, { duration: 10000 });
+                                toast.error('Please configure your settings first.');
                               }
-                            } else {
-                              toast.error('Please configure your settings first.');
+                            } catch {
+                              toast.error('Failed to fetch service email.');
                             }
-                          } catch {
-                            toast.error('Failed to fetch service email.');
-                          }
-                        }}
-                      >
-                        <Copy className="h-3 w-3 mr-1" />
-                        Copy Service Email
-                      </Button>
-                      <span className="text-xs text-muted-foreground">
-                        Paste this into Google Sheet Share
-                      </span>
+                          }}
+                        >
+                          <Copy className="h-3 w-3 mr-1" />
+                          Copy Service Email
+                        </Button>
+                        <span className="text-xs text-muted-foreground">
+                          Paste this into Google Sheet Share
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="thank-you-message">Custom Thank You Message</Label>
@@ -694,11 +697,10 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                             },
                           }))
                         }
-                        className={`flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all ${
-                          (form.theme?.backgroundPattern || 'none') === p.id
-                            ? 'border-primary bg-primary/5'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
+                        className={`flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all ${(form.theme?.backgroundPattern || 'none') === p.id
+                          ? 'border-primary bg-primary/5'
+                          : 'border-gray-200 hover:border-gray-300'
+                          }`}
                       >
                         <div className={`w-10 h-10 rounded-md ${p.pattern} border`} />
                         <span className="text-xs font-medium">{p.label}</span>
@@ -828,11 +830,10 @@ export function BuilderClient({ initialForm, userCertificates }: BuilderClientPr
                             onClick={() =>
                               setForm((f) => ({ ...f, eCertificateTemplate: cert.id }))
                             }
-                            className={`cursor-pointer rounded-lg border-2 overflow-hidden transition-all relative group ${
-                              form.eCertificateTemplate === cert.id
-                                ? 'border-primary ring-2 ring-primary/20'
-                                : 'border-gray-200 hover:border-gray-300'
-                            }`}
+                            className={`cursor-pointer rounded-lg border-2 overflow-hidden transition-all relative group ${form.eCertificateTemplate === cert.id
+                              ? 'border-primary ring-2 ring-primary/20'
+                              : 'border-gray-200 hover:border-gray-300'
+                              }`}
                           >
                             {/* Thumbnail */}
                             <div

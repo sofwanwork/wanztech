@@ -240,11 +240,11 @@
 }
 
 /* Content first/last child margins */
-.rich-text-editor .tiptap > :first-child {
+.rich-text-editor .tiptap> :first-child {
   margin-top: 0;
 }
 
-.rich-text-editor .tiptap > :last-child {
+.rich-text-editor .tiptap> :last-child {
   margin-bottom: 0;
 }
 
@@ -288,5 +288,5 @@
 
 .animate-gradient-xy {
   background-size: 200% auto;
-  animation: gradient-xy 3s ease infinite;
+  animation: gradient-xy 8s ease infinite;
 }

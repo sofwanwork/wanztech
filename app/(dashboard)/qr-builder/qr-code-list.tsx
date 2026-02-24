@@ -73,7 +73,7 @@ export function QrCodeList({ initialQrCodes, query }: QrCodeListProps) {
       {initialQrCodes.map((qr) => (
         <Card key={qr.id} className="group hover:border-primary/50 transition-all hover:shadow-md">
           <CardHeader>
-            <CardTitle className="truncate">{qr.title}</CardTitle>
+            <CardTitle className="truncate pb-1">{qr.title}</CardTitle>
           </CardHeader>
           <CardContent className="h-40 flex items-center justify-center bg-gray-50 rounded-md mx-6 mb-4 relative overflow-hidden">
             {/* We could render a mini preview here, but for now just an icon */}

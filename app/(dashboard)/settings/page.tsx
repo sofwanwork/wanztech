@@ -283,11 +283,11 @@ function SettingsContent() {
           </div>
 
           <Tabs defaultValue="oauth" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6 p-1 bg-gray-100/80 rounded-lg">
-              <TabsTrigger value="oauth" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md py-2">
+            <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 mb-6 p-1 bg-gray-100/80 rounded-lg h-auto sm:h-12 gap-1 sm:gap-0">
+              <TabsTrigger value="oauth" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md py-2 h-auto whitespace-normal min-h-[40px]">
                 Connect with Google (Recommended)
               </TabsTrigger>
-              <TabsTrigger value="service-account" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md py-2">
+              <TabsTrigger value="service-account" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md py-2 h-auto whitespace-normal min-h-[40px]">
                 Service Account (Advanced)
               </TabsTrigger>
             </TabsList>

@@ -43,4 +43,5 @@ export interface TierLimits {
   maxSubmissionsPerForm: number;
   maxCertificates: number;
   maxQRCodes: number;
+  maxShortLinks: number;
 }

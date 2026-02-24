@@ -47,6 +47,79 @@ export async function sendEmail({ to, subject, html }: EmailOptions) {
   }
 }
 
+// New submission notification email
+export function getNewSubmissionEmail(
+  userName: string,
+  formTitle: string,
+  submissionData: Record<string, string>,
+  googleSheetUrl?: string
+) {
+  const dataRows = Object.entries(submissionData)
+    .slice(0, 10) // Limit to 10 fields to keep email clean
+    .map(
+      ([key, value]) => `
+      <tr>
+        <td style="padding: 10px 16px; color: #6b7280; font-size: 13px; border-bottom: 1px solid #f3f4f6; width: 40%;">${key}</td>
+        <td style="padding: 10px 16px; color: #1f2937; font-size: 13px; border-bottom: 1px solid #f3f4f6; font-weight: 500;">${String(value).substring(0, 100)}</td>
+      </tr>`
+    )
+    .join('');
+
+  const sheetButton = googleSheetUrl
+    ? `<div style="text-align: center; margin: 32px 0;">
+        <a href="${googleSheetUrl}" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 14px; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);">
+          📊 Buka Google Sheet
+        </a>
+      </div>`
+    : '';
+
+  const content = `
+        <!-- Header -->
+        <tr>
+          <td style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); padding: 40px 40px 30px; text-align: center;">
+            <div style="font-size: 56px; margin-bottom: 16px;">📬</div>
+            <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 700;">Response Baru!</h1>
+            <p style="margin: 12px 0 0 0; color: rgba(255,255,255,0.9); font-size: 15px;">${formTitle}</p>
+          </td>
+        </tr>
+        
+        <!-- Body -->
+        <tr>
+          <td style="padding: 40px;">
+            <p style="margin: 0 0 20px 0; color: #1f2937; font-size: 16px; line-height: 1.6;">
+              Hai <strong>${userName}</strong> 👋
+            </p>
+            
+            <p style="margin: 0 0 24px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+              Borang <strong>"${formTitle}"</strong> baru sahaja menerima response baru.
+            </p>
+            
+            <!-- Data Table -->
+            <div style="background: #f9fafb; border-radius: 12px; overflow: hidden; margin: 24px 0;">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding: 12px 16px; background: #f3f4f6; color: #374151; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Field</td>
+                  <td style="padding: 12px 16px; background: #f3f4f6; color: #374151; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Response</td>
+                </tr>
+                ${dataRows}
+              </table>
+            </div>
+            
+            ${sheetButton}
+            
+            <p style="margin: 24px 0 0 0; color: #9ca3af; font-size: 13px; text-align: center;">
+              Email ini dihantar secara automatik oleh KlikForm
+            </p>
+          </td>
+        </tr>
+    `;
+
+  return {
+    subject: `📬 Response baru: ${formTitle}`,
+    html: emailWrapper(content, '#6366f1'),
+  };
+}
+
 // Base email template wrapper
 function emailWrapper(content: string, accentColor: string = '#6366f1') {
   return `

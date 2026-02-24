@@ -18,7 +18,9 @@ export async function getQRCodes(query?: string, sort?: string): Promise<QRCode[
   let queryBuilder = supabase.from('qr_codes').select('*').eq('user_id', user.id);
 
   if (query) {
-    queryBuilder = queryBuilder.ilike('title', `%${query}%`);
+    // Escape SQL LIKE wildcard characters to prevent unintended pattern matching
+    const escapedQuery = query.replace(/[%_\\]/g, '\\$&');
+    queryBuilder = queryBuilder.ilike('title', `%${escapedQuery}%`);
   }
 
   // Initial sort from DB - but we might refine in JS for consistency with Forms

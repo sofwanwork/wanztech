@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, Download, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { QRCodeCanvas } from 'qrcode.react';
 
 interface CertificateQrCardProps {
   formId: string;
@@ -16,6 +17,7 @@ interface CertificateQrCardProps {
 export function CertificateQrCard({ formId, formTitle, templateName }: CertificateQrCardProps) {
   const [downloading, setDownloading] = useState(false);
   const [origin, setOrigin] = useState('');
+  const highResRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -23,29 +25,24 @@ export function CertificateQrCard({ formId, formTitle, templateName }: Certifica
 
   const checkUrl = `${origin}/check/${formId}`;
 
-  // High resolution QR (500x500)
-  // Only generate QR if origin is available to avoid relative URLs
-  const qrData = origin ? encodeURIComponent(checkUrl) : '';
-  const qrUrlPreview = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrData}`;
-  const qrUrlHighRes = `https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data=${qrData}`;
-
-  const handleDownload = async () => {
+  const handleDownload = useCallback(async () => {
     try {
       setDownloading(true);
 
-      // Fetch the high-res QR code
-      const response = await fetch(qrUrlHighRes);
-      const blob = await response.blob();
+      // Find the hidden high-res canvas and export it
+      const canvas = highResRef.current?.querySelector('canvas');
+      if (!canvas) {
+        toast.error('QR Code not ready');
+        return;
+      }
 
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
+      const url = canvas.toDataURL('image/png');
       const link = document.createElement('a');
       link.href = url;
       link.download = `qr-semakan-sijil-${formTitle.replace(/\s+/g, '-').toLowerCase()}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
 
       toast.success('QR Code dimuat turun! (1000x1000px)');
     } catch (error) {
@@ -54,7 +51,7 @@ export function CertificateQrCard({ formId, formTitle, templateName }: Certifica
     } finally {
       setDownloading(false);
     }
-  };
+  }, [formTitle]);
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -63,17 +60,31 @@ export function CertificateQrCard({ formId, formTitle, templateName }: Certifica
         <CardDescription>Template: {templateName}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* QR Code for verification */}
+        {/* QR Code Preview (client-side generated) */}
         <div className="flex justify-center p-4 bg-white rounded-lg border">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={qrUrlPreview}
-            alt="Certificate Verification QR Code"
-            width={150}
-            height={150}
-            className="rounded"
-          />
+          {origin ? (
+            <QRCodeCanvas
+              value={checkUrl}
+              size={150}
+              level="M"
+              marginSize={2}
+            />
+          ) : (
+            <div className="w-[150px] h-[150px] rounded bg-gray-100 animate-pulse" />
+          )}
         </div>
+
+        {/* Hidden high-res QR for download */}
+        {origin && (
+          <div ref={highResRef} className="hidden">
+            <QRCodeCanvas
+              value={checkUrl}
+              size={1000}
+              level="H"
+              marginSize={2}
+            />
+          </div>
+        )}
 
         {/* Download Button */}
         <Button

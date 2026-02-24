@@ -47,7 +47,7 @@
 5. **Terangkan Perubahan**: Berikan ringkasan asas pada setiap langkah kerja.
 6. **Dokumentasikan Keputusan**: Tambah seksyen reviu pada `task.md`.
 7. **Simpan Pengajaran**: Kemas kini `lessons.md` selepas melakukan pembaikan.
-8. **Kemas Kini Memori**: Wajib kemas kini di `memory.md` untuk merakam apa-apa perubahan, keputusan seni bina, atau status terkini.
+8. **Kemas Kini Memori**: Wajib kemas kini di `memory.md` untuk merakam **SEMUA** perubahan — besar atau kecil — termasuk keputusan seni bina, status terkini, dan sebarang modifikasi pada kod.
 
 ## Prinsip Teras
 

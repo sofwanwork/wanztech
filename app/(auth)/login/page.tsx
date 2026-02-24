@@ -35,8 +35,10 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
   const [showPassword, setShowPassword] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const params = new URLSearchParams(window.location.search);
     if (params.get('tab') === 'signup') {
       setActiveTab('signup');
@@ -224,7 +226,7 @@ export default function LoginPage() {
             >
               <Tabs
                 defaultValue="login"
-                value={activeTab}
+                value={mounted ? activeTab : 'login'}
                 className="w-full"
                 onValueChange={(value) => setActiveTab(value)}
               >

@@ -100,7 +100,7 @@ export type CertificateCategory = 'school' | 'corporate' | 'training' | 'event' 
  */
 export interface CertificateTemplate {
   id: string;
-  userId: string;
+  userId?: string; // Optional: omitted in public API responses for security
   name: string;
   category?: CertificateCategory;
   thumbnail?: string;

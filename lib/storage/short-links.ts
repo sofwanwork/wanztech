@@ -87,18 +87,14 @@ export async function createShortLink(slug: string, originalUrl: string): Promis
     const subscription = await getSubscription();
     const limits = TIER_LIMITS[subscription.tier];
 
-    if (limits.maxQRCodes !== -1) {
+    if (limits.maxShortLinks !== -1) {
         const { count } = await supabase
             .from('short_links')
             .select('*', { count: 'exact', head: true })
             .eq('user_id', user.id);
 
-        // Use 5 as the hard limit for free tier
-        // Note: We use maxQRCodes limit structure from constants but force strict 5 here for safety if constants drift.
-        const limit = 5;
-
-        if ((count || 0) >= limit) {
-            throw new Error(`Free tier is limited to ${limit} short links. Please upgrade to Pro.`);
+        if ((count || 0) >= limits.maxShortLinks) {
+            throw new Error(`Free tier is limited to ${limits.maxShortLinks} short links. Please upgrade to Pro.`);
         }
     }
 

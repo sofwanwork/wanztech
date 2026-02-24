@@ -29,7 +29,7 @@ export default async function ShortenerPage() {
     const totalClicks = shortLinks.reduce((acc, link) => acc + link.clicks, 0);
 
     return (
-        <div className="space-y-8 max-w-6xl mx-auto py-6">
+        <div className="space-y-8 max-w-6xl mx-auto py-6 px-4 md:px-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-gray-900">URL Shortener</h1>
@@ -68,34 +68,36 @@ export default async function ShortenerPage() {
                 <div className="p-6 border-b bg-gray-50/50">
                     <h2 className="font-semibold text-lg">Your Links</h2>
                 </div>
-                <Table>
-                    <TableHeader>
-                        <TableRow className="bg-gray-50/50 hover:bg-gray-50/50">
-                            <TableHead className="w-[300px]">Original URL</TableHead>
-                            <TableHead>Short Link</TableHead>
-                            <TableHead>Clicks</TableHead>
-                            <TableHead>Created At</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {shortLinks.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={5} className="h-32 text-center">
-                                    <div className="flex flex-col items-center justify-center text-muted-foreground">
-                                        <LinkIcon className="h-8 w-8 mb-2 opacity-20" />
-                                        <p>No links created yet</p>
-                                        <p className="text-xs">Create your first short link from the button above</p>
-                                    </div>
-                                </TableCell>
+                <div className="overflow-x-auto">
+                    <Table className="min-w-[600px]">
+                        <TableHeader>
+                            <TableRow className="bg-gray-50/50 hover:bg-gray-50/50">
+                                <TableHead className="w-[300px]">Original URL</TableHead>
+                                <TableHead>Short Link</TableHead>
+                                <TableHead>Clicks</TableHead>
+                                <TableHead>Created At</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
-                        ) : (
-                            shortLinks.map((link) => (
-                                <ShortLinkRow key={link.id} link={link} />
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
+                        </TableHeader>
+                        <TableBody>
+                            {shortLinks.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="h-32 text-center">
+                                        <div className="flex flex-col items-center justify-center text-muted-foreground">
+                                            <LinkIcon className="h-8 w-8 mb-2 opacity-20" />
+                                            <p>No links created yet</p>
+                                            <p className="text-xs">Create your first short link from the button above</p>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                shortLinks.map((link) => (
+                                    <ShortLinkRow key={link.id} link={link} />
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
             </div>
         </div>
     );

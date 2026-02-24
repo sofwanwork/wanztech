@@ -216,7 +216,7 @@ export async function getCertificateTemplatePublic(
 
   return {
     id: data.id,
-    userId: data.user_id,
+    // Security: userId intentionally omitted from public response
     name: data.name,
     thumbnail: data.thumbnail,
     elements: data.elements,

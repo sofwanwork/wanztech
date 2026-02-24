@@ -14,18 +14,21 @@ export const TIER_LIMITS: Record<SubscriptionTier, TierLimits> = {
     maxSubmissionsPerForm: 3000,
     maxCertificates: 2,
     maxQRCodes: 5,
+    maxShortLinks: 5,
   },
   pro: {
     maxForms: -1,
     maxSubmissionsPerForm: -1,
     maxCertificates: -1,
     maxQRCodes: -1,
+    maxShortLinks: -1,
   },
   enterprise: {
     maxForms: -1,
     maxSubmissionsPerForm: -1,
     maxCertificates: -1,
     maxQRCodes: -1,
+    maxShortLinks: -1,
   },
 };
 
