@@ -205,6 +205,8 @@ export function CertificateBuilderClient({
         backgroundColor: template.backgroundColor,
         backgroundImage: template.backgroundImage,
         thumbnail,
+        width: template.width,
+        height: template.height,
       });
       if (result.success) {
         toast.success('Template disimpan!');
@@ -437,7 +439,8 @@ export function CertificateBuilderClient({
         >
           <div
             ref={canvasRef}
-            className="relative shadow-2xl w-full max-w-[800px] bg-cover"
+            className={`relative shadow-2xl w-full bg-cover ${template.width >= template.height ? 'max-w-[800px]' : 'max-w-[500px]'
+              }`}
             style={{
               aspectRatio: `${template.width}/${template.height}`,
               backgroundColor: template.backgroundColor,
@@ -460,11 +463,10 @@ export function CertificateBuilderClient({
               return (
                 <div
                   key={el.id}
-                  className={`absolute cursor-move transition-shadow select-none ${
-                    isSelected
-                      ? 'ring-2 ring-primary ring-offset-2'
-                      : 'hover:ring-1 hover:ring-gray-300'
-                  }`}
+                  className={`absolute cursor-move transition-shadow select-none ${isSelected
+                    ? 'ring-2 ring-primary ring-offset-2'
+                    : 'hover:ring-1 hover:ring-gray-300'
+                    }`}
                   style={{
                     left: `${(el.x / template.width) * 100}%`,
                     top: `${(el.y / template.height) * 100}%`,

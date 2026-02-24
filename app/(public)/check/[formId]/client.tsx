@@ -66,18 +66,41 @@ export function CertificateCheckClient({
 
     try {
       const html2canvas = (await import('html2canvas-pro')).default;
-      // Capture the hidden full-size certificate directly (no cloning needed)
+
+      // Dynamically detect orientation from the hidden container before capture
+      const isPortrait = hiddenCertificateRef.current.offsetHeight > hiddenCertificateRef.current.offsetWidth;
+      const tWidth = isPortrait ? 794 : 1123;
+      const tHeight = isPortrait ? 1123 : 794;
+
+      // Capture the hidden full-size certificate directly using onclone
+      // This prevents the element from visually appearing on the user's screen during capturing
       const canvas = await html2canvas(hiddenCertificateRef.current, {
-        scale: 2, // High quality
+        scale: 3, // High quality HD
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff',
-        width: 1123,
-        height: 794,
+        width: tWidth,
+        height: tHeight,
+        // Prevent scroll offsets from injecting white gaps into the capture
+        scrollY: 0,
+        scrollX: 0,
+        windowWidth: tWidth,
+        windowHeight: tHeight,
+        onclone: (clonedDoc) => {
+          const el = clonedDoc.getElementById('hidden-print-container');
+          if (el) {
+            // Bring it into view ONLY inside the html2canvas cloned sandbox
+            el.style.position = 'absolute';
+            el.style.top = '0px';
+            el.style.left = '0px';
+            el.style.zIndex = '9999';
+          }
+        },
       });
 
       const link = document.createElement('a');
       link.download = `Certificate_${result.name.replace(/\s+/g, '_')}.png`;
+      // For PNG, keeping full 1.0 quality as PNG is typically lossless anyway 
       link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
 
@@ -95,30 +118,54 @@ export function CertificateCheckClient({
       const html2canvas = (await import('html2canvas-pro')).default;
       const { jsPDF } = await import('jspdf');
 
-      // Capture the hidden full-size certificate directly (no cloning needed)
+      // Dynamically detect orientation from the hidden container before capture
+      const isPortrait = hiddenCertificateRef.current.offsetHeight > hiddenCertificateRef.current.offsetWidth;
+      const tWidth = isPortrait ? 794 : 1123;
+      const tHeight = isPortrait ? 1123 : 794;
+
+      // Capture the hidden full-size certificate directly
+      // Using scale 3 is usually the "sweet spot" for HD text without crashing on mobile devices
       const canvas = await html2canvas(hiddenCertificateRef.current, {
-        scale: 2, // Good balance of quality and size
+        scale: 3,
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff',
-        width: 1123,
-        height: 794,
+        width: tWidth,
+        height: tHeight,
+        // Prevent scroll offsets from injecting white gaps into the capture
+        scrollY: 0,
+        scrollX: 0,
+        windowWidth: tWidth,
+        windowHeight: tHeight,
+        onclone: (clonedDoc) => {
+          const el = clonedDoc.getElementById('hidden-print-container');
+          if (el) {
+            // Bring it into view ONLY inside the html2canvas cloned sandbox
+            el.style.position = 'absolute';
+            el.style.top = '0px';
+            el.style.left = '0px';
+            el.style.zIndex = '9999';
+          }
+        },
       });
 
-      // A4 landscape dimensions in mm
+      // Parser dimensions to dictate jsPDF document mapping
       const pdf = new jsPDF({
-        orientation: 'landscape',
+        orientation: isPortrait ? 'portrait' : 'landscape',
         unit: 'mm',
         format: 'a4',
       });
 
-      // Use JPEG with high quality (0.9) to reduce file size significantly while keeping good resolution
-      const imgData = canvas.toDataURL('image/jpeg', 0.9);
+      // To keep file size LOW but quality HIGH:
+      // 1. High canvas scale (done above, scale: 3)
+      // 2. High jpeg compression ratio (0.6 - 0.75 range) 
+      const imgData = canvas.toDataURL('image/jpeg', 0.7);
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
 
-      // Stretch to fill entire page (no white borders)
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      // Ensure 'FAST' or 'MEDIUM' compression alias is injected
+      // Add generous +1 overlapping to prevent subpixel scaling rounding errors from revealing the white PDF background
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth + 2, pdfHeight + 2, undefined, 'FAST');
       pdf.save(`Certificate_${result.name.replace(/\s+/g, '_')}.pdf`);
 
       toast.success('Certificate PDF downloaded successfully!');
@@ -275,6 +322,7 @@ export function CertificateCheckClient({
             {/* Hidden Full-Size Certificate for PDF/PNG Capture - Exactly as Rendered */}
             <div
               ref={hiddenCertificateRef}
+              id="hidden-print-container"
               style={{
                 position: 'absolute',
                 top: '-9999px',

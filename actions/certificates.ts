@@ -5,6 +5,8 @@ import { JWT } from 'google-auth-library';
 import { getFormById } from '@/lib/storage/forms';
 import { getSettingsByFormId } from '@/lib/storage/settings';
 import { headers as getNextHeaders } from 'next/headers';
+import { createAdminClient } from '@/utils/supabase/admin';
+import { encrypt } from '@/lib/encryption';
 
 // ─── Simple In-Memory Rate Limiter ──────────────────────────────────────────────
 // Resets on server cold start (per-instance). Good enough for MVP.
@@ -69,8 +71,8 @@ export async function checkCertificateByIC(
     }
 
     const settings = await getSettingsByFormId(formId);
-    if (!settings?.googleClientEmail || !settings?.googlePrivateKey) {
-      return { found: false, error: 'Credentials Google Sheet tidak lengkap' };
+    if (!settings) {
+      return { found: false, error: 'Tiada konfigurasi integrasi dijumpai' };
     }
 
     // Extract sheet ID from URL
@@ -78,32 +80,82 @@ export async function checkCertificateByIC(
     if (!match || !match[1]) {
       return { found: false, error: 'URL Google Sheet tidak sah' };
     }
-
     const sheetId = match[1];
-    const pk = formatPrivateKey(settings.googlePrivateKey);
 
-    // Connect to Google Sheet
-    const serviceAccountAuth = new JWT({
-      email: settings.googleClientEmail,
-      key: pk,
-      scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
-    });
+    // Authentication Strategy: OAuth vs Service Account
+    let auth;
+    let accessToken = settings.googleAccessToken;
 
-    const doc = new GoogleSpreadsheet(sheetId, serviceAccountAuth);
+    if (accessToken) {
+      // Token Expiration Check
+      if (settings.googleRefreshToken && settings.googleTokenExpiry) {
+        if (Date.now() > settings.googleTokenExpiry - 300000) {
+          console.log('Access token expired for certificate check, refreshing...');
+          try {
+            const { refreshAccessToken } = await import('@/lib/api/google-auth');
+            const newCreds = await refreshAccessToken(settings.googleRefreshToken);
+
+            if (newCreds.access_token) {
+              accessToken = newCreds.access_token;
+
+              // Only update DB if we can identify the user who owns this form.
+              if (form.userId) {
+                const adminSupabase = createAdminClient();
+                const updateData: any = {
+                  google_access_token: encrypt(accessToken),
+                  updated_at: new Date().toISOString()
+                };
+                if (newCreds.expiry_date) {
+                  updateData.google_token_expiry = newCreds.expiry_date;
+                }
+                await adminSupabase.from('settings').update(updateData).eq('user_id', form.userId);
+                console.log('Refreshed token saved to DB during certificate check');
+              }
+            }
+          } catch (e) {
+            console.error('Token refresh failed during certificate check:', e);
+          }
+        }
+      }
+
+      // Initialize OAuth
+      const { google } = await import('googleapis');
+      const oauth2Client = new google.auth.OAuth2();
+      oauth2Client.setCredentials({ access_token: accessToken });
+      auth = oauth2Client;
+
+    } else if (settings.googleClientEmail && settings.googlePrivateKey) {
+      // Connect to Google Sheet via Service Account
+      const pk = formatPrivateKey(settings.googlePrivateKey);
+      auth = new JWT({
+        email: settings.googleClientEmail.trim(),
+        key: pk,
+        scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+      });
+    } else {
+      return { found: false, error: 'Tiada akses (sijil autentikasi tidak sah atau tamat tempoh)' };
+    }
+
+    const doc = new GoogleSpreadsheet(sheetId, auth);
     await doc.loadInfo();
 
     const sheet = doc.sheetsByIndex[0];
     await sheet.loadHeaderRow();
     const headers = sheet.headerValues;
 
-    // Find IC column (look for "IC", "No IC", "No Kad Pengenalan", etc.)
-    const icColumnIndex = headers.findIndex(
-      (h) =>
-        h.toLowerCase().includes('ic') ||
-        h.toLowerCase().includes('kad pengenalan') ||
-        h.toLowerCase() === 'no. ic' ||
-        h.toLowerCase() === 'no.ic'
-    );
+    // Find IC column (strictly look for exact or bounded "IC", "Kad Pengenalan", etc.)
+    const icColumnIndex = headers.findIndex((h) => {
+      const lower = h.toLowerCase().trim();
+      return (
+        lower === 'ic' ||
+        lower === 'no ic' ||
+        lower === 'no. ic' ||
+        lower === 'no.ic' ||
+        lower === 'ic number' ||
+        lower.includes('kad pengenalan') ||
+        lower.includes('nric')
+      );
+    });
 
     // Find Name column
     const nameColumnIndex = headers.findIndex(
@@ -233,7 +285,7 @@ export async function checkCertificateByIC(
     }
 
     return { found: false, error: 'IC tidak dijumpai dalam rekod' };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Certificate check error:', error);
     return { found: false, error: 'Ralat semasa menyemak sijil' };
   }

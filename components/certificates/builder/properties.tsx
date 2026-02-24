@@ -153,8 +153,8 @@ export function CertificateEditorProperties({
               <Label className="text-[10px] text-gray-500">X</Label>
               <Input
                 type="number"
-                value={Math.round(selectedElement.x)}
-                onChange={(e) => updateElement(selectedElement.id, { x: parseInt(e.target.value) })}
+                value={Math.round(Number(selectedElement.x) || 0)}
+                onChange={(e) => updateElement(selectedElement.id, { x: parseInt(e.target.value) || 0 })}
                 className="h-8"
               />
             </div>
@@ -162,8 +162,8 @@ export function CertificateEditorProperties({
               <Label className="text-[10px] text-gray-500">Y</Label>
               <Input
                 type="number"
-                value={Math.round(selectedElement.y)}
-                onChange={(e) => updateElement(selectedElement.id, { y: parseInt(e.target.value) })}
+                value={Math.round(Number(selectedElement.y) || 0)}
+                onChange={(e) => updateElement(selectedElement.id, { y: parseInt(e.target.value) || 0 })}
                 className="h-8"
               />
             </div>
@@ -171,9 +171,9 @@ export function CertificateEditorProperties({
               <Label className="text-[10px] text-gray-500">Width</Label>
               <Input
                 type="number"
-                value={Math.round(selectedElement.width)}
+                value={Math.round(Number(selectedElement.width) || 0)}
                 onChange={(e) =>
-                  updateElement(selectedElement.id, { width: parseInt(e.target.value) })
+                  updateElement(selectedElement.id, { width: parseInt(e.target.value) || 0 })
                 }
                 className="h-8"
               />
@@ -182,9 +182,9 @@ export function CertificateEditorProperties({
               <Label className="text-[10px] text-gray-500">Height</Label>
               <Input
                 type="number"
-                value={Math.round(selectedElement.height)}
+                value={Math.round(Number(selectedElement.height) || 0)}
                 onChange={(e) =>
-                  updateElement(selectedElement.id, { height: parseInt(e.target.value) })
+                  updateElement(selectedElement.id, { height: parseInt(e.target.value) || 0 })
                 }
                 className="h-8"
               />
@@ -258,10 +258,10 @@ export function CertificateEditorProperties({
                   <Label className="text-xs">Offset X</Label>
                   <Input
                     type="number"
-                    value={selectedElement.shadow.offsetX}
+                    value={Number(selectedElement.shadow.offsetX) || 0}
                     onChange={(e) =>
                       updateElement(selectedElement.id, {
-                        shadow: { ...selectedElement.shadow!, offsetX: parseInt(e.target.value) },
+                        shadow: { ...selectedElement.shadow!, offsetX: parseInt(e.target.value) || 0 },
                       })
                     }
                     className="mt-1"
@@ -271,10 +271,10 @@ export function CertificateEditorProperties({
                   <Label className="text-xs">Offset Y</Label>
                   <Input
                     type="number"
-                    value={selectedElement.shadow.offsetY}
+                    value={Number(selectedElement.shadow.offsetY) || 0}
                     onChange={(e) =>
                       updateElement(selectedElement.id, {
-                        shadow: { ...selectedElement.shadow!, offsetY: parseInt(e.target.value) },
+                        shadow: { ...selectedElement.shadow!, offsetY: parseInt(e.target.value) || 0 },
                       })
                     }
                     className="mt-1"
@@ -464,9 +464,9 @@ export function CertificateEditorProperties({
               <Label className="text-sm">Saiz Font</Label>
               <Input
                 type="number"
-                value={selectedElement.fontSize || 16}
+                value={Number(selectedElement.fontSize) || 16}
                 onChange={(e) =>
-                  updateElement(selectedElement.id, { fontSize: parseInt(e.target.value) })
+                  updateElement(selectedElement.id, { fontSize: parseInt(e.target.value) || 16 })
                 }
                 className="mt-1"
               />

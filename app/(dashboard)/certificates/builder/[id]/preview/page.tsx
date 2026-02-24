@@ -40,13 +40,13 @@ export default async function CertificatePreviewPage({ params }: PageProps) {
       </div>
 
       {/* Certificate Preview */}
-      <div className="flex-1 flex items-center justify-center p-8">
+      <div className="flex-1 flex items-center justify-center p-8 overflow-auto">
         <div
           id="certificate-preview"
-          className="relative shadow-2xl"
+          className={`relative shadow-2xl w-full ${template.width >= template.height ? 'max-w-[800px]' : 'max-w-[500px]'
+            }`}
           style={{
-            width: `${template.width}px`,
-            height: `${template.height}px`,
+            aspectRatio: `${template.width}/${template.height}`,
             backgroundColor: template.backgroundColor,
             backgroundImage: template.backgroundImage
               ? `url(${template.backgroundImage})`
@@ -55,65 +55,96 @@ export default async function CertificatePreviewPage({ params }: PageProps) {
             backgroundPosition: 'center',
           }}
         >
-          {template.elements.map((el) => (
-            <div
-              key={el.id}
-              className="absolute"
-              style={{
-                left: `${el.x}px`,
-                top: `${el.y}px`,
-                width: `${el.width}px`,
-                transform: 'translate(-50%, -50%)',
-              }}
-            >
-              {el.type === 'text' && (
-                <div
-                  style={{
-                    fontSize: `${el.fontSize || 16}px`,
-                    fontFamily: el.fontFamily,
-                    fontWeight: el.fontWeight,
-                    fontStyle: el.fontStyle,
-                    color: el.color,
-                    textAlign: el.textAlign,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {el.content}
-                </div>
-              )}
-              {el.type === 'placeholder' && (
-                <div
-                  style={{
-                    fontSize: `${el.fontSize || 16}px`,
-                    fontFamily: el.fontFamily,
-                    fontWeight: el.fontWeight,
-                    fontStyle: el.fontStyle,
-                    color: el.color,
-                    textAlign: el.textAlign,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {PLACEHOLDER_LABELS[el.placeholderType || 'name']}
-                </div>
-              )}
-              {el.type === 'shape' && (
-                <div
-                  style={{
-                    width: `${el.width}px`,
-                    height: `${el.height}px`,
-                    backgroundColor: el.fill,
-                    borderRadius: el.shapeType === 'circle' ? '50%' : 0,
-                  }}
-                />
-              )}
-              {el.type === 'image' && el.src && (
-                <>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={el.src} alt="" className="w-full h-auto" />
-                </>
-              )}
-            </div>
-          ))}
+          {template.elements.map((el) => {
+            // Replicate the scaling math used in the builder
+            const previewScale = (template.width >= template.height ? 800 : 500) / template.width;
+
+            return (
+              <div
+                key={el.id}
+                className="absolute"
+                style={{
+                  left: `${(el.x / template.width) * 100}%`,
+                  top: `${(el.y / template.height) * 100}%`,
+                  width: `${(el.width / template.width) * 100}%`,
+                  height: el.type === 'text' || el.type === 'placeholder'
+                    ? 'auto'
+                    : `${(el.height / template.height) * 100}%`,
+                  transform: `translate(-50%, -50%) rotate(${el.rotation ?? 0}deg)`,
+                  opacity: el.opacity ?? 1,
+                  boxShadow: el.shadow?.enabled
+                    ? `${el.shadow.offsetX}px ${el.shadow.offsetY}px ${el.shadow.blur}px ${el.shadow.color}`
+                    : undefined,
+                  borderRadius: `${el.borderRadius ?? 0}px`,
+                }}
+              >
+                {el.type === 'text' && (
+                  <div
+                    className="whitespace-nowrap"
+                    style={{
+                      fontSize: `${(el.fontSize || 16) * previewScale}px`,
+                      fontFamily: el.fontFamily,
+                      fontWeight: el.fontWeight,
+                      fontStyle: el.fontStyle,
+                      textDecoration: el.textDecoration,
+                      color: el.color,
+                      textAlign: el.textAlign,
+                      lineHeight: el.lineHeight ?? 1.2,
+                      letterSpacing: `${el.letterSpacing ?? 0}px`,
+                      WebkitTextStroke: el.textStrokeWidth
+                        ? `${el.textStrokeWidth * previewScale}px ${el.textStroke || '#000'}`
+                        : undefined,
+                    }}
+                  >
+                    {el.content}
+                  </div>
+                )}
+                {el.type === 'placeholder' && (
+                  <div
+                    className="whitespace-nowrap"
+                    style={{
+                      fontSize: `${(el.fontSize || 16) * previewScale}px`,
+                      fontFamily: el.fontFamily,
+                      fontWeight: el.fontWeight,
+                      fontStyle: el.fontStyle,
+                      textDecoration: el.textDecoration,
+                      color: el.color,
+                      textAlign: el.textAlign,
+                      lineHeight: el.lineHeight ?? 1.2,
+                      letterSpacing: `${el.letterSpacing ?? 0}px`,
+                      WebkitTextStroke: el.textStrokeWidth
+                        ? `${el.textStrokeWidth * previewScale}px ${el.textStroke || '#000'}`
+                        : undefined,
+                    }}
+                  >
+                    {PLACEHOLDER_LABELS[el.placeholderType || 'name']}
+                  </div>
+                )}
+                {el.type === 'shape' && (
+                  <div
+                    className="w-full h-full"
+                    style={{
+                      backgroundColor: el.fill,
+                      borderRadius: el.shapeType === 'circle' ? '50%' : 0,
+                      border: el.strokeWidth
+                        ? `${el.strokeWidth}px solid ${el.stroke || '#000'}`
+                        : undefined,
+                    }}
+                  />
+                )}
+                {el.type === 'image' && el.src && (
+                  <div
+                    className="w-full h-full bg-cover bg-center bg-no-repeat pointer-events-none"
+                    style={{
+                      backgroundImage: `url(${el.src})`,
+                      borderRadius: `${el.borderRadius ?? 0}px`,
+                      filter: `brightness(${el.brightness ?? 100}%) contrast(${el.contrast ?? 100}%) grayscale(${el.grayscale ?? 0}%)`,
+                    }}
+                  />
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
