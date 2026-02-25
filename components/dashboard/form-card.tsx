@@ -12,7 +12,7 @@ import {
   CardFooter,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, QrCode, Loader2 } from 'lucide-react';
+import { ExternalLink, QrCode, Loader2, Copy, Check } from 'lucide-react';
 import { getProxiedImageUrl, stripHtml } from '@/lib/utils';
 
 interface FormCardProps {
@@ -21,8 +21,21 @@ interface FormCardProps {
 
 export function FormCard({ form }: FormCardProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
   const isNavigatingRef = useRef(false);
   const builderHref = `/builder/${form.id}`;
+
+  const handleCopyLink = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const href = form.shortCode ? `/s/${form.shortCode}` : `/form/${form.id}`;
+    const url = `${window.location.origin}${href}`;
+
+    navigator.clipboard.writeText(url);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  };
 
   const handleEditClick = (e: React.MouseEvent) => {
     if (isNavigatingRef.current) {
@@ -118,19 +131,34 @@ export function FormCard({ form }: FormCardProps) {
             year: 'numeric',
           })}
         </span>
-        <Link
-          href={form.shortCode ? `/s/${form.shortCode}` : `/form/${form.id}`}
-          target="_blank"
-          onClick={(e) => e.stopPropagation()}
-        >
+        <div className="flex items-center gap-2">
           <Button
             size="sm"
             variant="outline"
-            className="h-8 text-primary border-primary/20 hover:bg-primary/5 hover:text-primary gap-1.5 rounded-full px-4 transition-all hover:pr-5"
+            className="h-8 w-8 p-0 text-gray-400 border-gray-200 hover:bg-gray-100 hover:text-gray-900 rounded-full transition-all"
+            onClick={handleCopyLink}
+            title="Copy Form Link"
           >
-            Preview <ExternalLink className="h-3.5 w-3.5" />
+            {isCopied ? (
+              <Check className="h-3.5 w-3.5 text-green-500" />
+            ) : (
+              <Copy className="h-3.5 w-3.5" />
+            )}
           </Button>
-        </Link>
+          <Link
+            href={form.shortCode ? `/s/${form.shortCode}` : `/form/${form.id}`}
+            target="_blank"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-primary border-primary/20 hover:bg-primary/5 hover:text-primary gap-1.5 rounded-full px-4 transition-all hover:pr-5"
+            >
+              Preview <ExternalLink className="h-3.5 w-3.5" />
+            </Button>
+          </Link>
+        </div>
       </CardFooter>
     </Card>
   );

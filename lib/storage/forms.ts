@@ -43,6 +43,7 @@ export async function getForms(): Promise<Form[]> {
     attendance_settings: unknown;
     qr_settings: unknown;
     theme: unknown;
+    receive_email_notifications: boolean;
   }
   return data.map((f: DbFormRow) => ({
     id: f.id,
@@ -56,6 +57,7 @@ export async function getForms(): Promise<Form[]> {
     shortCode: f.short_code ?? undefined,
     eCertificateEnabled: f.e_certificate_enabled,
     eCertificateTemplate: f.e_certificate_template as Form['eCertificateTemplate'],
+    receiveEmailNotifications: f.receive_email_notifications ?? true,
     attendanceSettings: f.attendance_settings as Form['attendanceSettings'],
     qrSettings: f.qr_settings as Form['qrSettings'],
     theme: f.theme as Form['theme'],
@@ -69,7 +71,7 @@ export async function getFormsSummary(): Promise<Form[]> {
   const { data, error } = await supabase
     .from('forms')
     .select(
-      'id,title,description,cover_image,created_at,short_code,e_certificate_enabled,e_certificate_template'
+      'id,title,description,cover_image,created_at,short_code,e_certificate_enabled,e_certificate_template,receive_email_notifications'
     )
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
@@ -88,6 +90,7 @@ export async function getFormsSummary(): Promise<Form[]> {
     short_code: string | null;
     e_certificate_enabled: boolean;
     e_certificate_template: unknown;
+    receive_email_notifications: boolean;
   }
 
   return data.map((f: DbFormSummaryRow) => ({
@@ -100,6 +103,7 @@ export async function getFormsSummary(): Promise<Form[]> {
     shortCode: f.short_code ?? undefined,
     eCertificateEnabled: f.e_certificate_enabled,
     eCertificateTemplate: f.e_certificate_template as Form['eCertificateTemplate'],
+    receiveEmailNotifications: f.receive_email_notifications ?? true,
     userId: user.id,
   }));
 }
@@ -139,6 +143,7 @@ export async function getFormById(id: string): Promise<Form | undefined> {
     shortCode: data.short_code,
     eCertificateEnabled: data.e_certificate_enabled,
     eCertificateTemplate: data.e_certificate_template,
+    receiveEmailNotifications: data.receive_email_notifications ?? true,
     attendanceSettings: data.attendance_settings,
     qrSettings: data.qr_settings,
     theme: data.theme,
@@ -181,6 +186,7 @@ export async function getFormByShortCode(code: string): Promise<Form | undefined
     shortCode: data.short_code,
     eCertificateEnabled: data.e_certificate_enabled,
     eCertificateTemplate: data.e_certificate_template,
+    receiveEmailNotifications: data.receive_email_notifications ?? true,
     attendanceSettings: data.attendance_settings,
     qrSettings: data.qr_settings,
     theme: data.theme,
@@ -215,6 +221,7 @@ export async function saveForm(form: Form): Promise<void> {
     thank_you_message: form.thankYouMessage,
     google_sheet_url: form.googleSheetUrl,
     allow_multiple_submissions: form.allowMultipleSubmissions,
+    receive_email_notifications: form.receiveEmailNotifications ?? true,
     fields: form.fields, // jsonb handles array automatically
     e_certificate_enabled: form.eCertificateEnabled,
     e_certificate_template: form.eCertificateTemplate,

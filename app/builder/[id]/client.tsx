@@ -552,6 +552,24 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                     </p>
                   </div>
                 </div>
+
+                <div className="flex items-center space-x-2 border p-3 rounded-lg bg-slate-50">
+                  <Switch
+                    id="receive-emails"
+                    checked={form.receiveEmailNotifications ?? true} // Default to true
+                    onCheckedChange={(checked) =>
+                      setForm((f) => ({ ...f, receiveEmailNotifications: checked }))
+                    }
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <Label htmlFor="receive-emails" className="cursor-pointer">
+                      Receive Email Notifications
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Get an email alert every time someone submits this form.
+                    </p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 

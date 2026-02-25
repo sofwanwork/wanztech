@@ -379,10 +379,18 @@ export async function submitFormAction(
     // Fire-and-forget email notification (don't block submission response)
     (async () => {
       try {
+        if (form.receiveEmailNotifications === false) {
+          console.log(`Email notification skipped for form ${formId} (disabled by user).`);
+          return;
+        }
+
         const admin = createAdminClient();
         const { data: userData } = await admin.auth.admin.getUserById(form.userId!);
         const ownerEmail = userData?.user?.email;
-        const ownerName = userData?.user?.user_metadata?.full_name || userData?.user?.user_metadata?.username || 'User';
+        const ownerName =
+          userData?.user?.user_metadata?.full_name ||
+          userData?.user?.user_metadata?.username ||
+          'User';
 
         if (ownerEmail) {
           const submissionSummary: Record<string, string> = {};

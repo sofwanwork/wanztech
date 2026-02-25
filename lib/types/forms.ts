@@ -152,6 +152,7 @@ export interface Form {
   thankYouMessage?: string;
   googleSheetUrl?: string;
   allowMultipleSubmissions?: boolean;
+  receiveEmailNotifications?: boolean;
   theme?: FormTheme;
   fields: FormField[];
   createdAt: string;

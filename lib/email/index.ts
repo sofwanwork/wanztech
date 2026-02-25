@@ -77,7 +77,9 @@ export function getNewSubmissionEmail(
         <!-- Header -->
         <tr>
           <td style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); padding: 40px 40px 30px; text-align: center;">
-            <div style="font-size: 56px; margin-bottom: 16px;">📬</div>
+            <div style="margin-bottom: 16px;">
+              <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f4eb/512.webp" alt="mailbox" width="56" height="56" style="display: block; margin: 0 auto; border: 0;" />
+            </div>
             <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 700;">Response Baru!</h1>
             <p style="margin: 12px 0 0 0; color: rgba(255,255,255,0.9); font-size: 15px;">${formTitle}</p>
           </td>
@@ -139,10 +141,10 @@ function emailWrapper(content: string, accentColor: string = '#6366f1') {
         </noscript>
         <![endif]-->
       </head>
-      <body style="margin: 0; padding: 0; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; min-height: 100vh;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="min-height: 100vh;">
+      <body style="margin: 0; padding: 0; background-color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); background-color: #0f172a; width: 100%;">
           <tr>
-            <td align="center" style="padding: 40px 20px;">
+            <td align="center" style="padding: 40px 20px; vertical-align: top;">
               <!-- Logo -->
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 520px;">
                 <tr>

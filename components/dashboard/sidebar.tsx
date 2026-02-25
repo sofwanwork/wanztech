@@ -70,12 +70,6 @@ export function DashboardSidebar({ profile, onNavigate, isMobile = false }: Side
       active: pathname === '/responses',
     },
     {
-      title: 'Settings',
-      href: '/settings',
-      icon: Settings,
-      active: pathname === '/settings',
-    },
-    {
       title: 'E-Cert',
       href: '/certificates',
       icon: Award,
