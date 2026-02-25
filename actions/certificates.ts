@@ -101,7 +101,7 @@ export async function checkCertificateByIC(
               // Only update DB if we can identify the user who owns this form.
               if (form.userId) {
                 const adminSupabase = createAdminClient();
-                const updateData: any = {
+                const updateData: Record<string, unknown> = {
                   google_access_token: encrypt(accessToken),
                   updated_at: new Date().toISOString()
                 };
@@ -285,7 +285,7 @@ export async function checkCertificateByIC(
     }
 
     return { found: false, error: 'IC tidak dijumpai dalam rekod' };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Certificate check error:', error);
     return { found: false, error: 'Ralat semasa menyemak sijil' };
   }

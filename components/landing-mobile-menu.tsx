@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Menu, Sparkles, CreditCard, LogIn, UserPlus, Users, FileSpreadsheet, Award, Link as LinkIcon, QrCode } from 'lucide-react';
+import { Menu, CreditCard, LogIn, UserPlus, Users, FileSpreadsheet, Award, Link as LinkIcon, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     Sheet,

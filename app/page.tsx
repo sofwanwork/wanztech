@@ -17,19 +17,15 @@ export const metadata: Metadata = {
 import {
   CheckCircle2,
   FileSpreadsheet,
-  Files,
   QrCode,
   Zap,
   ShieldCheck,
-  Users,
   ArrowRight,
   Link as LinkIcon,
   Award,
   Facebook,
   Twitter,
   Instagram,
-  Mail,
-  ChevronDown,
 } from 'lucide-react';
 import { LandingMobileMenu } from '@/components/landing-mobile-menu';
 import { LandingNavbar } from '@/components/landing-navbar';

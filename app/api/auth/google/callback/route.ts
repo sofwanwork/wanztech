@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
         const userEmail = userInfo.data.email;
 
         // 4. Save tokens to DB
-        const updateData: any = {
+        const updateData: Record<string, unknown> = {
             user_id: user.id,
             google_access_token: tokens.access_token ? encrypt(tokens.access_token) : null,
             google_token_expiry: tokens.expiry_date,

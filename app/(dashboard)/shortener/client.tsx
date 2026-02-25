@@ -8,11 +8,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DialogFooter } from '@/components/ui/dialog';
 import { TableCell, TableRow } from '@/components/ui/table';
-import { Trash2, ExternalLink, Copy, Link as LinkIcon, Check } from 'lucide-react';
+import { Trash2, ExternalLink, Copy, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
-export function CreateLinkForm({ onSuccess }: { onSuccess?: () => void }) {
+export function CreateLinkForm() {
     const [error, setError] = useState<string | null>(null);
 
     async function clientAction(formData: FormData) {

@@ -9,7 +9,6 @@ import {
     NavigationMenuLink,
     NavigationMenuList,
     NavigationMenuTrigger,
-    navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu';
 import { FileSpreadsheet, Award, Link as LinkIcon, QrCode } from 'lucide-react';
 

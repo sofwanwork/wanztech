@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/accordion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { ExternalLink, Eye, EyeOff, User, CreditCard, Settings, Mail, Shield } from 'lucide-react';
+import { ExternalLink, Eye, EyeOff, User, CreditCard, Mail, Shield } from 'lucide-react';
 import { saveSettingsAction, getSettingsAction } from '@/actions/forms';
 import { getUserProfile, getUserSubscription, type UserProfile, type UserSubscription } from '@/actions/user';
 import { resetPasswordAction } from '@/actions/auth';
@@ -129,7 +129,7 @@ function SettingsContent() {
       } else {
         toast.error(res?.error || 'Failed to send reset email');
       }
-    } catch (error) {
+    } catch {
       toast.error('An error occurred');
     } finally {
       setResetting(false);

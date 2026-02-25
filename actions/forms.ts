@@ -264,7 +264,7 @@ export async function submitFormAction(
           // Use admin client because public user cannot write to settings
           const adminSupabase = createAdminClient();
 
-          const updateData: any = {
+          const updateData: Record<string, unknown> = {
             google_access_token: encrypt(accessToken),
             updated_at: new Date().toISOString()
           };

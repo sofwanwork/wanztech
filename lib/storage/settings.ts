@@ -109,13 +109,13 @@ export async function saveSettings(settings: Settings): Promise<void> {
   // So omitting them is safer if the frontend doesn't send them.
 
   if (settings.googleAccessToken !== undefined) {
-    (settingsData as any).google_access_token = settings.googleAccessToken ? encrypt(settings.googleAccessToken) : null;
+    (settingsData as Record<string, unknown>).google_access_token = settings.googleAccessToken ? encrypt(settings.googleAccessToken) : null;
   }
   if (settings.googleRefreshToken !== undefined) {
-    (settingsData as any).google_refresh_token = settings.googleRefreshToken ? encrypt(settings.googleRefreshToken) : null;
+    (settingsData as Record<string, unknown>).google_refresh_token = settings.googleRefreshToken ? encrypt(settings.googleRefreshToken) : null;
   }
   if (settings.googleTokenExpiry !== undefined) {
-    (settingsData as any).google_token_expiry = settings.googleTokenExpiry;
+    (settingsData as Record<string, unknown>).google_token_expiry = settings.googleTokenExpiry;
   }
 
   const { error } = await supabase.from('settings').upsert(settingsData);
