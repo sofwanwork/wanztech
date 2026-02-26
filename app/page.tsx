@@ -87,14 +87,14 @@ export default async function LandingPage() {
           </div>
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center gap-4">
-              <Link href="/login">
-                <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/login">
                   Login
-                </Button>
-              </Link>
-              <Link href="/login?tab=signup">
-                <Button size="sm">Sign Up Free</Button>
-              </Link>
+                </Link>
+              </Button>
+              <Button size="sm" asChild>
+                <Link href="/login?tab=signup">Sign Up Free</Link>
+              </Button>
             </div>
             <LandingMobileMenu />
           </div>
@@ -122,11 +122,11 @@ export default async function LandingPage() {
                 to participants automatically. Free to start.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-                <Link href="/login?tab=signup">
-                  <Button size="lg" className="h-12 px-8 text-base w-full sm:w-auto">
+                <Button size="lg" className="h-12 px-8 text-base w-full sm:w-auto" asChild>
+                  <Link href="/login?tab=signup">
                     Start for Free <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </div>
 
               <div className="mt-8 flex justify-center items-center gap-8 text-sm text-gray-500">
@@ -260,9 +260,9 @@ export default async function LandingPage() {
                   ))}
                 </div>
                 <div className="mt-8">
-                  <Link href="/login?tab=signup">
-                    <Button size="lg">Create Account Now</Button>
-                  </Link>
+                  <Button size="lg" asChild>
+                    <Link href="/login?tab=signup">Create Account Now</Link>
+                  </Button>
                 </div>
               </div>
               <div className="relative">
@@ -309,14 +309,15 @@ export default async function LandingPage() {
               Join thousands of users who have simplified their workflow with KlikForm.
               Free forever for basic features.
             </p>
-            <Link href="/login?tab=signup">
-              <Button
-                size="lg"
-                className="h-14 px-10 text-lg bg-white text-gray-900 hover:bg-gray-100"
-              >
+            <Button
+              size="lg"
+              className="h-14 px-10 text-lg bg-white text-gray-900 hover:bg-gray-100"
+              asChild
+            >
+              <Link href="/login?tab=signup">
                 Create Free Account
-              </Button>
-            </Link>
+              </Link>
+            </Button>
             <p className="mt-4 text-sm text-gray-400">No credit card required.</p>
           </div>
         </section>

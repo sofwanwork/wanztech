@@ -120,16 +120,16 @@ export function LandingMobileMenu() {
 
                     {/* Footer Actions */}
                     <div className="p-6 border-t border-gray-100 bg-gray-50/30 space-y-3">
-                        <Link href="/login" onClick={() => setOpen(false)} className="block w-full">
-                            <Button variant="outline" className="w-full justify-center h-12 text-base font-medium border-gray-200 hover:bg-white hover:text-primary shadow-sm">
+                        <Button variant="outline" className="w-full justify-center h-12 text-base font-medium border-gray-200 hover:bg-white hover:text-primary shadow-sm" asChild>
+                            <Link href="/login" onClick={() => setOpen(false)}>
                                 <LogIn className="mr-2 h-4 w-4" /> Login
-                            </Button>
-                        </Link>
-                        <Link href="/login?tab=signup" onClick={() => setOpen(false)} className="block w-full">
-                            <Button className="w-full justify-center h-12 text-base font-medium shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90">
+                            </Link>
+                        </Button>
+                        <Button className="w-full justify-center h-12 text-base font-medium shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90" asChild>
+                            <Link href="/login?tab=signup" onClick={() => setOpen(false)}>
                                 <UserPlus className="mr-2 h-4 w-4" /> Sign Up Free
-                            </Button>
-                        </Link>
+                            </Link>
+                        </Button>
                         <p className="text-xs text-center text-gray-400 mt-4">
                             © {new Date().getFullYear()} KlikForm.
                         </p>

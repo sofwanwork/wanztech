@@ -66,11 +66,11 @@ export function CertificateEditorToolbar({
   return (
     <div className="bg-white border-b px-4 py-3 flex items-center justify-between gap-4">
       <div className="flex items-center gap-4">
-        <Link href="/ecert/builder">
-          <Button variant="ghost" size="icon">
+        <Button variant="ghost" size="icon" asChild>
+          <Link href="/ecert/builder">
             <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </Link>
+          </Link>
+        </Button>
         <Input
           value={templateName}
           onChange={(e) => onNameChange(e.target.value)}
@@ -164,12 +164,12 @@ export function CertificateEditorToolbar({
           <Download className="h-4 w-4" />
           {exporting ? 'Eksport...' : 'Eksport PNG'}
         </Button>
-        <Link href={`/ecert/builder/${templateId}/preview`}>
-          <Button variant="outline" size="sm" className="gap-2">
+        <Button variant="outline" size="sm" className="gap-2" asChild>
+          <Link href={`/ecert/builder/${templateId}/preview`}>
             <Eye className="h-4 w-4" />
             Preview
-          </Button>
-        </Link>
+          </Link>
+        </Button>
         <Button onClick={onSave} disabled={saving} className="gap-2">
           <Save className="h-4 w-4" />
           {saving ? 'Menyimpan...' : 'Simpan'}

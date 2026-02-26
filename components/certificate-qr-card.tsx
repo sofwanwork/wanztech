@@ -108,17 +108,17 @@ export function CertificateQrCard({ formId, formTitle, templateName }: Certifica
         </div>
 
         <div className="flex gap-2">
-          <Link href={checkUrl} className="flex-1" target="_blank" rel="noopener noreferrer">
-            <Button variant="outline" className="w-full" size="sm">
+          <Button variant="outline" className="w-full flex-1" size="sm" asChild>
+            <Link href={checkUrl} target="_blank" rel="noopener noreferrer">
               <ExternalLink className="h-4 w-4 mr-2" />
               Buka
-            </Button>
-          </Link>
-          <Link href={`/builder/${formId}`}>
-            <Button variant="ghost" size="sm">
+            </Link>
+          </Button>
+          <Button variant="ghost" size="sm" asChild>
+            <Link href={`/builder/${formId}`}>
               Edit
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </CardContent>
     </Card>
