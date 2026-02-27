@@ -260,7 +260,7 @@ function SettingsContent() {
               {subscription?.currentPeriodEnd && (
                 <div>
                   <Label>Expiry Date</Label>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-gray-600 mt-1" suppressHydrationWarning>
                     Valid until {new Date(subscription.currentPeriodEnd).toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' })}
                   </p>
                 </div>

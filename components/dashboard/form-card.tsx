@@ -124,7 +124,7 @@ export function FormCard({ form }: FormCardProps) {
       </CardContent>
 
       <CardFooter className="p-5 pt-3 border-t border-gray-50 flex items-center justify-between">
-        <span className="text-xs text-gray-400 font-medium bg-gray-50 px-2 py-1 rounded-md">
+        <span className="text-xs text-gray-400 font-medium bg-gray-50 px-2 py-1 rounded-md" suppressHydrationWarning>
           {new Date(form.createdAt).toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
