@@ -142,7 +142,7 @@ export function ShortLinkRow({ link }: { link: ShortLink }) {
                     <span className="text-xs text-muted-foreground">clicks</span>
                 </div>
             </TableCell>
-            <TableCell className="text-muted-foreground text-sm">
+            <TableCell className="text-muted-foreground text-sm" suppressHydrationWarning>
                 {format(new Date(link.created_at), 'MMM d, yyyy')}
             </TableCell>
             <TableCell className="text-right">

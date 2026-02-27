@@ -89,7 +89,7 @@ export function CertificateTemplateCard({ template }: CertificateTemplateCardPro
         <div className="flex items-center justify-between">
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-gray-900 truncate">{template.name}</h3>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 mt-1" suppressHydrationWarning>
               {new Date(template.updatedAt).toLocaleDateString('ms-MY')}
             </p>
           </div>
