@@ -187,7 +187,7 @@ function SettingsContent() {
                 <div className="space-y-2">
                   <Label>Email Address</Label>
                   <div className="flex gap-2">
-                    <Input value={profile?.email || ''} disabled className="bg-gray-50" />
+                    <Input id="profile-email" name="profile-email" value={profile?.email || ''} disabled className="bg-gray-50" />
                     {profile?.email && (
                       <Button
                         variant="outline"
@@ -367,6 +367,8 @@ function SettingsContent() {
                   <div className="space-y-2">
                     <Label>Google Service Account Email</Label>
                     <Input
+                      id="google-service-email"
+                      name="google-service-email"
                       placeholder="example@project-id.iam.gserviceaccount.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -375,6 +377,8 @@ function SettingsContent() {
                   <div className="space-y-2">
                     <Label>Your Personal Email (For Auto-Share)</Label>
                     <Input
+                      id="personal-email"
+                      name="personal-email"
                       placeholder="your.email@gmail.com"
                       value={personalEmail}
                       onChange={(e) => setPersonalEmail(e.target.value)}
@@ -386,6 +390,8 @@ function SettingsContent() {
                   <div className="space-y-2">
                     <Label>Google Drive Folder ID (Optional)</Label>
                     <Input
+                      id="google-drive-folder-id"
+                      name="google-drive-folder-id"
                       placeholder="1-D7dlraZiTG7zOjqi5LVt7mJaTr1i8az"
                       value={folderId}
                       onChange={(e) => setFolderId(e.target.value)}
@@ -417,6 +423,8 @@ function SettingsContent() {
                     </div>
                     {showPrivateKey ? (
                       <Textarea
+                        id="google-private-key"
+                        name="google-private-key"
                         placeholder="-----BEGIN PRIVATE KEY-----\n..."
                         className="font-mono text-xs min-h-[150px]"
                         value={key}
@@ -425,6 +433,8 @@ function SettingsContent() {
                     ) : (
                       <div className="relative">
                         <Input
+                          id="google-private-key-hidden"
+                          name="google-private-key-hidden"
                           type="password"
                           value={key ? 'FAKEPASSWORD' : ''}
                           readOnly
