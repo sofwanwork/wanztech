@@ -67,6 +67,7 @@ export default function QrBuilderClient({ initialData }: QrBuilderClientProps) {
           <div className="flex flex-col">
             <Input
               id="qr-title"
+              name="qr-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="text-lg font-semibold h-8 border-transparent hover:border-input focus:border-input px-2 -ml-2 transition-all bg-transparent w-full max-w-sm"
@@ -108,6 +109,7 @@ export default function QrBuilderClient({ initialData }: QrBuilderClientProps) {
                     <Label htmlFor="qr-url">Website URL / Text</Label>
                     <Input
                       id="qr-url"
+                      name="qr-url"
                       placeholder="https://example.com"
                       value={url}
                       onChange={(e) => setUrl(e.target.value)}

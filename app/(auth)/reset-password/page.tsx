@@ -91,6 +91,7 @@ export default function ResetPasswordPage() {
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
                   id="password"
+                  name="password"
                   type={showPassword ? 'text' : 'password'}
                   className="pl-10 pr-10"
                   value={password}
@@ -111,6 +112,7 @@ export default function ResetPasswordPage() {
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
                   id="confirm-password"
+                  name="confirm-password"
                   type={showConfirmPassword ? 'text' : 'password'}
                   className="pl-10 pr-10"
                   value={confirmPassword}
