@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import { createShortLinkAction, deleteShortLinkAction } from '@/actions/short-links';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,11 @@ import { toast } from 'sonner';
 
 export function CreateLinkForm() {
     const [error, setError] = useState<string | null>(null);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     async function clientAction(formData: FormData) {
         const res = await createShortLinkAction({}, formData);
@@ -45,7 +50,7 @@ export function CreateLinkForm() {
                 <Label htmlFor="slug">Short Code (Optional)</Label>
                 <div className="flex items-center">
                     <div className="bg-muted px-3 h-10 flex items-center border border-r-0 rounded-l-md text-sm text-muted-foreground whitespace-nowrap">
-                        {typeof window !== 'undefined' ? window.location.host : 'klikform.com'}/s/
+                        {mounted ? window.location.host : 'klikform.com'}/s/
                     </div>
                     <Input
                         id="slug"
@@ -90,7 +95,8 @@ interface ShortLink {
 }
 
 export function ShortLinkRow({ link }: { link: ShortLink }) {
-    const shortUrl = `${window.location.origin}/s/${link.slug}`;
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://klikform.com';
+    const shortUrl = `${baseUrl}/s/${link.slug}`;
     const [isDeleting, setIsDeleting] = useState(false);
     const [copied, setCopied] = useState(false);
 
