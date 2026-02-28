@@ -437,6 +437,8 @@ export default function LoginPage() {
                               <div className="relative">
                                 <Input
                                   id="signup-username"
+                                  name="signup-username"
+                                  autoComplete="username"
                                   placeholder="username"
                                   className="pl-3"
                                   value={username}
@@ -450,6 +452,8 @@ export default function LoginPage() {
                                 <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                                 <Input
                                   id="signup-email"
+                                  name="signup-email"
+                                  autoComplete="email"
                                   type="email"
                                   placeholder="name@example.com"
                                   className="pl-10"
@@ -464,6 +468,8 @@ export default function LoginPage() {
                                 <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                                 <Input
                                   id="signup-password"
+                                  name="signup-password"
+                                  autoComplete="new-password"
                                   type={showPassword ? 'text' : 'password'}
                                   className="pl-10 pr-10"
                                   value={password}
