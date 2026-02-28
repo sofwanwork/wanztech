@@ -151,10 +151,8 @@ function emailWrapper(content: string, accentColor: string = '#6366f1') {
                   <td align="center" style="padding-bottom: 30px;">
                     <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
                       <tr>
-                        <td style="vertical-align: middle; padding-right: 12px;">
-                          <div style="width: 48px; height: 48px; background: linear-gradient(135deg, ${accentColor}, #8b5cf6); border-radius: 12px; text-align: center; line-height: 48px;">
-                            <span style="color: white; font-size: 24px; font-weight: 700;">K</span>
-                          </div>
+                        <td style="vertical-align: middle; padding-right: 10px;">
+                          <img src="https://klikform.com/logo.png" alt="KlikForm" width="44" height="44" style="display: block; border: 0; border-radius: 12px;" />
                         </td>
                         <td style="vertical-align: middle;">
                           <span style="color: white; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">KlikForm</span>
