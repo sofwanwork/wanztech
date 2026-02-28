@@ -376,14 +376,9 @@ export async function submitFormAction(
   if (form.userId) {
     await incrementSubmissionCount(form.userId);
 
-    // Fire-and-forget email notification (don't block submission response)
-    (async () => {
-      try {
-        if (form.receiveEmailNotifications === false) {
-          console.log(`Email notification skipped for form ${formId} (disabled by user).`);
-          return;
-        }
-
+    // Send email notification (awaited so serverless doesn't kill it before completion)
+    try {
+      if (form.receiveEmailNotifications !== false) {
         const admin = createAdminClient();
         const { data: userData } = await admin.auth.admin.getUserById(form.userId!);
         const ownerEmail = userData?.user?.email;
@@ -411,11 +406,11 @@ export async function submitFormAction(
             html: emailContent.html,
           });
         }
-      } catch (emailErr) {
-        // Never fail submission because of email
-        console.warn('Submission email notification failed:', emailErr);
       }
-    })();
+    } catch (emailErr) {
+      // Never fail submission because of email
+      console.warn('Submission email notification failed:', emailErr);
+    }
   }
 
   return { success: true };
