@@ -99,7 +99,7 @@ export function PlanCard({ plan, user }: PlanCardProps) {
         </div>
       )}
 
-      <div className="p-8 border-b border-gray-100 flex-1">
+      <div className="p-8 border-b border-gray-100">
         <div className="flex items-center justify-between mb-4">
           <div className={cn('w-12 h-12 rounded-xl flex items-center justify-center', plan.color)}>
             {plan.icon}
@@ -125,8 +125,8 @@ export function PlanCard({ plan, user }: PlanCardProps) {
         {plan.priceDetail && <p className="text-xs text-gray-400">{plan.priceDetail}</p>}
       </div>
 
-      <div className="p-8 bg-gray-50/50 rounded-b-2xl">
-        <ul className="space-y-4 mb-8">
+      <div className="flex flex-col flex-1 p-8 bg-gray-50/50 rounded-b-2xl">
+        <ul className="space-y-4 mb-8 flex-1">
           {plan.features.map((feature) => (
             <li key={feature} className="flex items-start gap-3 text-sm text-gray-700">
               <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />

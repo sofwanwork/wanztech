@@ -64,6 +64,10 @@
 ## Lessons Learned
 - When introducing a new authentication mechanism (e.g., Google OAuth to replace/supplement Service Accounts), all related functional pathways (like Certificate Search) must be audited and updated to support both credential types.
 - Ensure temporary API routes or explicit error string exposures in the Catch block are reverted cleanly before marking development tasks done.
+- **Always sync feature lists across all surfaces.** When updating pricing features, remember there are TWO places to update: `app/pricing/page.tsx` (public pricing page) AND `components/pricing-modal.tsx` (in-dashboard upgrade modal). Missing one causes inconsistency.
+- **CSS `flex-1` placement matters in card layouts.** When pricing/plan cards have different content lengths, putting `flex-1` on the top section creates ugly gaps between header and content. Apply `flex-1` to the bottom section (feature list + button) so the button aligns at the bottom of all cards.
+- **Turbopack cache can cause 404s unexpectedly.** If a route suddenly returns 404 even though `page.tsx` exists, restart the dev server first. If that doesn't work, delete `.next` folder and restart.
+- **KlikForm complete feature set (for marketing):** Online Forms (Google Sheets integration), Dynamic QR Code Generator, URL Shortener, E-Certificate Generation (auto-generated & emailed), Certificate Verification System (serial number + QR code).
 
 ## Rendering System (e-Sijil)
 - **PDF/PNG Download Issues**: Fixed a bug where downloaded PDFs were saving as blank. `html2canvas` struggles to capture elements strictly hidden off-screen (`top: -9999px`). The fix uses `html2canvas-pro`'s native `onclone` hook (`clonedDoc.getElementById`) to position the element into the viewport *only* inside the cloned rendering sandbox, avoiding visual bleeding or layout flashing across the live DOM.
@@ -129,3 +133,8 @@
   - Fix: Executed `ALTER FUNCTION ... RESET search_path;` on all three affected functions and executed `NOTIFY pgrst, 'reload schema'` to restore system stability. We must intentionally ignore the Supabase "mutable search path" warnings for these specific triggers to keep the app functional.
 - **Codebase Linting & Strict Types**: Ran a rigorous `npm run lint` audit. Eliminated dozens of `no-explicit-any` warnings by carefully casting to `unknown` or `Record<string, unknown>`. Purged numerous unused imports (Lucide icons, unused destructures, obsolete components) to ensure a perfectly clean console.
 - **Final Security Release (2026-02-26)**: Verified that all primary attack vectors (XSS in Public Forms via `dangerouslySetInnerHTML`, Open Redirects via `middleware.ts`, and permissive RLS policies on `transactions`) have been fully fortified. Proceeded to execute a flawless production Turbopack build (`npm run build`) which succeeded with exactly `0` errors confirming holistic structural integrity for the entire application.
+
+## System Improvements (2026-02-28)
+- **Pricing Page Features Update**: Updated `app/pricing/page.tsx` to reflect all latest KlikForm features. Free plan now includes `Basic QR code generation` and `URL Shortener`. Pro plan now includes `Dynamic QR code generator`, `URL Shortener`, `E-Certificate generation`, and `Certificate Verification System`. The `notIncluded` lists for the Free plan were also expanded to show the full feature gap vs Pro.
+- **Pricing Modal Sync**: Updated `components/pricing-modal.tsx` (the "Upgrade to Pro" dialog inside the dashboard) with the exact same feature lists as the main Pricing page to ensure consistency across both surfaces.
+- **Plan Card Layout Fix**: Fixed a layout bug in `components/pricing/plan-card.tsx` where the top section of pricing cards had `flex-1`, causing an ugly empty gap between the price area and the feature list when cards had different heights. Moved `flex-1` to the bottom section (`ul` + button area) so the button aligns at the bottom and the price section stays compact.
