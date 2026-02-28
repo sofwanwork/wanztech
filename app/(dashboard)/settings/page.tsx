@@ -185,7 +185,7 @@ function SettingsContent() {
 
               <div className="grid gap-4 max-w-md">
                 <div className="space-y-2">
-                  <Label>Email Address</Label>
+                  <Label htmlFor="profile-email">Email Address</Label>
                   <div className="flex gap-2">
                     <Input id="profile-email" name="profile-email" autoComplete="email" value={profile?.email || ''} disabled className="bg-gray-50" />
                     {profile?.email && (
@@ -259,7 +259,7 @@ function SettingsContent() {
 
               {subscription?.currentPeriodEnd && (
                 <div>
-                  <Label>Expiry Date</Label>
+                  <Label htmlFor="expiry-date">Expiry Date</Label>
                   <p className="text-sm text-gray-600 mt-1" suppressHydrationWarning>
                     Valid until {new Date(subscription.currentPeriodEnd).toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' })}
                   </p>
@@ -365,7 +365,7 @@ function SettingsContent() {
                 </CardHeader>
                 <CardContent className="space-y-5 pt-6">
                   <div className="space-y-2">
-                    <Label>Google Service Account Email</Label>
+                    <Label htmlFor="google-service-email">Google Service Account Email</Label>
                     <Input
                       id="google-service-email"
                       name="google-service-email"
@@ -375,7 +375,7 @@ function SettingsContent() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Your Personal Email (For Auto-Share)</Label>
+                    <Label htmlFor="personal-email">Your Personal Email (For Auto-Share)</Label>
                     <Input
                       id="personal-email"
                       name="personal-email"
@@ -389,7 +389,7 @@ function SettingsContent() {
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <Label>Google Drive Folder ID (Optional)</Label>
+                    <Label htmlFor="google-drive-folder-id">Google Drive Folder ID (Optional)</Label>
                     <Input
                       id="google-drive-folder-id"
                       name="google-drive-folder-id"
@@ -403,7 +403,7 @@ function SettingsContent() {
                   </div>
                   <div className="space-y-2">
                     <div className="flex justify-between items-center mb-1">
-                      <Label>Google Private Key</Label>
+                      <Label htmlFor="google-private-key">Google Private Key</Label>
                       <Button
                         type="button"
                         variant="ghost"
