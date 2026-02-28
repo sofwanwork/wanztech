@@ -322,6 +322,8 @@ export default function LoginPage() {
                                 <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                                 <Input
                                   id="email"
+                                  name="email"
+                                  autoComplete="username"
                                   type="text"
                                   placeholder="name@example.com or username"
                                   className="pl-10"
@@ -347,6 +349,8 @@ export default function LoginPage() {
                                 <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                                 <Input
                                   id="password"
+                                  name="password"
+                                  autoComplete="current-password"
                                   type={showPassword ? 'text' : 'password'}
                                   className="pl-10 pr-10"
                                   value={password}
