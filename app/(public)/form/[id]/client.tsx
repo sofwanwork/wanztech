@@ -251,7 +251,16 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
       <div className="min-h-screen flex items-center justify-center p-4 transition-colors duration-500 font-sans submitted-container">
         <Card className="w-full max-w-md text-center shadow-lg bg-white overflow-hidden relative border-none">
           <div className="absolute top-0 left-0 right-0 h-1.5 bg-[var(--primary)]" />
-          <CardHeader className="pt-8 pb-6">
+          {form.coverImage && (
+            <div className="w-full">
+              <img
+                src={form.coverImage}
+                alt={form.title}
+                className="w-full h-48 object-cover"
+              />
+            </div>
+          )}
+          <CardHeader className="py-8">
             <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
               <CheckCircle2 className="h-6 w-6 text-green-600" />
             </div>
