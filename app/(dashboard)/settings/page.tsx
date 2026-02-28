@@ -187,7 +187,7 @@ function SettingsContent() {
                 <div className="space-y-2">
                   <Label>Email Address</Label>
                   <div className="flex gap-2">
-                    <Input id="profile-email" name="profile-email" value={profile?.email || ''} disabled className="bg-gray-50" />
+                    <Input id="profile-email" name="profile-email" autoComplete="email" value={profile?.email || ''} disabled className="bg-gray-50" />
                     {profile?.email && (
                       <Button
                         variant="outline"
@@ -379,6 +379,7 @@ function SettingsContent() {
                     <Input
                       id="personal-email"
                       name="personal-email"
+                      autoComplete="email"
                       placeholder="your.email@gmail.com"
                       value={personalEmail}
                       onChange={(e) => setPersonalEmail(e.target.value)}

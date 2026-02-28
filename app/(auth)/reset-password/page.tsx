@@ -92,6 +92,7 @@ export default function ResetPasswordPage() {
                 <Input
                   id="password"
                   name="password"
+                  autoComplete="new-password"
                   type={showPassword ? 'text' : 'password'}
                   className="pl-10 pr-10"
                   value={password}
@@ -113,6 +114,7 @@ export default function ResetPasswordPage() {
                 <Input
                   id="confirm-password"
                   name="confirm-password"
+                  autoComplete="new-password"
                   type={showConfirmPassword ? 'text' : 'password'}
                   className="pl-10 pr-10"
                   value={confirmPassword}
