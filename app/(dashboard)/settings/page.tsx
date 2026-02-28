@@ -259,7 +259,7 @@ function SettingsContent() {
 
               {subscription?.currentPeriodEnd && (
                 <div>
-                  <Label htmlFor="expiry-date">Expiry Date</Label>
+                  <Label>Expiry Date</Label>
                   <p className="text-sm text-gray-600 mt-1" suppressHydrationWarning>
                     Valid until {new Date(subscription.currentPeriodEnd).toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' })}
                   </p>
@@ -434,7 +434,7 @@ function SettingsContent() {
                     ) : (
                       <div className="relative">
                         <Input
-                          id="google-private-key-hidden"
+                          id="google-private-key"
                           name="google-private-key-hidden"
                           type="password"
                           value={key ? 'FAKEPASSWORD' : ''}
