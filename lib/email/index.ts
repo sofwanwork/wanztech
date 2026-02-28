@@ -78,7 +78,7 @@ export function getNewSubmissionEmail(
         <tr>
           <td style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); padding: 40px 40px 30px; text-align: center;">
             <div style="margin-bottom: 16px;">
-              <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f4eb/512.webp" alt="mailbox" width="56" height="56" style="display: block; margin: 0 auto; border: 0;" />
+              <div style="font-size: 56px; margin-bottom: 16px;">📬</div>
             </div>
             <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 700;">Response Baru!</h1>
             <p style="margin: 12px 0 0 0; color: rgba(255,255,255,0.9); font-size: 15px;">${formTitle}</p>
@@ -149,12 +149,18 @@ function emailWrapper(content: string, accentColor: string = '#6366f1') {
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 520px;">
                 <tr>
                   <td align="center" style="padding-bottom: 30px;">
-                    <div style="display: inline-flex; align-items: center; gap: 12px;">
-                      <div style="width: 48px; height: 48px; background: linear-gradient(135deg, ${accentColor}, #8b5cf6); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                        <span style="color: white; font-size: 24px; font-weight: 700;">K</span>
-                      </div>
-                      <span style="color: white; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">KlikForm</span>
-                    </div>
+                    <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                      <tr>
+                        <td style="vertical-align: middle; padding-right: 12px;">
+                          <div style="width: 48px; height: 48px; background: linear-gradient(135deg, ${accentColor}, #8b5cf6); border-radius: 12px; text-align: center; line-height: 48px;">
+                            <span style="color: white; font-size: 24px; font-weight: 700;">K</span>
+                          </div>
+                        </td>
+                        <td style="vertical-align: middle;">
+                          <span style="color: white; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">KlikForm</span>
+                        </td>
+                      </tr>
+                    </table>
                   </td>
                 </tr>
               </table>
