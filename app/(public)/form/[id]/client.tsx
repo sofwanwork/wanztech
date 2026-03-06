@@ -249,14 +249,16 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
   if (submitted) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 transition-colors duration-500 font-sans submitted-container">
-        <Card className="w-full max-w-md text-center shadow-lg bg-white overflow-hidden relative border-none">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-[var(--primary)]" />
+        <Card className={cn("w-full max-w-md text-center shadow-lg bg-white overflow-hidden relative border-none", form.coverImage && "!pt-0 !gap-0")}>
+          {!form.coverImage && (
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-[var(--primary)]" />
+          )}
           {form.coverImage && (
             <div className="w-full">
               <img
-                src={form.coverImage}
+                src={getProxiedImageUrl(form.coverImage)}
                 alt={form.title}
-                className="w-full h-48 object-cover"
+                className="w-full h-auto"
               />
             </div>
           )}
