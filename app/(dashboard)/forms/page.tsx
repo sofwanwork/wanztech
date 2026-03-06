@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { getFormsSummary } from '@/lib/storage/forms';
-import { getDashboardStats } from '@/lib/storage/subscription';
+import { getDashboardStats, getSubscriptionStatus } from '@/lib/storage/subscription';
 import { Button } from '@/components/ui/button';
 
 import { FileText, Search } from 'lucide-react';
@@ -26,7 +26,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
   const sort = searchParams?.sort || 'newest';
   const error = searchParams?.error || '';
 
-  const [allForms, stats] = await Promise.all([getFormsSummary(), getDashboardStats()]);
+  const [allForms, stats, subStatus] = await Promise.all([getFormsSummary(), getDashboardStats(), getSubscriptionStatus()]);
 
   // 1. Filter
   let forms = allForms.filter(
@@ -64,6 +64,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
         subscription={stats.subscription}
         usage={stats.usage}
         totalForms={stats.totalForms}
+        subscriptionStatus={subStatus.status}
       />
 
       {/* Page Header */}

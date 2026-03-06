@@ -1,6 +1,7 @@
 'use client';
 
 import { Subscription, Usage, TIER_LIMITS } from '@/lib/types';
+import type { SubscriptionStatus } from '@/lib/storage/subscription';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -12,10 +13,14 @@ interface DashboardStatsProps {
   subscription: Subscription;
   usage: Usage;
   totalForms: number;
+  subscriptionStatus?: SubscriptionStatus;
 }
 
-export function DashboardStats({ subscription, usage, totalForms }: DashboardStatsProps) {
-  const limits = TIER_LIMITS[subscription.tier];
+export function DashboardStats({ subscription, usage, totalForms, subscriptionStatus }: DashboardStatsProps) {
+  // When subscription is expired or in grace period, use free-tier limits for display
+  const isExpiredPro = subscriptionStatus === 'expired' || subscriptionStatus === 'grace_period';
+  const effectiveTier = isExpiredPro ? 'free' : subscription.tier;
+  const limits = TIER_LIMITS[effectiveTier];
   const isUnlimited = limits.maxForms === -1;
   const totalFormsProgress = isUnlimited ? 100 : (totalForms / limits.maxForms) * 100;
   const totalFormsRemaining = isUnlimited ? '∞' : limits.maxForms - totalForms;
