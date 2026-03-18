@@ -154,7 +154,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex h-screen w-full items-center justify-center bg-gray-50 relative overflow-hidden pb-24">
+    <div className="flex flex-col min-h-screen w-full items-center justify-center bg-gray-50 relative overflow-hidden py-4">
       {/* Minimal Background */}
       <div className="absolute inset-0 overflow-hidden z-0 pointer-events-none">
         <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2" />
@@ -168,8 +168,8 @@ export default function LoginPage() {
         transition={{ duration: 0.6, ease: 'easeOut' }}
       >
         {/* ... (Header content unchanged) ... */}
-        <div className="mb-8 text-center flex flex-col items-center">
-          <div className="h-16 w-16 relative mb-4 rounded-xl overflow-hidden border border-gray-200 shadow-sm">
+        <div className="mb-4 text-center flex flex-col items-center">
+          <div className="h-12 w-12 relative mb-2 rounded-xl overflow-hidden border border-gray-200 shadow-sm">
             <Image
               src="/logo.png"
               alt="KlikForm Logo"
@@ -179,8 +179,7 @@ export default function LoginPage() {
               priority
             />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">KlikForm</h1>
-          <p className="text-gray-500 mt-1 text-sm">Create beautiful forms in seconds.</p>
+          <h1 className="text-2xl font-bold text-gray-900">KlikForm</h1>
         </div>
 
         <AnimatePresence mode="wait">
@@ -230,7 +229,7 @@ export default function LoginPage() {
                 onValueChange={(value) => setActiveTab(value)}
               >
                 {/* Custom Sliding Tabs */}
-                <div className="relative grid w-full grid-cols-2 mb-6 bg-gray-100/50 p-1 rounded-xl">
+                <div className="relative grid w-full grid-cols-2 mb-2 bg-gray-100/50 p-1 rounded-xl">
                   <button
                     onClick={() => setActiveTab('login')}
                     className="relative z-10 flex items-center justify-center py-2.5 text-sm font-medium transition-colors focus:outline-none"
@@ -276,14 +275,14 @@ export default function LoginPage() {
                       exit={{ opacity: 0, x: 20 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <Card className="border-gray-200 shadow-xl bg-white/80 backdrop-blur-sm">
-                        <CardHeader>
-                          <CardTitle>Welcome back</CardTitle>
-                          <CardDescription>
+                      <Card className="border-gray-200 shadow-xl bg-white/80 backdrop-blur-sm gap-3 py-3">
+                        <CardHeader className="pb-2 pt-4 px-6">
+                          <CardTitle className="text-base">Welcome back</CardTitle>
+                          <CardDescription className="text-sm">
                             Enter your credentials to access your dashboard.
                           </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
+                        <CardContent className="space-y-3 pt-2">
                           <Button
                             type="button"
                             variant="outline"
@@ -314,9 +313,9 @@ export default function LoginPage() {
                               e.preventDefault();
                               handleLogin();
                             }}
-                            className="space-y-4"
+                            className="space-y-3"
                           >
-                            <div className="space-y-2">
+                            <div className="space-y-1">
                               <Label htmlFor="email">Email or Username</Label>
                               <div className="relative">
                                 <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -332,7 +331,7 @@ export default function LoginPage() {
                                 />
                               </div>
                             </div>
-                            <div className="space-y-2">
+                            <div className="space-y-1">
                               <div className="flex items-center justify-between">
                                 <Label htmlFor="password">Password</Label>
                                 <Button
@@ -370,7 +369,7 @@ export default function LoginPage() {
                               </div>
                             </div>
                             <Button
-                              className="w-full bg-black hover:bg-gray-800 text-white mt-4"
+                              className="w-full bg-black hover:bg-gray-800 text-white mt-2"
                               type="submit"
                               disabled={loading}
                             >
@@ -543,7 +542,7 @@ export default function LoginPage() {
         </DialogContent>
       </Dialog>
 
-      <div className="absolute bottom-6 w-full text-center text-xs text-gray-400">
+      <div className="w-full text-center text-xs text-gray-400 mt-4 pb-4">
         &copy; 2026 KlikForm by WanzTech
       </div>
     </div>
