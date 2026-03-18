@@ -61,6 +61,9 @@
 - **Mobile Certificate Template Fallback (2026-03-18)**: Fixed a bug where the public certificate verification page (`/check/[formId]`) showed the default 'classic' template on mobile/unauthenticated devices instead of the custom template. Root cause: `getCertificateTemplatePublic()` in `lib/storage/certificates.ts` used `createClient()` (auth-aware SSR client). The `certificate_templates` RLS policy (`auth.uid() = user_id`) blocked unauthenticated queries, returning null. Fix: switched to `createAdminClient()` (service role, bypasses RLS). Security maintained because the function already strips `userId` from the response.
 - **Service Account Google Credentials parsing**: Implemented `.trim()` and `formatPrivateKey()` when building the service account parameter to prevent trailing space errors.
 - **IC Search Robustness**: Improved the Google Sheet column regex/matching to be more deterministic (`IC`, `No IC`, `Kad Pengenalan` etc).
+- **Certificate Name Formatting**: Auto-uppercased all certificate names in `CertificateTemplate` component to ensure consistent ALL CAPS display across custom, legacy URL, and built-[in] templates alike.
+- **IC Input UX**: Removed dashes from the example placeholder (`901234567890`) safely since dash-formatting isn't required strictly, preventing end-user confusion.
+- **Login Layout Optimization**: Compacted the `/login` page UI components (Card gaps, spacing, subtitle removal, `min-h-screen`) to improve visibility on smaller viewports like 14-inch laptops (768px height and down to 643px) without hard viewport clipping.
 
 ## Lessons Learned
 - When introducing a new authentication mechanism (e.g., Google OAuth to replace/supplement Service Accounts), all related functional pathways (like Certificate Search) must be audited and updated to support both credential types.

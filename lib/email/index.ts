@@ -118,12 +118,12 @@ export function getNewSubmissionEmail(
 
   return {
     subject: `📬 Response baru: ${formTitle}`,
-    html: emailWrapper(content, '#6366f1'),
+    html: emailWrapper(content),
   };
 }
 
 // Base email template wrapper
-function emailWrapper(content: string, accentColor: string = '#6366f1') {
+function emailWrapper(content: string) {
   return `
     <!DOCTYPE html>
     <html lang="ms">
@@ -252,7 +252,7 @@ export function getSubscriptionReminderEmail(
 
   return {
     subject: `⏰ Langganan Pro KlikForm anda akan tamat dalam ${daysRemaining} hari`,
-    html: emailWrapper(content, '#f59e0b'),
+    html: emailWrapper(content),
   };
 }
 
@@ -325,7 +325,7 @@ export function getGracePeriodStartedEmail(userName: string, graceDays: number, 
 
   return {
     subject: `🚨 URGENT: Langganan KlikForm tamat - ${graceDays} hari untuk renew`,
-    html: emailWrapper(content, '#dc2626'),
+    html: emailWrapper(content),
   };
 }
 
@@ -395,7 +395,7 @@ export function getAccountBlockedEmail(userName: string, renewUrl: string) {
 
   return {
     subject: `🔒 Akaun KlikForm disekat - Unlock sekarang`,
-    html: emailWrapper(content, '#6366f1'),
+    html: emailWrapper(content),
   };
 }
 
@@ -463,7 +463,7 @@ export function getWelcomeProEmail(userName: string, dashboardUrl: string) {
 
   return {
     subject: `🎉 Welcome to KlikForm Pro, ${userName}!`,
-    html: emailWrapper(content, '#6366f1'),
+    html: emailWrapper(content),
   };
 }
 
@@ -529,7 +529,7 @@ export function getPaymentSuccessEmail(
 
   return {
     subject: `✅ Pembayaran KlikForm Pro berjaya - ${amount}`,
-    html: emailWrapper(content, '#10b981'),
+    html: emailWrapper(content),
   };
 }
 
@@ -589,7 +589,7 @@ export function getInactivityReminderEmail(userName: string, loginUrl: string) {
 
   return {
     subject: `👋 Kami rindu anda, ${userName}! Log masuk ke KlikForm`,
-    html: emailWrapper(content, '#7C3AED'),
+    html: emailWrapper(content),
   };
 }
 
@@ -663,6 +663,6 @@ export function getAccountDeletionWarningEmail(
 
   return {
     subject: `⚠️ URGENT: Akaun KlikForm anda akan dipadam pada ${deletionDate}`,
-    html: emailWrapper(content, '#dc2626'),
+    html: emailWrapper(content),
   };
 }

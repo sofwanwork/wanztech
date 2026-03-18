@@ -255,6 +255,7 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
           )}
           {form.coverImage && (
             <div className="w-full">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={getProxiedImageUrl(form.coverImage)}
                 alt={form.title}
