@@ -1,4 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@/utils/supabase/admin';
 import { CertificateTemplate } from '@/lib/types';
 
 // Get all certificate templates for the current user
@@ -198,7 +199,9 @@ export async function deleteCertificateTemplate(id: string): Promise<boolean> {
 export async function getCertificateTemplatePublic(
   id: string
 ): Promise<CertificateTemplate | null> {
-  const supabase = await createClient();
+  // Use admin client to bypass RLS — this is a public-facing function
+  // (unauthenticated users need to view certificate templates for verification)
+  const supabase = createAdminClient();
 
   const { data, error } = await supabase
     .from('certificate_templates')

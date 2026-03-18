@@ -58,6 +58,7 @@
 
 ## Core Features & Fixes
 - **Certificate Verification (e-Sijil)**: Fixed a bug where certificate verification threw an `invalid_grant` exception when checking records from Google Sheets. The root cause was that `checkCertificateByIC` strictly assumed a Google Service Account (`googleClientEmail` & `googlePrivateKey`) was in use. It was updated to check for `googleAccessToken` (Google OAuth "Connect with Google" flow) first, with an auto-refresh mechanism if the token is expired.
+- **Mobile Certificate Template Fallback (2026-03-18)**: Fixed a bug where the public certificate verification page (`/check/[formId]`) showed the default 'classic' template on mobile/unauthenticated devices instead of the custom template. Root cause: `getCertificateTemplatePublic()` in `lib/storage/certificates.ts` used `createClient()` (auth-aware SSR client). The `certificate_templates` RLS policy (`auth.uid() = user_id`) blocked unauthenticated queries, returning null. Fix: switched to `createAdminClient()` (service role, bypasses RLS). Security maintained because the function already strips `userId` from the response.
 - **Service Account Google Credentials parsing**: Implemented `.trim()` and `formatPrivateKey()` when building the service account parameter to prevent trailing space errors.
 - **IC Search Robustness**: Improved the Google Sheet column regex/matching to be more deterministic (`IC`, `No IC`, `Kad Pengenalan` etc).
 
