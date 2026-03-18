@@ -203,7 +203,7 @@ export function CertificateCheckClient({
                 <Label htmlFor="ic">IC Number</Label>
                 <Input
                   id="ic"
-                  placeholder="Example: 901234-56-7890"
+                  placeholder="Example: 901234567890"
                   value={ic}
                   onChange={(e) => setIC(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleCheck()}
