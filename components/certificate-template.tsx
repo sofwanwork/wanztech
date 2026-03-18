@@ -23,6 +23,9 @@ export function CertificateTemplate({
   ic,
   formId,
 }: CertificateTemplateProps) {
+  // Auto-uppercase name for all certificate templates
+  const uppercaseName = name.toUpperCase();
+
   const formattedDate = date
     ? new Date(date).toLocaleDateString('ms-MY', {
         day: 'numeric',
@@ -38,7 +41,7 @@ export function CertificateTemplate({
         id={id}
         template={customTemplateData}
         data={{
-          name,
+          name: uppercaseName,
           program,
           date: formattedDate || date || '', // Use formatted if available
           ic,
@@ -68,7 +71,7 @@ export function CertificateTemplate({
             className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 uppercase tracking-wider"
             style={{ textShadow: '2px 2px 4px rgba(255,255,255,0.8)' }}
           >
-            {name}
+            {uppercaseName}
           </h1>
           <p
             className="text-xl text-gray-800 font-medium mb-2"
@@ -99,7 +102,7 @@ export function CertificateTemplate({
   // Default to 'classic' if type is not found (which happens for UUIDs if customTemplateData is missing)
   const TemplateComponent = templateRegistry[type] || templateRegistry['classic'];
 
-  return <TemplateComponent id={id} name={name} program={program} formattedDate={formattedDate} />;
+  return <TemplateComponent id={id} name={uppercaseName} program={program} formattedDate={formattedDate} />;
 }
 
 // Re-export template list for use in selectors
