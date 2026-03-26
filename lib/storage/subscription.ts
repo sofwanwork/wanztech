@@ -457,16 +457,11 @@ export async function canCreateCertificate(): Promise<{ allowed: boolean; messag
     return { allowed: true };
   }
 
-  // We need to count existing certificates.
-  // Ideally we should have a count function, but for now we import the getter.
-  // To avoid circular dependency if getCertificateTemplates uses types from here (which is fine),
-  // but if it uses subscription (circular), we might have issues.
-  // Inspecting code: getCertificateTemplates is in lib/certificate-storage.ts.
-  // It imports supabase/server, and types. It does NOT seem to import subscription.
-  const { getCertificateTemplates } = await import('@/lib/storage/certificates');
-  const templates = await getCertificateTemplates();
+  // Use lightweight COUNT query instead of fetching all templates
+  const { getUserCertificateCount } = await import('@/lib/storage/certificates');
+  const count = await getUserCertificateCount();
 
-  if (templates.length >= limits.maxCertificates) {
+  if (count >= limits.maxCertificates) {
     return {
       allowed: false,
       message: `Anda telah mencapai had ${limits.maxCertificates} sijil untuk plan Free. Upgrade ke Pro untuk sijil tanpa had!`,
@@ -486,14 +481,15 @@ export async function canUpdateCertificate(): Promise<{ allowed: boolean; messag
     return { allowed: true };
   }
 
-  const { getCertificateTemplates } = await import('@/lib/storage/certificates');
-  const templates = await getCertificateTemplates();
+  // Use lightweight COUNT query instead of fetching all templates
+  const { getUserCertificateCount } = await import('@/lib/storage/certificates');
+  const count = await getUserCertificateCount();
 
   // If usage EXCEEDS the limit, block updates (lockout mode)
-  if (templates.length > limits.maxCertificates) {
+  if (count > limits.maxCertificates) {
     return {
       allowed: false,
-      message: `Limit exceeded (${templates.length}/${limits.maxCertificates}). Upgrade to Pro or delete certificates to edit.`,
+      message: `Limit exceeded (${count}/${limits.maxCertificates}). Upgrade to Pro or delete certificates to edit.`,
     };
   }
 
