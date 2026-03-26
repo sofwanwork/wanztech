@@ -21,6 +21,7 @@ import {
   MoreHorizontal,
   Loader2,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { createCertificateTemplateAction } from '@/actions/certificate-template';
 
@@ -52,15 +53,19 @@ export function NewCertificateDialog({ children }: NewCertificateDialogProps) {
     try {
       const result = await createCertificateTemplateAction(formData);
       if (result?.error) {
-        // We use a basic alert if there's no toast available, or ideally a toast
-        alert(result.error);
+        toast.error('Gagal membina sijil', {
+          description: result.error,
+        });
         setLoading(false);
       } else if (result?.success && result.id) {
-        // Navigate on the client to avoid Server Action NEXT_REDIRECT hanging bugs
+        toast.success('Sijil berjaya dicipta!');
         router.push(`/certificates/builder/${result.id}`);
       }
     } catch (error) {
       console.error('Submit error:', error);
+      toast.error('Ralat sistem', {
+        description: 'Sistem mengalami gangguan pautan. Sila uncak/refresh semula.',
+      });
       setLoading(false);
     }
   };
@@ -68,41 +73,43 @@ export function NewCertificateDialog({ children }: NewCertificateDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md max-h-[90dvh] flex flex-col">
+        <DialogHeader className="shrink-0">
           <DialogTitle className="text-xl">Create New Certificate</DialogTitle>
           <DialogDescription>Pilih kategori untuk sijil baru anda</DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <RadioGroup
-            value={selectedCategory}
-            onValueChange={setSelectedCategory}
-            className="grid gap-3"
-          >
-            {CATEGORIES.map((category) => {
-              const Icon = category.icon;
-              return (
-                <div key={category.id}>
-                  <RadioGroupItem value={category.id} id={category.id} className="peer sr-only" />
-                  <Label
-                    htmlFor={category.id}
-                    className="flex items-center gap-4 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 cursor-pointer transition-all"
-                  >
-                    <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center peer-data-[state=checked]:bg-primary/10">
-                      <Icon className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">{category.label}</p>
-                      <p className="text-sm text-muted-foreground">{category.description}</p>
-                    </div>
-                  </Label>
-                </div>
-              );
-            })}
-          </RadioGroup>
+        <form onSubmit={handleSubmit} className="flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-1 mb-6">
+            <RadioGroup
+              value={selectedCategory}
+              onValueChange={setSelectedCategory}
+              className="grid gap-3"
+            >
+              {CATEGORIES.map((category) => {
+                const Icon = category.icon;
+                return (
+                  <div key={category.id}>
+                    <RadioGroupItem value={category.id} id={category.id} className="peer sr-only" />
+                    <Label
+                      htmlFor={category.id}
+                      className="flex items-center gap-4 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 cursor-pointer transition-all"
+                    >
+                      <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center peer-data-[state=checked]:bg-primary/10">
+                        <Icon className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium">{category.label}</p>
+                        <p className="text-sm text-muted-foreground">{category.description}</p>
+                      </div>
+                    </Label>
+                  </div>
+                );
+              })}
+            </RadioGroup>
+          </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-3 shrink-0">
             <Button
               type="button"
               variant="outline"
