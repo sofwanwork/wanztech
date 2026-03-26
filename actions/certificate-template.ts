@@ -161,7 +161,7 @@ export async function createCertificateTemplateAction(formData: FormData) {
 
     if (error || !data) {
       console.error('Error creating certificate template:', error);
-      return { error: 'Gagal membina sijil baharu. Sila cuba lagi.' };
+      return { error: `Gagal membina sijil baharu: ${error?.message || 'Tiada data ID'}` };
     }
 
     return { success: true, id: data.id };
