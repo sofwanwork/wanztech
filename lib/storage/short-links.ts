@@ -71,21 +71,10 @@ export async function createShortLink(slug: string, originalUrl: string): Promis
         throw new Error('URL tidak sah. Sila masukkan URL yang betul.');
     }
 
-    // Check limits
     // Check limits and subscription status
-    const { isSubscriptionBlocked } = await import('@/lib/storage/subscription');
-    const blockStatus = await isSubscriptionBlocked();
-
-    if (blockStatus.blocked) {
-        throw new Error(
-            blockStatus.reason === 'grace_period'
-                ? 'Subscription grace period. Please renew to create links.'
-                : 'Subscription expired. Please renew.'
-        );
-    }
-
-    const subscription = await getSubscription();
-    const limits = TIER_LIMITS[subscription.tier];
+    const { getEffectiveTier } = await import('@/lib/storage/subscription');
+    const effectiveTier = await getEffectiveTier();
+    const limits = TIER_LIMITS[effectiveTier];
 
     if (limits.maxShortLinks !== -1) {
         const { count } = await supabase
@@ -94,7 +83,7 @@ export async function createShortLink(slug: string, originalUrl: string): Promis
             .eq('user_id', user.id);
 
         if ((count || 0) >= limits.maxShortLinks) {
-            throw new Error(`Free tier is limited to ${limits.maxShortLinks} short links. Please upgrade to Pro.`);
+            throw new Error(`Anda telah mencapai had pautan pendek percuma (${limits.maxShortLinks}). Sila upgrade ke Pro.`);
         }
     }
 

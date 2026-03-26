@@ -148,23 +148,11 @@ export async function getSubscriptionStatus(): Promise<{
   };
 }
 
-// Check if subscription is blocking (grace period or expired)
-export async function isSubscriptionBlocked(): Promise<{
-  blocked: boolean;
-  reason?: 'grace_period' | 'expired';
-  graceDaysRemaining?: number;
-}> {
-  const { status, graceDaysRemaining } = await getSubscriptionStatus();
-
-  if (status === 'grace_period') {
-    return { blocked: true, reason: 'grace_period', graceDaysRemaining };
-  }
-
-  if (status === 'expired') {
-    return { blocked: true, reason: 'expired' };
-  }
-
-  return { blocked: false };
+// Get effective tier (downgrades expired/grace_period users to 'free')
+export async function getEffectiveTier(): Promise<SubscriptionTier> {
+  const { status, tier } = await getSubscriptionStatus();
+  if (status === 'active') return tier;
+  return 'free';
 }
 
 // Get current month's usage (auto-create if not exists)
@@ -298,31 +286,9 @@ export async function canCreateForm(): Promise<{
   message?: string;
   reason?: string;
 }> {
-  // First check if subscription is blocked (grace period or expired)
-  const blockStatus = await isSubscriptionBlocked();
-
-  if (blockStatus.blocked) {
-    if (blockStatus.reason === 'grace_period') {
-      return {
-        allowed: false,
-        reason: 'grace_period',
-        message: `Langganan Pro anda telah tamat. Anda mempunyai ${blockStatus.graceDaysRemaining} hari lagi sebelum akaun disekat sepenuhnya. Sila renew untuk terus create form baru.`,
-      };
-    }
-
-    if (blockStatus.reason === 'expired') {
-      return {
-        allowed: false,
-        reason: 'expired',
-        message:
-          'Langganan Pro anda telah tamat dan akaun disekat. Sila renew untuk terus menggunakan KlikForm.',
-      };
-    }
-  }
-
   const { user } = await getUser();
-  const subscription = await getSubscription();
-  const limits = TIER_LIMITS[subscription.tier];
+  const effectiveTier = await getEffectiveTier();
+  const limits = TIER_LIMITS[effectiveTier];
 
   // Unlimited forms
   if (limits.maxForms === -1) {
@@ -346,8 +312,8 @@ export async function canCreateForm(): Promise<{
 // Check if user can update an existing form
 export async function canUpdateForm(): Promise<{ allowed: boolean; message?: string }> {
   const { user } = await getUser();
-  const subscription = await getSubscription();
-  const limits = TIER_LIMITS[subscription.tier];
+  const effectiveTier = await getEffectiveTier();
+  const limits = TIER_LIMITS[effectiveTier];
 
   // Unlimited forms
   if (limits.maxForms === -1) {
@@ -373,15 +339,24 @@ export async function canAcceptSubmission(
 ): Promise<{ allowed: boolean; message?: string }> {
   const supabase = await createClient();
 
-  // Get form owner's subscription
+  // Get form owner's subscription status safely since this is critical
   const { data: sub } = await supabase
     .from('subscriptions')
-    .select('tier')
+    .select('tier, current_period_end')
     .eq('user_id', formOwnerId)
     .single();
 
-  const tier = (sub?.tier || 'free') as SubscriptionTier;
-  const limits = TIER_LIMITS[tier];
+  let effectiveTier: SubscriptionTier = (sub?.tier || 'free') as SubscriptionTier;
+  
+  // Apply fallback logic manually for form owners
+  if (effectiveTier !== 'free' && sub?.current_period_end) {
+    const periodEnd = new Date(sub.current_period_end);
+    if (periodEnd.getTime() < Date.now()) {
+      effectiveTier = 'free';
+    }
+  }
+
+  const limits = TIER_LIMITS[effectiveTier];
 
   // Unlimited submissions
   if (limits.maxSubmissionsPerForm === -1) {
@@ -417,12 +392,20 @@ export async function canSubmitForm(formOwnerId: string): Promise<boolean> {
   // This runs for public submissions (no auth), so we must bypass RLS
   const { data: sub } = await supabase
     .from('subscriptions')
-    .select('tier')
+    .select('tier, current_period_end')
     .eq('user_id', formOwnerId)
     .single();
 
-  const tier = (sub?.tier || 'free') as SubscriptionTier;
-  const limits = TIER_LIMITS[tier];
+  let effectiveTier: SubscriptionTier = (sub?.tier || 'free') as SubscriptionTier;
+
+  if (effectiveTier !== 'free' && sub?.current_period_end) {
+    const periodEnd = new Date(sub.current_period_end);
+    if (periodEnd.getTime() < Date.now()) {
+      effectiveTier = 'free';
+    }
+  }
+
+  const limits = TIER_LIMITS[effectiveTier];
 
   // Unlimited submissions
   if (limits.maxSubmissionsPerForm === -1) {
@@ -449,8 +432,8 @@ export async function canSubmitForm(formOwnerId: string): Promise<boolean> {
 
 // Check if user can create a new certificate
 export async function canCreateCertificate(): Promise<{ allowed: boolean; message?: string }> {
-  const subscription = await getSubscription();
-  const limits = TIER_LIMITS[subscription.tier];
+  const effectiveTier = await getEffectiveTier();
+  const limits = TIER_LIMITS[effectiveTier];
 
   // Unlimited certificates
   if (limits.maxCertificates === -1) {
@@ -473,8 +456,8 @@ export async function canCreateCertificate(): Promise<{ allowed: boolean; messag
 
 // Check if user can update an existing certificate
 export async function canUpdateCertificate(): Promise<{ allowed: boolean; message?: string }> {
-  const subscription = await getSubscription();
-  const limits = TIER_LIMITS[subscription.tier];
+  const effectiveTier = await getEffectiveTier();
+  const limits = TIER_LIMITS[effectiveTier];
 
   // Unlimited certificates
   if (limits.maxCertificates === -1) {
@@ -499,8 +482,8 @@ export async function canUpdateCertificate(): Promise<{ allowed: boolean; messag
 // Check if user can create a new QR code
 export async function canCreateQRCode(): Promise<{ allowed: boolean; message?: string }> {
   const { user } = await getUser();
-  const subscription = await getSubscription();
-  const limits = TIER_LIMITS[subscription.tier];
+  const effectiveTier = await getEffectiveTier();
+  const limits = TIER_LIMITS[effectiveTier];
 
   // Unlimited QR codes
   if (limits.maxQRCodes === -1) {
