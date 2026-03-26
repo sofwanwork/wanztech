@@ -21,6 +21,7 @@ import {
   MoreHorizontal,
   Loader2,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { createCertificateTemplateAction } from '@/actions/certificate-template';
 
 interface NewCertificateDialogProps {
@@ -36,6 +37,7 @@ const CATEGORIES = [
 ];
 
 export function NewCertificateDialog({ children }: NewCertificateDialogProps) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('other');
   const [loading, setLoading] = useState(false);
@@ -47,8 +49,20 @@ export function NewCertificateDialog({ children }: NewCertificateDialogProps) {
     const formData = new FormData();
     formData.set('category', selectedCategory);
 
-    await createCertificateTemplateAction(formData);
-    // Note: The action will redirect, so we don't need to handle close
+    try {
+      const result = await createCertificateTemplateAction(formData);
+      if (result?.error) {
+        // We use a basic alert if there's no toast available, or ideally a toast
+        alert(result.error);
+        setLoading(false);
+      } else if (result?.success && result.id) {
+        // Navigate on the client to avoid Server Action NEXT_REDIRECT hanging bugs
+        router.push(`/certificates/builder/${result.id}`);
+      }
+    } catch (error) {
+      console.error('Submit error:', error);
+      setLoading(false);
+    }
   };
 
   return (

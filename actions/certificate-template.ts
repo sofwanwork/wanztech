@@ -103,70 +103,76 @@ const DEFAULT_ELEMENTS: CertificateElement[] = [
   },
 ];
 
-export async function createCertificateTemplateAction(formData: FormData): Promise<void> {
-  const categoryInput = formData.get('category') as string | null;
-  const category: CertificateCategory = VALID_CATEGORIES.includes(
-    categoryInput as CertificateCategory
-  )
-    ? (categoryInput as CertificateCategory)
-    : 'other';
+export async function createCertificateTemplateAction(formData: FormData) {
+  try {
+    const categoryInput = formData.get('category') as string | null;
+    const category: CertificateCategory = VALID_CATEGORIES.includes(
+      categoryInput as CertificateCategory
+    )
+      ? (categoryInput as CertificateCategory)
+      : 'other';
 
-  // ── Single auth check ─────────────────────────────────────────────────
-  // Previously this flow called getUser() 3 times (subscription check,
-  // certificate count, and save). Now we authenticate ONCE and reuse.
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    // ── Single auth check ─────────────────────────────────────────────────
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect('/login');
-  }
+    if (!user) {
+      redirect('/login');
+    }
 
-  // ── Parallel: subscription + certificate count ────────────────────────
-  // Run both queries simultaneously instead of sequentially
-  const [subResult, countResult] = await Promise.all([
-    supabase.from('subscriptions').select('tier').eq('user_id', user.id).single(),
-    supabase
+    // ── Parallel: subscription + certificate count ────────────────────────
+    const [subResult, countResult] = await Promise.all([
+      supabase.from('subscriptions').select('tier').eq('user_id', user.id).single(),
+      supabase
+        .from('certificate_templates')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id),
+    ]);
+
+    const tier = (subResult.data?.tier || 'free') as SubscriptionTier;
+    const limits = TIER_LIMITS[tier];
+    const currentCount = countResult.count || 0;
+
+    // Check limits
+    if (limits.maxCertificates !== -1 && currentCount >= limits.maxCertificates) {
+      const message = `Anda telah mencapai had ${limits.maxCertificates} sijil untuk plan Free. Upgrade ke Pro untuk sijil tanpa had!`;
+      return { error: message };
+    }
+
+    // ── Insert new template ───────────────────────────────────────────────
+    const now = new Date().toISOString();
+    const { data, error } = await supabase
       .from('certificate_templates')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id),
-  ]);
+      .insert({
+        user_id: user.id,
+        name: 'Sijil Baru',
+        category,
+        elements: DEFAULT_ELEMENTS,
+        background_color: '#ffffff',
+        width: 842,
+        height: 595,
+        created_at: now,
+        updated_at: now,
+      })
+      .select('id')
+      .single();
 
-  const tier = (subResult.data?.tier || 'free') as SubscriptionTier;
-  const limits = TIER_LIMITS[tier];
-  const currentCount = countResult.count || 0;
+    if (error || !data) {
+      console.error('Error creating certificate template:', error);
+      return { error: 'Gagal membina sijil baharu. Sila cuba lagi.' };
+    }
 
-  // Check limits
-  if (limits.maxCertificates !== -1 && currentCount >= limits.maxCertificates) {
-    const message = `Anda telah mencapai had ${limits.maxCertificates} sijil untuk plan Free. Upgrade ke Pro untuk sijil tanpa had!`;
-    redirect('/certificates/builder?error=' + encodeURIComponent(message));
+    return { success: true, id: data.id };
+  } catch (error) {
+    // If it's a redirect error, DO NOT catch it because Next.js needs it to navigate.
+    if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
+      throw error;
+    }
+    console.error('Action error:', error);
+    return { error: 'Gagal menyambung ke pangkalan data.' };
   }
-
-  // ── Insert new template (reuse same client, no extra getUser) ─────────
-  const now = new Date().toISOString();
-  const { data, error } = await supabase
-    .from('certificate_templates')
-    .insert({
-      user_id: user.id,
-      name: 'Sijil Baru',
-      category,
-      elements: DEFAULT_ELEMENTS,
-      background_color: '#ffffff',
-      width: 842,
-      height: 595,
-      created_at: now,
-      updated_at: now,
-    })
-    .select('id')
-    .single();
-
-  if (error || !data) {
-    console.error('Error creating certificate template:', error);
-    return;
-  }
-
-  redirect(`/certificates/builder/${data.id}`);
 }
 
 export async function updateCertificateTemplateAction(
