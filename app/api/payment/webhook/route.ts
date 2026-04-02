@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@/utils/supabase/admin';
 import { addMonths } from 'date-fns';
 import crypto from 'crypto';
 
@@ -146,6 +147,54 @@ export async function POST(req: NextRequest) {
       if (subError) {
         console.error('Error updating subscription:', subError);
         return NextResponse.json({ error: 'Subscription update failed' }, { status: 500 });
+      }
+
+      // 3. Send Success & Welcome Emails (Invoice)
+      try {
+        const { getPaymentSuccessEmail, getWelcomeProEmail, sendEmail } = await import(
+          '@/lib/email'
+        );
+        const adminSupabase = createAdminClient();
+        
+        // Fetch user data via Admin API bypassing RLS
+        const { data: userData } = await adminSupabase.auth.admin.getUserById(
+          transaction.user_id
+        );
+        
+        const userEmail = userData?.user?.email || body.customer_email || body.payer_email;
+        const userName =
+          userData?.user?.user_metadata?.full_name ||
+          body.customer_name ||
+          body.payer_name ||
+          'Pelanggan Pro';
+          
+        if (userEmail) {
+          const receiptUrl = body.receipt_url || body.payment_url || '#';
+
+          // Send Receipt Email
+          const receiptEmail = getPaymentSuccessEmail(
+            userName,
+            `RM ${transaction.amount || '5.00'}`,
+            new Date(currentPeriodEnd).toLocaleDateString('ms-MY'),
+            receiptUrl
+          );
+          
+          await sendEmail({
+            to: userEmail,
+            subject: receiptEmail.subject,
+            html: receiptEmail.html,
+          });
+
+          // Send Welcome to Pro Email
+          const welcomeEmail = getWelcomeProEmail(userName, 'https://klikform.com/forms');
+          await sendEmail({
+            to: userEmail,
+            subject: welcomeEmail.subject,
+            html: welcomeEmail.html,
+          });
+        }
+      } catch (emailErr) {
+        console.error('Failed to send payment emails:', emailErr);
       }
     } else {
       // Handle failed payment
