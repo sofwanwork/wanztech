@@ -103,7 +103,7 @@ export default async function LandingPage() {
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative overflow-hidden pt-16 md:pt-24 lg:pt-32 pb-16">
+        <section className="relative overflow-hidden pt-8 md:pt-16 lg:pt-20 pb-16">
           <div className="container mx-auto px-4 md:px-6 text-center">
             <div className="mx-auto max-w-3xl space-y-6">
               <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl text-transparent bg-clip-text bg-gradient-to-r from-[#451263] via-[#9333ea] to-[#451263] animate-gradient-xy pb-4">
