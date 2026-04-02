@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Polisi Privasi | KlikForm',
-    description: 'Ketahui bagaimana KlikForm menguruskan dan melindungi data serta privasi anda.',
+    title: 'Privacy Policy | KlikForm',
+    description: 'Learn how KlikForm manages and protects your data and privacy.',
 };
 
 export default function PrivacyPage() {
@@ -17,20 +17,20 @@ export default function PrivacyPage() {
                     <Link href="/">
                         <Button variant="ghost" size="sm" className="mb-6 -ml-3 text-gray-500 hover:text-gray-900">
                             <ArrowLeft className="mr-2 h-4 w-4" />
-                            Kembali ke Laman Utama
+                            Back to Home
                         </Button>
                     </Link>
                     <div className="flex items-center gap-3 mb-4">
                         <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                             <LockKeyhole className="h-6 w-6" />
                         </div>
-                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">Polisi Privasi</h1>
+                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">Privacy Policy</h1>
                     </div>
                     <p className="text-gray-500 text-lg">
-                        Ketahui bagaimana kami menjaga ketelusan dan melindungi maklumat peribadi anda di KlikForm.
+                        Learn how we maintain transparency and protect your personal information at KlikForm.
                     </p>
                     <div className="mt-6 flex items-center text-sm text-gray-400">
-                        Kemas kini terakhir: 20 Februari 2026
+                        Last updated: 20 February 2026
                     </div>
                 </div>
             </div>
@@ -39,80 +39,80 @@ export default function PrivacyPage() {
             <div className="container mx-auto px-4 md:px-6 max-w-4xl mt-12">
                 <div className="bg-white rounded-2xl p-8 md:p-12 shadow-sm border border-gray-100">
 
-                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-8 mb-4 first:mt-0">1. Pengenalan</h2>
+                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-8 mb-4 first:mt-0">1. Introduction</h2>
                     <p className="text-gray-600 leading-relaxed mb-4">
-                        Selamat datang ke <strong className="font-semibold text-gray-900">KlikForm</strong> ("kami"). Kami komited untuk melindungi maklumat peribadi anda dan hak privasi anda. Polisi Privasi ini menerangkan cara kami mengumpul, menggunakan, melindungi dan mendedahkan maklumat peribadi anda apabila anda menggunakan laman web dan perkhidmatan kami (secara kolektif dirujuk sebagai "Perkhidmatan").
+                        Welcome to <strong className="font-semibold text-gray-900">KlikForm</strong> ("we" or "us"). We are committed to protecting your personal information and your right to privacy. This Privacy Policy describes how we collect, use, protect, and disclose your personal information when you use our website and services (collectively referred to as the "Service").
                     </p>
                     <p className="text-gray-600 leading-relaxed mb-6">
-                        Dengan mengakses atau menggunakan Perkhidmatan kami, anda bersetuju dengan amalan pengumpulan dan penggunaan maklumat seperti yang dinyatakan dalam dasar ini.
+                        By accessing or using our Service, you agree to the information collection and use practices as outlined in this policy.
                     </p>
 
-                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-10 mb-4">2. Maklumat yang Kami Kumpul</h2>
+                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-10 mb-4">2. Information We Collect</h2>
                     <p className="text-gray-600 leading-relaxed mb-4">
-                        Kami mungkin mengumpul jenis maklumat peribadi yang anda berikan secara sukarela apabila anda mendaftar, menyatakan minat terhadap produk, atau apabila menghubungi kami:
+                        We may collect personal information that you voluntarily provide when you register, express interest in our products, or contact us:
                     </p>
                     <ul className="list-disc pl-6 mb-6 text-gray-600 space-y-2">
-                        <li><strong className="font-semibold text-gray-900">Maklumat Akaun:</strong> Nama, alamat e-mel, nama pengguna, dan kata laluan.</li>
-                        <li><strong className="font-semibold text-gray-900">Data Transaksi:</strong> Data yang diperlukan untuk memproses pembayaran jika anda membuat pembelian borang langganan.</li>
+                        <li><strong className="font-semibold text-gray-900">Account Information:</strong> Name, email address, username, and password.</li>
+                        <li><strong className="font-semibold text-gray-900">Transaction Data:</strong> Data necessary to process your payment if you purchase a subscription plan.</li>
                     </ul>
 
-                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-10 mb-4">3. Data Pengguna Google (Google User Data)</h2>
+                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-10 mb-4">3. Google User Data</h2>
                     <p className="text-gray-600 leading-relaxed mb-4">
-                        Aplikasi kami berintegrasi dengan <strong className="font-semibold text-gray-900">Google Drive</strong> dan kelak dengan <strong className="font-semibold text-gray-900">Google Sheets API</strong> untuk menyediakan kefungsian automasi yang mantap. Jika anda bersetuju untuk menyambungkan akaun Google anda, kami mengakses data berikut:
+                        Our application integrates with <strong className="font-semibold text-gray-900">Google Drive</strong> and <strong className="font-semibold text-gray-900">Google Sheets API</strong> to provide robust automation functionalities. If you consent to connect your Google account, we access the following data:
                     </p>
                     <ul className="list-disc pl-6 mb-6 text-gray-600 space-y-2">
-                        <li><strong className="font-semibold text-gray-900">Fail Google Drive:</strong> Kami mungkin mengakses ruangan folder spesifik (yang telah diizinkan) atau membina folder/fail baru bagi tujuan memuatnaikkan simpanan gambar dokumen pengguna anda.</li>
-                        <li><strong className="font-semibold text-gray-900">Google Sheets:</strong> Kami mungkin membaca, mencipta dan mengemaskini fail lembaran hamparan cerminan untuk menyelaras pendaftaran sistem responden borang ke awan.</li>
+                        <li><strong className="font-semibold text-gray-900">Google Drive Files:</strong> We may access specific authorized folders or create new folders/files for the purpose of uploading your users' document images.</li>
+                        <li><strong className="font-semibold text-gray-900">Google Sheets:</strong> We may read, create, and update spreadsheet files to synchronize form respondent data to the cloud.</li>
                     </ul>
                     <p className="text-gray-600 leading-relaxed mb-2">
-                        <strong className="font-semibold text-gray-900">Pendedahan Penggunaan Terhad (Limited Use Disclosure):</strong>
+                        <strong className="font-semibold text-gray-900">Limited Use Disclosure:</strong>
                     </p>
                     <p className="text-gray-600 leading-relaxed mb-6 bg-gray-50 border border-gray-100 p-4 rounded-lg">
-                        Penggunaan serta pemindahan kepada mana-mana aplikasi atau maklumat lain yang diakses melalui APIs Google oleh KlikForm akan sentiasa mematuhi sepenuhnya
+                        KlikForm's use and transfer to any other app of information received from Google APIs will adhere to the
                         <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noreferrer" className="text-primary hover:underline font-medium ml-1">
-                            Polisi Data Pengguna API Servis Google
-                        </a> (Google API Services User Data Policy), khususnya melibatkan syarat peruntukan Penggunaan Terhad (Limited Use requirements).
+                            Google API Services User Data Policy
+                        </a>, including the Limited Use requirements.
                     </p>
 
-                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-10 mb-4">4. Cara Kami Menggunakan Maklumat Anda</h2>
+                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-10 mb-4">4. How We Use Your Information</h2>
                     <p className="text-gray-600 leading-relaxed mb-4">
-                        Maklumat yang dikumpul digunakan untuk tujuan perniagaan berikut:
+                        The information we collect is used for the following business purposes:
                     </p>
                     <ul className="list-disc pl-6 mb-6 text-gray-600 space-y-2">
-                        <li>Mengendalikan pendaftaran log masuk (account creation) dan tetapan automasi.</li>
-                        <li>Memproses transaksi pembayaran dan memudahkan pengurusan pengebilan.</li>
-                        <li>Melindungi aset Perkhidmatan (mencengah salah laku dan penipuan).</li>
-                        <li>Menghantar pengumuman penting sistem, kemas kini teknikal, notis keselamatan kepada pengguna.</li>
-                        <li>Menganalisis pola penggunaan dan interaksi agar perkhidmatan lebih stabil hari demi hari.</li>
+                        <li>Facilitating account creation and managing automation settings.</li>
+                        <li>Processing payment transactions and billing management.</li>
+                        <li>Protecting our Services (preventing misconduct and fraud).</li>
+                        <li>Sending important system announcements, technical updates, and security notices to users.</li>
+                        <li>Analyzing usage patterns and interactions to improve the stability of our services over time.</li>
                     </ul>
 
-                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-10 mb-4">5. Kuki (Cookies) dan Penjejakan</h2>
+                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-10 mb-4">5. Cookies and Tracking</h2>
                     <p className="text-gray-600 leading-relaxed mb-6">
-                        Kami menggunakan "cookies" pada aplikasi kami (terutamanya untuk tujuan pengesahan log masuk/sesi menerusi integrasi). Namun jika tetapan privasi pelayar ditukar, ia mungkin menghalang navigasi halaman platform pembina anda.
+                        We use "cookies" on our application (primarily for login authentication/session management). However, if your browser's privacy settings block cookies, it may prevent navigation within your form builder dashboard.
                     </p>
 
-                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-10 mb-4">6. Perkongsian dan Pendedahan</h2>
+                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-10 mb-4">6. Sharing and Disclosure</h2>
                     <p className="text-gray-600 leading-relaxed mb-4">
-                        Kami mungkin berkongsi data anda di dalam terma berwajib seperti senario di bawah ini:
+                        We may share your data in mandatory situations such as:
                     </p>
                     <ul className="list-disc pl-6 mb-6 text-gray-600 space-y-2">
-                        <li><strong className="font-semibold text-gray-900">Peruntukan Syarat Undang-undang:</strong> Sekiranya dituntut keperluannya oleh proses kehakiman yang rasmi bagi membanteras dan menjaga keselamatan komunit secara pukal mengikut laras tata amalan jenayah digital.</li>
-                        <li><strong className="font-semibold text-gray-900">Pertukaran Transaksi Pengambilalihan Perniagaan:</strong> Semasa proses penjualan / pemerolehan syarikat secara berperingkat peribadi ke korporat.</li>
+                        <li><strong className="font-semibold text-gray-900">Legal Compliance:</strong> If required by formal judicial processes to combat fraud and maintain public safety in accordance with digital criminal procedural laws.</li>
+                        <li><strong className="font-semibold text-gray-900">Business Transfers:</strong> During the process of a corporate merger, acquisition, or sale of the company.</li>
                     </ul>
 
-                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-10 mb-4">7. Keselamatan Pengurusan Rekod</h2>
+                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-10 mb-4">7. Data Security Management</h2>
                     <p className="text-gray-600 leading-relaxed mb-6">
-                        Maklumat pengguna disimpan dan dilindungi menerusi penyekatan pentadbiran teknikal berasaskan amalan sistem tinggi untuk menggagalkan pemolosan di luar duga. Harap ambil maklum, biarpun inisiatif pemanjangan talian SSL / enkripsi dilakukan, apa jua infrastruktur internet sememangnya bukan seratus peratus dijamin tanpa kompromi tebus-guna (unimpeachable perfection).
+                        User information is stored and protected through elevated technical administrative practices to thwart unauthorized access. Please note that while we implement SSL and encryption initiatives, no internet infrastructure is 100% guaranteed to be absolutely secure against breaches.
                     </p>
 
-                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-10 mb-4">8. Hak Pentadbiran Rekod Anda</h2>
+                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-10 mb-4">8. Your Data Management Rights</h2>
                     <p className="text-gray-600 leading-relaxed mb-6">
-                        Anda mempunyai keupayaan pentabdiran penuh dan hak selamanya untuk memadam dan menggubal kembali sebarang privasi data atau menyalin log fail sistem secepat 2 minit di "Profil Sistem". Sekiranya masih memerlukan kelulusan pentadbiran dalaman sila kemukakannya serta merta di halaman utama.
+                        You have full administrative capabilities and the perpetual right to delete or modify any data privacy settings or export system logs within minutes from your "System Profile". If you still require internal administrative assistance, please submit a request immediately via the main page.
                     </p>
 
-                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-10 mb-4">9. Hubungi Kami</h2>
+                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-10 mb-4">9. Contact Us</h2>
                     <p className="text-gray-600 leading-relaxed mb-6">
-                        Jika anda mempunyai sebarang soalan, kekeliruan, atau aduan berkaitan polisi privasi ini, sila hubungi kami di <a href="mailto:support@klikform.com" className="text-primary hover:underline font-medium">support@klikform.com</a>.
+                        If you have any questions, concerns, or complaints regarding this privacy policy, please contact us at <a href="mailto:support@klikform.com" className="text-primary hover:underline font-medium">support@klikform.com</a>.
                     </p>
 
                 </div>

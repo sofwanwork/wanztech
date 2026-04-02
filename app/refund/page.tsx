@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Polisi Bayaran Balik | KlikForm',
-    description: 'Prosedur dan syarat mengenai bayaran balik di KlikForm.',
+    title: 'Refund Policy | KlikForm',
+    description: 'Procedures and conditions regarding refunds at KlikForm.',
 };
 
 export default function RefundPage() {
@@ -17,20 +17,20 @@ export default function RefundPage() {
                     <Link href="/">
                         <Button variant="ghost" size="sm" className="mb-6 -ml-3 text-gray-500 hover:text-gray-900">
                             <ArrowLeft className="mr-2 h-4 w-4" />
-                            Kembali ke Laman Utama
+                            Back to Home
                         </Button>
                     </Link>
                     <div className="flex items-center gap-3 mb-4">
                         <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                             <RefreshCcw className="h-6 w-6" />
                         </div>
-                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">Polisi Bayaran Balik</h1>
+                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">Refund Policy</h1>
                     </div>
                     <p className="text-gray-500 text-lg">
-                        Terma terperinci mengenai kelayakan dan proses pemulangan wang dan gantirugi.
+                        Detailed terms regarding the eligibility and process for refunds and compensation.
                     </p>
                     <div className="mt-6 flex items-center text-sm text-gray-400">
-                        Kemas kini terakhir: 20 Februari 2026
+                        Last updated: 20 February 2026
                     </div>
                 </div>
             </div>
@@ -39,46 +39,46 @@ export default function RefundPage() {
             <div className="container mx-auto px-4 md:px-6 max-w-4xl mt-12">
                 <div className="bg-white rounded-2xl p-8 md:p-12 shadow-sm border border-gray-100">
 
-                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-8 mb-4 first:mt-0">1. Polisi Pengembalian Wang Asas</h2>
+                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-8 mb-4 first:mt-0">1. Basic Refund Policy</h2>
                     <p className="text-gray-600 leading-relaxed mb-4">
-                        Di <strong className="font-semibold text-gray-900">KlikForm</strong>, kami memastikan perkhidmatan pembina borang dalam talian (SaaS) sentiasa memuaskan. Memandangkan perkhidmatan kami adalah berasaskan langganan digital yang dapat diakses sertamerta, <strong className="font-semibold text-gray-900">kami umumnya tidak menawarkan bayaran balik (refund) sewenang-wenangnya setelah pembayaran langganan telah diproses sepenuhnya.</strong>
+                        At <strong className="font-semibold text-gray-900">KlikForm</strong>, we ensure our online form builder service (SaaS) is consistently satisfactory. Because our service is a digitally accessible subscription product, <strong className="font-semibold text-gray-900">we generally do not offer arbitrary refunds once a subscription payment has been fully processed.</strong>
                     </p>
                     <p className="text-gray-600 leading-relaxed mb-6">
-                        Namun begitu, kami akan mempertimbangkan permohonan bayaran balik secara per se dasar (case-by-case basis) untuk isu teknikal tersendiri tertakluk kepada budi bicara kami di bawah syarat kelayakan tertentu.
+                        However, we will consider refund requests on a case-by-case basis for specific technical issues, subject to our discretion and specific eligibility criteria.
                     </p>
 
-                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-10 mb-4">2. Syarat Kelayakan Permohonan Awam </h2>
+                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-10 mb-4">2. Eligibility for Refund Requests </h2>
                     <p className="text-gray-600 leading-relaxed mb-4">
-                        Anda hanya layak dipertimbangkan untuk pemulangan penuh tatkala anda memenuhi situasi yang berikut:
-                    </p>
-                    <ul className="list-disc pl-6 mb-6 text-gray-600 space-y-2">
-                        <li><strong className="font-semibold text-gray-900">Isu Kritikal Sistem:</strong> Anda mendapati sistem sama sekali tidak dapat berfungsi sejajar spesifikasi rasmi dalam tempoh masa <strong className="font-semibold text-gray-900">tiga (3) hari</strong> semenjak pembelian mula dibuat. Isu ini dibuktikan berpunca dari kecacatan keupayaan sistem pihak utama KlikForm serra 100% ralat terhenti tanpa keupayaan penyelesaian lain.</li>
-                        <li><strong className="font-semibold text-gray-900">Caj Pertindihan:</strong> Di mana sistem mendapati berlaku insiden ketidaksengajaan terpotong caj langganan berulang melebihi 2 nilai transaksi pada bulan atau tempoh yang sama disebabkan isu gateway pangkalan.</li>
-                    </ul>
-
-                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-10 mb-4">3. Keadaan Yang Tidak Layak</h2>
-                    <p className="text-gray-600 leading-relaxed mb-4">
-                        Bayaran ganti-rugi/pemulangan tunai <strong className="font-semibold text-gray-900">TIDAK AKAN DIBERI</strong> di bawah situasi berikut :
+                        You may be eligible for a full refund only if you meet the following conditions:
                     </p>
                     <ul className="list-disc pl-6 mb-6 text-gray-600 space-y-2">
-                        <li>Penyesalan sesudah membeli (Buyer's remorse) ataupun penukaran fikiran pengubah suaian bisnes pengguna secara spontan.</li>
-                        <li>Adanya anda tertelupa membatalkan pakej langganan sebelum kitaran pengebilan / auto-pas bulanan di-caj kembali untuk tempoh kitar seterusnya. Pengguna adalah digalakkan membatalkan pakej dengan pantas melalai tetapan sistem pada tetapan "Renew / Batal" profil dashboard sedia ada jikalau tidak mahu auto-potongan pada bulan hadapan.</li>
-                        <li>Tiada resit sah sebagai rekod urus niaga utama bersama klikform.</li>
+                        <li><strong className="font-semibold text-gray-900">Critical System Issues:</strong> You find that the system is completely non-functional according to its official specifications within <strong className="font-semibold text-gray-900">three (3) days</strong> from the initial purchase date. This issue must be proven to originate from KlikForm's core system capabilities resulting in a 100% hard stop error with no alternative workarounds.</li>
+                        <li><strong className="font-semibold text-gray-900">Duplicate Charges:</strong> Given instances of accidental duplicate subscription charges exceeding 2 transactions in the same month or cycle due to underlying payment gateway issues.</li>
                     </ul>
 
-                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-10 mb-4">4. Proses Pemohonan Polisi</h2>
+                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-10 mb-4">3. Non-Eligible Situations</h2>
                     <p className="text-gray-600 leading-relaxed mb-4">
-                        Untuk mengajukan semakan polisi bayaran pemulangan dengan pihak sokongan:
+                        Refunds or compensation <strong className="font-semibold text-gray-900">WILL NOT BE PROVIDED</strong> in the following scenarios:
+                    </p>
+                    <ul className="list-disc pl-6 mb-6 text-gray-600 space-y-2">
+                        <li>Buyer's remorse or spontaneous business alterations after the purchase.</li>
+                        <li>Forgetting to cancel the subscription package before the monthly billing cycle / auto-renew activates for the next period. Users are highly encouraged to cancel their packages promptly via the system settings at the "Renew / Cancel" dashboard profile if they do not wish to be auto-charged next month.</li>
+                        <li>Inability to provide a valid receipt as the primary transaction record with KlikForm.</li>
+                    </ul>
+
+                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-10 mb-4">4. Policy Claim Process</h2>
+                    <p className="text-gray-600 leading-relaxed mb-4">
+                        To submit a refund policy review with our support team:
                     </p>
                     <ol className="list-decimal pl-6 mb-6 text-gray-600 space-y-2">
-                        <li>Mohon emailkan butiran kes secara formal di: <a href="mailto:support@klikform.com" className="text-primary hover:underline font-medium">support@klikform.com</a>.</li>
-                        <li>Judul Subjek E-mel: "Penyemakan Polisi Bayaran Balik: [Emel / Username Anda]".</li>
-                        <li>Sertakan dalam salinan (tangkapan resit asal atau rujukan nombor pengesahan resit, huraian mendalam secara padu bersasar isu / justifikasi yang dipertikaikan).</li>
+                        <li>Please formally email the case details to: <a href="mailto:support@klikform.com" className="text-primary hover:underline font-medium">support@klikform.com</a>.</li>
+                        <li>Email Subject Title: "Refund Policy Review: [Your Email / Username]".</li>
+                        <li>Include in the copy (screenshot of the original receipt or receipt confirmation number, along with a deep targeted description / justification of the disputed issue).</li>
                     </ol>
 
-                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-10 mb-4">5. Tempoh dan Kaedah Kelulusan Pindaan</h2>
+                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-10 mb-4">5. Duration and Method of Resolution</h2>
                     <p className="text-gray-600 leading-relaxed mb-6">
-                        Setiap aduan yang lengkap akan dibawa ke penelitian bahagian penyelia operasi. Jika semakan rayuan diluluskan, pembayaran ganti nilai akan didepositkan kembali secara terus menerusi mekanisma alat teras penyedia kad atau saluran asal pembayaran di masa terawal yang mungkin mengambil jangka kitaran berulang antara 5 sehingga ke 10 hari masa bekerja penuh (bergantung pada kelajuan proses pemproses perbankan / akaun antarabangsa penyalur).
+                        Every complete complaint will be escalated to our operations supervisor for scrutiny. If the appeal review is approved, the compensation payment will be deposited back directly via the core card provider's mechanism or original payment channel at the earliest possible time, which may span a recurring cycle between 5 to 10 full working days (depending on the clearing speed of the international banking processor / channel account).
                     </p>
 
                 </div>
