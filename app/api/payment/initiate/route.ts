@@ -23,8 +23,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Amount and description
-    const amount = 10.0; // BCL expects number
-    const description = 'KlikForm Pro Plan - Monthly Subscription (Promo)';
+    const amount = 5.0; // BCL expects number
+    const description = 'KlikForm Pro Plan - Monthly Subscription (50% Promo)';
 
     // BCL API Configuration
     const bclToken = process.env.BCL_API_TOKEN;
