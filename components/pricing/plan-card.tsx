@@ -106,8 +106,8 @@ export function PlanCard({ plan, user }: PlanCardProps) {
           </div>
           {plan.name === 'Pro' && (
             <div className="text-right">
-              <span className="block text-xs text-gray-400 line-through">RM 19</span>
-              <span className="block text-xs font-bold text-green-600">Promo!</span>
+              <span className="block text-xs text-gray-400 line-through">RM 10</span>
+              <span className="block text-xs font-bold text-green-600">50% OFF!</span>
             </div>
           )}
         </div>
