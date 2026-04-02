@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Award, Search, Download, Loader2, CheckCircle2, XCircle } from 'lucide-react';
-import { checkCertificateByIC, CertificateCheckResult } from '@/actions/certificates';
+import { checkCertificateByICOrEmail, CertificateCheckResult } from '@/actions/certificates';
 import { useRef } from 'react';
 // import html2canvas from 'html2canvas-pro';
 // import { jsPDF } from 'jspdf';
@@ -35,7 +35,7 @@ export function CertificateCheckClient({
   templateId,
   customTemplateData,
 }: CertificateCheckClientProps) {
-  const [ic, setIC] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CertificateCheckResult | null>(null);
 
@@ -43,8 +43,8 @@ export function CertificateCheckClient({
   const hiddenCertificateRef = useRef<HTMLDivElement>(null);
 
   const handleCheck = async () => {
-    if (!ic.trim()) {
-      toast.error('Sila masukkan nombor IC');
+    if (!identifier.trim()) {
+      toast.error('Sila masukkan nombor IC atau Email');
       return;
     }
 
@@ -52,7 +52,7 @@ export function CertificateCheckClient({
     setResult(null);
 
     try {
-      const checkResult = await checkCertificateByIC(formId, ic.trim());
+      const checkResult = await checkCertificateByICOrEmail(formId, identifier.trim());
       setResult(checkResult);
     } catch {
       toast.error('Ralat semasa menyemak sijil');
@@ -195,17 +195,17 @@ export function CertificateCheckClient({
             <CardHeader>
               <CardTitle className="text-lg">Certificate Verification</CardTitle>
               <CardDescription>
-                Enter your IC number to verify and download certificate
+                Enter your IC number or Email to verify and download certificate
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="ic">IC Number</Label>
+                <Label htmlFor="ic">IC Number / Email</Label>
                 <Input
                   id="ic"
-                  placeholder="Example: 901234567890"
-                  value={ic}
-                  onChange={(e) => setIC(e.target.value)}
+                  placeholder="Example: 901234567890 or email@domain.com"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleCheck()}
                   className="h-12 text-lg"
                 />
@@ -305,7 +305,7 @@ export function CertificateCheckClient({
                             date={result.date}
                             id="check-preview"
                             customTemplateData={customTemplateData}
-                            ic={ic}
+                            ic={identifier}
                             formId={formId}
                           />
                         </div>
@@ -340,7 +340,7 @@ export function CertificateCheckClient({
                 date={result.date}
                 id="hidden-certificate"
                 customTemplateData={customTemplateData}
-                ic={ic}
+                ic={identifier}
                 formId={formId}
               />
             </div>
@@ -355,7 +355,7 @@ export function CertificateCheckClient({
                   <XCircle className="h-6 w-6 text-red-600" />
                 </div>
                 <h3 className="text-lg font-semibold text-red-800 mb-2">Certificate Not Found</h3>
-                <p className="text-red-600">{result.error || 'IC not found in records'}</p>
+                <p className="text-red-600">{result.error || 'IC / Email not found in records'}</p>
               </CardContent>
             </Card>
           </div>

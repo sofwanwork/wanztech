@@ -42,9 +42,9 @@ function formatPrivateKey(key: string) {
   return clean;
 }
 
-export async function checkCertificateByIC(
+export async function checkCertificateByICOrEmail(
   formId: string,
-  ic: string
+  identifier: string
 ): Promise<CertificateCheckResult> {
   try {
     // --- Rate Limiting (Security: Prevent IC Enumeration / Bruteforce) ---
@@ -143,19 +143,34 @@ export async function checkCertificateByIC(
     await sheet.loadHeaderRow();
     const headers = sheet.headerValues;
 
-    // Find IC column (strictly look for exact or bounded "IC", "Kad Pengenalan", etc.)
-    const icColumnIndex = headers.findIndex((h) => {
-      const lower = h.toLowerCase().trim();
-      return (
-        lower === 'ic' ||
-        lower === 'no ic' ||
-        lower === 'no. ic' ||
-        lower === 'no.ic' ||
-        lower === 'ic number' ||
-        lower.includes('kad pengenalan') ||
-        lower.includes('nric')
-      );
-    });
+    const isEmailSearch = identifier.includes('@');
+    
+    let targetColumnIndex = -1;
+    if (isEmailSearch) {
+      targetColumnIndex = headers.findIndex((h) => {
+        const lower = h.toLowerCase().trim();
+        return lower === 'email' || lower === 'e-mel' || lower === 'e-mail' || lower.includes('emel') || lower.includes('alamat e-mel');
+      });
+      if (targetColumnIndex === -1) {
+        return { found: false, error: 'Field Email tidak dijumpai dalam Google Sheet' };
+      }
+    } else {
+      targetColumnIndex = headers.findIndex((h) => {
+        const lower = h.toLowerCase().trim();
+        return (
+          lower === 'ic' ||
+          lower === 'no ic' ||
+          lower === 'no. ic' ||
+          lower === 'no.ic' ||
+          lower === 'ic number' ||
+          lower.includes('kad pengenalan') ||
+          lower.includes('nric')
+        );
+      });
+      if (targetColumnIndex === -1) {
+        return { found: false, error: 'Field IC tidak dijumpai dalam Google Sheet' };
+      }
+    }
 
     // Find Name column
     const nameColumnIndex = headers.findIndex(
@@ -165,19 +180,17 @@ export async function checkCertificateByIC(
         h.toLowerCase() === 'full name'
     );
 
-    if (icColumnIndex === -1) {
-      return { found: false, error: 'Field IC tidak dijumpai dalam Google Sheet' };
-    }
-
     if (nameColumnIndex === -1) {
       return { found: false, error: 'Field Nama tidak dijumpai dalam Google Sheet' };
     }
 
-    // Get all rows and search for IC
+    // Get all rows and search
     const rows = await sheet.getRows();
 
-    // Clean IC for comparison (remove dashes, spaces)
-    const cleanIC = ic.replace(/[-\s]/g, '');
+    // Clean input for comparison
+    const cleanInput = isEmailSearch 
+      ? identifier.trim().toLowerCase() 
+      : identifier.replace(/[-\s]/g, '');
 
     // Helper to parse date (Google Sheets usually sends d/m/yyyy or m/d/yyyy or yyyy-mm-dd)
     const parseDate = (dateStr: string) => {
@@ -221,8 +234,12 @@ export async function checkCertificateByIC(
     };
 
     for (const row of rows) {
-      const rowIC = (row.get(headers[icColumnIndex]) || '').toString().replace(/[-\s]/g, '');
-      if (rowIC === cleanIC) {
+      const rowVal = row.get(headers[targetColumnIndex]) || '';
+      const cleanRowVal = isEmailSearch
+        ? rowVal.toString().trim().toLowerCase()
+        : rowVal.toString().replace(/[-\s]/g, '');
+
+      if (cleanRowVal === cleanInput) {
         // Found the participant
         const name = row.get(headers[nameColumnIndex]) || '';
 
@@ -284,7 +301,7 @@ export async function checkCertificateByIC(
       }
     }
 
-    return { found: false, error: 'IC tidak dijumpai dalam rekod' };
+    return { found: false, error: isEmailSearch ? 'Email tidak dijumpai dalam rekod' : 'IC tidak dijumpai dalam rekod' };
   } catch (error: unknown) {
     console.error('Certificate check error:', error);
     return { found: false, error: 'Ralat semasa menyemak sijil' };

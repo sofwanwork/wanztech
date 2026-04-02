@@ -60,6 +60,17 @@ export async function appendToSheet(
 
       // Reload headers to be safe
       await sheet.loadHeaderRow();
+    } else {
+      // Check if there are new fields in data that do not exist in the current headers
+      const dataKeys = Object.keys(data);
+      const missingHeaders = dataKeys.filter((key) => !headers.includes(key));
+      
+      if (missingHeaders.length > 0) {
+        console.log('Appending new headers:', missingHeaders);
+        const updatedHeaders = [...headers, ...missingHeaders];
+        await sheet.setHeaderRow(updatedHeaders);
+        await sheet.loadHeaderRow();
+      }
     }
 
     // Sanitize data: convert null/undefined to empty string to satisfy google-spreadsheet types
