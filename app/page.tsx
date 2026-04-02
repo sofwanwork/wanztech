@@ -103,47 +103,60 @@ export default async function LandingPage() {
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative overflow-hidden pt-16 md:pt-24 lg:pt-32 pb-16">
-          <div className="container mx-auto px-4 md:px-6 text-center">
-            <div className="mx-auto max-w-3xl space-y-6">
-              <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm font-medium text-primary shadow-sm ring-1 ring-inset ring-primary/10 transition-all hover:bg-primary/10 hover:shadow-md mb-8">
-                <span className="relative flex h-2 w-2 mr-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+        <section className="relative overflow-hidden pt-20 md:pt-28 lg:pt-36 pb-20 bg-[#fafafa]">
+          <div className="container mx-auto px-4 md:px-6">
+            <div className="flex flex-col items-center text-center max-w-4xl mx-auto space-y-8">
+              <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl text-gray-900 leading-[1.1]">
+                Powerful Online Forms & <br className="hidden md:inline" />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 animate-gradient-x">
+                  Automated Digital Certificates
                 </span>
-                Automated Digital Certificates <span className="ml-1.5 hidden sm:inline">🚀</span>
-              </div>
-              <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl text-transparent bg-clip-text bg-gradient-to-r from-[#451263] via-[#9333ea] to-[#451263] animate-gradient-xy pb-4">
-                Online Forms & <br className="hidden sm:inline" />
-                Automated Digital Certificates
               </h1>
-              <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed dark:text-gray-400">
-                Create registration forms, collect data directly to Google Sheets, and send e-certificates
-                to participants automatically. Free to start.
+              <p className="mx-auto max-w-2xl text-lg md:text-xl text-gray-600 font-medium leading-relaxed">
+                Seamlessly collect data to Google Sheets, track dynamic QR codes, and generate beautiful E-Certificates automatically. Elevate your event operations with KlikForm today.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-                <Button size="lg" className="h-12 px-8 text-base w-full sm:w-auto" asChild>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6 w-full sm:w-auto">
+                <Button size="lg" className="h-14 px-8 text-base font-semibold shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all rounded-full w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white" asChild>
                   <Link href="/login?tab=signup">
-                    Start for Free <ArrowRight className="ml-2 h-4 w-4" />
+                    Start for Free <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline" className="h-14 px-8 text-base font-semibold border-gray-200 hover:bg-gray-50 hover:text-indigo-600 transition-colors rounded-full w-full sm:w-auto text-gray-700" asChild>
+                  <Link href="#features">
+                    Explore Features
                   </Link>
                 </Button>
               </div>
 
-              <div className="mt-8 flex justify-center items-center gap-8 text-sm text-gray-500">
+              <div className="mt-10 flex flex-wrap justify-center items-center gap-x-8 gap-y-4 text-sm font-medium text-gray-600 pt-8 border-t border-gray-200/60 w-full max-w-2xl">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" /> No Credit Card Required
+                  <div className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                  </div>
+                  No Credit Card Required
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" /> Secure & Private Data
+                  <div className="h-5 w-5 rounded-full bg-blue-100 flex items-center justify-center">
+                    <ShieldCheck className="h-3.5 w-3.5 text-blue-600" />
+                  </div>
+                  Enterprise-grade Security
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-5 w-5 rounded-full bg-purple-100 flex items-center justify-center">
+                    <Zap className="h-3.5 w-3.5 text-purple-600" />
+                  </div>
+                  Real-time Automation
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Abstract Background Elements */}
-          <div className="absolute top-0 left-0 -z-10 h-full w-full overflow-hidden opacity-30 pointer-events-none">
-            <div className="absolute -top-[20%] -left-[10%] h-[500px] w-[500px] rounded-full bg-blue-100/50 blur-3xl"></div>
-            <div className="absolute top-[40%] -right-[10%] h-[400px] w-[400px] rounded-full bg-purple-100/50 blur-3xl"></div>
+          {/* Premium Abstract Background Gradients */}
+          <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none -z-10">
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-400/20 blur-[120px] mix-blend-multiply"></div>
+            <div className="absolute top-[20%] right-[-10%] w-[35%] h-[50%] rounded-full bg-purple-400/20 blur-[120px] mix-blend-multiply"></div>
+            <div className="absolute bottom-[-20%] left-[20%] w-[50%] h-[50%] rounded-full bg-blue-300/20 blur-[100px] mix-blend-multiply"></div>
+            <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px]"></div>
           </div>
         </section>
 
