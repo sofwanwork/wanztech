@@ -136,6 +136,7 @@ function SortableField({
                   <SelectItem value="time">Time</SelectItem>
                   <SelectItem value="rating">Linear Scale (Rating)</SelectItem>
                   <SelectItem value="separator">Section / Text</SelectItem>
+                  <SelectItem value="image">Image Display</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -145,7 +146,9 @@ function SortableField({
             <Label htmlFor={`field-desc-${field.id}`}>
               {field.type === 'separator'
                 ? 'Description / Body Text (Optional)'
-                : 'Description (Optional)'}
+                : field.type === 'image'
+                  ? 'Image Caption (Optional)'
+                  : 'Description (Optional)'}
             </Label>
             <Input
               id={`field-desc-${field.id}`}
@@ -154,10 +157,27 @@ function SortableField({
               placeholder={
                 field.type === 'separator'
                   ? 'Add more details or instructions...'
-                  : 'Help text or instructions for this question'
+                  : field.type === 'image'
+                    ? 'Caption for the image (Optional)'
+                    : 'Help text or instructions for this question'
               }
             />
           </div>
+
+          {field.type === 'image' && (
+            <div className="space-y-4 p-4 bg-slate-50 rounded-lg border border-slate-100">
+              <div className="space-y-2">
+                <Label htmlFor={`field-image-${field.id}`}>Image URL</Label>
+                <Input
+                  id={`field-image-${field.id}`}
+                  placeholder="https://example.com/image.jpg"
+                  value={field.imageUrl || ''}
+                  onChange={(e) => updateField(index, { imageUrl: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">Provide a valid URL to an image file (jpg, png, gif).</p>
+              </div>
+            </div>
+          )}
 
           {(field.type === 'select' || field.type === 'checkbox' || field.type === 'radio') && (
             <div className="space-y-2">
@@ -402,7 +422,7 @@ function SortableField({
             </div>
           )}
 
-          {field.type !== 'separator' && (
+          {field.type !== 'separator' && field.type !== 'image' && (
             <div className="flex items-center gap-2">
               <Switch
                 id={`field-required-${field.id}`}
@@ -504,7 +524,7 @@ function SortableField({
           )}
 
           {/* Conditional Logic Section */}
-          {field.type !== 'separator' && (
+          {field.type !== 'separator' && field.type !== 'image' && (
             <div className="pt-4 border-t space-y-3">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">

@@ -293,7 +293,7 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
   // Check validity (only visible inputs)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const validateField = (field: FormField, value: any): string | null => {
-    if (field.type === 'separator') return null;
+    if (field.type === 'separator' || field.type === 'image') return null;
 
     // Required Check
     if (
@@ -468,6 +468,33 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
                         <p className="text-sm text-gray-500 mt-1 whitespace-pre-wrap">
                           {field.description}
                         </p>
+                      )}
+                    </div>
+                  );
+                }
+
+                if (field.type === 'image') {
+                  return (
+                    <div
+                      key={field.id}
+                      className="py-6 px-6 bg-slate-50 border-b border-gray-100 last:border-b-0 space-y-4"
+                    >
+                      {field.label && field.label !== 'New Question' && field.label !== '' && (
+                         <h3 className="text-lg font-semibold text-gray-900">{field.label}</h3>
+                      )}
+                      {field.description && (
+                        <p className="text-sm text-gray-500 whitespace-pre-wrap">
+                          {field.description}
+                        </p>
+                      )}
+                      {field.imageUrl ? (
+                        <div className="rounded-lg overflow-hidden border border-gray-200 bg-white inline-block max-w-full">
+                           <img src={getProxiedImageUrl(field.imageUrl)} alt={field.label || 'Image'} className="w-full h-auto object-contain max-h-[800px]" />
+                        </div>
+                      ) : (
+                        <div className="p-8 border-2 border-dashed border-gray-300 rounded-lg text-center text-gray-500 text-sm bg-gray-50">
+                           No Image Provided
+                        </div>
                       )}
                     </div>
                   );

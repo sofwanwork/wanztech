@@ -20,7 +20,8 @@ export type FormFieldType =
   | 'file'
   | 'separator'
   | 'rating'
-  | 'product';
+  | 'product'
+  | 'image';
 
 /**
  * Product item for product field type
@@ -75,6 +76,7 @@ export interface FormField {
   ratingConfig?: RatingConfig;
   conditional?: ConditionalConfig;
   validation?: ValidationConfig;
+  imageUrl?: string;
 }
 
 /**
