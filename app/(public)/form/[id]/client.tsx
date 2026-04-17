@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/select';
 import { cn, getProxiedImageUrl, sanitizeHtml } from '@/lib/utils';
 import { format } from 'date-fns';
-import { Loader2, CheckCircle2, List } from 'lucide-react';
+import { Loader2, CheckCircle2, List, Clock } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { submitFormAction } from '@/actions/forms';
 import { toast } from 'sonner';
@@ -32,6 +32,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { TimePicker } from '@/components/ui/time-picker';
 import { DatePicker } from '@/components/ui/date-picker';
+import { Progress } from '@/components/ui/progress';
 
 interface PublicFormClientProps {
   form: Form;
@@ -93,6 +94,13 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
         }
       });
 
+      // Honeypot check
+      const rawFormData = new FormData(e.currentTarget as HTMLFormElement);
+      const gotchaValue = rawFormData.get('_gotcha');
+      if (gotchaValue) {
+        formDataToSend.append('_gotcha', gotchaValue);
+      }
+
       const result = await submitFormAction(form.id, formDataToSend);
 
       if (result.success) {
@@ -111,6 +119,21 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleInputChange = (id: string, value: any) => {
     setFormData((prev) => ({ ...prev, [id]: value }));
+
+    // Smart Auto-Scroll for single-selection fields
+    const field = visibleFields.find(f => f.id === id);
+    if (field && (field.type === 'radio' || field.type === 'rating')) {
+      setTimeout(() => {
+        const index = visibleFields.findIndex(f => f.id === id);
+        if (index !== -1 && index < visibleFields.length - 1) {
+          const nextField = visibleFields[index + 1];
+          const element = document.getElementById(`field-container-${nextField.id}`);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
+      }, 400); // Wait briefly for UI to update before scrolling
+    }
   };
 
   const [checkingAccess, setCheckingAccess] = useState(true);
@@ -210,6 +233,42 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
     checkAccess();
   }, [form.attendanceSettings]);
 
+  // Countdown Timer Logic
+  const [timeLeft, setTimeLeft] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!form.attendanceSettings?.endTime) return;
+    const endTime = new Date(form.attendanceSettings.endTime).getTime();
+
+    const interval = setInterval(() => {
+      const now = new Date().getTime();
+      const distance = endTime - now;
+
+      if (distance <= 0) {
+        clearInterval(interval);
+        setTimeLeft('Telah tamat');
+        // Let checkAccess handle the access denied state by reloading or just wait
+        window.location.reload();
+        return;
+      }
+
+      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+      const parts = [];
+      if (days > 0) parts.push(`${days}h`);
+      if (hours > 0) parts.push(`${hours}j`);
+      parts.push(`${minutes}m`);
+      parts.push(`${seconds}s`);
+
+      setTimeLeft(parts.join(' '));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [form.attendanceSettings?.endTime]);
+
   if (!mounted || checkingAccess) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -246,6 +305,24 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
     );
   }
 
+  if (form.isActive === false) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 transition-colors duration-500 font-sans access-denied-container" style={{ backgroundColor: backgroundColor || '#f9fafb' }}>
+        <Card className="w-full max-w-md text-center border-t-4 border-slate-500 shadow-lg bg-white">
+          <CardHeader className="pt-8 pb-6">
+            <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
+              <span className="text-2xl">🔒</span>
+            </div>
+            <CardTitle className="text-xl font-semibold text-gray-900">Borang Ditutup</CardTitle>
+            <CardDescription className="whitespace-pre-wrap text-gray-600 mt-2 font-medium">
+              Borang ini telah ditutup oleh penganjur dan tidak lagi menerima sebarang respons.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
   if (submitted) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 transition-colors duration-500 font-sans submitted-container">
@@ -274,12 +351,27 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
               {form.thankYouMessage || 'Your response has been recorded.'}
             </CardDescription>
           </CardHeader>
-          <CardFooter className="justify-center pb-8">
+          <CardFooter className="justify-center pb-8 flex-col gap-3">
+            {form.theme?.whatsappShareEnabled && (
+              <Button
+                variant="default"
+                className="w-full sm:w-auto bg-[#25D366] hover:bg-[#1da851] text-white flex items-center gap-2 shadow-sm"
+                onClick={() => {
+                  const message = encodeURIComponent((form.theme?.whatsappShareMessage || 'Sila isi borang ini: ') + '\n\n' + window.location.href);
+                  window.open(`https://wa.me/?text=${message}`, '_blank');
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
+                </svg>
+                Kongsi ke WhatsApp
+              </Button>
+            )}
             {(form.allowMultipleSubmissions ?? true) && (
               <Button
                 variant="outline"
                 onClick={() => window.location.reload()}
-                className="border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-colors"
+                className="w-full sm:w-auto border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-colors"
               >
                 Submit another response
               </Button>
@@ -334,6 +426,15 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
 
   const isFormValid = visibleFields.every((field) => !validateField(field, formData[field.id]));
 
+  // Progress Bar calculation
+  const totalRequired = visibleFields.filter((f) => f.required).length;
+  const filledRequired = visibleFields.filter((f) => {
+    if (!f.required) return false;
+    const value = formData[f.id];
+    return value !== undefined && value !== null && value !== '' && (!Array.isArray(value) || value.length > 0);
+  }).length;
+  const progressPercentage = totalRequired === 0 ? 100 : Math.round((filledRequired / totalRequired) * 100);
+
   // Generate background pattern CSS
   const getPatternCSS = (): React.CSSProperties => {
     const pattern = form.theme?.backgroundPattern;
@@ -387,9 +488,27 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
         /* ... existing styles ... */
       `}</style>
 
-      {/* ... */}
+      {/* Progress Bar (Sticky Top) */}
+      <div className="fixed top-0 left-0 w-full z-50">
+        <Progress value={progressPercentage} className="h-1.5 rounded-none bg-black/10" style={{ '--primary': primaryColor || '#0f172a' } as React.CSSProperties} />
+      </div>
 
-      <div className="max-w-2xl mx-auto space-y-6">
+      {/* Countdown Timer Badge */}
+      {timeLeft && !submitted && (
+        <div className="fixed top-4 right-4 z-40 bg-white/90 backdrop-blur-sm shadow-md border border-red-100 rounded-full px-4 py-2 flex items-center gap-2 text-sm font-semibold text-red-600 animate-in fade-in slide-in-from-top-4">
+          <Clock className="h-4 w-4" />
+          <span>Tutup dalam: {timeLeft}</span>
+        </div>
+      )}
+
+      {/* Progress Badge (Floating Bottom Right) */}
+      {!submitted && totalRequired > 0 && (
+        <div className="fixed bottom-4 right-4 z-40 bg-white/90 backdrop-blur-sm shadow-md border border-gray-200 rounded-full px-4 py-2 text-xs font-semibold text-gray-700 animate-in fade-in slide-in-from-bottom-4">
+          {filledRequired} / {totalRequired} Terjawab
+        </div>
+      )}
+
+      <div className="max-w-2xl mx-auto space-y-6 pt-4">
         {/* Cover Image */}
         {form.coverImage && (
           <div className="rounded-lg overflow-hidden border border-gray-200">
@@ -454,6 +573,7 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
 
         {/* Form Fields */}
         <form onSubmit={handleSubmit} className="space-y-6">
+          <input type="text" name="_gotcha" tabIndex={-1} autoComplete="off" className="absolute opacity-0 -z-50 w-0 h-0 overflow-hidden" />
           <Card className="border border-gray-200 bg-white">
             <CardContent className="p-0">
               {visibleFields.map((field) => {
@@ -503,7 +623,8 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
                 return (
                   <div
                     key={field.id}
-                    className="py-5 px-6 border-b border-gray-100 last:border-b-0"
+                    id={`field-container-${field.id}`}
+                    className="py-5 px-6 border-b border-gray-100 last:border-b-0 transition-colors duration-300 hover:bg-slate-50/50"
                   >
                     <Label className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-1">
                       {field.label}

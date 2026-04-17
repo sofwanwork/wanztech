@@ -108,6 +108,8 @@ export interface FormTheme {
   logo?: string;
   logoAlignment?: 'left' | 'center' | 'right';
   headerFont?: HeaderFont;
+  whatsappShareEnabled?: boolean;
+  whatsappShareMessage?: string;
 }
 
 /**
@@ -155,6 +157,7 @@ export interface Form {
   googleSheetUrl?: string;
   allowMultipleSubmissions?: boolean;
   receiveEmailNotifications?: boolean;
+  isActive?: boolean;
   theme?: FormTheme;
   fields: FormField[];
   createdAt: string;

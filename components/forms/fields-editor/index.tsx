@@ -75,8 +75,8 @@ function SortableField({
     <div ref={setNodeRef} style={style} className="relative group">
       <Card>
         <CardHeader className="py-3 px-4 bg-muted/30 flex flex-row items-center gap-2">
-          <div {...attributes} {...listeners} className="cursor-move touch-none">
-            <GripVertical className="h-4 w-4 text-muted-foreground" />
+          <div {...attributes} {...listeners} className="cursor-move touch-none hover:bg-slate-200/60 p-1 -ml-1 rounded transition-colors" id={index === 0 ? "tour-drag-handle" : undefined}>
+            <GripVertical className="h-4 w-4 text-slate-400 group-hover:text-slate-700" />
           </div>
           <span className="text-sm font-medium">Question {index + 1}</span>
           <div className="flex items-center gap-1 ml-auto">
@@ -692,7 +692,7 @@ export function FieldsEditor({ fields, onChange }: FieldsEditorProps) {
         </SortableContext>
       </DndContext>
 
-      <Button onClick={addField} variant="secondary" className="w-full">
+      <Button id="tour-add-question" onClick={addField} variant="secondary" className="w-full">
         <Plus className="mr-2 h-4 w-4" />
         Add Question
       </Button>

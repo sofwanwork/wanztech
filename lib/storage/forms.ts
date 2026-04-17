@@ -44,6 +44,7 @@ export async function getForms(): Promise<Form[]> {
     qr_settings: unknown;
     theme: unknown;
     receive_email_notifications: boolean;
+    is_active: boolean;
   }
   return data.map((f: DbFormRow) => ({
     id: f.id,
@@ -61,6 +62,7 @@ export async function getForms(): Promise<Form[]> {
     attendanceSettings: f.attendance_settings as Form['attendanceSettings'],
     qrSettings: f.qr_settings as Form['qrSettings'],
     theme: f.theme as Form['theme'],
+    isActive: f.is_active ?? true,
     userId: user.id,
   }));
 }
@@ -71,7 +73,7 @@ export async function getFormsSummary(): Promise<Form[]> {
   const { data, error } = await supabase
     .from('forms')
     .select(
-      'id,title,description,cover_image,created_at,short_code,e_certificate_enabled,e_certificate_template,receive_email_notifications'
+      'id,title,description,cover_image,created_at,short_code,e_certificate_enabled,e_certificate_template,receive_email_notifications,is_active'
     )
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
@@ -91,6 +93,7 @@ export async function getFormsSummary(): Promise<Form[]> {
     e_certificate_enabled: boolean;
     e_certificate_template: unknown;
     receive_email_notifications: boolean;
+    is_active: boolean;
   }
 
   return data.map((f: DbFormSummaryRow) => ({
@@ -104,6 +107,7 @@ export async function getFormsSummary(): Promise<Form[]> {
     eCertificateEnabled: f.e_certificate_enabled,
     eCertificateTemplate: f.e_certificate_template as Form['eCertificateTemplate'],
     receiveEmailNotifications: f.receive_email_notifications ?? true,
+    isActive: f.is_active ?? true,
     userId: user.id,
   }));
 }
@@ -147,6 +151,7 @@ export async function getFormById(id: string): Promise<Form | undefined> {
     attendanceSettings: data.attendance_settings,
     qrSettings: data.qr_settings,
     theme: data.theme,
+    isActive: data.is_active ?? true,
     userTier: (subscription?.tier as Form['userTier']) || 'free',
   };
 }
@@ -190,6 +195,7 @@ export async function getFormByShortCode(code: string): Promise<Form | undefined
     attendanceSettings: data.attendance_settings,
     qrSettings: data.qr_settings,
     theme: data.theme,
+    isActive: data.is_active ?? true,
     userTier: (subscription?.tier as Form['userTier']) || 'free',
   };
 }
@@ -228,6 +234,7 @@ export async function saveForm(form: Form): Promise<void> {
     attendance_settings: form.attendanceSettings,
     qr_settings: form.qrSettings,
     theme: form.theme,
+    is_active: form.isActive ?? true,
     // created_at is default now(), but for updates we might want to keep original or allow db to handle.
     // If we pass id, upsert works.
   };

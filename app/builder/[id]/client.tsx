@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useTransition } from 'react';
+import { useState, useEffect, useTransition, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Form, CertificateTemplate as CertificateTemplateType } from '@/lib/types';
 import { updateFormAction, deleteFormAction } from '@/actions/forms';
@@ -43,6 +43,7 @@ import {
   MapPin,
   AlertTriangle,
   Loader2,
+  CheckCircle2,
 } from 'lucide-react';
 
 import Link from 'next/link';
@@ -60,6 +61,8 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { QrCustomizer } from '@/components/forms/qr-customizer';
+import { BuilderTour } from '@/components/builder-tour';
+import { HelpCircle } from 'lucide-react';
 
 interface BuilderClientProps {
   initialForm: Form;
@@ -77,9 +80,18 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
 
   const [mounted, setMounted] = useState(false);
   const [publicUrl, setPublicUrl] = useState(`/form/${initialForm.id}`);
+  const [runTour, setRunTour] = useState(false);
+  const [tourKey, setTourKey] = useState(0);
 
   useEffect(() => {
     setMounted(true);
+    
+    const hasSeenTour = localStorage.getItem('has_seen_builder_tour');
+    if (!hasSeenTour) {
+      localStorage.setItem('has_seen_builder_tour', 'true');
+      setTimeout(() => setRunTour(true), 800);
+    }
+
     if (form.shortCode) {
       setPublicUrl(`${window.location.origin}/s/${form.shortCode}`);
     } else {
@@ -87,42 +99,52 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
     }
   }, [form.id, form.shortCode]);
 
-  // Auto-save QR Settings (Debounced)
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('saved');
+  const isInitialRender = useRef(true);
+
+  // Global Auto-save (Debounced)
   useEffect(() => {
     if (!mounted) return;
+    if (isInitialRender.current) {
+      isInitialRender.current = false;
+      return;
+    }
+
+    setSaveStatus('saving');
     const timer = setTimeout(() => {
-      // Only save if qrSettings exist (avoid saving initial empty state if irrelevant)
-      if (form.qrSettings) {
-        updateFormAction(form)
-          .then((result) => {
-            if (!result.success) {
-              console.warn('Auto-save failed:', result.error);
-              // Optional: Toast might be too aggressive if it happens frequently.
-              // keeping it for now but user can decide to remove it.
-              toast.error(`Auto-save failed: ${result.error}`);
-            }
-          })
-          .catch((err) => {
-            // Log as warning to avoid console noise, as it will likely retry or be transient
-            console.warn('Auto-save network error (retrying...):', err);
-          });
-      }
-    }, 1000);
+      updateFormAction(form)
+        .then((result) => {
+          if (result.success) {
+            setSaveStatus('saved');
+          } else {
+            setSaveStatus('error');
+            console.warn('Auto-save failed:', result.error);
+          }
+        })
+        .catch((err) => {
+          setSaveStatus('error');
+          console.warn('Auto-save network error (retrying...):', err);
+        });
+    }, 1500);
 
     return () => clearTimeout(timer);
-  }, [form.qrSettings, form, mounted]);
+  }, [form, mounted]);
 
   const handleSave = async () => {
     setSaving(true);
+    setSaveStatus('saving');
     try {
       const result = await updateFormAction(form);
       if (result.success) {
         toast.success('Form saved successfully');
+        setSaveStatus('saved');
       } else {
         toast.error(result.error || 'Failed to save');
+        setSaveStatus('error');
       }
     } catch {
       toast.error('Failed to save');
+      setSaveStatus('error');
     } finally {
       setSaving(false);
     }
@@ -208,8 +230,18 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <div className="relative z-50">
+        <BuilderTour 
+          key={tourKey}
+          run={runTour} 
+          onFinish={() => {
+            setRunTour(false);
+            localStorage.setItem('has_seen_builder_tour', 'true');
+          }} 
+        />
+      </div>
       {/* Header */}
-      <header className="sticky top-0 bg-white border-b border-gray-200 z-10">
+      <header className={cn("sticky top-0 bg-white border-b border-gray-200 transition-all", runTour ? "z-0" : "z-10")}>
         <div className="container mx-auto py-3 px-3 sm:px-4 flex items-center justify-between gap-1.5">
           <div className="flex items-center gap-2 shrink-0 max-w-[55%]">
             <Button
@@ -235,6 +267,41 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
             </div>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
+            {/* Auto-save Indicator */}
+            <div className="hidden sm:flex items-center text-xs mr-2 text-gray-500 font-medium">
+              {saveStatus === 'saving' && (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin text-gray-400" />
+                  Menyimpan...
+                </>
+              )}
+              {saveStatus === 'saved' && (
+                <>
+                  <CheckCircle2 className="h-3.5 w-3.5 mr-1.5 text-emerald-500" />
+                  Tersimpan di awan
+                </>
+              )}
+              {saveStatus === 'error' && (
+                <>
+                  <AlertTriangle className="h-3.5 w-3.5 mr-1.5 text-red-500" />
+                  Gagal menyimpan
+                </>
+              )}
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setTourKey(prev => prev + 1);
+                setRunTour(true);
+              }}
+              className="px-2 sm:px-3 text-violet-600 border-violet-200 hover:bg-violet-50 hover:text-violet-700 hidden sm:flex"
+              title="Start Tour"
+            >
+              <HelpCircle className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Help</span>
+            </Button>
             <Link
               href={form.shortCode ? `/s/${form.shortCode}` : `/form/${form.id}`}
               target="_blank"
@@ -286,6 +353,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
             </Dialog>
 
             <Button
+              id="tour-save-button"
               onClick={handleSave}
               disabled={saving}
               className="bg-primary hover:bg-primary/90 px-3 sm:px-4"
@@ -307,7 +375,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                 <CardTitle>General Info</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
+                <div className="space-y-2" id="tour-form-title">
                   <Label htmlFor="form-title">Form Title</Label>
                   <Input
                     id="form-title"
@@ -464,7 +532,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                     </Select>
                   </div>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2" id="tour-google-sheet">
                   <Label htmlFor="google-sheet-url">Google Sheet Share URL</Label>
                   <Input
                     id="google-sheet-url"
@@ -569,6 +637,69 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                       Get an email alert every time someone submits this form.
                     </p>
                   </div>
+                </div>
+
+                <div className="flex items-center space-x-2 border p-3 rounded-lg bg-slate-50">
+                  <Switch
+                    id="form-status"
+                    checked={form.isActive ?? true}
+                    onCheckedChange={(checked) =>
+                      setForm((f) => ({ ...f, isActive: checked }))
+                    }
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <Label htmlFor="form-status" className="cursor-pointer">
+                      Status Borang (Aktif / Ditutup)
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Tutup borang jika anda tidak mahu menerima respons lagi.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col space-y-4 border p-4 rounded-lg bg-emerald-50/50 border-emerald-100">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="whatsapp-share"
+                      checked={form.theme?.whatsappShareEnabled ?? false}
+                      onCheckedChange={(checked) =>
+                        setForm((f) => ({
+                          ...f,
+                          theme: { ...f.theme, whatsappShareEnabled: checked },
+                        }))
+                      }
+                    />
+                    <div className="grid gap-1.5 leading-none">
+                      <Label htmlFor="whatsapp-share" className="cursor-pointer text-emerald-800">
+                        Butang Kongsi WhatsApp
+                      </Label>
+                      <p className="text-xs text-emerald-600">
+                        Papar butang Kongsi ke WhatsApp selepas responden menghantar borang.
+                      </p>
+                    </div>
+                  </div>
+
+                  {form.theme?.whatsappShareEnabled && (
+                    <div className="space-y-2 pt-2 border-t border-emerald-100">
+                      <Label htmlFor="whatsapp-message" className="text-emerald-800">Mesej Perkongsian</Label>
+                      <Textarea
+                        id="whatsapp-message"
+                        value={form.theme?.whatsappShareMessage ?? 'Sila isi borang ini: '}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            theme: { ...f.theme, whatsappShareMessage: e.target.value },
+                          }))
+                        }
+                        placeholder="Contoh: Sila isi borang ini: "
+                        className="bg-white border-emerald-200 focus-visible:ring-emerald-500"
+                        rows={2}
+                      />
+                      <p className="text-xs text-emerald-600">
+                        Pautan (link) borang anda akan diletakkan secara automatik pada penghujung mesej ini.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

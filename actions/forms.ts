@@ -154,8 +154,24 @@ export async function submitFormAction(
     return { success: false, error: 'Terlalu banyak percubaan. Sila cuba lagi selepas 1 minit.' };
   }
 
+  // --- Anti-Bot: Honeypot Check ---
+  if (formDataOrObj instanceof FormData) {
+    if (formDataOrObj.get('_gotcha')) {
+      console.warn('Bot detected by honeypot! IP:', ip);
+      return { success: true }; // Silently trick the bot
+    }
+  } else if ('_gotcha' in formDataOrObj && formDataOrObj['_gotcha']) {
+    console.warn('Bot detected by honeypot (JSON)! IP:', ip);
+    return { success: true }; // Silently trick the bot
+  }
+
   const form = await getFormById(formId);
   if (!form) return { success: false, error: 'Form not found' };
+
+  // --- Active Status Check ---
+  if (form.isActive === false) {
+    return { success: false, error: 'Borang telah ditutup oleh penganjur.' };
+  }
 
   // 1. Rate Limiting / Quota Check
   if (form.userId) {
