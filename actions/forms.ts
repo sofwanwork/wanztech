@@ -18,28 +18,7 @@ import { createAdminClient } from '@/utils/supabase/admin';
 import { encrypt } from '@/lib/encryption';
 import { sanitizeHtml } from '@/lib/utils'; // Import sanitization
 import { headers as getNextHeaders } from 'next/headers';
-
-// ─── Submission Rate Limiter (per submitter IP) ──────────────────────────────
-// Prevents spam flooding of public forms. Resets on cold start.
-// For distributed deployments, replace with Redis-based solution.
-const submitRateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const SUBMIT_RATE_LIMIT = 20;          // max 20 submissions per window per IP
-const SUBMIT_RATE_WINDOW_MS = 60_000;  // 1 minute
-
-function isSubmitRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const entry = submitRateLimitMap.get(ip);
-  if (!entry || now > entry.resetAt) {
-    submitRateLimitMap.set(ip, { count: 1, resetAt: now + SUBMIT_RATE_WINDOW_MS });
-    return false;
-  }
-  if (entry.count >= SUBMIT_RATE_LIMIT) return true;
-  entry.count++;
-  return false;
-}
-
-// --- Types ---
-// Re-exporting Form types for client use if needed, but usually we just use the lib/storage types.
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 
 // --- Settings Storage for Credentials ---
 // Replaced by lib/storage which uses Supabase
@@ -150,7 +129,8 @@ export async function submitFormAction(
   const headersList = await getNextHeaders();
   const forwarded = headersList.get('x-forwarded-for');
   const ip = forwarded ? forwarded.split(',')[0].trim() : 'unknown';
-  if (isSubmitRateLimited(ip)) {
+  const rl = await checkRateLimit(ip, RATE_LIMITS.formSubmission, 'form-submit');
+  if (!rl.success) {
     return { success: false, error: 'Terlalu banyak percubaan. Sila cuba lagi selepas 1 minit.' };
   }
 

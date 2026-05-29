@@ -33,6 +33,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { TimePicker } from '@/components/ui/time-picker';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Progress } from '@/components/ui/progress';
+import { useFormTracking } from '@/hooks/use-form-tracking';
 
 interface PublicFormClientProps {
   form: Form;
@@ -44,6 +45,10 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [mounted, setMounted] = useState(false);
+
+  // Analytics: fires `view` on mount, `start` on first interaction,
+  // `field_focus` per field, `submit` on success, `abandon` on pagehide.
+  const { trackFieldFocus, trackSubmit } = useFormTracking({ formId: form.id });
 
   useEffect(() => {
     setMounted(true);
@@ -105,6 +110,7 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
 
       if (result.success) {
         setSubmitted(true);
+        trackSubmit();
         toast.success('Submitted successfully!');
       } else {
         toast.error(result.error || 'Something went wrong');
@@ -609,6 +615,7 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
                       )}
                       {field.imageUrl ? (
                         <div className="rounded-lg overflow-hidden border border-gray-200 bg-white inline-block max-w-full">
+                           {/* eslint-disable-next-line @next/next/no-img-element -- User-uploaded image via /api/proxy with dynamic dimensions; next/image not suitable */}
                            <img src={getProxiedImageUrl(field.imageUrl)} alt={field.label || 'Image'} className="w-full h-auto object-contain max-h-[800px]" />
                         </div>
                       ) : (
@@ -624,6 +631,7 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
                   <div
                     key={field.id}
                     id={`field-container-${field.id}`}
+                    onFocusCapture={() => trackFieldFocus(field.id)}
                     className="py-5 px-6 border-b border-gray-100 last:border-b-0 transition-colors duration-300 hover:bg-slate-50/50"
                   >
                     <Label className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-1">
