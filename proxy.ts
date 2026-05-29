@@ -17,7 +17,7 @@ const protectedRoutes = ['/dashboard', '/builder', '/settings', '/certificates',
 // Routes that are always public
 const publicRoutes = ['/login', '/form', '/s', '/check', '/verify', '/api'];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // Skip static files and images
@@ -85,21 +85,15 @@ export async function middleware(request: NextRequest) {
                 error?.message?.includes('Refresh Token') ||
                 error?.code === 'session_not_found' ||
                 error?.message?.includes('JWT') ||
-                //If we have an error but no user, we should probably treat it as a session issue to be safe
+                // If we have an error but no user, treat as a session issue to be safe
                 (error && !user);
 
             if (isAuthError) {
-                // Suppress expected auth errors (like session expiry) from console.error
-                // Only log if it's an unusual error or for debugging
-                // console.log('Proxy: Redirecting to login due to auth error:', error.message);
-
                 const loginUrl = new URL('/login', request.url);
                 loginUrl.searchParams.set('redirect', getSafeRedirectPath(pathname));
                 const redirectResponse = NextResponse.redirect(loginUrl);
 
-                // Clear all Supabase auth cookies to prevent stale token loops
-                // This is a critical step to break out of the "Invalid Refresh Token" loop
-                // This is a critical step to break out of the "Invalid Refresh Token" loop
+                // Clear all Supabase auth cookies to break out of "Invalid Refresh Token" loops
                 request.cookies.getAll().forEach((cookie) => {
                     if (cookie.name.startsWith('sb-')) {
                         redirectResponse.cookies.delete(cookie.name);
@@ -116,8 +110,6 @@ export async function middleware(request: NextRequest) {
         }
     } catch {
         // Catch any unexpected errors during auth check
-        // Only log truly unexpected errors
-        // console.error('Proxy Unexpected Error:', err);
         const loginUrl = new URL('/login', request.url);
         loginUrl.searchParams.set('redirect', getSafeRedirectPath(pathname));
         const redirectResponse = NextResponse.redirect(loginUrl);

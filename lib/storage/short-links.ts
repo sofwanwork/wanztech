@@ -1,7 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { TIER_LIMITS } from '@/lib/constants/subscription-tiers';
-import { getSubscription } from '@/lib/storage/subscription';
 
 export interface ShortLink {
     id: string;

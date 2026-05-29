@@ -41,3 +41,11 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# Local-only command output artifacts (don't commit)
+build-log.txt
+build_output.txt
+lint_output.txt
+tsc_output.txt
+*_output.txt
+
