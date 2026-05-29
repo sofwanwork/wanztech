@@ -3,12 +3,13 @@
 import { Form } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, FileSpreadsheet, Search, Plus, Loader2 } from 'lucide-react';
+import { ExternalLink, FileSpreadsheet, Search, Plus, Loader2, BarChart3 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useState, useTransition } from 'react';
 import { createSheetForFormAction } from '@/actions/sheets';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface ResponsesClientProps {
     forms: Form[];
@@ -86,9 +87,21 @@ export function ResponsesClient({ forms, hasGoogleOAuth }: ResponsesClientProps)
                             className="border border-gray-200 bg-white hover:shadow-md transition-shadow"
                         >
                             <CardHeader className="pb-2 pt-4 px-5">
-                                <CardTitle className="text-base font-semibold text-gray-900 truncate">
-                                    {form.title}
-                                </CardTitle>
+                                <div className="flex items-start justify-between gap-3">
+                                    <CardTitle className="text-base font-semibold text-gray-900 truncate flex-1">
+                                        {form.title}
+                                    </CardTitle>
+                                    <Link href={`/responses/${form.id}/analytics`} className="shrink-0">
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="gap-1.5 h-8 text-gray-600 hover:text-gray-900"
+                                        >
+                                            <BarChart3 className="h-4 w-4" />
+                                            <span className="hidden sm:inline">Analytics</span>
+                                        </Button>
+                                    </Link>
+                                </div>
                             </CardHeader>
                             <CardContent className="px-5 pb-4">
                                 {form.googleSheetUrl ? (
