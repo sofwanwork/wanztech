@@ -2,6 +2,7 @@
 
 import { Form, FormField } from '@/lib/types';
 import Link from 'next/link';
+import { evaluateConditional } from '@/lib/forms/conditions';
 
 import {
   Card,
@@ -37,31 +38,38 @@ import { useFormTracking } from '@/hooks/use-form-tracking';
 
 interface PublicFormClientProps {
   form: Form;
+  /** When set, the form is rendered in edit mode: prefilled and re-submission
+   *  goes through `submitEditedResponseAction` rather than the new-submission
+   *  action. */
+  editMode?: { token: string };
+  /** Initial values keyed by field.id. Used by edit mode. */
+  initialValues?: Record<string, unknown>;
 }
 
-export function PublicFormClient({ form }: PublicFormClientProps) {
+export function PublicFormClient({ form, editMode, initialValues }: PublicFormClientProps) {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [formData, setFormData] = useState<Record<string, any>>(() => initialValues ?? {});
   const [mounted, setMounted] = useState(false);
 
   // Analytics: fires `view` on mount, `start` on first interaction,
   // `field_focus` per field, `submit` on success, `abandon` on pagehide.
-  const { trackFieldFocus, trackSubmit } = useFormTracking({ formId: form.id });
+  // Disabled in edit-mode — re-submits aren't "form views" in the analytics
+  // sense, and we don't want them inflating conversion stats.
+  const { trackFieldFocus, trackSubmit } = useFormTracking({
+    formId: form.id,
+    enabled: !editMode,
+  });
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Helper to check visibility
-  const isFieldVisible = (field: FormField) => {
-    if (!field.conditional) return true;
-    const { fieldId, value } = field.conditional;
-    const dependentValue = formData[fieldId];
-    // Simple string comparison. For checkboxes/arrays, might need includes() check in future.
-    return dependentValue === value;
-  };
+  // Helper to check visibility — uses pure evaluator that supports
+  // multi-rule logic, all operators, and graceful legacy normalization.
+  const isFieldVisible = (field: FormField) =>
+    evaluateConditional(field, formData, form.fields);
 
   const visibleFields = form.fields.filter(isFieldVisible);
 
@@ -106,12 +114,16 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
         formDataToSend.append('_gotcha', gotchaValue);
       }
 
-      const result = await submitFormAction(form.id, formDataToSend);
+      const result = editMode
+        ? await (
+            await import('@/actions/edit-response')
+          ).submitEditedResponseAction(editMode.token, formDataToSend)
+        : await submitFormAction(form.id, formDataToSend);
 
       if (result.success) {
         setSubmitted(true);
-        trackSubmit();
-        toast.success('Submitted successfully!');
+        if (!editMode) trackSubmit();
+        toast.success(editMode ? 'Jawapan dikemas kini!' : 'Submitted successfully!');
       } else {
         toast.error(result.error || 'Something went wrong');
       }

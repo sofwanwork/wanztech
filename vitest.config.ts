@@ -15,6 +15,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './'),
+      // The real `server-only` package throws when imported outside an RSC.
+      // For Vitest (Node) we map it to an empty stub so files that mark
+      // themselves server-only can still be imported in unit tests.
+      'server-only': path.resolve(__dirname, './tests/__mocks__/server-only.ts'),
     },
   },
 });

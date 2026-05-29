@@ -101,6 +101,81 @@ export async function appendToSheet(
   }
 }
 
+/**
+ * Update an existing row identified by a value in `matchColumn`.
+ * Used by the response-edit flow: rows are tagged with a hidden
+ * `_submission_id` on insert, then located + rewritten here.
+ *
+ * Returns `{ success: true, updated: true }` on a hit, `updated: false`
+ * if no row matched (caller can decide to fall back to append).
+ */
+export async function updateSheetRow(
+  config: SheetConfig,
+  matchColumn: string,
+  matchValue: string,
+  data: Record<string, string | number | boolean | null | undefined>
+): Promise<{ success: boolean; updated?: boolean; error?: string }> {
+  try {
+    let auth;
+    if (config.accessToken) {
+      const { google } = await import('googleapis');
+      const oauth2Client = new google.auth.OAuth2();
+      oauth2Client.setCredentials({ access_token: config.accessToken });
+      auth = oauth2Client;
+    } else if (config.clientEmail && config.privateKey) {
+      auth = new JWT({
+        email: config.clientEmail,
+        key: config.privateKey,
+        scopes: [
+          'https://www.googleapis.com/auth/spreadsheets',
+          'https://www.googleapis.com/auth/drive',
+        ],
+      });
+    } else {
+      throw new Error('Missing credentials (either Access Token or Service Account)');
+    }
+
+    const doc = new GoogleSpreadsheet(config.sheetId, auth);
+    await doc.loadInfo();
+    const sheet = doc.sheetsByIndex[0];
+
+    await sheet.loadHeaderRow();
+    const headers = sheet.headerValues;
+    const dataKeys = Object.keys(data);
+    const missingHeaders = dataKeys.filter((key) => !headers.includes(key));
+    if (missingHeaders.length > 0) {
+      await sheet.setHeaderRow([...headers, ...missingHeaders]);
+      await sheet.loadHeaderRow();
+    }
+
+    const rows = await sheet.getRows();
+    const target = rows.find((r) => String(r.get(matchColumn) ?? '') === matchValue);
+    if (!target) {
+      return { success: true, updated: false };
+    }
+
+    for (const [key, value] of Object.entries(data)) {
+      let stringValue =
+        value === null || value === undefined ? '' : String(value);
+      if (
+        stringValue.startsWith('=') ||
+        stringValue.startsWith('+') ||
+        stringValue.startsWith('-') ||
+        stringValue.startsWith('@')
+      ) {
+        stringValue = "'" + stringValue;
+      }
+      target.set(key, stringValue);
+    }
+    await target.save();
+
+    return { success: true, updated: true };
+  } catch (error) {
+    console.error('Google Sheet Update Error:', error);
+    return { success: false, error: (error as Error).message };
+  }
+}
+
 export async function createSpreadsheet(
   config: SheetConfig,
   title: string,

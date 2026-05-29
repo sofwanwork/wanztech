@@ -111,3 +111,77 @@ export function aggregateFormEvents(
     devices,
   };
 }
+
+// ─── Cross-form aggregation ──────────────────────────────────────────────
+
+export interface UserAnalyticsRow extends FormEventRow {
+  form_id: string;
+}
+
+export interface UserAnalyticsSummary {
+  totalViews: number;
+  totalSubmits: number;
+  uniqueVisitors: number;
+  conversionRate: number;
+  /** Top forms by submission count, max 5. */
+  topForms: Array<{ formId: string; submits: number; views: number }>;
+  /** Daily counts for the last `days` window — summed across all forms. */
+  daily: Array<{ date: string; views: number; submits: number }>;
+}
+
+/**
+ * Aggregate events across MULTIPLE forms for a single user. Pure helper.
+ * Used by the dashboard widget on `/forms`.
+ */
+export function aggregateUserAnalytics(
+  rows: UserAnalyticsRow[],
+  days = 30
+): UserAnalyticsSummary {
+  const totalViews = rows.filter((r) => r.event_type === 'view').length;
+  const totalSubmits = rows.filter((r) => r.event_type === 'submit').length;
+
+  const uniq = new Set<string>();
+  for (const r of rows) {
+    if (r.event_type === 'view' && r.visitor_hash) uniq.add(r.visitor_hash);
+  }
+
+  // Per-form counts
+  const perForm = new Map<string, { views: number; submits: number }>();
+  for (const r of rows) {
+    if (r.event_type !== 'view' && r.event_type !== 'submit') continue;
+    const cur = perForm.get(r.form_id) ?? { views: 0, submits: 0 };
+    if (r.event_type === 'view') cur.views++;
+    else cur.submits++;
+    perForm.set(r.form_id, cur);
+  }
+  const topForms = Array.from(perForm.entries())
+    .map(([formId, v]) => ({ formId, ...v }))
+    .sort((a, b) => b.submits - a.submits || b.views - a.views)
+    .slice(0, 5);
+
+  // Daily totals
+  const dailyMap = new Map<string, { views: number; submits: number }>();
+  const now = new Date();
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(now);
+    d.setUTCDate(d.getUTCDate() - i);
+    dailyMap.set(d.toISOString().slice(0, 10), { views: 0, submits: 0 });
+  }
+  for (const r of rows) {
+    const key = r.created_at.slice(0, 10);
+    const bucket = dailyMap.get(key);
+    if (!bucket) continue;
+    if (r.event_type === 'view') bucket.views++;
+    else if (r.event_type === 'submit') bucket.submits++;
+  }
+
+  return {
+    totalViews,
+    totalSubmits,
+    uniqueVisitors: uniq.size,
+    conversionRate:
+      totalViews > 0 ? Math.round((totalSubmits / totalViews) * 1000) / 10 : 0,
+    topForms,
+    daily: Array.from(dailyMap.entries()).map(([date, v]) => ({ date, ...v })),
+  };
+}

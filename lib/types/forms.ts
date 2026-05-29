@@ -46,11 +46,41 @@ export interface RatingConfig {
 }
 
 /**
- * Conditional display configuration
+ * Conditional display configuration.
+ *
+ * Supports two shapes for backward compatibility:
+ *  - Legacy (single equality): `{ fieldId, value }` — implicit `equals`.
+ *  - New (multi-rule): `{ rules: ConditionRule[], logic?: 'all' | 'any' }`.
+ *
+ * Both shapes are normalized via `normalizeConditional()` in
+ * `lib/forms/conditions.ts` before evaluation.
  */
-export interface ConditionalConfig {
+export type ConditionOperator =
+  | 'equals'
+  | 'not_equals'
+  | 'contains'
+  | 'not_contains'
+  | 'is_empty'
+  | 'is_not_empty'
+  | 'gt'
+  | 'lt';
+
+export interface ConditionRule {
   fieldId: string;
-  value: string;
+  operator: ConditionOperator;
+  /** Value to compare against. Ignored for `is_empty` / `is_not_empty`. */
+  value?: string;
+}
+
+export interface ConditionalConfig {
+  // Legacy shape (kept so older saved forms still load). New rules engine
+  // normalizes these into a single equals-rule at runtime.
+  fieldId?: string;
+  value?: string;
+  // New shape
+  rules?: ConditionRule[];
+  /** How to combine multiple rules. Defaults to `all`. */
+  logic?: 'all' | 'any';
 }
 
 /**
@@ -145,6 +175,20 @@ export interface QRSettings {
 }
 
 /**
+ * Edit-link settings — when enabled, every submission generates a magic
+ * link emailed to the respondent so they can edit their answers within
+ * `expiryDays`. Requires an email field on the form so we know where to
+ * send the link.
+ */
+export interface EditLinkSettings {
+  enabled: boolean;
+  /** Days the magic link stays valid after submission. */
+  expiryDays: number;
+  /** id of the form field that holds the respondent's email address. */
+  emailFieldId?: string;
+}
+
+/**
  * Complete Form definition
  */
 export interface Form {
@@ -172,4 +216,6 @@ export interface Form {
   attendanceSettings?: AttendanceSettings;
   // QR Settings
   qrSettings?: QRSettings;
+  // Edit-link Settings
+  editLinkSettings?: EditLinkSettings;
 }

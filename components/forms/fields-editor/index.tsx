@@ -1,7 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FormField } from '@/lib/types';
+import { FormField, ConditionOperator, ConditionRule } from '@/lib/types';
+import {
+  CONDITION_OPERATORS,
+  normalizeConditional,
+  operatorNeedsValue,
+} from '@/lib/forms/conditions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -61,14 +66,16 @@ function SortableField({
     transition,
   };
 
-  // Filter potential condition fields (fields that appear before the current one)
-  // Actually, simple logic: just don't allow self-reference. Circular dependency is hard to prevent fully without complex logic.
-  // Let's just allow picking any OTHER field for now, or maybe restricted to "Select" types for simplicity?
-  // User requested "Show if other field EQUALS value". Usually works best with Select/Radio.
+  // Source fields available as the LHS of a condition. Allow most input types
+  // — radio/checkbox/select still work best with `equals`, but text/number/etc.
+  // pair well with `contains`/`gt`/`lt`. Excludes layout-only types and self.
   const availableConditionFields = allFields.filter(
     (f) =>
       f.id !== field.id &&
-      (f.type === 'select' || f.type === 'text' || f.type === 'email' || f.type === 'number')
+      f.type !== 'separator' &&
+      f.type !== 'image' &&
+      f.type !== 'file' &&
+      f.type !== 'product'
   );
 
   return (
@@ -525,77 +532,11 @@ function SortableField({
 
           {/* Conditional Logic Section */}
           {field.type !== 'separator' && field.type !== 'image' && (
-            <div className="pt-4 border-t space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Conditional Logic
-                </p>
-                {field.conditional && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 text-xs text-destructive"
-                    onClick={() => updateField(index, { conditional: undefined })}
-                  >
-                    Clear Logic
-                  </Button>
-                )}
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center p-3 bg-slate-50 rounded-md border border-slate-100">
-                <span
-                  id={`condition-label-${field.id}`}
-                  className="text-sm text-slate-600 whitespace-nowrap"
-                >
-                  Show this field if
-                </span>
-                <Select
-                  value={field.conditional?.fieldId || 'none'}
-                  onValueChange={(val) => {
-                    if (val === 'none') {
-                      updateField(index, { conditional: undefined });
-                    } else {
-                      updateField(index, {
-                        conditional: { fieldId: val, value: field.conditional?.value || '' },
-                      });
-                    }
-                  }}
-                >
-                  <SelectTrigger
-                    className="w-full sm:w-[180px] h-9 text-sm"
-                    aria-labelledby={`condition-label-${field.id}`}
-                  >
-                    <SelectValue placeholder="Select Question..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">-- Always Show --</SelectItem>
-                    {availableConditionFields.map((f) => (
-                      <SelectItem key={f.id} value={f.id}>
-                        {f.label || '(Unnamed)'}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {field.conditional?.fieldId && (
-                  <>
-                    <span className="text-sm text-slate-600">equals</span>
-                    <Input
-                      id={`conditional-value-${field.id}`}
-                      aria-label="Condition Value"
-                      className="h-9 text-sm"
-                      placeholder="Value to match..."
-                      value={field.conditional.value}
-                      onChange={(e) =>
-                        updateField(index, {
-                          conditional: { ...field.conditional!, value: e.target.value },
-                        })
-                      }
-                    />
-                  </>
-                )}
-              </div>
-            </div>
+            <ConditionalLogicEditor
+              field={field}
+              availableFields={availableConditionFields}
+              onChange={(updates) => updateField(index, updates)}
+            />
           )}
         </CardContent>
       </Card>
@@ -603,12 +544,177 @@ function SortableField({
   );
 }
 
+interface ConditionalLogicEditorProps {
+  field: FormField;
+  availableFields: FormField[];
+  onChange: (updates: Partial<FormField>) => void;
+}
+
+function ConditionalLogicEditor({
+  field,
+  availableFields,
+  onChange,
+}: ConditionalLogicEditorProps) {
+  const norm = normalizeConditional(field.conditional);
+  const rules: ConditionRule[] = norm?.rules ?? [];
+  const logic: 'all' | 'any' = norm?.logic ?? 'all';
+
+  const writeRules = (next: ConditionRule[], nextLogic: 'all' | 'any' = logic) => {
+    if (next.length === 0) {
+      onChange({ conditional: undefined });
+      return;
+    }
+    onChange({ conditional: { rules: next, logic: nextLogic } });
+  };
+
+  const addRule = () => {
+    const firstField = availableFields[0];
+    if (!firstField) return;
+    writeRules([...rules, { fieldId: firstField.id, operator: 'equals', value: '' }]);
+  };
+
+  const updateRule = (idx: number, patch: Partial<ConditionRule>) => {
+    const next = rules.map((r, i) => (i === idx ? { ...r, ...patch } : r));
+    writeRules(next);
+  };
+
+  const removeRule = (idx: number) => {
+    writeRules(rules.filter((_, i) => i !== idx));
+  };
+
+  return (
+    <div className="pt-4 border-t space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Conditional Logic
+        </p>
+        {rules.length > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 text-xs text-destructive"
+            onClick={() => onChange({ conditional: undefined })}
+          >
+            Clear Logic
+          </Button>
+        )}
+      </div>
+
+      {rules.length === 0 ? (
+        <div className="p-3 bg-slate-50 rounded-md border border-slate-100 text-sm text-slate-600 flex items-center justify-between">
+          <span>Sentiasa tunjuk soalan ini.</span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={addRule}
+            disabled={availableFields.length === 0}
+          >
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            Tambah peraturan
+          </Button>
+        </div>
+      ) : (
+        <div className="p-3 bg-slate-50 rounded-md border border-slate-100 space-y-3">
+          {rules.length > 1 && (
+            <div className="flex items-center gap-2 text-sm text-slate-600">
+              <span>Tunjuk jika</span>
+              <Select value={logic} onValueChange={(v) => writeRules(rules, v as 'all' | 'any')}>
+                <SelectTrigger className="w-[110px] h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">SEMUA</SelectItem>
+                  <SelectItem value="any">MANA-MANA</SelectItem>
+                </SelectContent>
+              </Select>
+              <span>peraturan ini benar:</span>
+            </div>
+          )}
+
+          {rules.map((rule, idx) => (
+            <div
+              key={idx}
+              className="flex flex-col sm:flex-row gap-2 items-start sm:items-center"
+            >
+              {rules.length === 1 && (
+                <span className="text-sm text-slate-600 whitespace-nowrap">Tunjuk jika</span>
+              )}
+              <Select
+                value={rule.fieldId}
+                onValueChange={(val) => updateRule(idx, { fieldId: val })}
+              >
+                <SelectTrigger className="w-full sm:w-[180px] h-9 text-sm">
+                  <SelectValue placeholder="Pilih soalan..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableFields.map((f) => (
+                    <SelectItem key={f.id} value={f.id}>
+                      {f.label || '(Tanpa Tajuk)'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={rule.operator}
+                onValueChange={(val) =>
+                  updateRule(idx, { operator: val as ConditionOperator })
+                }
+              >
+                <SelectTrigger className="w-full sm:w-[170px] h-9 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CONDITION_OPERATORS.map((op) => (
+                    <SelectItem key={op.value} value={op.value}>
+                      {op.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {operatorNeedsValue(rule.operator) && (
+                <Input
+                  className="h-9 text-sm"
+                  placeholder="Nilai..."
+                  value={rule.value ?? ''}
+                  onChange={(e) => updateRule(idx, { value: e.target.value })}
+                  aria-label="Condition value"
+                />
+              )}
+
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                onClick={() => removeRule(idx)}
+                aria-label="Buang peraturan"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={addRule}
+            disabled={availableFields.length === 0}
+            className="h-8 text-xs"
+          >
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            Tambah peraturan
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface FieldsEditorProps {
   fields: FormField[];
   onChange: (fields: FormField[]) => void;
-}
-
-export function FieldsEditor({ fields, onChange }: FieldsEditorProps) {
+}export function FieldsEditor({ fields, onChange }: FieldsEditorProps) {
   // Initialize mounted state directly to avoid useEffect setState
   const [mounted, setMounted] = useState(false);
 

@@ -6,8 +6,11 @@ import { headers as getNextHeaders } from 'next/headers';
 import { checkRateLimit } from '@/lib/rate-limit';
 import {
   aggregateFormEvents,
+  aggregateUserAnalytics,
   type FormEventRow,
   type FormAnalyticsSummary,
+  type UserAnalyticsRow,
+  type UserAnalyticsSummary,
   type AnalyticsEventType,
 } from '@/lib/analytics/aggregate';
 import crypto from 'crypto';
@@ -122,4 +125,34 @@ export async function getFormAnalytics(
     return null;
   }
   return aggregateFormEvents((data ?? []) as FormEventRow[], days);
+}
+
+/**
+ * Cross-form summary for the current user. RLS auto-restricts to the
+ * caller's own forms, so we don't need a manual user_id filter (kept
+ * defensively though, mirroring `getFormAnalytics`).
+ */
+export async function getUserAnalyticsSummary(
+  days = 30
+): Promise<UserAnalyticsSummary | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const since = new Date();
+  since.setUTCDate(since.getUTCDate() - days);
+
+  const { data, error } = await supabase
+    .from('form_events')
+    .select('event_type, field_id, visitor_hash, device, duration_ms, created_at, form_id')
+    .eq('user_id', user.id)
+    .gte('created_at', since.toISOString());
+
+  if (error) {
+    console.error('[analytics] user-summary fetch error:', error);
+    return null;
+  }
+  return aggregateUserAnalytics((data ?? []) as UserAnalyticsRow[], days);
 }

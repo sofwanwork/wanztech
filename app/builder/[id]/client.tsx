@@ -61,6 +61,8 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { QrCustomizer } from '@/components/forms/qr-customizer';
+import { WebhooksCard } from '@/components/forms/webhooks-card';
+import { EditLinkCard } from '@/components/forms/edit-link-card';
 import { BuilderTour } from '@/components/builder-tour';
 import { HelpCircle } from 'lucide-react';
 
@@ -1270,6 +1272,13 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                 </CardContent>
               )}
             </Card>
+
+            <WebhooksCard formId={form.id} />
+
+            <EditLinkCard
+              form={form}
+              onChange={(next) => setForm((f) => ({ ...f, editLinkSettings: next }))}
+            />
 
             <Separator />
             <h2 className="text-xl font-semibold">Form Fields</h2>

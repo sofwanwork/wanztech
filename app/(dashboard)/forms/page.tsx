@@ -8,6 +8,7 @@ import { createFormAction } from '@/actions/forms';
 import { DashboardSearch } from '@/components/dashboard/search';
 import { DashboardFilter } from '@/components/dashboard/filter';
 import { DashboardStats } from '@/components/dashboard/stats';
+import { CrossFormAnalytics } from '@/components/dashboard/cross-form-analytics';
 import { FormCard } from '@/components/dashboard/form-card';
 
 interface DashboardPageProps {
@@ -66,6 +67,9 @@ export default async function DashboardPage(props: DashboardPageProps) {
         totalForms={stats.totalForms}
         subscriptionStatus={subStatus.status}
       />
+
+      {/* Cross-form analytics — silently renders nothing when no data yet */}
+      <CrossFormAnalytics />
 
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">

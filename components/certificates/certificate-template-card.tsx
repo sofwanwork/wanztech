@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { FileImage, Copy, Loader2 } from 'lucide-react';
+import { FileImage, Copy, Loader2, Sparkles } from 'lucide-react';
 import { cloneCertificateTemplateAction } from '@/actions/certificate-template';
 import { DeleteCertificateButton } from '@/components/certificates/delete-certificate-button';
 import type { CertificateTemplate } from '@/lib/types';
@@ -94,6 +94,17 @@ export function CertificateTemplateCard({ template }: CertificateTemplateCardPro
             </p>
           </div>
           <div className="flex items-center gap-1">
+            <Link href={`/certificates/builder/${template.id}/bulk`}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0"
+                title="Jana sijil pukal dari CSV"
+              >
+                <Sparkles className="h-4 w-4" />
+              </Button>
+            </Link>
             <form action={cloneCertificateTemplateAction.bind(null, template.id)}>
               <Button
                 type="submit"

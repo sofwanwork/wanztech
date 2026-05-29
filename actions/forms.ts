@@ -235,6 +235,11 @@ export async function submitFormAction(
   // --- Process & Upload ---
   let dbData: Record<string, string | number | boolean | null | undefined> = {};
 
+  // Stable submission id — kept in a hidden Sheet column so the edit-link
+  // flow can locate this row later. Generated before any I/O so it stays
+  // identical for the Sheets row + the edit token snapshot.
+  const submissionId = uuidv4();
+
   // Use getSettingsByFormId for public form submission (no auth required)
   // This now uses admin client internally to fetch settings safely
   const settings = await getSettingsByFormId(formId);
@@ -323,6 +328,10 @@ export async function submitFormAction(
     dbData = formDataOrObj;
   }
 
+  // Tag with submission id so we can update this row from the edit-link
+  // flow without touching unrelated rows.
+  dbData._submission_id = submissionId;
+
   // 2. Send to Google Sheet
   if (form.googleSheetUrl && settings) {
     if (accessToken || (settings.googleClientEmail && settings.googlePrivateKey)) {
@@ -372,6 +381,48 @@ export async function submitFormAction(
   if (form.userId) {
     await incrementSubmissionCount(form.userId);
 
+    // --- Outgoing webhooks (fire-and-forget) ---
+    // Dispatched after Sheets sync + quota increment so a webhook receiver
+    // sees the same data we kept. Failures here must never affect the
+    // respondent's success state.
+    try {
+      const { listWebhooksForDispatch, recordWebhookResult } = await import(
+        '@/lib/storage/webhooks'
+      );
+      const { dispatchWebhook } = await import('@/lib/webhooks/dispatch');
+      const hooks = await listWebhooksForDispatch(form.id, form.userId, 'submission');
+      if (hooks.length > 0) {
+        const stringData: Record<string, string> = {};
+        for (const [k, v] of Object.entries(dbData)) {
+          if (v !== null && v !== undefined) stringData[k] = String(v);
+        }
+        const payload = {
+          event: 'submission' as const,
+          formId: form.id,
+          formTitle: form.title,
+          submittedAt: new Date().toISOString(),
+          data: stringData,
+        };
+        // Run dispatches in parallel; await all so we record results, but
+        // never let the throw bubble out of submitFormAction.
+        await Promise.all(
+          hooks.map(async (hook) => {
+            const result = await dispatchWebhook({
+              url: hook.url,
+              secret: hook.secret,
+              payload,
+            });
+            await recordWebhookResult(hook.id, {
+              status: result.status,
+              error: result.error ?? null,
+            });
+          })
+        );
+      }
+    } catch (whErr) {
+      console.warn('Webhook dispatch failed:', whErr);
+    }
+
     // Send email notification (awaited so serverless doesn't kill it before completion)
     try {
       if (form.receiveEmailNotifications !== false) {
@@ -406,6 +457,51 @@ export async function submitFormAction(
     } catch (emailErr) {
       // Never fail submission because of email
       console.warn('Submission email notification failed:', emailErr);
+    }
+
+    // --- Edit-link token (fire-and-forget) ---
+    // If the form opted in AND the respondent provided their email, create
+    // a single-use magic link and email it to them.
+    try {
+      const editCfg = form.editLinkSettings;
+      if (editCfg?.enabled && editCfg.emailFieldId) {
+        // Find the email value: the email field's *label* is what dbData
+        // is keyed by, so look up label from the schema first.
+        const emailField = form.fields.find((f) => f.id === editCfg.emailFieldId);
+        const emailValue = emailField
+          ? String(dbData[emailField.label] ?? '').trim()
+          : '';
+        const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue);
+        if (isEmail) {
+          const { createEditToken } = await import('@/lib/storage/edit-tokens');
+          const snapshot: Record<string, string> = {};
+          for (const [k, v] of Object.entries(dbData)) {
+            if (v !== null && v !== undefined) snapshot[k] = String(v);
+          }
+          const token = await createEditToken({
+            formId: form.id,
+            userId: form.userId!,
+            submissionId,
+            email: emailValue,
+            snapshot,
+            expiryDays: Math.max(1, Math.min(365, editCfg.expiryDays ?? 7)),
+          });
+
+          const origin =
+            headersList.get('origin') ||
+            (process.env.NEXT_PUBLIC_APP_URL ?? 'https://klikform.com');
+          const editUrl = `${origin.replace(/\/$/, '')}/edit/${token}`;
+          const { getEditLinkEmail } = await import('@/lib/email');
+          const email = getEditLinkEmail(form.title, editUrl, editCfg.expiryDays ?? 7);
+          await sendEmail({
+            to: emailValue,
+            subject: email.subject,
+            html: email.html,
+          });
+        }
+      }
+    } catch (editErr) {
+      console.warn('Edit-link token / email failed:', editErr);
     }
   }
 

@@ -122,6 +122,62 @@ export function getNewSubmissionEmail(
   };
 }
 
+// Edit-link email — sent to respondents when the form has edit-link
+// enabled and the respondent provided an email.
+export function getEditLinkEmail(
+  formTitle: string,
+  editUrl: string,
+  expiryDays: number
+) {
+  const content = `
+        <!-- Header -->
+        <tr>
+          <td style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); padding: 40px 40px 30px; text-align: center;">
+            <div style="font-size: 56px; margin-bottom: 16px;">✏️</div>
+            <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 700;">Sunting Jawapan Anda</h1>
+            <p style="margin: 12px 0 0 0; color: rgba(255,255,255,0.9); font-size: 15px;">${formTitle}</p>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding: 40px;">
+            <p style="margin: 0 0 20px 0; color: #1f2937; font-size: 16px; line-height: 1.6;">
+              Hai 👋
+            </p>
+            <p style="margin: 0 0 24px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+              Terima kasih kerana menghantar jawapan untuk borang
+              <strong>"${formTitle}"</strong>. Jika anda perlu mengubah jawapan,
+              klik butang di bawah dalam tempoh <strong>${expiryDays} hari</strong>.
+            </p>
+
+            <div style="text-align: center; margin: 32px 0;">
+              <a href="${editUrl}" style="display: inline-block; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 14px; box-shadow: 0 4px 14px rgba(14, 165, 233, 0.3);">
+                🔗 Sunting Jawapan
+              </a>
+            </div>
+
+            <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 6px; margin: 24px 0;">
+              <p style="margin: 0; color: #78350f; font-size: 13px; line-height: 1.5;">
+                ⚠️ Pautan ini hanya boleh digunakan <strong>sekali sahaja</strong>
+                dan akan luput dalam ${expiryDays} hari. Jangan kongsi pautan ini
+                dengan orang lain.
+              </p>
+            </div>
+
+            <p style="margin: 24px 0 0 0; color: #9ca3af; font-size: 13px; text-align: center;">
+              Jika anda tidak menghantar borang ini, abaikan email ini.
+            </p>
+          </td>
+        </tr>
+    `;
+
+  return {
+    subject: `✏️ Sunting jawapan anda: ${formTitle}`,
+    html: emailWrapper(content),
+  };
+}
+
 // Base email template wrapper
 function emailWrapper(content: string) {
   return `

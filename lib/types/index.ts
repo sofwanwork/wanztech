@@ -9,6 +9,8 @@ export type {
   ProductItem,
   RatingConfig,
   ConditionalConfig,
+  ConditionOperator,
+  ConditionRule,
   ValidationConfig,
   FormField,
   BackgroundPattern,
@@ -17,6 +19,7 @@ export type {
   GeofenceConfig,
   AttendanceSettings,
   QRSettings,
+  EditLinkSettings,
   Form,
 } from './forms';
 
