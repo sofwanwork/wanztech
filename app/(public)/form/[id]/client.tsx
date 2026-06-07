@@ -1176,7 +1176,10 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
                 {multiPage && !isLastPage ? (
                   <Button
                     type="button"
-                    onClick={goToNextPage}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      goToNextPage();
+                    }}
                     className="flex-1 h-11 bg-primary hover:bg-primary/90 text-white font-medium"
                   >
                     Next
