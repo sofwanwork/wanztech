@@ -363,9 +363,16 @@ export async function submitFormAction(
     dbData = formDataOrObj;
   }
 
-  // Tag with submission id so we can update this row from the edit-link
-  // flow without touching unrelated rows.
-  dbData._submission_id = submissionId;
+  // Bookkeeping columns (`_submission_id`, `timestamp`) are only useful for the
+  // magic-link edit feature, which needs to locate this exact row later. When
+  // Edit Link is OFF, keep the Sheet clean — just the respondent's answers.
+  const editLinkEnabled = !!form.editLinkSettings?.enabled;
+  if (editLinkEnabled) {
+    dbData._submission_id = submissionId;
+  } else {
+    delete dbData._submission_id;
+    delete dbData.timestamp;
+  }
 
   // Record PDPA consent as a human-friendly column and drop the raw internal
   // flag so the Sheet shows "PDPA Consent: Yes" rather than "_pdpa_consent".
