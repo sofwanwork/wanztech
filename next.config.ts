@@ -38,6 +38,10 @@ const nextConfig: NextConfig = {
       `script-src 'self' 'unsafe-inline' 'unsafe-eval' *.vercel-scripts.com`,
       `style-src 'self' 'unsafe-inline' fonts.googleapis.com`,
       `font-src 'self' fonts.gstatic.com`,
+      // Sentry Session Replay spins up a Web Worker from a blob: URL for
+      // compression. Without an explicit worker-src it falls back to
+      // script-src (which lacks blob:) and gets blocked.
+      `worker-src 'self' blob:`,
       // Allow images from any HTTPS source (cover images, avatars, etc.)
       `img-src 'self' data: blob: https:`,
       // Allow connections to Supabase, Sentry tunnel, and BCL.my payment API
