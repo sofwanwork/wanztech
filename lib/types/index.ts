@@ -22,6 +22,7 @@ export type {
   EditLinkSettings,
   RespondentNotificationSettings,
   PdpaSettings,
+  CertificateCategoryConfig,
   Form,
 } from './forms';
 

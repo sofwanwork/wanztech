@@ -19,14 +19,22 @@ import { useRef } from 'react';
 // import { jsPDF } from 'jspdf';
 import { CertificateTemplate } from '@/components/certificate-template';
 import { toast } from 'sonner';
+import { resolveCategoryTemplateId } from '@/lib/certificates/category';
 
-import { CertificateTemplate as CertificateTemplateType } from '@/lib/types';
+import {
+  CertificateTemplate as CertificateTemplateType,
+  CertificateCategoryConfig,
+} from '@/lib/types';
 
 interface CertificateCheckClientProps {
   formId: string;
   formTitle: string;
   templateId?: string;
   customTemplateData?: CertificateTemplateType | null;
+  /** Category → template mapping (when configured on the form). */
+  categoryConfig?: CertificateCategoryConfig | null;
+  /** All prefetched templates keyed by id (default + mapped categories). */
+  templatesById?: Record<string, CertificateTemplateType>;
 }
 
 export function CertificateCheckClient({
@@ -34,6 +42,8 @@ export function CertificateCheckClient({
   formTitle,
   templateId,
   customTemplateData,
+  categoryConfig,
+  templatesById,
 }: CertificateCheckClientProps) {
   const [identifier, setIdentifier] = useState('');
   const [loading, setLoading] = useState(false);
@@ -41,6 +51,18 @@ export function CertificateCheckClient({
 
   const certificateRef = useRef<HTMLDivElement>(null);
   const hiddenCertificateRef = useRef<HTMLDivElement>(null);
+
+  // Pick the template based on the respondent's category answer; fall back to
+  // the form's default template when there's no category mapping/match.
+  const activeTemplate: CertificateTemplateType | null = (() => {
+    if (!result?.found) return customTemplateData ?? null;
+    const tplId = resolveCategoryTemplateId(
+      categoryConfig ?? undefined,
+      result.category,
+      templateId
+    );
+    return (tplId && templatesById?.[tplId]) || customTemplateData || null;
+  })();
 
   const handleCheck = async () => {
     if (!identifier.trim()) {
@@ -304,7 +326,7 @@ export function CertificateCheckClient({
                             program={formTitle || ''}
                             date={result.date}
                             id="check-preview"
-                            customTemplateData={customTemplateData}
+                            customTemplateData={activeTemplate}
                             ic={identifier}
                             formId={formId}
                           />
@@ -339,7 +361,7 @@ export function CertificateCheckClient({
                 program={formTitle || ''}
                 date={result.date}
                 id="hidden-certificate"
-                customTemplateData={customTemplateData}
+                customTemplateData={activeTemplate}
                 ic={identifier}
                 formId={formId}
               />

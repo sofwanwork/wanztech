@@ -220,6 +220,20 @@ export interface PdpaSettings {
 }
 
 /**
+ * Category-based certificate mapping. A chosen dropdown (`select`) field's
+ * answer decides WHICH certificate template a respondent receives — e.g. a
+ * "Kategori" field with options Urusetia / Penganjur / Peserta each mapped to
+ * a different template. Falls back to the form's default template when a
+ * respondent's value has no mapping.
+ */
+export interface CertificateCategoryConfig {
+  /** id of the `select` field whose answer selects the template. */
+  fieldId: string;
+  /** Maps an option value → certificate template id. */
+  map: Record<string, string>;
+}
+
+/**
  * Complete Form definition
  */
 export interface Form {
@@ -243,6 +257,8 @@ export interface Form {
   eCertificateTemplate?: string; // Template ID or custom URL
   eCertificateExpiryDays?: number; // Number of days the certificate link is valid after submission
   eCertificateExpiredMessage?: string; // Custom message to show when link is expired
+  // Category-based certificate (different template per dropdown answer)
+  eCertificateCategory?: CertificateCategoryConfig;
   // Attendance Settings
   attendanceSettings?: AttendanceSettings;
   // QR Settings

@@ -65,6 +65,7 @@ import { WebhooksCard } from '@/components/forms/webhooks-card';
 import { EditLinkCard } from '@/components/forms/edit-link-card';
 import { RespondentNotificationCard } from '@/components/forms/respondent-notification-card';
 import { PdpaCard } from '@/components/forms/pdpa-card';
+import { CertificateCategorySection } from '@/components/forms/certificate-category-card';
 import { BuilderTour } from '@/components/builder-tour';
 import { HelpCircle } from 'lucide-react';
 
@@ -1016,6 +1017,17 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                       </div>
                     )}
                   </div>
+
+                  {/* Category-based certificate mapping */}
+                  {form.eCertificateTemplate && (
+                    <CertificateCategorySection
+                      form={form}
+                      userCertificates={userCertificates}
+                      onChange={(next) =>
+                        setForm((f) => ({ ...f, eCertificateCategory: next }))
+                      }
+                    />
+                  )}
 
                   {/* Check Certificate Link */}
                   {mounted && form.eCertificateEnabled && (

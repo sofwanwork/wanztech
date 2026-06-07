@@ -155,6 +155,7 @@ export async function getFormById(id: string): Promise<Form | undefined> {
     editLinkSettings: data.edit_link_settings ?? undefined,
     respondentNotification: data.respondent_notification ?? undefined,
     pdpaSettings: data.pdpa_settings ?? undefined,
+    eCertificateCategory: data.e_certificate_category ?? undefined,
     userTier: (subscription?.tier as Form['userTier']) || 'free',
   };
 }
@@ -202,6 +203,7 @@ export async function getFormByShortCode(code: string): Promise<Form | undefined
     editLinkSettings: data.edit_link_settings ?? undefined,
     respondentNotification: data.respondent_notification ?? undefined,
     pdpaSettings: data.pdpa_settings ?? undefined,
+    eCertificateCategory: data.e_certificate_category ?? undefined,
     userTier: (subscription?.tier as Form['userTier']) || 'free',
   };
 }
@@ -244,6 +246,7 @@ export async function saveForm(form: Form): Promise<void> {
     edit_link_settings: form.editLinkSettings,
     respondent_notification: form.respondentNotification,
     pdpa_settings: form.pdpaSettings,
+    e_certificate_category: form.eCertificateCategory,
     // created_at is default now(), but for updates we might want to keep original or allow db to handle.
     // If we pass id, upsert works.
   };

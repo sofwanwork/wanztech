@@ -14,6 +14,8 @@ export interface CertificateCheckResult {
   name?: string;
   date?: string;
   programName?: string;
+  /** Respondent's answer to the category field (for category-based templates). */
+  category?: string;
   error?: string;
 }
 
@@ -280,6 +282,20 @@ export async function checkCertificateByICOrEmail(
           name: name.toString(),
           date: date?.toString(),
           programName: form.title,
+          category: (() => {
+            // Read the respondent's category answer (the Sheet column is keyed
+            // by the field's LABEL) so the client can pick the right template.
+            const catFieldId = form.eCertificateCategory?.fieldId;
+            if (!catFieldId) return undefined;
+            const catField = form.fields.find((f) => f.id === catFieldId);
+            if (!catField) return undefined;
+            const catIdx = headers.findIndex(
+              (h) => h.trim().toLowerCase() === catField.label.trim().toLowerCase()
+            );
+            if (catIdx === -1) return undefined;
+            const raw = (row.get(headers[catIdx]) || '').toString().trim();
+            return raw || undefined;
+          })(),
         };
       }
     }
@@ -301,5 +317,6 @@ export async function getFormForCertificateCheck(formId: string) {
     title: form.title,
     eCertificateEnabled: form.eCertificateEnabled,
     eCertificateTemplate: form.eCertificateTemplate,
+    eCertificateCategory: form.eCertificateCategory ?? null,
   };
 }
