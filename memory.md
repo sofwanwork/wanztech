@@ -442,3 +442,13 @@ Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build c
 ### Build state
 - lint 0, **143/143 tests** (17 suites), build clean.
 - Not done (per user): Fasa C.
+
+
+## Sentry instrumentation fix + Smoke-test checklist (2026-06-07)
+- **Bug found & fixed**: no `instrumentation.ts` at root → in Next.js 16 + @sentry/nextjs v10, `sentry.server.config.ts` / `sentry.edge.config.ts` were NEVER loaded, so server/edge errors went uncaptured even with a DSN set. Created:
+  - `instrumentation.ts` — `register()` imports server/edge config per `NEXT_RUNTIME`; exports `onRequestError = Sentry.captureRequestError`.
+  - `instrumentation-client.ts` — imports `./sentry.client.config` (single init) + exports `onRouterTransitionStart`.
+  - All still no-op without `NEXT_PUBLIC_SENTRY_DSN`. Build verified clean.
+- **To activate Sentry** (user action — secrets): set in Vercel env → `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN`. next.config.ts only wraps withSentryConfig when DSN + AUTH_TOKEN present. Prod trace sampling already 10%.
+- **`SMOKE_TEST.md`** created (user-requested): step-by-step manual checklist for prod flows that automated tests can't cover (Google connect, form submit → Sheet + emails, edit link, certificates, bulk, audit, analytics, payment, Sentry).
+- Honest status given to user: lint/test/build green, but NOT provably bug-free — external-service flows (OAuth, live Sheets/Drive, Resend, BCL, cert render) are not runtime-tested; service-account scope narrowing not live-tested.
