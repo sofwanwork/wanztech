@@ -48,4 +48,6 @@ build_output.txt
 lint_output.txt
 tsc_output.txt
 *_output.txt
+# Build/CLI logs (e.g. build_full.log, build_output.log)
+*.log
 
