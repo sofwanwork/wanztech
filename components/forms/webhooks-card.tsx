@@ -70,7 +70,7 @@ export function WebhooksCard({ formId }: WebhooksCardProps) {
 
   const handleAdd = () => {
     if (!newUrl.trim() || !newSecret.trim()) {
-      toast.error('URL dan secret diperlukan');
+      toast.error('URL and secret are required');
       return;
     }
     startTransition(async () => {
@@ -82,7 +82,7 @@ export function WebhooksCard({ formId }: WebhooksCardProps) {
         enabled: true,
       });
       if (res.success) {
-        toast.success('Webhook ditambah');
+        toast.success('Webhook added');
         setNewUrl('');
         setNewSecret('');
         setShowAdd(false);
@@ -107,14 +107,14 @@ export function WebhooksCard({ formId }: WebhooksCardProps) {
   };
 
   const handleDelete = (hook: FormWebhook) => {
-    if (!confirm('Padam webhook ini?')) return;
+    if (!confirm('Delete this webhook?')) return;
     startTransition(async () => {
       const res = await deleteWebhookAction(hook.id);
       if (res.success) {
-        toast.success('Webhook dipadam');
+        toast.success('Webhook deleted');
         setWebhooks((prev) => prev.filter((w) => w.id !== hook.id));
       } else {
-        toast.error(res.error ?? 'Gagal');
+        toast.error(res.error ?? 'Failed');
       }
     });
   };
@@ -124,9 +124,9 @@ export function WebhooksCard({ formId }: WebhooksCardProps) {
     try {
       const res = await testWebhookAction({ formId, webhookId: hook.id });
       if (res.ok) {
-        toast.success(`Test berjaya — HTTP ${res.status}`);
+        toast.success(`Test succeeded — HTTP ${res.status}`);
       } else {
-        toast.error(`Test gagal: ${res.error ?? `HTTP ${res.status ?? '?'}`}`);
+        toast.error(`Test failed: ${res.error ?? `HTTP ${res.status ?? '?'}`}`);
       }
       await refresh();
     } finally {
@@ -138,14 +138,14 @@ export function WebhooksCard({ formId }: WebhooksCardProps) {
     const fresh = genSecret();
     if (
       !confirm(
-        'Tukar secret webhook? Anda perlu kemas kini secret di sistem penerima selepas ini.'
+        'Rotate the webhook secret? You will need to update the secret in your receiver afterwards.'
       )
     )
       return;
     startTransition(async () => {
       const res = await updateWebhookAction({ id: hook.id, secret: fresh });
       if (res.success) {
-        toast.success('Secret ditukar');
+        toast.success('Secret rotated');
         setRevealedSecrets((prev) => ({ ...prev, [hook.id]: fresh }));
       } else {
         toast.error(res.error);
@@ -162,7 +162,7 @@ export function WebhooksCard({ formId }: WebhooksCardProps) {
             <div>
               <CardTitle>Outgoing Webhooks</CardTitle>
               <CardDescription>
-                POST data submission ke URL anda dengan signature HMAC-SHA256.
+                POST each submission to your URL with an HMAC-SHA256 signature.
               </CardDescription>
             </div>
           </div>
@@ -175,19 +175,19 @@ export function WebhooksCard({ formId }: WebhooksCardProps) {
             }}
           >
             <Plus className="h-4 w-4 mr-1" />
-            Tambah
+            Add
           </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {loading ? (
-          <div className="text-sm text-muted-foreground">Memuatkan…</div>
+          <div className="text-sm text-muted-foreground">Loading…</div>
         ) : (
           <>
             {webhooks.length === 0 && !showAdd && (
               <div className="text-sm text-muted-foreground p-4 bg-slate-50 rounded-md border border-dashed">
-                Belum ada webhook. Tambah satu untuk auto-hantar setiap response baru ke
-                Zapier, Make, n8n, atau API anda sendiri.
+                No webhooks yet. Add one to auto-send every new response to Zapier,
+                Make, n8n, or your own API.
               </div>
             )}
 
@@ -219,7 +219,7 @@ export function WebhooksCard({ formId }: WebhooksCardProps) {
                             )}
                             <span>·</span>
                             <span>
-                              {new Date(hook.lastFiredAt).toLocaleString('ms-MY')}
+                              {new Date(hook.lastFiredAt).toLocaleString('en-MY')}
                             </span>
                           </>
                         )}
@@ -238,7 +238,7 @@ export function WebhooksCard({ formId }: WebhooksCardProps) {
                         className="h-8 w-8"
                         disabled={testingId === hook.id || !hook.enabled}
                         onClick={() => handleTest(hook)}
-                        aria-label="Hantar test event"
+                        aria-label="Send test event"
                       >
                         {testingId === hook.id ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -251,7 +251,7 @@ export function WebhooksCard({ formId }: WebhooksCardProps) {
                         size="icon"
                         className="h-8 w-8 text-destructive hover:bg-destructive/10"
                         onClick={() => handleDelete(hook)}
-                        aria-label="Padam webhook"
+                        aria-label="Delete webhook"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -284,7 +284,7 @@ export function WebhooksCard({ formId }: WebhooksCardProps) {
                             return next;
                           })
                         }
-                        aria-label="Sembunyikan"
+                        aria-label="Hide"
                       >
                         <EyeOff className="h-3.5 w-3.5" />
                       </Button>
@@ -298,7 +298,7 @@ export function WebhooksCard({ formId }: WebhooksCardProps) {
               <div className="p-4 border rounded-lg space-y-3 bg-slate-50">
                 <div className="space-y-2">
                   <Label htmlFor="webhook-url" className="text-sm">
-                    URL Webhook
+                    Webhook URL
                   </Label>
                   <Input
                     id="webhook-url"
@@ -316,7 +316,7 @@ export function WebhooksCard({ formId }: WebhooksCardProps) {
                     <Input
                       id="webhook-secret"
                       type="text"
-                      placeholder="Auto-jana atau taip sendiri"
+                      placeholder="Auto-generate or type your own"
                       value={newSecret}
                       onChange={(e) => setNewSecret(e.target.value)}
                       className="font-mono text-xs"
@@ -326,12 +326,12 @@ export function WebhooksCard({ formId }: WebhooksCardProps) {
                       variant="outline"
                       onClick={() => setNewSecret(genSecret())}
                     >
-                      Jana
+                      Generate
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Akan dihantar dalam header{' '}
-                    <code className="font-mono">x-klikform-signature</code> sebagai
+                    Sent in the{' '}
+                    <code className="font-mono">x-klikform-signature</code> header as
                     HMAC-SHA256(body, secret).
                   </p>
                 </div>
@@ -342,7 +342,7 @@ export function WebhooksCard({ formId }: WebhooksCardProps) {
                     onClick={() => setShowAdd(false)}
                     disabled={pending}
                   >
-                    Batal
+                    Cancel
                   </Button>
                   <Button size="sm" onClick={handleAdd} disabled={pending}>
                     {pending ? (
@@ -350,7 +350,7 @@ export function WebhooksCard({ formId }: WebhooksCardProps) {
                     ) : (
                       <Plus className="h-4 w-4 mr-1" />
                     )}
-                    Tambah Webhook
+                    Add Webhook
                   </Button>
                 </div>
               </div>

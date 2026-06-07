@@ -19,6 +19,8 @@ import { encrypt } from '@/lib/encryption';
 import { sanitizeHtml } from '@/lib/utils'; // Import sanitization
 import { headers as getNextHeaders } from 'next/headers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
+import { requiresPdpaConsent, isPdpaSubmissionAllowed } from '@/lib/forms/pdpa';
+import { logAudit } from '@/lib/storage/audit';
 
 // --- Settings Storage for Credentials ---
 // Replaced by lib/storage which uses Supabase
@@ -35,9 +37,12 @@ export async function getSettingsAction() {
 // --- Form Actions ---
 
 export async function createFormAction(formData: Partial<Form>) {
-  // Check if settings exist before creating form
+  // Check if settings exist before creating form (supports OAuth or Service Account)
   const settings = await getSettings();
-  if (!settings || !settings.googleClientEmail || !settings.googlePrivateKey) {
+  const hasOAuth = !!(settings?.googleAccessToken);
+  const hasServiceAccount = !!(settings?.googleClientEmail && settings?.googlePrivateKey);
+
+  if (!settings || (!hasOAuth && !hasServiceAccount)) {
     redirect('/settings?error=missing_config');
   }
 
@@ -66,6 +71,13 @@ export async function createFormAction(formData: Partial<Form>) {
 
   // Increment form count for this month
   await incrementFormCount();
+
+  await logAudit({
+    action: 'form.create',
+    entityType: 'form',
+    entityId: id,
+    metadata: { title: newForm.title },
+  });
 
   redirect(`/builder/${id}`);
 }
@@ -102,7 +114,14 @@ export async function updateFormAction(form: Form) {
 }
 
 export async function deleteFormAction(id: string) {
+  const existing = await getFormById(id);
   await deleteForm(id);
+  await logAudit({
+    action: 'form.delete',
+    entityType: 'form',
+    entityId: id,
+    metadata: existing?.title ? { title: existing.title } : {},
+  });
   redirect('/forms');
 }
 
@@ -151,6 +170,22 @@ export async function submitFormAction(
   // --- Active Status Check ---
   if (form.isActive === false) {
     return { success: false, error: 'Borang telah ditutup oleh penganjur.' };
+  }
+
+  // --- PDPA Consent Enforcement ---
+  // If the form requires PDPA consent, the client must send `_pdpa_consent`.
+  // Enforced server-side so the gate can't be bypassed by scripting the action.
+  if (requiresPdpaConsent(form.pdpaSettings)) {
+    const consent =
+      formDataOrObj instanceof FormData
+        ? formDataOrObj.get('_pdpa_consent')
+        : (formDataOrObj as Record<string, unknown>)['_pdpa_consent'];
+    if (!isPdpaSubmissionAllowed(form.pdpaSettings, consent)) {
+      return {
+        success: false,
+        error: 'Persetujuan PDPA diperlukan untuk menghantar borang ini.',
+      };
+    }
   }
 
   // 1. Rate Limiting / Quota Check
@@ -332,6 +367,16 @@ export async function submitFormAction(
   // flow without touching unrelated rows.
   dbData._submission_id = submissionId;
 
+  // Record PDPA consent as a human-friendly column and drop the raw internal
+  // flag so the Sheet shows "PDPA Consent: Yes" rather than "_pdpa_consent".
+  if ('_pdpa_consent' in dbData) {
+    const consented = String(dbData._pdpa_consent) === 'true';
+    delete dbData._pdpa_consent;
+    if (form.pdpaSettings?.enabled) {
+      dbData['PDPA Consent'] = consented ? 'Yes' : 'No';
+    }
+  }
+
   // 2. Send to Google Sheet
   if (form.googleSheetUrl && settings) {
     if (accessToken || (settings.googleClientEmail && settings.googlePrivateKey)) {
@@ -502,6 +547,44 @@ export async function submitFormAction(
       }
     } catch (editErr) {
       console.warn('Edit-link token / email failed:', editErr);
+    }
+
+    // --- Respondent confirmation email (fire-and-forget) ---
+    // Separate from the owner notification above. Sends an acknowledgement to
+    // the *respondent* when the form opted in AND a valid email was provided.
+    try {
+      const respCfg = form.respondentNotification;
+      if (respCfg?.enabled && respCfg.emailFieldId) {
+        const emailField = form.fields.find((f) => f.id === respCfg.emailFieldId);
+        const emailValue = emailField
+          ? String(dbData[emailField.label] ?? '').trim()
+          : '';
+        const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue);
+        if (isEmail) {
+          let summary: Record<string, string> | undefined;
+          if (respCfg.includeSummary) {
+            summary = {};
+            for (const [k, v] of Object.entries(dbData)) {
+              // Skip internal bookkeeping keys (e.g. _submission_id).
+              if (k.startsWith('_')) continue;
+              if (v !== null && v !== undefined) summary[k] = String(v);
+            }
+          }
+          const { getRespondentConfirmationEmail } = await import('@/lib/email');
+          const email = getRespondentConfirmationEmail(
+            form.title,
+            respCfg.message,
+            summary
+          );
+          await sendEmail({
+            to: emailValue,
+            subject: email.subject,
+            html: email.html,
+          });
+        }
+      }
+    } catch (respErr) {
+      console.warn('Respondent confirmation email failed:', respErr);
     }
   }
 

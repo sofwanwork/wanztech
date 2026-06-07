@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { CertificateElement, CertificateTemplate } from '@/lib/types';
 import { updateCertificateTemplateAction } from '@/actions/certificate-template';
 import {
@@ -86,6 +86,23 @@ export function CertificateBuilderClient({
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const selectedElement = template.elements.find((el) => el.id === selectedId);
+
+  // Track the on-screen canvas width in state via ResizeObserver instead of
+  // reading `offsetWidth` during render. Reading layout in render (especially
+  // once per element) forces synchronous reflows ("layout thrashing") on every
+  // drag/resize re-render. The observer callback receives the size directly, so
+  // no forced reflow — and the font preview now also rescales on window resize.
+  const [canvasWidth, setCanvasWidth] = useState(0);
+  useEffect(() => {
+    const node = canvasRef.current;
+    if (!node) return;
+    const observer = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width ?? 0;
+      setCanvasWidth(w);
+    });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
 
   // 3. Hooks Initialization
   const {
@@ -456,9 +473,11 @@ export function CertificateBuilderClient({
             {showGrid && (
               <div className="absolute inset-0 pointer-events-none z-0 bg-[image:linear-gradient(to_right,#e5e7eb_1px,transparent_1px),linear-gradient(to_bottom,#e5e7eb_1px,transparent_1px)] bg-[length:20px_20px]" />
             )}
-            {template.elements.map((el) => {
+            {(() => {
+              // Computed once per render (not per element) from observed width.
+              const scale = canvasWidth ? canvasWidth / template.width : 1;
+              return template.elements.map((el) => {
               const isSelected = el.id === selectedId || additionalSelectedIds.includes(el.id);
-              const scale = canvasRef.current ? canvasRef.current.offsetWidth / template.width : 1;
 
               return (
                 <div
@@ -591,7 +610,8 @@ export function CertificateBuilderClient({
                   )}
                 </div>
               );
-            })}
+              });
+            })()}
 
             {/* Alignment Guides */}
             {alignmentGuides.x.map((x, i) => (

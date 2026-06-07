@@ -251,3 +251,162 @@ tests/edit-token.test.ts
 tests/webhook-dispatch.test.ts
 task.md
 ```
+
+## System Improvements (2026-06-05 — Bug Fixes: Account Creation, OAuth Form Creation & Forms Save Trigger)
+- **Account Creation Database Error**: Fixed a critical database error during user signup. The `handle_new_user()` trigger function on `auth.users` attempted to seed the `usage` table using the incorrect column name `total_forms` (should be `forms_created`) and omitted the `NOT NULL` column `month`, which caused the database transactions to abort. Created migration `supabase/migrations/20260605000000_fix_handle_new_user_trigger.sql` to resolve this.
+- **Form Creation Block for OAuth Users**: Fixed a bug where users who connected their Google Account via Google OAuth ("Connect with Google") were blocked from creating a form and redirected back to Settings. The check in `createFormAction` in `actions/forms.ts` strictly demanded manual service account keys (`googleClientEmail` + `googlePrivateKey`). Rewrote the validation to allow form creation if either OAuth (`googleAccessToken` exists) or Service Account credentials exist.
+- **Forms Save Trigger Error**: Fixed a 500 server error when creating/saving a form. The database trigger on the `forms` table executed the `generate_short_code` function, which had been modified to reference `NEW.slug` (for URL shortener links) instead of `NEW.short_code`, causing a `record "new" has no field "slug"` database abort. Created migration `supabase/migrations/20260605001000_fix_forms_short_code_trigger.sql` to separate the forms trigger function (`generate_form_short_code`) from the shortener trigger function.
+
+### Build state
+- `npm run lint` — 0 warnings.
+- `npm test` — 87/87 pass across 10 suites.
+- `npm run build` — clean, 43 routes.
+
+### Files added / modified
+- **Modified**: `actions/forms.ts`
+- **Added**: `supabase/migrations/20260605000000_fix_handle_new_user_trigger.sql`, `supabase/migrations/20260605001000_fix_forms_short_code_trigger.sql`
+
+### Production Deployment
+- **Date**: 2026-06-05
+- **Method**: Vercel CLI (`npx vercel --prod --yes`)
+- **Production URL**: `https://www.klikform.com`
+- **Deployment URL**: `https://klikform-7hnfgvwlr-sofwan-jailanis-projects.vercel.app`
+
+## System Improvements (2026-06-07 — Production Load Speed Optimizations)
+- **Vercel Serverless Region Optimization**: Ditetapkan region Singapore (`sin1`) di dalam `vercel.json` untuk menghapuskan latensi database (~250ms) dengan pelayan database Supabase.
+- **Halaman Pemasaran Statik (SSG)**: 
+  - Halaman `/`, `/pricing`, `/about`, `/products/forms`, `/products/certificates`, `/products/qr-codes`, `/products/shortener` ditukarkan daripada `ƒ (Dynamic)` kepada `○ (Static)`.
+  - Mengalihkan logik auth checking ke klien-side di bawah komponen klien baharu `components/landing-header-auth.tsx` bagi mengelakkan halaman-halaman pemasaran tersebut tersekat di pelayan.
+  - Membetulkan amaran linter `Unexpected any` dan `useEffect react-hooks/exhaustive-deps` di dalam `components/pricing/plan-card.tsx` dengan menyusun dependencies array [initialUser, plan] dan mengimport jenis `User` dari `@supabase/supabase-js`.
+- **Pemasangan `@upstash/redis`**: Memasang pakej kebergantian `@upstash/redis` dalam `package.json` untuk menyokong rate limiting tanpa ralat amaran import dinamik.
+
+### Build state
+- `npm run lint` — 0 warnings.
+- `npm test` — 87/87 pass across 10 suites.
+- `npm run build` — clean, 43 routes (semua halaman pemasaran kini static ○).
+
+### Files added / modified
+- **Modified**: `vercel.json`, `package.json`, `app/page.tsx`, `app/pricing/page.tsx`, `app/about/page.tsx`, `app/products/forms/page.tsx`, `app/products/certificates/page.tsx`, `app/products/qr-codes/page.tsx`, `app/products/shortener/page.tsx`, `components/pricing/plan-card.tsx`
+- **Added**: `components/landing-header-auth.tsx`
+
+
+
+
+
+
+
+## System Improvements (2026-06-07 — Fasa B mula: Notifikasi Emel Responden)
+- **Respondent Confirmation Email** dihantar — auto-acknowledgement kepada *responden* (berasingan daripada notifikasi pemilik yang dikawal `receiveEmailNotifications`).
+  - Type baharu `RespondentNotificationSettings { enabled, emailFieldId?, message?, includeSummary? }` di `lib/types/forms.ts`; ditambah ke `Form` + re-export di `lib/types/index.ts`.
+  - Migration `supabase/migrations/20260607010000_add_respondent_notification.sql` — lajur `respondent_notification jsonb` pada `forms` + `NOTIFY pgrst, 'reload schema'`.
+  - Pemetaan storage `lib/storage/forms.ts`: `respondent_notification` ↔ `respondentNotification` (2× fromRow getFormById/getFormByShortCode + 1× toRow saveForm).
+  - Template `getRespondentConfirmationEmail(formTitle, message?, summary?)` di `lib/email/index.ts` (tema hijau emerald untuk bezakan daripada edit-link biru). Tambah helper `escapeHtml()` — semua nilai responden (title, mesej, ringkasan) di-escape untuk halang HTML injection. Ringkasan dicap 12 baris.
+  - Hook fire-and-forget dalam `submitFormAction` (`actions/forms.ts`) selepas blok edit-link. Resolusi emel guna `field.label` sebagai kunci `dbData` (sama macam edit-link). Ringkasan tapis kunci prefix `_` (cth `_submission_id`).
+  - UI builder `components/forms/respondent-notification-card.tsx` (cermin `EditLinkCard`): toggle, pemilih medan emel, textarea mesej tersuai (1000 char), toggle sertakan ringkasan. Mount di `app/builder/[id]/client.tsx` selepas `EditLinkCard`.
+  - Tests `tests/respondent-notification.test.ts` — 7 tests (subjek, mesej lalai vs tersuai, ringkasan on/off, HTML escaping anti-injection, cap 12 baris).
+- **Nota teknikal**: `getNewSubmissionEmail` (notifikasi pemilik) masih TIDAK escape input pengguna — potensi HTML injection dalam emel pemilik. Belum dibaiki (luar skop pass ini); calon pembaikan keselamatan berasingan.
+
+### Build state
+- `npm run lint` — 0 warnings.
+- `npm test` — 94/94 pass across 11 suites (was 87/87).
+- `npm run build` — clean, 43 routes.
+
+### Files added / modified
+- **Added**: `components/forms/respondent-notification-card.tsx`, `supabase/migrations/20260607010000_add_respondent_notification.sql`, `tests/respondent-notification.test.ts`
+- **Modified**: `lib/types/forms.ts`, `lib/types/index.ts`, `lib/storage/forms.ts`, `lib/email/index.ts`, `actions/forms.ts`, `app/builder/[id]/client.tsx`
+
+
+## System Improvements (2026-06-07 — Fasa B sambung: Email escaping + PDPA + Audit Log + Multi-page)
+Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build clean 44 routes.
+
+### Track 0 — Email HTML escaping (keselamatan)
+- `lib/email/index.ts`: `escapeHtml()` (function declaration, hoisted) kini diguna merentas `getNewSubmissionEmail` (userName, formTitle, submissionData key+value, googleSheetUrl href), `getEditLinkEmail` (formTitle ×2), dan `getRespondentConfirmationEmail`. Tutup vektor HTML/markup injection daripada nilai responden dalam emel pemilik (isu yang dibangkitkan dalam pass sebelum).
+- Tests ditambah ke `tests/respondent-notification.test.ts` (kini 9): escaping data submission + nama/title pemilik.
+
+### Track 1 — PDPA Toolkit
+- Type `PdpaSettings { enabled, consentText?, policyUrl? }` di `lib/types/forms.ts` + `Form.pdpaSettings` + barrel.
+- Migration `supabase/migrations/20260607020000_add_pdpa_settings.sql` — lajur `pdpa_settings jsonb` + NOTIFY pgrst.
+- Storage `lib/storage/forms.ts`: `pdpa_settings` ↔ `pdpaSettings` (2× fromRow + toRow).
+- Helper tulen `lib/forms/pdpa.ts`: `requiresPdpaConsent`, `isConsentGiven` (hanya string `'true'`), `isPdpaSubmissionAllowed`.
+- Public form `app/(public)/form/[id]/client.tsx`: checkbox consent (state `pdpaConsent`, hanya bila bukan editMode), block `handleSubmit` + disable butang jika tak tick, append `_pdpa_consent='true'`. Server `submitFormAction` kuatkuasa (tolak jika enabled tapi consent ≠ true) — tak boleh bypass via scripting. Consent direkod sebagai lajur `Persetujuan PDPA: Ya/Tidak` dalam dbData (drop raw `_pdpa_consent`).
+- UI builder `components/forms/pdpa-card.tsx` + mount selepas RespondentNotificationCard.
+- Tests `tests/pdpa.test.ts` — 8.
+
+### Track 2 — Audit Log
+- Migration `supabase/migrations/20260607030000_add_audit_logs.sql` — jadual `audit_logs` (user_id FK auth.users ON DELETE CASCADE, action, entity_type, entity_id, metadata jsonb, created_at), index `(user_id, created_at DESC)`, RLS owner-only SELECT sahaja (TIADA polisi INSERT — immutable dari klien; tulis via service role), fungsi `prune_audit_logs()` (SECURITY DEFINER, search_path='', 365-hari retention).
+- Type `lib/types/audit.ts` (`AuditAction`, `AuditLog`) + barrel. **Nota**: jangan padam eksport `TIER_LIMITS` bila edit barrel (hampir tersilap).
+- Storage `lib/storage/audit.ts` (`import 'server-only'`): `logAudit()` resolve user dari auth lalu insert via admin client (fire-and-forget, swallow error); `listAuditLogs()` RLS-gated.
+- Formatter tulen `lib/audit/format.ts`: `describeAuditAction` (label Melayu), `describeAuditLog` (gabung dengan metadata.title/name), `auditActionKind` (create/delete/update/other).
+- Hook `logAudit` dalam `createFormAction` (selepas incrementFormCount, sebelum redirect) + `deleteFormAction` (fetch title dulu, lepas delete, sebelum redirect). updateFormAction TIDAK di-log (autosave terlalu bising).
+- Dashboard `app/(dashboard)/audit/page.tsx` (`force-dynamic`) + pautan "Log Audit" (ikon ScrollText) di `components/dashboard/sidebar.tsx` + `/audit` ditambah ke protectedRoutes `proxy.ts`.
+- Tests `tests/audit-format.test.ts` — 7.
+
+### Track 3 — Multi-page Forms
+- Jenis medan baharu `pagebreak` di `FormFieldType` (pemisah; tiada migration — guna array sedia ada, backward-compatible).
+- Helper tulen `lib/forms/pagination.ts`: `splitIntoPages` (split di pagebreak, buang marker, sentiasa ≥1 page), `isMultiPage`, `findAdjacentNonEmptyPage` (skip page kosong akibat conditional), `lastNonEmptyPageIndex`.
+- Public form: state `currentPage`; `visiblePages` = splitIntoPages.map(filter visible); render `currentPageFields`; butang Kembali/Seterusnya/Submit + "Halaman X / Y" (kira page non-kosong sahaja); validasi per-page pada Next; PDPA consent + Submit hanya di page akhir; guard Enter (multiPage && !isLastPage → goNext). **Penting**: `visibleFields` kini kecualikan `pagebreak` supaya tidak divalidasi/dihantar/dikira (elak lajur "Page Break" dalam Sheet).
+- Builder `components/forms/fields-editor/index.tsx`: SelectItem "Page Break (Multi-page)", butang "Add Page Break", kecualikan pagebreak dari sumber syarat + sembunyi toggle required & conditional editor.
+- Tests `tests/pagination.test.ts` — 10.
+
+### Build state
+- `npm run lint` — 0 warnings.
+- `npm test` — 121/121 pass across 14 suites.
+- `npm run build` — clean, 44 routes (+`/audit`).
+
+### Migrations PENDING apply (supabase db push) sebelum produksi
+- `20260607010000_add_respondent_notification.sql`
+- `20260607020000_add_pdpa_settings.sql`
+- `20260607030000_add_audit_logs.sql`
+
+### Files added / modified (Fasa B sambung)
+- **Added**: `lib/forms/pdpa.ts`, `lib/forms/pagination.ts`, `lib/audit/format.ts`, `lib/storage/audit.ts`, `lib/types/audit.ts`, `components/forms/pdpa-card.tsx`, `app/(dashboard)/audit/page.tsx`, `supabase/migrations/20260607020000_add_pdpa_settings.sql`, `supabase/migrations/20260607030000_add_audit_logs.sql`, `tests/pdpa.test.ts`, `tests/audit-format.test.ts`, `tests/pagination.test.ts`
+- **Modified**: `lib/email/index.ts`, `lib/types/forms.ts`, `lib/types/index.ts`, `lib/storage/forms.ts`, `actions/forms.ts`, `app/(public)/form/[id]/client.tsx`, `components/forms/fields-editor/index.tsx`, `components/dashboard/sidebar.tsx`, `app/builder/[id]/client.tsx`, `proxy.ts`, `tests/respondent-notification.test.ts`
+
+## Fasa B — STATUS: SIAP (4/4 feature: notifikasi responden, PDPA, audit log, multi-page forms). Fasa C masih pending.
+
+
+## Production Deployment (2026-06-07 — Fasa B sambung)
+- **Prasyarat**: 3 migration (respondent_notification, pdpa_settings, audit_logs) diapply ke DB produksi DAHULU (disahkan oleh pengguna "db dh settel") sebelum deploy — kerana `saveForm` upsert lajur baharu; deploy sebelum migration akan pecahkan simpan borang (PGRST204).
+- **Method**: Vercel CLI (`npx vercel --prod --yes`).
+- **Production URL**: `https://www.klikform.com`
+- **Deployment URL**: `https://klikform-4turtui9x-sofwan-jailanis-projects.vercel.app`
+- **Status**: Build completed (~1m), Ready in ~2m, aliased ke www.klikform.com. Lint 0, 121/121 tests, build clean 44 routes.
+
+
+## UI Language Standardization (2026-06-07 — builder/dashboard → English)
+- Builder convention is English (e.g. "E-Cert Settings", "Attendance & Location"). The Fasa A/B cards I added were in Malay, breaking consistency. Standardized all owner-facing UI to English:
+  - `components/forms/webhooks-card.tsx` — descriptions, buttons (Add/Generate/Cancel/Add Webhook), toasts, confirms, aria-labels, empty state, locale `en-MY`.
+  - `components/forms/edit-link-card.tsx` — "Response Edit Link" + all labels/placeholders/help text.
+  - `components/forms/respondent-notification-card.tsx` — "Respondent Confirmation Email" + all strings.
+  - `components/forms/pdpa-card.tsx` — "PDPA Consent" + labels; `DEFAULT_CONSENT` now English.
+  - `components/forms/fields-editor/index.tsx` — "Add Page Break" title tooltip.
+  - `app/(dashboard)/audit/page.tsx` — "Audit Log", "Recent Activity", empty state.
+  - `lib/audit/format.ts` — `ACTION_LABELS` now English ("Form created", etc.); `tests/audit-format.test.ts` updated to match.
+  - `components/dashboard/sidebar.tsx` — nav item "Audit Log".
+  - `app/(public)/form/[id]/client.tsx` — PDPA consent default text + "Privacy Policy" link + consent toast + page nav buttons "Back"/"Next"/"Page X / Y".
+  - `actions/forms.ts` — PDPA Sheet column renamed `Persetujuan PDPA` → `PDPA Consent`, value `Ya/Tidak` → `Yes/No`.
+- **Deliberately kept Malay**: the email layer (`lib/email/index.ts` — `getRespondentConfirmationEmail` and ALL existing templates are Malay; translating only the new one would CREATE inconsistency) and the pre-existing public respondent form chrome ("Terjawab" badge, "Borang Ditutup", etc.). Only my newly-added public strings were aligned to English.
+- Build state: lint 0, 121/121 tests, build clean 44 routes.
+
+
+## Production Deployment (2026-06-07 — UI English standardization)
+- **Method**: Vercel CLI (`npx vercel --prod --yes`). No schema change (UI/string-only), safe deploy.
+- **Production URL**: `https://www.klikform.com`
+- **Deployment URL**: `https://klikform-k6mxw0e9h-sofwan-jailanis-projects.vercel.app`
+- **Status**: Build ~2m, Ready, aliased to www.klikform.com.
+
+
+## Performance Fix (2026-06-07 — Forced reflow in certificate builder)
+- **Symptom**: Chrome console `[Violation] Forced reflow while executing JavaScript took 33ms`.
+- **Root cause**: `app/(dashboard)/certificates/builder/[id]/client.tsx` read `canvasRef.current.offsetWidth` inside `template.elements.map(...)` → one layout read per element per render → layout thrashing during drag/resize.
+- **Fix**: Added `canvasWidth` state fed by a `ResizeObserver` on the canvas; `scale` now computed once per render (wrapped the element map in an IIFE) from `canvasWidth` instead of reading the DOM. Also fixes a latent bug where font preview didn't rescale on window resize.
+- `getBoundingClientRect` in `handleMouseMove` left as-is (one read per event, not per render).
+- Build state: lint 0, 121/121 tests, build clean.
+
+
+## Google OAuth/Scope Least-Privilege Review (2026-06-07)
+- **Context**: "Google hasn't verified this app" warning on "Connect with Google" — caused by requesting sensitive scopes without completing Google OAuth verification (process matter, not a code bug). Resolved via: keep app in Testing + add test users, OR submit for verification (privacy/terms pages already exist).
+- **OAuth scopes** (`lib/api/google-auth.ts`): `drive.file` + `spreadsheets` + `userinfo.email` — all "sensitive" tier (NOT restricted; no annual security assessment needed). Already minimal for current features. Added justification comments to aid verification submission.
+- **Least-privilege fix**: `lib/api/google-sheets.ts` service-account JWTs in `appendToSheet` + `updateSheetRow` previously requested full `drive` (RESTRICTED scope) + `spreadsheets`, but those functions only use the Sheets API (loadInfo/addRow/getRows/save) — never Drive. Narrowed to `['spreadsheets']` only. `createSpreadsheet` keeps `drive` (genuinely uses Drive API: files.create, about.get quota, permissions). Service-account scope narrowing is immediate (no re-consent) and doesn't affect the OAuth consent screen.
+- **Open product decision (NOT applied)**: OAuth could drop `spreadsheets` and rely on `drive.file` alone IF the product only supports app-created Sheets (drive.file covers Sheets API for app-created files). Tradeoff: OAuth users could no longer connect a pre-existing sheet they made manually. Would reduce OAuth to a single sensitive scope (easiest verification). Left to user.
+- Build state: lint 0, build clean. (Service-account scope change is scope-narrowing — provably correct since those paths call Sheets API only — but not runtime-tested against live Google here.)

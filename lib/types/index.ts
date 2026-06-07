@@ -20,6 +20,8 @@ export type {
   AttendanceSettings,
   QRSettings,
   EditLinkSettings,
+  RespondentNotificationSettings,
+  PdpaSettings,
   Form,
 } from './forms';
 
@@ -47,6 +49,9 @@ export type {
 
 // Common types
 export type { Profile, Settings } from './common';
+
+// Audit log types
+export type { AuditAction, AuditLog } from './audit';
 
 // Re-export constants (will be moved to lib/constants later)
 export { TIER_LIMITS } from '../constants/subscription-tiers';

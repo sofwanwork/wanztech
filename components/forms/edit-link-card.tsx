@@ -37,10 +37,10 @@ export function EditLinkCard({ form, onChange }: EditLinkCardProps) {
           <div className="flex items-center gap-2">
             <Pencil className="h-5 w-5 text-primary" />
             <div>
-              <CardTitle>Pautan Sunting Jawapan</CardTitle>
+              <CardTitle>Response Edit Link</CardTitle>
               <CardDescription>
-                Hantar pautan ajaib kepada respondent supaya mereka boleh sunting
-                jawapan dalam tempoh tertentu.
+                Send respondents a magic link so they can edit their answers
+                within a set period.
               </CardDescription>
             </div>
           </div>
@@ -55,31 +55,31 @@ export function EditLinkCard({ form, onChange }: EditLinkCardProps) {
         <CardContent className="space-y-4">
           {emailFields.length === 0 ? (
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800">
-              ⚠️ Tambah satu field jenis <strong>Email</strong> dalam borang anda
-              dahulu. Pautan sunting akan dihantar ke email tersebut.
+              ⚠️ Add an <strong>Email</strong> field to your form first. The edit
+              link will be sent to that email.
             </div>
           ) : (
             <div className="space-y-2">
               <Label htmlFor="edit-email-field" className="text-sm">
-                Field email respondent
+                Respondent&apos;s email field
               </Label>
               <Select
                 value={cfg.emailFieldId ?? ''}
                 onValueChange={(val) => update({ emailFieldId: val || undefined })}
               >
                 <SelectTrigger id="edit-email-field" className="w-full">
-                  <SelectValue placeholder="Pilih field email..." />
+                  <SelectValue placeholder="Select email field..." />
                 </SelectTrigger>
                 <SelectContent>
                   {emailFields.map((f) => (
                     <SelectItem key={f.id} value={f.id}>
-                      {f.label || '(Tanpa Tajuk)'}
+                      {f.label || '(Untitled)'}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                Pautan sunting akan dihantar ke nilai field ini selepas setiap
+                The edit link will be sent to this field&apos;s value after every
                 submission.
               </p>
             </div>
@@ -87,7 +87,7 @@ export function EditLinkCard({ form, onChange }: EditLinkCardProps) {
 
           <div className="space-y-2">
             <Label htmlFor="edit-expiry" className="text-sm">
-              Tempoh sah pautan (hari)
+              Link validity (days)
             </Label>
             <Input
               id="edit-expiry"
@@ -103,8 +103,8 @@ export function EditLinkCard({ form, onChange }: EditLinkCardProps) {
               className="w-32"
             />
             <p className="text-xs text-muted-foreground">
-              Pautan luput automatik selepas tempoh ini. Setiap pautan hanya boleh
-              digunakan sekali.
+              The link expires automatically after this period. Each link can only
+              be used once.
             </p>
           </div>
         </CardContent>

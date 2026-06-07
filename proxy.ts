@@ -12,7 +12,7 @@ function getSafeRedirectPath(path: string, fallback = '/forms'): string {
 }
 
 // Routes that require authentication
-const protectedRoutes = ['/dashboard', '/builder', '/settings', '/certificates', '/qr-builder', '/forms', '/shortener', '/responses'];
+const protectedRoutes = ['/dashboard', '/builder', '/settings', '/certificates', '/qr-builder', '/forms', '/shortener', '/responses', '/audit'];
 
 // Routes that are always public
 const publicRoutes = ['/login', '/form', '/s', '/check', '/verify', '/api'];

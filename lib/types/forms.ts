@@ -19,6 +19,7 @@ export type FormFieldType =
   | 'radio'
   | 'file'
   | 'separator'
+  | 'pagebreak'
   | 'rating'
   | 'product'
   | 'image';
@@ -189,6 +190,36 @@ export interface EditLinkSettings {
 }
 
 /**
+ * Respondent confirmation email — when enabled, every submission sends an
+ * acknowledgement email to the *respondent* (separate from the owner
+ * notification controlled by `receiveEmailNotifications`). Requires an email
+ * field on the form so we know where to send the confirmation.
+ */
+export interface RespondentNotificationSettings {
+  enabled: boolean;
+  /** id of the form field that holds the respondent's email address. */
+  emailFieldId?: string;
+  /** Optional custom thank-you message shown in the email body. */
+  message?: string;
+  /** Whether to include a summary table of the respondent's answers. */
+  includeSummary?: boolean;
+}
+
+/**
+ * PDPA (Personal Data Protection Act) consent settings. When enabled, the
+ * public form shows a mandatory consent checkbox the respondent must tick
+ * before submitting. The consent is recorded with the submission. Aligns the
+ * form with Malaysia's PDPA 2010 consent requirements.
+ */
+export interface PdpaSettings {
+  enabled: boolean;
+  /** Consent statement shown next to the checkbox. */
+  consentText?: string;
+  /** Optional link to the data controller's privacy policy. */
+  policyUrl?: string;
+}
+
+/**
  * Complete Form definition
  */
 export interface Form {
@@ -218,4 +249,8 @@ export interface Form {
   qrSettings?: QRSettings;
   // Edit-link Settings
   editLinkSettings?: EditLinkSettings;
+  // Respondent confirmation email Settings
+  respondentNotification?: RespondentNotificationSettings;
+  // PDPA consent Settings
+  pdpaSettings?: PdpaSettings;
 }

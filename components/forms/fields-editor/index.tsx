@@ -75,6 +75,7 @@ function SortableField({
       f.type !== 'separator' &&
       f.type !== 'image' &&
       f.type !== 'file' &&
+      f.type !== 'pagebreak' &&
       f.type !== 'product'
   );
 
@@ -143,6 +144,7 @@ function SortableField({
                   <SelectItem value="time">Time</SelectItem>
                   <SelectItem value="rating">Linear Scale (Rating)</SelectItem>
                   <SelectItem value="separator">Section / Text</SelectItem>
+                  <SelectItem value="pagebreak">Page Break (Multi-page)</SelectItem>
                   <SelectItem value="image">Image Display</SelectItem>
                 </SelectContent>
               </Select>
@@ -429,7 +431,7 @@ function SortableField({
             </div>
           )}
 
-          {field.type !== 'separator' && field.type !== 'image' && (
+          {field.type !== 'separator' && field.type !== 'image' && field.type !== 'pagebreak' && (
             <div className="flex items-center gap-2">
               <Switch
                 id={`field-required-${field.id}`}
@@ -531,7 +533,7 @@ function SortableField({
           )}
 
           {/* Conditional Logic Section */}
-          {field.type !== 'separator' && field.type !== 'image' && (
+          {field.type !== 'separator' && field.type !== 'image' && field.type !== 'pagebreak' && (
             <ConditionalLogicEditor
               field={field}
               availableFields={availableConditionFields}
@@ -750,6 +752,13 @@ interface FieldsEditorProps {
     onChange([...fields, { id: uuidv4(), type: 'text', label: 'New Question', required: false }]);
   };
 
+  const addPageBreak = () => {
+    onChange([
+      ...fields,
+      { id: uuidv4(), type: 'pagebreak', label: 'Page Break', required: false },
+    ]);
+  };
+
   const updateField = (index: number, updates: Partial<FormField>) => {
     const newFields = [...fields];
     newFields[index] = { ...newFields[index], ...updates };
@@ -798,10 +807,26 @@ interface FieldsEditorProps {
         </SortableContext>
       </DndContext>
 
-      <Button id="tour-add-question" onClick={addField} variant="secondary" className="w-full">
-        <Plus className="mr-2 h-4 w-4" />
-        Add Question
-      </Button>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Button
+          id="tour-add-question"
+          onClick={addField}
+          variant="secondary"
+          className="w-full"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Add Question
+        </Button>
+        <Button
+          onClick={addPageBreak}
+          variant="outline"
+          className="w-full"
+          title="Split the form into multiple pages"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Add Page Break
+        </Button>
+      </div>
     </div>
   );
 }

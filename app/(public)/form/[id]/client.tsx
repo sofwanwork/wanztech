@@ -35,6 +35,12 @@ import { TimePicker } from '@/components/ui/time-picker';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Progress } from '@/components/ui/progress';
 import { useFormTracking } from '@/hooks/use-form-tracking';
+import {
+  splitIntoPages,
+  isMultiPage,
+  findAdjacentNonEmptyPage,
+  lastNonEmptyPageIndex,
+} from '@/lib/forms/pagination';
 
 interface PublicFormClientProps {
   form: Form;
@@ -52,6 +58,11 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [formData, setFormData] = useState<Record<string, any>>(() => initialValues ?? {});
   const [mounted, setMounted] = useState(false);
+  // PDPA consent — when the form enables PDPA, this must be true before submit.
+  const pdpaEnabled = !editMode && !!form.pdpaSettings?.enabled;
+  const [pdpaConsent, setPdpaConsent] = useState(false);
+  // Multi-page navigation: index of the currently displayed page.
+  const [currentPage, setCurrentPage] = useState(0);
 
   // Analytics: fires `view` on mount, `start` on first interaction,
   // `field_focus` per field, `submit` on success, `abandon` on pagehide.
@@ -71,10 +82,61 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
   const isFieldVisible = (field: FormField) =>
     evaluateConditional(field, formData, form.fields);
 
-  const visibleFields = form.fields.filter(isFieldVisible);
+  const visibleFields = form.fields.filter(
+    (f) => f.type !== 'pagebreak' && isFieldVisible(f)
+  );
+
+  // --- Multi-page support ---
+  // Pages are derived from the static field order (split at `pagebreak`),
+  // then each page is filtered to its currently-visible fields so conditional
+  // logic still applies per page.
+  const multiPage = isMultiPage(form.fields);
+  const visiblePages = splitIntoPages(form.fields).map((p) => p.filter(isFieldVisible));
+  const pageCount = visiblePages.length;
+  const safePage = Math.min(Math.max(0, currentPage), pageCount - 1);
+  const currentPageFields = multiPage ? (visiblePages[safePage] ?? []) : visibleFields;
+  const lastPageIdx = lastNonEmptyPageIndex(visiblePages);
+  const isLastPage = !multiPage || safePage >= lastPageIdx;
+  const prevPageIdx = findAdjacentNonEmptyPage(visiblePages, safePage, -1);
+  // For the "Page X / Y" indicator we count only non-empty pages.
+  const nonEmptyPageIndices = visiblePages
+    .map((p, i) => (p.length > 0 ? i : -1))
+    .filter((i) => i >= 0);
+  const displayTotal = nonEmptyPageIndices.length;
+  const displayCurrent = nonEmptyPageIndices.indexOf(safePage) + 1;
+
+  const goToNextPage = () => {
+    // Validate only the fields on the current page before advancing.
+    for (const field of currentPageFields) {
+      const error = validateField(field, formData[field.id]);
+      if (error) {
+        toast.error(error);
+        return;
+      }
+    }
+    const next = findAdjacentNonEmptyPage(visiblePages, safePage, 1);
+    if (next !== null) {
+      setCurrentPage(next);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const goToPrevPage = () => {
+    if (prevPageIdx !== null) {
+      setCurrentPage(prevPageIdx);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // On a multi-page form, a stray Enter key (or submit) on a non-final page
+    // should advance the page rather than submit the whole form.
+    if (multiPage && !isLastPage) {
+      goToNextPage();
+      return;
+    }
 
     // Validation (only for visible fields)
     for (const field of visibleFields) {
@@ -84,6 +146,12 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
         // Optional: Scroll to error field
         return;
       }
+    }
+
+    // PDPA consent gate
+    if (pdpaEnabled && !pdpaConsent) {
+      toast.error('Please tick the PDPA consent box before submitting.');
+      return;
     }
 
     setSubmitting(true);
@@ -112,6 +180,11 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
       const gotchaValue = rawFormData.get('_gotcha');
       if (gotchaValue) {
         formDataToSend.append('_gotcha', gotchaValue);
+      }
+
+      // PDPA consent flag (recorded with the submission)
+      if (pdpaEnabled) {
+        formDataToSend.append('_pdpa_consent', 'true');
       }
 
       const result = editMode
@@ -594,7 +667,7 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
           <input type="text" name="_gotcha" tabIndex={-1} autoComplete="off" className="absolute opacity-0 -z-50 w-0 h-0 overflow-hidden" />
           <Card className="border border-gray-200 bg-white">
             <CardContent className="p-0">
-              {visibleFields.map((field) => {
+              {currentPageFields.map((field) => {
                 if (field.type === 'separator') {
                   return (
                     <div
@@ -1041,15 +1114,73 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
                 );
               })}
             </CardContent>
-            <CardFooter className="p-6 border-t border-gray-100">
-              <Button
-                type="submit"
-                disabled={submitting || !isFormValid}
-                className="w-full h-11 bg-primary hover:bg-primary/90 text-white font-medium disabled:bg-gray-200 disabled:text-gray-400"
-              >
-                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {submitting ? 'Submitting...' : 'Submit'}
-              </Button>
+            <CardFooter className="p-6 border-t border-gray-100 flex-col items-stretch gap-4">
+              {multiPage && displayTotal > 1 && (
+                <p className="text-center text-xs font-medium text-muted-foreground">
+                  Page {displayCurrent} / {displayTotal}
+                </p>
+              )}
+              {pdpaEnabled && isLastPage && (
+                <div className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50/70 p-4">
+                  <Checkbox
+                    id="pdpa-consent"
+                    checked={pdpaConsent}
+                    onCheckedChange={(checked) => setPdpaConsent(checked === true)}
+                    className="mt-0.5"
+                  />
+                  <Label
+                    htmlFor="pdpa-consent"
+                    className="text-sm font-normal leading-relaxed text-gray-600 cursor-pointer"
+                  >
+                    {form.pdpaSettings?.consentText?.trim() ||
+                      'I consent to my personal data being processed in accordance with the Personal Data Protection Act (PDPA) 2010.'}
+                    {form.pdpaSettings?.policyUrl?.trim() && (
+                      <>
+                        {' '}
+                        <a
+                          href={form.pdpaSettings.policyUrl}
+                          target="_blank"
+                          rel="noopener noreferrer nofollow"
+                          className="text-primary underline underline-offset-2"
+                        >
+                          Privacy Policy
+                        </a>
+                      </>
+                    )}
+                  </Label>
+                </div>
+              )}
+              <div className="flex gap-3">
+                {multiPage && prevPageIdx !== null && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={goToPrevPage}
+                    disabled={submitting}
+                    className="flex-1 h-11"
+                  >
+                    Back
+                  </Button>
+                )}
+                {multiPage && !isLastPage ? (
+                  <Button
+                    type="button"
+                    onClick={goToNextPage}
+                    className="flex-1 h-11 bg-primary hover:bg-primary/90 text-white font-medium"
+                  >
+                    Next
+                  </Button>
+                ) : (
+                  <Button
+                    type="submit"
+                    disabled={submitting || !isFormValid || (pdpaEnabled && !pdpaConsent)}
+                    className="flex-1 h-11 bg-primary hover:bg-primary/90 text-white font-medium disabled:bg-gray-200 disabled:text-gray-400"
+                  >
+                    {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {submitting ? 'Submitting...' : 'Submit'}
+                  </Button>
+                )}
+              </div>
             </CardFooter>
           </Card>
         </form>

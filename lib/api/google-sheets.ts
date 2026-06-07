@@ -22,14 +22,13 @@ export async function appendToSheet(
       oauth2Client.setCredentials({ access_token: config.accessToken });
       auth = oauth2Client;
     } else if (config.clientEmail && config.privateKey) {
-      // Service Account Strategy
+      // Service Account Strategy.
+      // Only the Sheets API is used here (loadInfo + addRow), so the
+      // `spreadsheets` scope alone is sufficient — no Drive scope needed.
       auth = new JWT({
         email: config.clientEmail,
         key: config.privateKey,
-        scopes: [
-          'https://www.googleapis.com/auth/spreadsheets',
-          'https://www.googleapis.com/auth/drive',
-        ],
+        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
       });
     } else {
       throw new Error("Missing credentials (either Access Token or Service Account)");
@@ -123,13 +122,11 @@ export async function updateSheetRow(
       oauth2Client.setCredentials({ access_token: config.accessToken });
       auth = oauth2Client;
     } else if (config.clientEmail && config.privateKey) {
+      // Only Sheets API operations below — `spreadsheets` scope suffices.
       auth = new JWT({
         email: config.clientEmail,
         key: config.privateKey,
-        scopes: [
-          'https://www.googleapis.com/auth/spreadsheets',
-          'https://www.googleapis.com/auth/drive',
-        ],
+        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
       });
     } else {
       throw new Error('Missing credentials (either Access Token or Service Account)');

@@ -15,6 +15,7 @@ import {
   QrCode,
   Link as LinkIcon,
   ClipboardList,
+  ScrollText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createFormAction } from '@/actions/forms';
@@ -91,6 +92,12 @@ export function DashboardSidebar({ profile, onNavigate, isMobile = false }: Side
       href: '/shortener',
       icon: LinkIcon,
       active: pathname === '/shortener',
+    },
+    {
+      title: 'Audit Log',
+      href: '/audit',
+      icon: ScrollText,
+      active: pathname === '/audit',
     },
   ];
 

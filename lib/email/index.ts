@@ -59,15 +59,15 @@ export function getNewSubmissionEmail(
     .map(
       ([key, value]) => `
       <tr>
-        <td style="padding: 10px 16px; color: #6b7280; font-size: 13px; border-bottom: 1px solid #f3f4f6; width: 40%;">${key}</td>
-        <td style="padding: 10px 16px; color: #1f2937; font-size: 13px; border-bottom: 1px solid #f3f4f6; font-weight: 500;">${String(value).substring(0, 100)}</td>
+        <td style="padding: 10px 16px; color: #6b7280; font-size: 13px; border-bottom: 1px solid #f3f4f6; width: 40%;">${escapeHtml(key)}</td>
+        <td style="padding: 10px 16px; color: #1f2937; font-size: 13px; border-bottom: 1px solid #f3f4f6; font-weight: 500;">${escapeHtml(String(value).substring(0, 100))}</td>
       </tr>`
     )
     .join('');
 
   const sheetButton = googleSheetUrl
     ? `<div style="text-align: center; margin: 32px 0;">
-        <a href="${googleSheetUrl}" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 14px; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);">
+        <a href="${escapeHtml(googleSheetUrl)}" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 14px; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);">
           📊 Buka Google Sheet
         </a>
       </div>`
@@ -81,7 +81,7 @@ export function getNewSubmissionEmail(
               <div style="font-size: 56px; margin-bottom: 16px;">📬</div>
             </div>
             <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 700;">Response Baru!</h1>
-            <p style="margin: 12px 0 0 0; color: rgba(255,255,255,0.9); font-size: 15px;">${formTitle}</p>
+            <p style="margin: 12px 0 0 0; color: rgba(255,255,255,0.9); font-size: 15px;">${escapeHtml(formTitle)}</p>
           </td>
         </tr>
         
@@ -89,11 +89,11 @@ export function getNewSubmissionEmail(
         <tr>
           <td style="padding: 40px;">
             <p style="margin: 0 0 20px 0; color: #1f2937; font-size: 16px; line-height: 1.6;">
-              Hai <strong>${userName}</strong> 👋
+              Hai <strong>${escapeHtml(userName)}</strong> 👋
             </p>
             
             <p style="margin: 0 0 24px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
-              Borang <strong>"${formTitle}"</strong> baru sahaja menerima response baru.
+              Borang <strong>"${escapeHtml(formTitle)}"</strong> baru sahaja menerima response baru.
             </p>
             
             <!-- Data Table -->
@@ -135,7 +135,7 @@ export function getEditLinkEmail(
           <td style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); padding: 40px 40px 30px; text-align: center;">
             <div style="font-size: 56px; margin-bottom: 16px;">✏️</div>
             <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 700;">Sunting Jawapan Anda</h1>
-            <p style="margin: 12px 0 0 0; color: rgba(255,255,255,0.9); font-size: 15px;">${formTitle}</p>
+            <p style="margin: 12px 0 0 0; color: rgba(255,255,255,0.9); font-size: 15px;">${escapeHtml(formTitle)}</p>
           </td>
         </tr>
 
@@ -147,7 +147,7 @@ export function getEditLinkEmail(
             </p>
             <p style="margin: 0 0 24px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
               Terima kasih kerana menghantar jawapan untuk borang
-              <strong>"${formTitle}"</strong>. Jika anda perlu mengubah jawapan,
+              <strong>"${escapeHtml(formTitle)}"</strong>. Jika anda perlu mengubah jawapan,
               klik butang di bawah dalam tempoh <strong>${expiryDays} hari</strong>.
             </p>
 
@@ -176,6 +176,85 @@ export function getEditLinkEmail(
     subject: `✏️ Sunting jawapan anda: ${formTitle}`,
     html: emailWrapper(content),
   };
+}
+
+// Respondent confirmation email — sent to the respondent (not the owner) as an
+// acknowledgement that their submission was received. Optional custom message
+// and an optional summary table of their answers.
+export function getRespondentConfirmationEmail(
+  formTitle: string,
+  message?: string,
+  summary?: Record<string, string>
+) {
+  const customMessage = (message ?? '').trim();
+
+  const summaryRows = summary
+    ? Object.entries(summary)
+        .slice(0, 12) // keep the email tidy
+        .map(
+          ([key, value]) => `
+      <tr>
+        <td style="padding: 10px 16px; color: #6b7280; font-size: 13px; border-bottom: 1px solid #f3f4f6; width: 40%;">${escapeHtml(key)}</td>
+        <td style="padding: 10px 16px; color: #1f2937; font-size: 13px; border-bottom: 1px solid #f3f4f6; font-weight: 500;">${escapeHtml(String(value).substring(0, 200))}</td>
+      </tr>`
+        )
+        .join('')
+    : '';
+
+  const summaryBlock = summaryRows
+    ? `<p style="margin: 24px 0 8px 0; color: #374151; font-size: 14px; font-weight: 600;">Ringkasan jawapan anda:</p>
+       <div style="background: #f9fafb; border-radius: 12px; overflow: hidden; margin: 8px 0 0 0;">
+         <table width="100%" cellpadding="0" cellspacing="0">${summaryRows}</table>
+       </div>`
+    : '';
+
+  const messageBlock = customMessage
+    ? `<p style="margin: 0 0 24px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">${escapeHtml(customMessage)}</p>`
+    : `<p style="margin: 0 0 24px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+         Terima kasih! Jawapan anda untuk borang <strong>"${escapeHtml(formTitle)}"</strong> telah kami terima.
+       </p>`;
+
+  const content = `
+        <!-- Header -->
+        <tr>
+          <td style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 40px 30px; text-align: center;">
+            <div style="font-size: 56px; margin-bottom: 16px;">✅</div>
+            <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 700;">Jawapan Diterima</h1>
+            <p style="margin: 12px 0 0 0; color: rgba(255,255,255,0.9); font-size: 15px;">${escapeHtml(formTitle)}</p>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding: 40px;">
+            <p style="margin: 0 0 20px 0; color: #1f2937; font-size: 16px; line-height: 1.6;">
+              Hai 👋
+            </p>
+            ${messageBlock}
+            ${summaryBlock}
+            <p style="margin: 24px 0 0 0; color: #9ca3af; font-size: 13px; text-align: center;">
+              Email ini dihantar secara automatik oleh KlikForm sebagai pengesahan.
+            </p>
+          </td>
+        </tr>
+    `;
+
+  return {
+    subject: `✅ Pengesahan: ${formTitle}`,
+    html: emailWrapper(content),
+  };
+}
+
+// Minimal HTML-escaping for respondent-controlled values injected into the
+// confirmation email. Prevents the respondent's own answers (or a malicious
+// payload) from breaking out of the table cell / injecting markup.
+function escapeHtml(input: string): string {
+  return input
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 // Base email template wrapper

@@ -63,6 +63,8 @@ import {
 import { QrCustomizer } from '@/components/forms/qr-customizer';
 import { WebhooksCard } from '@/components/forms/webhooks-card';
 import { EditLinkCard } from '@/components/forms/edit-link-card';
+import { RespondentNotificationCard } from '@/components/forms/respondent-notification-card';
+import { PdpaCard } from '@/components/forms/pdpa-card';
 import { BuilderTour } from '@/components/builder-tour';
 import { HelpCircle } from 'lucide-react';
 
@@ -1278,6 +1280,18 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
             <EditLinkCard
               form={form}
               onChange={(next) => setForm((f) => ({ ...f, editLinkSettings: next }))}
+            />
+
+            <RespondentNotificationCard
+              form={form}
+              onChange={(next) =>
+                setForm((f) => ({ ...f, respondentNotification: next }))
+              }
+            />
+
+            <PdpaCard
+              form={form}
+              onChange={(next) => setForm((f) => ({ ...f, pdpaSettings: next }))}
             />
 
             <Separator />
