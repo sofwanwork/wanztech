@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Check, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { createClient } from '@/utils/supabase/client';
+import type { User } from '@supabase/supabase-js';
 
 interface PlanCardProps {
   plan: {
@@ -22,12 +24,38 @@ interface PlanCardProps {
     comingSoon?: boolean;
     current?: boolean;
   };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  user: any | null;
+  user: User | null;
 }
 
-export function PlanCard({ plan, user }: PlanCardProps) {
+export function PlanCard({ plan, user: initialUser }: PlanCardProps) {
+  const [user, setUser] = useState<User | null>(initialUser);
+  const [planCurrent, setPlanCurrent] = useState(plan.current);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (initialUser) {
+      setUser(initialUser);
+      setPlanCurrent(plan.current);
+      return;
+    }
+    const supabase = createClient();
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        setUser(session.user);
+        
+        // Fetch subscription status client-side
+        const { data: subscription } = await supabase
+          .from('subscriptions')
+          .select('tier, status')
+          .eq('user_id', session.user.id)
+          .eq('status', 'active')
+          .single();
+          
+        const activeTier = subscription?.tier === 'pro' ? 'Pro' : 'Free';
+        setPlanCurrent(plan.name === activeTier);
+      }
+    });
+  }, [initialUser, plan]);
 
   const handleUpgrade = async () => {
     if (!user) {
@@ -73,11 +101,11 @@ export function PlanCard({ plan, user }: PlanCardProps) {
   // Determine button text and action
   const buttonText = plan.comingSoon
     ? 'Coming Soon'
-    : user && plan.current
+    : user && planCurrent
       ? 'Current Plan'
       : `Get Started with ${plan.name}`;
 
-  const isDisabled = plan.comingSoon || (plan.current && !!user) || loading;
+  const isDisabled = plan.comingSoon || (planCurrent && !!user) || loading;
 
   return (
     <div

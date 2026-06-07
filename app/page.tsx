@@ -2,10 +2,8 @@ import * as React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 import { Metadata } from 'next';
+import { LandingHeaderAuth } from '@/components/landing-header-auth';
 
 export const metadata: Metadata = {
   title: 'KlikForm - Malaysia\'s #1 Online Forms & Automated Digital Certificates',
@@ -30,39 +28,7 @@ import {
 import { LandingMobileMenu } from '@/components/landing-mobile-menu';
 import { LandingNavbar } from '@/components/landing-navbar';
 
-export default async function LandingPage() {
-  const cookieStore = await cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
-            // The `setAll` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-          }
-        },
-      },
-    }
-  );
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (user) {
-    redirect('/forms');
-  }
-
+export default function LandingPage() {
   return (
     <div className="flex min-h-screen flex-col bg-white">
       {/* Navbar */}
@@ -86,16 +52,7 @@ export default async function LandingPage() {
             <LandingNavbar />
           </div>
           <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center gap-4">
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/login">
-                  Login
-                </Link>
-              </Button>
-              <Button size="sm" asChild>
-                <Link href="/login?tab=signup">Sign Up Free</Link>
-              </Button>
-            </div>
+            <LandingHeaderAuth />
             <LandingMobileMenu />
           </div>
         </div>

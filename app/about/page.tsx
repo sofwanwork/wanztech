@@ -3,10 +3,9 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { LandingNavbar } from '@/components/landing-navbar';
 import { LandingMobileMenu } from '@/components/landing-mobile-menu';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
 import { Target, Users, Zap, Shield } from 'lucide-react';
 import { Metadata } from 'next';
+import { LandingHeaderAuth } from '@/components/landing-header-auth';
 
 export const metadata: Metadata = {
     title: 'About Us | KlikForm',
@@ -16,31 +15,7 @@ export const metadata: Metadata = {
     }
 };
 
-export default async function AboutPage() {
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-            cookies: {
-                getAll() {
-                    return cookieStore.getAll();
-                },
-                setAll(cookiesToSet) {
-                    try {
-                        cookiesToSet.forEach(({ name, value, options }) =>
-                            cookieStore.set(name, value, options)
-                        );
-                    } catch {
-                        // Ignored Server Component cookie set error
-                    }
-                },
-            },
-        }
-    );
-
-    const { data: { user } } = await supabase.auth.getUser();
-
+export default function AboutPage() {
     return (
         <div className="flex flex-col min-h-screen bg-white">
             {/* Header */}
@@ -64,16 +39,7 @@ export default async function AboutPage() {
                         <LandingNavbar />
                     </div>
                     <div className="flex items-center gap-4">
-                        <div className="hidden md:flex items-center gap-4">
-                            <Button variant="ghost" size="sm" asChild>
-                                <Link href={user ? '/forms' : '/login'}>{user ? 'Dashboard' : 'Login'}</Link>
-                            </Button>
-                            {!user && (
-                                <Button size="sm" asChild>
-                                    <Link href="/login?tab=signup">Sign Up Free</Link>
-                                </Button>
-                            )}
-                        </div>
+                        <LandingHeaderAuth />
                         <LandingMobileMenu />
                     </div>
                 </div>

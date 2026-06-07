@@ -1,13 +1,11 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { Button } from '@/components/ui/button';
 import { Crown, Zap, Users } from 'lucide-react';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
 import { PlanCard } from '@/components/pricing/plan-card';
 import { LandingMobileMenu } from '@/components/landing-mobile-menu';
 import { LandingNavbar } from '@/components/landing-navbar';
 import { Metadata } from 'next';
+import { LandingHeaderAuth } from '@/components/landing-header-auth';
 
 export const metadata: Metadata = {
   title: 'Pricing & Plans | KlikForm',
@@ -17,50 +15,7 @@ export const metadata: Metadata = {
   }
 };
 
-export default async function PricingPage() {
-  // Check auth status for header button
-  const cookieStore = await cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
-            // The `setAll` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-          }
-        },
-      },
-    }
-  );
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  let currentTier = 'Free';
-
-  if (user) {
-    const { data: subscription } = await supabase
-      .from('subscriptions')
-      .select('tier, status')
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .single();
-
-    if (subscription) {
-      currentTier = subscription.tier === 'pro' ? 'Pro' : 'Free';
-    }
-  }
-
+export default function PricingPage() {
   const plans = [
     {
       name: 'Free',
@@ -87,7 +42,7 @@ export default async function PricingPage() {
         'Priority support',
         'Remove KlikForm branding',
       ],
-      current: currentTier === 'Free',
+      current: false,
     },
     {
       name: 'Pro',
@@ -112,7 +67,7 @@ export default async function PricingPage() {
       ],
       notIncluded: [],
       popular: true,
-      current: currentTier === 'Pro',
+      current: false,
     },
     {
       name: 'Enterprise',
@@ -158,16 +113,7 @@ export default async function PricingPage() {
             <LandingNavbar />
           </div>
           <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center gap-4">
-              <Button variant="ghost" size="sm" asChild>
-                <Link href={user ? '/forms' : '/login'}>{user ? 'Dashboard' : 'Login'}</Link>
-              </Button>
-              {!user && (
-                <Button size="sm" asChild>
-                  <Link href="/login?tab=signup">Sign Up Free</Link>
-                </Button>
-              )}
-            </div>
+            <LandingHeaderAuth />
             <LandingMobileMenu />
           </div>
         </div>
@@ -186,7 +132,7 @@ export default async function PricingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
             {plans.map((plan) => (
-              <PlanCard key={plan.name} plan={plan} user={user} />
+              <PlanCard key={plan.name} plan={plan} user={null} />
             ))}
           </div>
         </div>
