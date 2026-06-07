@@ -807,7 +807,7 @@ interface FieldsEditorProps {
         </SortableContext>
       </DndContext>
 
-      <div className="flex flex-col gap-2 sm:flex-row">
+      <div className="flex flex-col gap-2">
         <Button
           id="tour-add-question"
           onClick={addField}
