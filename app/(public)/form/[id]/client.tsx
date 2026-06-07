@@ -719,9 +719,14 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
                     onFocusCapture={() => trackFieldFocus(field.id)}
                     className="py-5 px-6 border-b border-gray-100 last:border-b-0 transition-colors duration-300 hover:bg-slate-50/50"
                   >
-                    <Label className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-1">
+                    <Label
+                      htmlFor={`field-input-${field.id}`}
+                      id={`field-label-${field.id}`}
+                      className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-1"
+                    >
                       {field.label}
-                      {field.required && <span className="text-red-500">*</span>}
+                      {field.required && <span className="text-red-500" aria-hidden="true">*</span>}
+                      {field.required && <span className="sr-only">(wajib)</span>}
                     </Label>
 
                     {field.description && (
@@ -730,6 +735,7 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
 
                     {field.type === 'text' && (
                       <Input
+                        id={`field-input-${field.id}`}
                         className="h-12 text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 border-slate-200"
                         placeholder="Your answer"
                         value={formData[field.id] || ''}
@@ -739,6 +745,7 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
 
                     {field.type === 'email' && (
                       <Input
+                        id={`field-input-${field.id}`}
                         type="email"
                         className="h-12 text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 border-slate-200"
                         placeholder="name@example.com"
@@ -749,6 +756,7 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
 
                     {field.type === 'number' && (
                       <Input
+                        id={`field-input-${field.id}`}
                         type="number"
                         className="h-12 text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 border-slate-200"
                         placeholder="0"
@@ -759,6 +767,7 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
 
                     {field.type === 'textarea' && (
                       <Textarea
+                        id={`field-input-${field.id}`}
                         className="min-h-[120px] text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 border-slate-200 resize-y"
                         placeholder="Your answer"
                         value={formData[field.id] || ''}
@@ -771,7 +780,11 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
                         onValueChange={(val) => handleInputChange(field.id, val)}
                         value={formData[field.id] || ''}
                       >
-                        <SelectTrigger className="w-full h-12 text-base border-slate-200 justify-start px-3 font-normal">
+                        <SelectTrigger
+                          id={`field-input-${field.id}`}
+                          aria-labelledby={`field-label-${field.id}`}
+                          className="w-full h-12 text-base border-slate-200 justify-start px-3 font-normal"
+                        >
                           <List className="mr-2 h-4 w-4 text-muted-foreground" />
                           <SelectValue placeholder="Select an option" />
                         </SelectTrigger>
@@ -786,7 +799,11 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
                     )}
 
                     {field.type === 'checkbox' && (
-                      <div className="space-y-3 pt-2">
+                      <div
+                        className="space-y-3 pt-2"
+                        role="group"
+                        aria-labelledby={`field-label-${field.id}`}
+                      >
                         {field.options?.map((opt, i) => (
                           <div key={i} className="flex items-center space-x-2">
                             <Checkbox
@@ -817,6 +834,7 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
 
                     {field.type === 'radio' && (
                       <RadioGroup
+                        aria-labelledby={`field-label-${field.id}`}
                         value={formData[field.id] || ''}
                         onValueChange={(val) => handleInputChange(field.id, val)}
                         className="space-y-3 pt-2"

@@ -422,3 +422,23 @@ Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build c
 - **Deploy**: `npx vercel --prod` → `https://www.klikform.com` (deployment `klikform-69xm4jcm7`). Now production includes the perf + scope fixes too.
 - **Security advisories (monitored, not fixed)**: `vitest <4.1.0` critical but dev-only (UI server unused; we run `vitest run`) — bumping is breaking, low value. `postcss <8.5.10` moderate via Next — awaiting upstream.
 - **Still open (larger, not started)**: Fasa C (custom domain, workspaces, payments-in-form, templates gallery, AI generator, backup); integration tests for storage/action paths; a11y audit (axe-core in deps); consider git-based Vercel auto-deploy for traceability.
+
+
+## Improvements Batch (2026-06-07 — pipeline, integration tests, a11y)
+### Git-based deploy pipeline (#4)
+- Vercel project already connected to GitHub repo `sofwanwork/wanztech` (verified via `vercel git connect` → "already connected"). Production branch = `master`.
+- Root cause of "git out of sync": `master` was behind since Fasa A — everything was deployed via `vercel --prod` from the working dir, never merged to `master`. Fixed by fast-forwarding `master` to the feature branch and pushing → from now on, **push to `master` auto-deploys** (no more manual CLI needed).
+
+### Integration tests (#2) — mocked Supabase clients
+- `tests/audit-storage.test.ts` (8): logAudit insert shape, default null/{}, skip when no user, swallow errors; listAuditLogs no-user→[], row mapping, limit clamp (1..200), error→[].
+- `tests/edit-token-storage.test.ts` (9): createEditToken 64-hex + expiry math + insert shape + throw on error; getEditToken not_found/used/expired/valid mapping + short-token guard; markEditTokenUsed update scope + never-throws.
+- `tests/webhook-storage.test.ts` (5): listWebhooksForForm masks secret (never decrypts); listWebhooksForDispatch decrypts; createWebhook ownership rejection + encrypt-on-write + masked return.
+- Pattern: `vi.hoisted` + `vi.mock` for `@/utils/supabase/server|admin` and `@/lib/encryption`; chainable builder mock (methods return builder; `.single()` + thenable resolve configurable results). Total tests now **143** (was 121).
+
+### Accessibility (#3) — public form WCAG fixes
+- `app/(public)/form/[id]/client.tsx`: associated each field `<Label>` with its control (`htmlFor`/`id` = `field-input-${id}`) for text/email/number/textarea/select; added `id`=`field-label-${id}` + `aria-labelledby` on select trigger and `role="group"` + `aria-labelledby` on checkbox & radio groups. Required marker: `aria-hidden` on the `*` + `sr-only` "(wajib)" text. Fixes WCAG 1.3.1 / 4.1.2 (label-control association).
+- Note: full WCAG conformance still needs manual testing with assistive tech; this pass fixed the clear programmatic gaps. Automated axe testing would need jsdom + vitest-axe setup (not added to avoid dep bloat).
+
+### Build state
+- lint 0, **143/143 tests** (17 suites), build clean.
+- Not done (per user): Fasa C.
