@@ -410,3 +410,15 @@ Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build c
 - **Least-privilege fix**: `lib/api/google-sheets.ts` service-account JWTs in `appendToSheet` + `updateSheetRow` previously requested full `drive` (RESTRICTED scope) + `spreadsheets`, but those functions only use the Sheets API (loadInfo/addRow/getRows/save) — never Drive. Narrowed to `['spreadsheets']` only. `createSpreadsheet` keeps `drive` (genuinely uses Drive API: files.create, about.get quota, permissions). Service-account scope narrowing is immediate (no re-consent) and doesn't affect the OAuth consent screen.
 - **Open product decision (NOT applied)**: OAuth could drop `spreadsheets` and rely on `drive.file` alone IF the product only supports app-created Sheets (drive.file covers Sheets API for app-created files). Tradeoff: OAuth users could no longer connect a pre-existing sheet they made manually. Would reduce OAuth to a single sensitive scope (easiest verification). Left to user.
 - Build state: lint 0, build clean. (Service-account scope change is scope-narrowing — provably correct since those paths call Sheets API only — but not runtime-tested against live Google here.)
+
+
+## Repo Hygiene + Git Sync (2026-06-07)
+- **Problem found**: git was stuck at Fasa A commit (`aa4dba7`); ALL Fasa B work + bug fixes + SSG load-speed + i18n + perf + scope changes were uncommitted (deployed via `vercel --prod` from working dir, so production was ahead of git — no history/rollback).
+- **Resolved**: removed stale `build_full.log`/`build_output.log`, added `*.log` to `.gitignore`. Created branch `feat/fasa-b-improvements` and committed everything in 3 logical commits:
+  - `c03b04c` chore: ignore *.log + remove stale logs
+  - `8c0ef04` perf: SSG marketing pages + sin1 region + signup/forms trigger fixes (the earlier uncommitted production work)
+  - `c297cf6` feat: Fasa B + email escaping + English UI + perf (ResizeObserver) + least-privilege scope
+  - Pushed to `origin/feat/fasa-b-improvements`. Working tree clean.
+- **Deploy**: `npx vercel --prod` → `https://www.klikform.com` (deployment `klikform-69xm4jcm7`). Now production includes the perf + scope fixes too.
+- **Security advisories (monitored, not fixed)**: `vitest <4.1.0` critical but dev-only (UI server unused; we run `vitest run`) — bumping is breaking, low value. `postcss <8.5.10` moderate via Next — awaiting upstream.
+- **Still open (larger, not started)**: Fasa C (custom domain, workspaces, payments-in-form, templates gallery, AI generator, backup); integration tests for storage/action paths; a11y audit (axe-core in deps); consider git-based Vercel auto-deploy for traceability.
