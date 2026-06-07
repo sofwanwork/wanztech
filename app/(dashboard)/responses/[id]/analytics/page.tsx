@@ -4,6 +4,7 @@ import { getFormById } from '@/lib/storage/forms';
 import { createClient } from '@/utils/supabase/server';
 import { getFormAnalytics } from '@/actions/analytics';
 import { AnalyticsClient } from './client';
+import { ResponseChartsSection } from './response-charts';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,6 +44,8 @@ export default async function FormAnalyticsPage({ params }: PageProps) {
       </div>
 
       <AnalyticsClient summary={summary} fields={form.fields} formId={form.id} />
+
+      <ResponseChartsSection formId={form.id} />
     </div>
   );
 }

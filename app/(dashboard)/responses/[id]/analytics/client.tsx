@@ -167,7 +167,9 @@ export function AnalyticsClient({ summary, fields }: AnalyticsClientProps) {
                         <span className="text-gray-700 truncate max-w-[60%]">
                           {fieldLabel(f.fieldId)}
                         </span>
-                        <span className="text-gray-500">{f.focuses} focuses</span>
+                        <span className="text-gray-500">
+                          {f.focuses} {f.focuses === 1 ? 'focus' : 'focuses'}
+                        </span>
                       </div>
                       <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
                         <div

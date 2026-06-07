@@ -275,3 +275,47 @@ export async function createSpreadsheet(
     return { success: false, error: (error as Error).message };
   }
 }
+
+
+/**
+ * Read all rows from the first sheet as plain objects keyed by column header.
+ * Read-only — used by the response-summary (charts) feature. Service-account
+ * path uses the `spreadsheets.readonly` scope.
+ */
+export async function readSheetRows(
+  config: SheetConfig
+): Promise<{ success: boolean; headers?: string[]; rows?: Record<string, string>[]; error?: string }> {
+  try {
+    let auth;
+    if (config.accessToken) {
+      const { google } = await import('googleapis');
+      const oauth2Client = new google.auth.OAuth2();
+      oauth2Client.setCredentials({ access_token: config.accessToken });
+      auth = oauth2Client;
+    } else if (config.clientEmail && config.privateKey) {
+      auth = new JWT({
+        email: config.clientEmail,
+        key: config.privateKey,
+        scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+      });
+    } else {
+      throw new Error('Missing credentials (either Access Token or Service Account)');
+    }
+
+    const doc = new GoogleSpreadsheet(config.sheetId, auth);
+    await doc.loadInfo();
+    const sheet = doc.sheetsByIndex[0];
+    await sheet.loadHeaderRow();
+    const headers = sheet.headerValues;
+    const rawRows = await sheet.getRows();
+    const rows = rawRows.map((r) => {
+      const obj: Record<string, string> = {};
+      for (const h of headers) obj[h] = (r.get(h) ?? '').toString();
+      return obj;
+    });
+    return { success: true, headers, rows };
+  } catch (error) {
+    console.error('Google Sheet Read Error:', error);
+    return { success: false, error: (error as Error).message };
+  }
+}

@@ -485,3 +485,14 @@ Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build c
 - Implemented server-side in `submitFormAction` (`actions/forms.ts`): `const editLinkEnabled = !!form.editLinkSettings?.enabled;` → if enabled set `dbData._submission_id = submissionId`, else `delete dbData._submission_id` + `delete dbData.timestamp`. Done before the Sheet write so the edit-link token flow still has `_submission_id` available.
 - Rationale: both columns are bookkeeping for the edit feature (locate the exact row to update). Useless clutter for simple forms.
 - Note: existing forms that previously wrote these columns will leave them blank on NEW rows once Edit Link is off (historical rows keep their values). Commit `83217f6`, pushed → auto-deploy. lint 0, build clean.
+
+
+## Category-based certificates (2026-06-07 — Fasa C item)
+- **Feature**: a form can map a dropdown (`select`) field's answer → a different certificate template (e.g. Urusetia/Penganjur/Peserta each get a different cert). Falls back to the default template when a respondent's value has no mapping.
+- Type `CertificateCategoryConfig { fieldId, map: Record<option,templateId> }` on `Form.eCertificateCategory` (+ barrel). Migration `20260607040000_add_certificate_category.sql` adds `e_certificate_category jsonb`. Storage mapping in `lib/storage/forms.ts` (2× fromRow + toRow).
+- Pure helpers `lib/certificates/category.ts`: `resolveCategoryTemplateId(config, value, default)` + `collectTemplateIds(config, default)`. Tests `tests/certificate-category.test.ts` (9). Total 152.
+- `actions/certificates.ts`: `CertificateCheckResult.category` added; `checkCertificateByICOrEmail` reads the category column (Sheet column keyed by the field's LABEL, case-insensitive) from the matched row. `getFormForCertificateCheck` returns `eCertificateCategory`.
+- `check/[formId]/page.tsx`: prefetches default + all mapped templates (`collectTemplateIds`) into `templatesById`, passes `categoryConfig` + `templatesById` to client.
+- `check/[formId]/client.tsx`: computes `activeTemplate` via `resolveCategoryTemplateId` after lookup; both preview + hidden-capture renders use `activeTemplate` instead of the single `customTemplateData`.
+- Builder UI `components/forms/certificate-category-card.tsx` (`CertificateCategorySection`): toggle (needs a `select` field), pick category field, per-option template dropdown ("Use default template" = fallback). Mounted in the E-Cert card after the template grid (only when a default template is chosen). Uses `userCertificates` prop already available in builder.
+- **PENDING**: apply migration `20260607040000_add_certificate_category.sql` to prod DB before this works (saveForm upserts `e_certificate_category`). lint 0, 152/152 tests, build clean. Commit `49f0599`, pushed.
