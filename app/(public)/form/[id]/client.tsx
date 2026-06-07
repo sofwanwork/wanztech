@@ -37,9 +37,6 @@ import { Progress } from '@/components/ui/progress';
 import { useFormTracking } from '@/hooks/use-form-tracking';
 import {
   splitIntoPages,
-  isMultiPage,
-  findAdjacentNonEmptyPage,
-  lastNonEmptyPageIndex,
 } from '@/lib/forms/pagination';
 
 interface PublicFormClientProps {
@@ -87,23 +84,20 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
   );
 
   // --- Multi-page support ---
-  // Pages are derived from the static field order (split at `pagebreak`),
-  // then each page is filtered to its currently-visible fields so conditional
-  // logic still applies per page.
-  const multiPage = isMultiPage(form.fields);
-  const visiblePages = splitIntoPages(form.fields).map((p) => p.filter(isFieldVisible));
-  const pageCount = visiblePages.length;
-  const safePage = Math.min(Math.max(0, currentPage), pageCount - 1);
-  const currentPageFields = multiPage ? (visiblePages[safePage] ?? []) : visibleFields;
-  const lastPageIdx = lastNonEmptyPageIndex(visiblePages);
-  const isLastPage = !multiPage || safePage >= lastPageIdx;
-  const prevPageIdx = findAdjacentNonEmptyPage(visiblePages, safePage, -1);
-  // For the "Page X / Y" indicator we count only non-empty pages.
-  const nonEmptyPageIndices = visiblePages
-    .map((p, i) => (p.length > 0 ? i : -1))
-    .filter((i) => i >= 0);
-  const displayTotal = nonEmptyPageIndices.length;
-  const displayCurrent = nonEmptyPageIndices.indexOf(safePage) + 1;
+  // Split at pagebreaks, filter each page to its visible fields, then DROP
+  // empty pages (leading/trailing pagebreaks, or pages whose every field is
+  // hidden by conditional logic). This way a stray pagebreak never creates a
+  // phantom blank page or a premature "Submit" button.
+  const pages = splitIntoPages(form.fields)
+    .map((p) => p.filter(isFieldVisible))
+    .filter((p) => p.length > 0);
+  const multiPage = pages.length > 1;
+  const safePage = Math.min(Math.max(0, currentPage), Math.max(0, pages.length - 1));
+  const currentPageFields = multiPage ? (pages[safePage] ?? visibleFields) : visibleFields;
+  const isFirstPage = safePage <= 0;
+  const isLastPage = !multiPage || safePage >= pages.length - 1;
+  const displayTotal = pages.length;
+  const displayCurrent = safePage + 1;
 
   const goToNextPage = () => {
     // Validate only the fields on the current page before advancing.
@@ -114,16 +108,15 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
         return;
       }
     }
-    const next = findAdjacentNonEmptyPage(visiblePages, safePage, 1);
-    if (next !== null) {
-      setCurrentPage(next);
+    if (!isLastPage) {
+      setCurrentPage(safePage + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const goToPrevPage = () => {
-    if (prevPageIdx !== null) {
-      setCurrentPage(prevPageIdx);
+    if (!isFirstPage) {
+      setCurrentPage(safePage - 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -1169,7 +1162,7 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
                 </div>
               )}
               <div className="flex gap-3">
-                {multiPage && prevPageIdx !== null && (
+                {multiPage && !isFirstPage && (
                   <Button
                     type="button"
                     variant="outline"

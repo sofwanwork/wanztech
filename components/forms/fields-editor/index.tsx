@@ -79,6 +79,43 @@ function SortableField({
       f.type !== 'product'
   );
 
+  // Page break renders as a distinct divider, not a normal question card —
+  // no label/description/type editor (those confused users). Still draggable
+  // so it can be positioned between fields, and deletable.
+  if (field.type === 'pagebreak') {
+    return (
+      <div ref={setNodeRef} style={style} className="relative group">
+        <div className="flex items-center gap-2 py-1">
+          <div
+            {...attributes}
+            {...listeners}
+            className="cursor-move touch-none hover:bg-slate-200/60 p-1 rounded transition-colors"
+          >
+            <GripVertical className="h-4 w-4 text-slate-400 group-hover:text-slate-700" />
+          </div>
+          <span className="h-px flex-1 bg-primary/30" />
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-primary whitespace-nowrap">
+            Page Break
+          </span>
+          <span className="h-px flex-1 bg-primary/30" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={() => removeField(index)}
+            title="Delete page break"
+            aria-label="Delete page break"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+        <p className="text-[11px] text-muted-foreground text-center -mt-0.5">
+          Fields below this line start a new page. Place it between questions.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div ref={setNodeRef} style={style} className="relative group">
       <Card>
@@ -431,7 +468,7 @@ function SortableField({
             </div>
           )}
 
-          {field.type !== 'separator' && field.type !== 'image' && field.type !== 'pagebreak' && (
+          {field.type !== 'separator' && field.type !== 'image' && (
             <div className="flex items-center gap-2">
               <Switch
                 id={`field-required-${field.id}`}
@@ -533,7 +570,7 @@ function SortableField({
           )}
 
           {/* Conditional Logic Section */}
-          {field.type !== 'separator' && field.type !== 'image' && field.type !== 'pagebreak' && (
+          {field.type !== 'separator' && field.type !== 'image' && (
             <ConditionalLogicEditor
               field={field}
               availableFields={availableConditionFields}

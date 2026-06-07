@@ -452,3 +452,22 @@ Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build c
 - **To activate Sentry** (user action — secrets): set in Vercel env → `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN`. next.config.ts only wraps withSentryConfig when DSN + AUTH_TOKEN present. Prod trace sampling already 10%.
 - **`SMOKE_TEST.md`** created (user-requested): step-by-step manual checklist for prod flows that automated tests can't cover (Google connect, form submit → Sheet + emails, edit link, certificates, bulk, audit, analytics, payment, Sentry).
 - Honest status given to user: lint/test/build green, but NOT provably bug-free — external-service flows (OAuth, live Sheets/Drive, Resend, BCL, cert render) are not runtime-tested; service-account scope narrowing not live-tested.
+
+
+## Sentry — ACTIVATED & VERIFIED (2026-06-07)
+- `NEXT_PUBLIC_SENTRY_DSN` set in Vercel Production (DSN region: `.de`/EU) + added to local `.env.local`. (NEXT_PUBLIC bakes at build → required a redeploy to take effect.)
+- **Verified working**: temporary `/sentry-test?throw=1` route triggered a server error that appeared in Sentry Issues ("KlikForm Sentry test error (server)") — confirms the `instrumentation.ts` server-capture fix works end-to-end. Test route then removed (commit `f73e141`).
+- **Still optional for readable stack traces (source maps)**: set `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN` in Vercel — only then does `next.config.ts` wrap with `withSentryConfig` to upload source maps. Currently DSN-only = capture works but traces are minified.
+- Git: `master` at `f73e141`, working tree clean, auto-deploy on push confirmed working.
+
+
+## Sentry — source maps enabled (2026-06-07)
+- Set in Vercel Production: `SENTRY_ORG=wanz-tech-enterprise-v4`, `SENTRY_PROJECT=javascript-nextjs`, `SENTRY_AUTH_TOKEN` (org auth token, EU region). Now all 4 Sentry vars present → `next.config.ts` wraps with `withSentryConfig` and uploads source maps on build.
+- Fresh prod build deployed (`klikform-5wvxvllif`, aliased www.klikform.com). Production errors now report with readable stack traces.
+- Security note: auth token was shared in chat — user may rotate it in Sentry (Settings → Auth Tokens) if concerned.
+
+
+## CSP fix for Sentry Session Replay (2026-06-07)
+- **Console error**: "Creating a worker from 'blob:' violates CSP script-src ... worker-src not set". Sentry Replay creates a blob: Web Worker for compression; CSP lacked `worker-src` so it fell back to `script-src` (no blob:) and was blocked → Replay broken (error capture itself was fine).
+- **Fix**: added `worker-src 'self' blob:` to the CSP in `next.config.ts`. Commit `3a97b58`, pushed to master (auto-deploy).
+- **The repeated `monitoring?o=...&r=de ERR_BLOCKED_BY_CLIENT`** = the developer's own browser ad/privacy blocker blocking the `/monitoring` Sentry tunnel route. Environmental, not a code bug; real users without blockers are unaffected. Could rename `tunnelRoute` to evade blocklists if it becomes a problem.
