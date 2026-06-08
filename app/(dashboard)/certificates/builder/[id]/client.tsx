@@ -40,6 +40,7 @@ const PLACEHOLDER_LABELS: Record<string, string> = {
   date: '{Tarikh}',
   signature: '{Tandatangan}',
   expiry: '{Tarikh Luput}',
+  ic: '{No. KP}',
 };
 // ... (existing code) ...
 

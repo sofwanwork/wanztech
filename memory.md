@@ -496,3 +496,13 @@ Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build c
 - `check/[formId]/client.tsx`: computes `activeTemplate` via `resolveCategoryTemplateId` after lookup; both preview + hidden-capture renders use `activeTemplate` instead of the single `customTemplateData`.
 - Builder UI `components/forms/certificate-category-card.tsx` (`CertificateCategorySection`): toggle (needs a `select` field), pick category field, per-option template dropdown ("Use default template" = fallback). Mounted in the E-Cert card after the template grid (only when a default template is chosen). Uses `userCertificates` prop already available in builder.
 - **PENDING**: apply migration `20260607040000_add_certificate_category.sql` to prod DB before this works (saveForm upserts `e_certificate_category`). lint 0, 152/152 tests, build clean. Commit `49f0599`, pushed.
+
+
+## Response answer charts (2026-06-07 — Fasa C item)
+- **Feature**: visualize the actual Google Sheet answers as charts (like Google Forms' Responses tab) — distribution per choice/rating question.
+- Pure helper `lib/analytics/responses.ts`: `aggregateResponses(rows, fields)` + `isChartable()`. Charts `select/radio/checkbox/rating`. Checkbox answers split on commas; rating gets an average. Seeds declared options so 0-count options show; sorts by count desc; pct relative to respondents who answered. Tests `tests/response-summary.test.ts` (6). Total 158.
+- `lib/api/google-sheets.ts`: added `readSheetRows(config)` — read-only, returns rows as objects keyed by header. Service-account uses `spreadsheets.readonly`.
+- `actions/response-summary.ts`: `getFormResponseSummary(formId)` — owner-gated (auth + `form.userId === user.id`), resolves OAuth (with token refresh) or service account, reads sheet, aggregates. Returns `{ ok, summaries, totalResponses }`.
+- UI `app/(dashboard)/responses/[id]/analytics/response-charts.tsx` (`ResponseChartsSection`): on-demand "Generate charts" button (avoids slow page load on big sheets), CSS bar charts per question, refresh button, empty/no-data states. Mounted on the analytics page under the events analytics.
+- Also fixed pluralization: "1 focus" / "N focuses" in `analytics/client.tsx`.
+- lint 0, 158/158 tests, build clean. Commit `2db33cf`, pushed.

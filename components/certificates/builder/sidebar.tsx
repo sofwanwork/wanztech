@@ -11,6 +11,7 @@ import {
   Calendar,
   Star,
   QrCode,
+  Fingerprint,
   Trash2,
 } from 'lucide-react';
 import { CertificateElement, CertificateTemplate } from '@/lib/types';
@@ -209,6 +210,22 @@ export function CertificateEditorSidebar({
           >
             <FileText className="h-4 w-4" />
             Nama Program
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="justify-start gap-2"
+            onClick={() =>
+              addElement('placeholder', {
+                placeholderType: 'ic',
+                fontSize: 18,
+                width: 250,
+                height: 30,
+              })
+            }
+          >
+            <Fingerprint className="h-4 w-4" />
+            No. Kad Pengenalan
           </Button>
           <Button
             variant="outline"
