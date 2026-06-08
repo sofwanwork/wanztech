@@ -41,6 +41,7 @@ const PLACEHOLDER_LABELS: Record<string, string> = {
   signature: '{Tandatangan}',
   expiry: '{Tarikh Luput}',
   ic: '{No. KP}',
+  serial: '{No. Siri}',
 };
 // ... (existing code) ...
 

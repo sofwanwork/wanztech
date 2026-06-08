@@ -10,6 +10,7 @@ interface CertificateRendererProps {
     date: string;
     signature?: string;
     ic?: string; // IC number for verification URL
+    serial?: string; // Deterministic certificate serial code
     formId?: string; // Form ID for verification URL
   };
   id?: string;

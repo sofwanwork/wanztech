@@ -10,7 +10,7 @@ export type CertificateElementType = 'text' | 'image' | 'shape' | 'placeholder' 
 /**
  * Placeholder types for dynamic content
  */
-export type PlaceholderType = 'name' | 'program' | 'date' | 'signature' | 'expiry' | 'ic';
+export type PlaceholderType = 'name' | 'program' | 'date' | 'signature' | 'expiry' | 'ic' | 'serial';
 
 /**
  * Shape types available in certificate builder
@@ -123,5 +123,6 @@ export interface CertificateData {
   signature?: string;
   expiry?: string;
   ic?: string;
+  serial?: string;
   formId?: string;
 }

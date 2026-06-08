@@ -1,6 +1,7 @@
 import { templateRegistry, templateList } from './certificates';
 import { CertificateTemplate as CertificateTemplateType } from '@/lib/types';
 import { CertificateRenderer } from './certificates/renderer';
+import { generateCertSerial } from '@/lib/certificates/serial';
 
 interface CertificateTemplateProps {
   type: string;
@@ -45,6 +46,7 @@ export function CertificateTemplate({
           program,
           date: formattedDate || date || '', // Use formatted if available
           ic,
+          serial: generateCertSerial(formId || '', ic || ''),
           formId,
         }}
       />

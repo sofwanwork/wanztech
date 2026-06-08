@@ -506,3 +506,11 @@ Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build c
 - UI `app/(dashboard)/responses/[id]/analytics/response-charts.tsx` (`ResponseChartsSection`): on-demand "Generate charts" button (avoids slow page load on big sheets), CSS bar charts per question, refresh button, empty/no-data states. Mounted on the analytics page under the events analytics.
 - Also fixed pluralization: "1 focus" / "N focuses" in `analytics/client.tsx`.
 - lint 0, 158/158 tests, build clean. Commit `2db33cf`, pushed.
+
+
+## IC placeholder for e-cert (2026-06-07)
+- Added `'ic'` to `PlaceholderType` (`lib/types/certificates.ts`). `CertificateData.ic` + renderer `data.ic` already existed, so `resolveContent` renders it automatically.
+- Builder sidebar (`components/certificates/builder/sidebar.tsx`): new "No. Kad Pengenalan" placeholder button (Fingerprint icon) → inserts placeholder with `placeholderType: 'ic'`.
+- `PLACEHOLDER_LABELS` in cert builder client gains `ic: '{No. KP}'` (canvas preview label).
+- Value source: the check flow passes `ic={identifier}` (what the visitor searched with). So when searched by IC → shows IC. **Nuance**: if the visitor searched by EMAIL, the IC placeholder would show the email (identifier), not the real IC — would need to read the IC column from the sheet row to fix. Not done yet (basic placeholder shipped as requested). Bulk flow maps the CSV `ic` column already.
+- lint 0, build clean. Commit `3ef6e62`, pushed.

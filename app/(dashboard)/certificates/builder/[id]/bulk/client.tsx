@@ -36,6 +36,7 @@ import {
   safeFilename,
 } from '@/lib/certificates/render';
 import { parseCSV, pickField } from '@/lib/csv/parse';
+import { generateCertSerial } from '@/lib/certificates/serial';
 import type { CertificateTemplate } from '@/lib/types';
 
 interface BulkGenerateClientProps {
@@ -384,6 +385,7 @@ export function BulkGenerateClient({ template }: BulkGenerateClientProps) {
                 program: currentData.program,
                 date: currentData.date,
                 ic: currentData.ic,
+                serial: generateCertSerial(template.id, currentData.ic || ''),
                 formId: undefined,
               }}
               id="bulk-print-inner"
