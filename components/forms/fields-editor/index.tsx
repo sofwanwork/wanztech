@@ -21,6 +21,12 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Trash2, GripVertical, Plus, Copy } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 
 import {
   DndContext,
@@ -78,6 +84,16 @@ function SortableField({
       f.type !== 'pagebreak' &&
       f.type !== 'product'
   );
+
+  const isValidationActive = !!(
+    field.validation?.minLength ||
+    field.validation?.maxLength ||
+    field.validation?.pattern
+  );
+
+  const norm = normalizeConditional(field.conditional);
+  const rulesCount = norm?.rules?.length ?? 0;
+  const isConditionalActive = rulesCount > 0;
 
   // Page break renders as a distinct divider, not a normal question card —
   // no label/description/type editor (those confused users). Still draggable
@@ -479,103 +495,129 @@ function SortableField({
             </div>
           )}
 
-          {/* Validation Settings */}
-          {(field.type === 'text' ||
-            field.type === 'textarea' ||
-            field.type === 'email' ||
-            field.type === 'number') && (
-            <div className="pt-4 border-t space-y-3">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Validation Rules
-              </p>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor={`validation-min-${field.id}`} className="text-sm">
-                    Min Length
-                  </Label>
-                  <Input
-                    id={`validation-min-${field.id}`}
-                    type="number"
-                    placeholder="0"
-                    value={field.validation?.minLength || ''}
-                    onChange={(e) =>
-                      updateField(index, {
-                        validation: {
-                          ...field.validation,
-                          minLength: e.target.value ? parseInt(e.target.value) : undefined,
-                        },
-                      })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor={`validation-max-${field.id}`} className="text-sm">
-                    Max Length
-                  </Label>
-                  <Input
-                    id={`validation-max-${field.id}`}
-                    type="number"
-                    placeholder="255"
-                    value={field.validation?.maxLength || ''}
-                    onChange={(e) =>
-                      updateField(index, {
-                        validation: {
-                          ...field.validation,
-                          maxLength: e.target.value ? parseInt(e.target.value) : undefined,
-                        },
-                      })
-                    }
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor={`validation-pattern-${field.id}`} className="text-sm">
-                  Regex Pattern (Advanced)
-                </Label>
-                <div className="flex gap-2">
-                  <Input
-                    id={`validation-pattern-${field.id}`}
-                    placeholder="e.g. ^[0-9]+$"
-                    value={field.validation?.pattern || ''}
-                    onChange={(e) =>
-                      updateField(index, {
-                        validation: { ...field.validation, pattern: e.target.value },
-                      })
-                    }
-                  />
-                  <Select
-                    onValueChange={(val) =>
-                      updateField(index, {
-                        validation: { ...field.validation, pattern: val },
-                      })
-                    }
-                  >
-                    <SelectTrigger
-                      id={`validation-pattern-preset-${field.id}`}
-                      className="w-[130px]"
-                      aria-label="Regex Pattern Presets"
-                    >
-                      <SelectValue placeholder="Presets" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="^[0-9]+$">Numbers</SelectItem>
-                      <SelectItem value="^[a-zA-Z]+$">Letters</SelectItem>
-                      <SelectItem value="^[^@]+@[^@]+\.[^@]+$">Email</SelectItem>
-                      <SelectItem value="^(\+?6?01)[0-46-9]-*[0-9]{7,8}$">Phone (MY)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Conditional Logic Section */}
+          {/* Validation & Conditional Logic Accordion */}
           {field.type !== 'separator' && field.type !== 'image' && (
-            <ConditionalLogicEditor
-              field={field}
-              availableFields={availableConditionFields}
-              onChange={(updates) => updateField(index, updates)}
-            />
+            <Accordion type="multiple" className="w-full mt-2 border-t border-slate-100">
+              {(field.type === 'text' ||
+                field.type === 'textarea' ||
+                field.type === 'email' ||
+                field.type === 'number') && (
+                <AccordionItem value="validation" className="border-b-0">
+                  <AccordionTrigger className="py-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <span>Validation Rules</span>
+                      {isValidationActive && (
+                        <span className="text-[10px] lowercase font-normal bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded-full">
+                          active
+                        </span>
+                      )}
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-2 pb-2">
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor={`validation-min-${field.id}`} className="text-sm">
+                            Min Length
+                          </Label>
+                          <Input
+                            id={`validation-min-${field.id}`}
+                            type="number"
+                            placeholder="0"
+                            value={field.validation?.minLength || ''}
+                            onChange={(e) =>
+                              updateField(index, {
+                                validation: {
+                                  ...field.validation,
+                                  minLength: e.target.value ? parseInt(e.target.value) : undefined,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`validation-max-${field.id}`} className="text-sm">
+                            Max Length
+                          </Label>
+                          <Input
+                            id={`validation-max-${field.id}`}
+                            type="number"
+                            placeholder="255"
+                            value={field.validation?.maxLength || ''}
+                            onChange={(e) =>
+                              updateField(index, {
+                                validation: {
+                                  ...field.validation,
+                                  maxLength: e.target.value ? parseInt(e.target.value) : undefined,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`validation-pattern-${field.id}`} className="text-sm">
+                          Regex Pattern (Advanced)
+                        </Label>
+                        <div className="flex gap-2">
+                          <Input
+                            id={`validation-pattern-${field.id}`}
+                            placeholder="e.g. ^[0-9]+$"
+                            value={field.validation?.pattern || ''}
+                            onChange={(e) =>
+                              updateField(index, {
+                                validation: { ...field.validation, pattern: e.target.value },
+                              })
+                            }
+                          />
+                          <Select
+                            onValueChange={(val) =>
+                              updateField(index, {
+                                validation: { ...field.validation, pattern: val },
+                              })
+                            }
+                          >
+                            <SelectTrigger
+                              id={`validation-pattern-preset-${field.id}`}
+                              className="w-[130px]"
+                              aria-label="Regex Pattern Presets"
+                            >
+                              <SelectValue placeholder="Presets" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="^[0-9]+$">Numbers</SelectItem>
+                              <SelectItem value="^[a-zA-Z]+$">Letters</SelectItem>
+                              <SelectItem value="^[^@]+@[^@]+\.[^@]+$">Email</SelectItem>
+                              <SelectItem value="^(\+?6?01)[0-46-9]-*[0-9]{7,8}$">Phone (MY)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
+              <AccordionItem value="conditional" className="border-b-0">
+                <AccordionTrigger className="py-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:no-underline">
+                  <div className="flex items-center gap-2">
+                    <span>Conditional Logic</span>
+                    {isConditionalActive && (
+                      <span className="text-[10px] lowercase font-normal bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-0.5 rounded-full">
+                        {rulesCount} {rulesCount === 1 ? 'rule' : 'rules'}
+                      </span>
+                    )}
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="pt-2 pb-2">
+                  <ConditionalLogicEditor
+                    field={field}
+                    availableFields={availableConditionFields}
+                    onChange={(updates) => updateField(index, updates)}
+                  />
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           )}
         </CardContent>
       </Card>
@@ -622,22 +664,19 @@ function ConditionalLogicEditor({
   };
 
   return (
-    <div className="pt-4 border-t space-y-3">
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          Conditional Logic
-        </p>
-        {rules.length > 0 && (
+    <div className="space-y-3">
+      {rules.length > 0 && (
+        <div className="flex justify-end">
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 text-xs text-destructive"
+            className="h-6 text-xs text-destructive hover:bg-destructive/10"
             onClick={() => onChange({ conditional: undefined })}
           >
             Clear Logic
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
       {rules.length === 0 ? (
         <div className="p-3 bg-slate-50 rounded-md border border-slate-100 text-sm text-slate-600 flex items-center justify-between">

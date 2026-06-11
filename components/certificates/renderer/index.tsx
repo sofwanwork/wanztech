@@ -1,6 +1,31 @@
 import { CertificateTemplate, CertificateElement } from '@/lib/types';
 import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import {
+  Star,
+  Award,
+  Shield,
+  Heart,
+  Trophy,
+  Medal,
+  ThumbsUp,
+  MapPin,
+  CheckCircle,
+  Flag,
+} from 'lucide-react';
+
+const ICON_MAP: Record<string, React.ElementType> = {
+  Star,
+  Award,
+  Shield,
+  Heart,
+  Trophy,
+  Medal,
+  ThumbsUp,
+  MapPin,
+  CheckCircle,
+  Flag,
+};
 
 interface CertificateRendererProps {
   template: CertificateTemplate;
@@ -70,15 +95,20 @@ export function CertificateRenderer({ template, data, id }: CertificateRendererP
             left: `${(Number(el.x) / safeWidth) * 100}%`,
             top: `${(Number(el.y) / safeHeight) * 100}%`,
             width:
-              el.type === 'image' || el.type === 'shape' || el.type === 'qr'
+              el.type === 'image' || el.type === 'shape' || el.type === 'qr' || el.type === 'icon'
                 ? `${(Number(el.width) / safeWidth) * 100}%`
                 : 'auto', // Auto width for text to allow centering
             height:
-              el.type === 'image' || el.type === 'shape' || el.type === 'qr'
+              el.type === 'image' || el.type === 'shape' || el.type === 'qr' || el.type === 'icon'
                 ? `${(Number(el.height) / safeHeight) * 100}%`
                 : 'auto',
-            transform: 'translate(-50%, -50%)',
+            transform: `translate(-50%, -50%) rotate(${el.rotation ?? 0}deg)`,
             zIndex: el.type === 'image' || el.type === 'shape' ? 0 : 10,
+            opacity: el.opacity ?? 1,
+            boxShadow: el.shadow?.enabled
+              ? `${el.shadow.offsetX}px ${el.shadow.offsetY}px ${el.shadow.blur}px ${el.shadow.color}`
+              : undefined,
+            borderRadius: `${el.borderRadius ?? 0}px`,
             whiteSpace: 'nowrap', // Prevent wrapping usually
             // Apply specific text styles
             fontSize: el.fontSize ? `${Number(el.fontSize)}px` : undefined,
@@ -87,8 +117,15 @@ export function CertificateRenderer({ template, data, id }: CertificateRendererP
             fontStyle: el.fontStyle,
             color: el.color,
             textAlign: el.textAlign,
+            lineHeight: el.lineHeight ?? undefined,
+            letterSpacing: el.letterSpacing ? `${el.letterSpacing}px` : undefined,
+            textDecoration: el.textDecoration,
+            WebkitTextStroke: el.textStrokeWidth
+              ? `${el.textStrokeWidth}px ${el.textStroke || '#000'}`
+              : undefined,
           }}
         >
+          {/* Image */}
           {el.type === 'image' && el.src && (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -96,10 +133,16 @@ export function CertificateRenderer({ template, data, id }: CertificateRendererP
                 src={el.src}
                 alt=""
                 className="w-full h-full object-cover"
-                style={{ opacity: el.opacity }}
+                style={{
+                  opacity: el.opacity,
+                  borderRadius: `${el.borderRadius ?? 0}px`,
+                  filter: `brightness(${el.brightness ?? 100}%) contrast(${el.contrast ?? 100}%) grayscale(${el.grayscale ?? 0}%)`,
+                }}
               />
             </>
           )}
+
+          {/* Shape */}
           {el.type === 'shape' && (
             <div
               style={{
@@ -108,9 +151,14 @@ export function CertificateRenderer({ template, data, id }: CertificateRendererP
                 backgroundColor: el.fill,
                 borderRadius: el.shapeType === 'circle' ? '50%' : 0,
                 opacity: el.opacity,
+                border: el.strokeWidth
+                  ? `${el.strokeWidth}px solid ${el.stroke || '#000'}`
+                  : undefined,
               }}
             />
           )}
+
+          {/* QR Code */}
           {el.type === 'qr' && (
             <div className="w-full h-full flex items-center justify-center bg-white p-1">
               <QRCodeSVG
@@ -121,6 +169,25 @@ export function CertificateRenderer({ template, data, id }: CertificateRendererP
               />
             </div>
           )}
+
+          {/* Icon */}
+          {el.type === 'icon' && el.iconName && (
+            <div
+              className="w-full h-full flex items-center justify-center pointer-events-none"
+              style={{
+                color: el.stroke || '#000000',
+              }}
+            >
+              {(() => {
+                const IconComp = ICON_MAP[el.iconName as string] || Star;
+                return (
+                  <IconComp strokeWidth={el.strokeWidth || 2} className="w-full h-full" />
+                );
+              })()}
+            </div>
+          )}
+
+          {/* Text & Placeholder */}
           {(el.type === 'text' || el.type === 'placeholder') && (
             <div style={{ pointerEvents: 'none' }}>{resolveContent(el)}</div>
           )}

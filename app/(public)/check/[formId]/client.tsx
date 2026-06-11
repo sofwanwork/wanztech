@@ -82,7 +82,7 @@ export function CertificateCheckClient({
     const wrapper = previewWrapperRef.current;
     if (!wrapper) return;
     const update = () => {
-      const available = wrapper.clientWidth;
+      const available = wrapper.clientWidth - 32; // subtract px-4 padding (16px * 2)
       if (available <= 0) return;
       const maxHeight = Math.min(520, window.innerHeight * 0.6);
       const fitWidth = available / captureWidth;
@@ -335,7 +335,7 @@ export function CertificateCheckClient({
 
             {/* Right: Certificate Preview */}
             <div className="md:col-span-2">
-              <Card className="border-0 shadow-lg overflow-hidden">
+              <Card className="border-0 shadow-lg">
                 <CardHeader className="bg-gray-50 border-b">
                   <CardTitle className="text-base flex items-center gap-2">
                     <Award className="h-4 w-4 text-primary" />
@@ -343,34 +343,39 @@ export function CertificateCheckClient({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0 bg-gray-200">
-                  {/* Scroll wrapper for mobile */}
-                  <div className="flex justify-center w-full bg-gray-200 py-8 px-4 overflow-visible">
-                    {/* Responsive wrapper - height tracks the scaled certificate */}
-                    <div
-                      ref={previewWrapperRef}
-                      className="relative w-full transition-all duration-300"
-                      style={{ height: `${captureHeight * previewScale}px` }}
-                    >
-                      {/* Scaled certificate - measured to fit, orientation-aware */}
+                  {/* Stable measurement wrapper - ref here so available width is consistent */}
+                  <div ref={previewWrapperRef} className="w-full">
+                    {/* Center the scaled certificate with padding */}
+                    <div className="flex justify-center w-full bg-gray-200 py-8 px-4">
+                      {/* Outer frame that tracks the actual scaled dimensions */}
                       <div
-                        className="absolute top-0 left-1/2 -translate-x-1/2 origin-top shadow-2xl transition-transform"
+                        className="relative"
                         style={{
-                          width: `${captureWidth}px`,
-                          height: `${captureHeight}px`,
-                          transform: `translateX(-50%) scale(${previewScale})`,
+                          width: `${captureWidth * previewScale}px`,
+                          height: `${captureHeight * previewScale}px`,
                         }}
                       >
-                        <div ref={certificateRef} className="w-full h-full">
-                          <CertificateTemplate
-                            type={templateId || 'classic'}
-                            name={result.name || ''}
-                            program={formTitle || ''}
-                            date={result.date}
-                            id="check-preview"
-                            customTemplateData={activeTemplate}
-                            ic={result.ic || identifier}
-                            formId={formId}
-                          />
+                        {/* Full-size certificate scaled down via transform */}
+                        <div
+                          className="absolute top-0 left-0 origin-top-left shadow-2xl"
+                          style={{
+                            width: `${captureWidth}px`,
+                            height: `${captureHeight}px`,
+                            transform: `scale(${previewScale})`,
+                          }}
+                        >
+                          <div ref={certificateRef} className="w-full h-full">
+                            <CertificateTemplate
+                              type={templateId || 'classic'}
+                              name={result.name || ''}
+                              program={formTitle || ''}
+                              date={result.date}
+                              id="check-preview"
+                              customTemplateData={activeTemplate}
+                              ic={result.ic || identifier}
+                              formId={formId}
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>

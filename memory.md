@@ -569,3 +569,12 @@ Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build c
 ## Google Sheet URL field: copy + lock-to-edit (2026-06-11)
 - `app/builder/[id]/client.tsx` (~line 570): Google Sheet Share URL `<Input>` is now `readOnly` by default (muted bg) to prevent accidental edits/deletion that break Sheet access. Wrapped in a flex row with two icon buttons: Copy (uses existing `copyToClipboard(form.googleSheetUrl)`, disabled when empty) and an Edit/Lock toggle (`sheetUrlEditable` state — Pencil when locked, Lock when editable). Added `Pencil` + `Lock` lucide imports and a helper caption.
 - Verified: tsc clean, lint 0, 164/164 tests, production build clean.
+
+
+## Form Builder Advanced Settings UI Simplification (2026-06-11)
+- **Feature**: Collapsed the advanced "Validation Rules" and "Conditional Logic" settings inside each question card in the Form Builder by default to clean up the interface for non-technical users.
+- **Accordion Integration**: Wrapped both sections in a multi-expandable `<Accordion type="multiple">` from `@/components/ui/accordion`.
+- **Active Badges**: Added dynamic visual badges (`"active"` for validation; `"{N} rule(s)"` for conditional logic) to the accordion triggers, allowing builders to see at a glance if a question has active rules/conditions without expanding it.
+- **Clean Layout**: Removed duplicate headings and dividers from both sections, optimizing space when expanded.
+- **Verified**: `npm run lint` clean (0 warnings), `npm test` clean (164/164 tests passing), and production build `npm run build` clean.
+

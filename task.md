@@ -190,3 +190,16 @@ Lima feature bebas konflik. Tiap satu mesti ada: jenis, storage, server action, 
 - **PDPA**: gate dikuatkuasakan dua lapis (client UX + server enforcement) supaya tak boleh dipintas. Consent direkod sebagai lajur mesra Sheet. Logik diekstrak ke fungsi tulen untuk ujian.
 - **Audit log**: jadual immutable dari sisi klien (tiada polisi INSERT; tulis via service role sahaja). Hanya log create/delete (bukan update autosave yang bising). Formatter tulen + `force-dynamic` page.
 - **Multi-page**: guna `pagebreak` sebagai pemisah dalam array sedia ada — tiada migration, backward-compatible (borang tanpa pagebreak = 1 page). Page kosong (akibat conditional) dilangkau automatik. Semua logik pagination tulen & diuji.
+
+---
+
+# Fasa B (sambung) — UX Simplification for Non-Technical Users
+
+**Matlamat**: Memudahkan antara muka Form Builder untuk pengguna bukan teknikal dengan menyembunyikan tetapan lanjutan ("Validation Rules" dan "Conditional Logic") secara lalai menggunakan Accordion.
+
+- [x] 1. Import komponen Accordion di `components/forms/fields-editor/index.tsx`.
+- [x] 2. Kemas kini `SortableField` untuk membungkus seksyen Validation dan Conditional dengan Accordion (collapsed by default).
+- [x] 3. Tambah indikator lencana (badge) jika validation/conditional aktif supaya pengguna tahu ada peraturan aktif.
+- [x] 4. Kemas kini `ConditionalLogicEditor` untuk membuang tajuk berganda.
+- [x] 5. Uji secara manual dan jalankan `npm test` serta `npm run build` untuk memastikan tiada masalah.
+
