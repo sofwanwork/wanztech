@@ -514,3 +514,18 @@ Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build c
 - `PLACEHOLDER_LABELS` in cert builder client gains `ic: '{No. KP}'` (canvas preview label).
 - Value source: the check flow passes `ic={identifier}` (what the visitor searched with). So when searched by IC → shows IC. **Nuance**: if the visitor searched by EMAIL, the IC placeholder would show the email (identifier), not the real IC — would need to read the IC column from the sheet row to fix. Not done yet (basic placeholder shipped as requested). Bulk flow maps the CSV `ic` column already.
 - lint 0, build clean. Commit `3ef6e62`, pushed.
+
+
+## Certificate serial number placeholder (2026-06-07)
+- Pure helper `lib/certificates/serial.ts`: `generateCertSerial(formId, identifier)` → `SIJIL-XXXXXXXX` (FNV-1a 32-bit hash → 8 hex). Deterministic (same form+person → same code; different form/person → different); returns '' when no identifier (avoids a shared code). Tests `tests/certificate-serial.test.ts` (6). Total 164.
+- `'serial'` added to `PlaceholderType`; `CertificateData.serial` + renderer data type already wired via `resolveContent` (data[placeholderType]).
+- `components/certificate-template.tsx`: computes `serial: generateCertSerial(formId, ic)` in the customTemplateData branch. (Note: serial uses the search identifier — IC if searched by IC; the same email-search nuance as the IC placeholder applies.)
+- Bulk: `bulk/client.tsx` passes `serial: generateCertSerial(template.id, ic)` (no formId in bulk context, so keyed by template id).
+- Builder sidebar: new "Nombor Siri" placeholder button (Hash icon) → `placeholderType: 'serial'`. `PLACEHOLDER_LABELS.serial = '{No. Siri}'`.
+- lint 0, 164/164 tests, build clean. Commit `1afffb9`, pushed.
+- **Outstanding migration still pending**: `20260607040000_add_certificate_category.sql` (`supabase db push`).
+
+
+## "Default" badge on selected certificate template (2026-06-11)
+- `app/builder/[id]/client.tsx` (~line 992): added a "Default" badge (top-right, primary pill + `CheckCircle2` icon) on the selected cert template card in the "Select Certificate Template" gallery. Shows only when `form.eCertificateTemplate === cert.id`. Makes the default-template selection explicit beyond the existing blue border/ring.
+- `CheckCircle2` already imported from lucide-react. tsc --noEmit clean.

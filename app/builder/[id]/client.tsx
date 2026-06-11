@@ -989,6 +989,14 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                               : 'border-gray-200 hover:border-gray-300'
                               }`}
                           >
+                            {/* Default badge */}
+                            {form.eCertificateTemplate === cert.id && (
+                              <div className="absolute top-2 right-2 z-10 flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground shadow-sm">
+                                <CheckCircle2 className="h-3 w-3" />
+                                Default
+                              </div>
+                            )}
+
                             {/* Thumbnail */}
                             <div
                               className="w-full aspect-[297/210] relative overflow-hidden"
