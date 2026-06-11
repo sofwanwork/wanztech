@@ -60,6 +60,16 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { QrCustomizer } from '@/components/forms/qr-customizer';
 import { WebhooksCard } from '@/components/forms/webhooks-card';
 import { EditLinkCard } from '@/components/forms/edit-link-card';
@@ -81,6 +91,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pendingTemplateId, setPendingTemplateId] = useState<string | null>(null);
   const [isNavigating, startTransition] = useTransition();
 
   const [mounted, setMounted] = useState(false);
@@ -106,6 +117,22 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
 
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('saved');
   const isInitialRender = useRef(true);
+
+  const applyTemplate = (templateId: string) =>
+    setForm((f) => ({ ...f, eCertificateTemplate: templateId }));
+
+  // Selecting a new default template when category mappings exist may confuse
+  // the owner (mapped categories still override the default). Confirm first.
+  const handleSelectTemplate = (templateId: string) => {
+    if (templateId === form.eCertificateTemplate) return;
+    const hasMappings =
+      Object.keys(form.eCertificateCategory?.map ?? {}).length > 0;
+    if (hasMappings) {
+      setPendingTemplateId(templateId);
+    } else {
+      applyTemplate(templateId);
+    }
+  };
 
   // Global Auto-save (Debounced)
   useEffect(() => {
@@ -981,9 +1008,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                         {userCertificates.map((cert) => (
                           <div
                             key={cert.id}
-                            onClick={() =>
-                              setForm((f) => ({ ...f, eCertificateTemplate: cert.id }))
-                            }
+                            onClick={() => handleSelectTemplate(cert.id)}
                             className={`cursor-pointer rounded-lg border-2 overflow-hidden transition-all relative group ${form.eCertificateTemplate === cert.id
                               ? 'border-primary ring-2 ring-primary/20'
                               : 'border-gray-200 hover:border-gray-300'
@@ -991,7 +1016,10 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                           >
                             {/* Default badge */}
                             {form.eCertificateTemplate === cert.id && (
-                              <div className="absolute top-2 right-2 z-10 flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground shadow-sm">
+                              <div
+                                title="Template ini digunakan untuk semua peserta yang tiada kategori khusus."
+                                className="absolute top-2 right-2 z-10 flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground shadow-sm"
+                              >
                                 <CheckCircle2 className="h-3 w-3" />
                                 Default
                               </div>
@@ -1383,6 +1411,35 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
           </div>
         </div>
       </main>
+
+      <AlertDialog
+        open={pendingTemplateId !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingTemplateId(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tukar template default?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Borang ini ada pemetaan kategori. Pemetaan kategori sedia ada akan
+              kekal — hanya peserta tanpa kategori khusus yang akan menggunakan
+              template default baharu ini.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingTemplateId) applyTemplate(pendingTemplateId);
+                setPendingTemplateId(null);
+              }}
+            >
+              Tukar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

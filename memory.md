@@ -536,3 +536,11 @@ Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build c
 - `actions/certificates.ts`: added `ic?` to `CertificateCheckResult`; extracted `isIcHeader()` helper (reused for IC search + email-search IC lookup). On match, resolve `icColumnIndex` regardless of search method and return the real IC from the sheet row.
 - `check/[formId]/client.tsx`: both `<CertificateTemplate>` instances (preview + hidden capture) now use `ic={result.ic || identifier}` — real IC when available, falls back to identifier.
 - Serial (`generateCertSerial(formId, ic)`) is now stable per person regardless of search method. tsc clean, 164/164 tests pass.
+
+
+## Default-template UX nice-to-haves (2026-06-11)
+- `app/builder/[id]/client.tsx`:
+  - "Default" badge now has a native `title` tooltip explaining it applies to participants without a specific category.
+  - Added `handleSelectTemplate(templateId)` + `applyTemplate(templateId)` helpers. Clicking a cert card now goes through `handleSelectTemplate`: if `form.eCertificateCategory?.map` has any entries (category mappings exist), it opens an AlertDialog confirmation before changing the default; otherwise applies directly. No-op if same id.
+  - New state `pendingTemplateId`. AlertDialog (controlled) imported from `@/components/ui/alert-dialog`, rendered after `</main>`. Copy clarifies existing category mappings stay intact.
+- No new deps (used native title + existing radix alert-dialog). lint 0, tsc clean, 164/164 tests.
