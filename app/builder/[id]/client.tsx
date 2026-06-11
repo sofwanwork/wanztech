@@ -892,6 +892,50 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                     Add a subtle pattern overlay to the background.
                   </p>
                 </div>
+
+                <div className="space-y-2 sm:col-span-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="background-image">Background Image URL</Label>
+                    {form.theme?.backgroundImage && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setForm((f) => ({
+                            ...f,
+                            theme: { ...f.theme, backgroundImage: '' },
+                          }))
+                        }
+                        className="text-xs text-muted-foreground hover:text-destructive"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                  <Input
+                    id="background-image"
+                    name="backgroundImage"
+                    placeholder="https://example.com/background.jpg"
+                    value={form.theme?.backgroundImage || ''}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        theme: { ...f.theme, backgroundImage: e.target.value },
+                      }))
+                    }
+                  />
+                  {form.theme?.backgroundImage && (
+                    <div
+                      className="mt-2 aspect-video rounded-md bg-cover bg-center border"
+                      style={{
+                        backgroundImage: `url(${getProxiedImageUrl(form.theme.backgroundImage)})`,
+                      }}
+                    />
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Full-page background photo. Layers above the background color
+                    (and beneath any pattern). Leave empty to use color/pattern only.
+                  </p>
+                </div>
               </CardContent>
             </Card>
 

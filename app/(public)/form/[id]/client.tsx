@@ -364,7 +364,7 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
     );
   }
 
-  const { primaryColor, backgroundColor } = form.theme || {};
+  const { primaryColor, backgroundColor, backgroundImage } = form.theme || {};
 
   if (accessDenied) {
     return (
@@ -547,10 +547,32 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
     };
   };
 
+  // Combine background color, optional pattern, and optional photo into one
+  // style. When a photo is set it sits beneath the pattern (pattern overlays).
+  const getBackgroundStyle = (): React.CSSProperties => {
+    const patternCSS = getPatternCSS();
+    if (!backgroundImage) {
+      return { backgroundColor: backgroundColor || '#f9fafb', ...patternCSS };
+    }
+    const photo = `url(${getProxiedImageUrl(backgroundImage)})`;
+    return {
+      backgroundColor: backgroundColor || '#f9fafb',
+      backgroundImage: patternCSS.backgroundImage
+        ? `${patternCSS.backgroundImage}, ${photo}`
+        : photo,
+      backgroundSize: patternCSS.backgroundSize
+        ? `${patternCSS.backgroundSize}, cover`
+        : 'cover',
+      backgroundRepeat: patternCSS.backgroundImage ? 'repeat, no-repeat' : 'no-repeat',
+      backgroundPosition: 'center',
+      backgroundAttachment: 'fixed',
+    };
+  };
+
   return (
     <div
       className="min-h-screen py-8 sm:py-12 px-4 transition-colors duration-500 font-sans form-container"
-      style={{ backgroundColor: backgroundColor || '#f9fafb', ...getPatternCSS() }}
+      style={getBackgroundStyle()}
     >
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Lora:wght@400;600;700;900&family=Roboto:wght@400;500;700;900&display=swap');

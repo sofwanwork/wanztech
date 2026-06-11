@@ -544,3 +544,10 @@ Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build c
   - Added `handleSelectTemplate(templateId)` + `applyTemplate(templateId)` helpers. Clicking a cert card now goes through `handleSelectTemplate`: if `form.eCertificateCategory?.map` has any entries (category mappings exist), it opens an AlertDialog confirmation before changing the default; otherwise applies directly. No-op if same id.
   - New state `pendingTemplateId`. AlertDialog (controlled) imported from `@/components/ui/alert-dialog`, rendered after `</main>`. Copy clarifies existing category mappings stay intact.
 - No new deps (used native title + existing radix alert-dialog). lint 0, tsc clean, 164/164 tests.
+
+
+## Form background image feature (2026-06-11)
+- Added `backgroundImage?: string` to `FormTheme` (`lib/types/forms.ts`, after `backgroundPattern`). Stored in the existing `theme` jsonb column — **no DB migration needed** (saveForm already persists whole theme; all read paths map theme back).
+- Public render `app/(public)/form/[id]/client.tsx`: destructured `backgroundImage` from theme; added `getBackgroundStyle()` helper that layers color + optional pattern + optional photo. Photo uses `getProxiedImageUrl` (Google Drive support), `background-size: cover`, `background-attachment: fixed`. When a pattern is also set, pattern gradient overlays the photo (`repeat, no-repeat`). Wrapper div now uses `getBackgroundStyle()` instead of inline color+pattern.
+- Builder `app/builder/[id]/client.tsx`: added "Background Image URL" field + live preview + Remove button in the Theme Settings card (after Background Pattern), matching the cover-image URL-input pattern.
+- URL-input approach (no uploader) — consistent with cover image & logo. Verified: tsc clean, lint 0, 164/164 tests, production build clean.

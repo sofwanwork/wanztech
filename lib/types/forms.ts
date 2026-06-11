@@ -135,6 +135,8 @@ export interface FormTheme {
   backgroundColor?: string;
   textColor?: string;
   backgroundPattern?: BackgroundPattern;
+  /** Full-page background image URL (layered above backgroundColor/pattern). */
+  backgroundImage?: string;
   headerAlignment?: 'left' | 'center';
   logo?: string;
   logoAlignment?: 'left' | 'center' | 'right';
