@@ -47,6 +47,91 @@ export async function sendEmail({ to, subject, html }: EmailOptions) {
   }
 }
 
+// ──────────────────────────────────────────────────────────────────────────
+// Design system — single-color (indigo), minimalist & premium.
+// One accent color across every email; the rest is neutral ink + whitespace.
+// ──────────────────────────────────────────────────────────────────────────
+const BRAND = '#4f46e5'; // indigo-600 — the one accent
+const BRAND_DARK = '#4338ca'; // indigo-700
+const INK = '#18181b'; // primary text
+const BODY = '#52525b'; // secondary text
+const MUTED = '#a1a1aa'; // tertiary / captions
+const SOFT = '#eef2ff'; // accent-tinted surface
+const LINE = '#ececf1'; // hairline dividers/borders
+
+// Uppercase accent label above the title.
+function eyebrow(label: string): string {
+  return `<p style="margin: 0 0 14px; font-size: 12px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: ${BRAND};">${label}</p>`;
+}
+
+// Title.
+function heading(title: string): string {
+  return `<h1 style="margin: 0 0 18px; font-size: 24px; line-height: 1.25; font-weight: 700; color: ${INK}; letter-spacing: -0.4px;">${title}</h1>`;
+}
+
+// Body paragraph.
+function para(text: string, marginTop = 0): string {
+  return `<p style="margin: ${marginTop}px 0 16px; font-size: 15px; line-height: 1.65; color: ${BODY};">${text}</p>`;
+}
+
+// Bulletproof, single-color CTA button.
+function button(href: string, label: string): string {
+  return `
+            <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 32px auto 4px;">
+              <tr>
+                <td align="center" style="border-radius: 10px; background-color: ${BRAND};">
+                  <a href="${href}" style="display: inline-block; padding: 15px 38px; font-size: 15px; font-weight: 600; color: #ffffff; letter-spacing: 0.2px; border-radius: 10px;">${label}</a>
+                </td>
+              </tr>
+            </table>`;
+}
+
+// Soft accent-tinted note box (used for security/expiry reminders).
+function note(text: string): string {
+  return `
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 24px 0 0;">
+              <tr>
+                <td style="background: ${SOFT}; border: 1px solid #e0e7ff; border-radius: 10px; padding: 14px 18px; font-size: 13px; line-height: 1.6; color: ${BRAND_DARK};">${text}</td>
+              </tr>
+            </table>`;
+}
+
+// Caption line (muted, centered).
+function caption(text: string): string {
+  return `<p style="margin: 28px 0 0; color: ${MUTED}; font-size: 13px; line-height: 1.6; text-align: center;">${text}</p>`;
+}
+
+// Key/value table (receipts, submission data, summaries).
+function kvRow(key: string, value: string): string {
+  return `
+                <tr>
+                  <td style="padding: 12px 18px; font-size: 13px; color: ${MUTED}; border-bottom: 1px solid ${LINE}; width: 42%; vertical-align: top;">${key}</td>
+                  <td style="padding: 12px 18px; font-size: 13px; color: ${INK}; font-weight: 500; border-bottom: 1px solid ${LINE};">${value}</td>
+                </tr>`;
+}
+function kvTable(rowsHtml: string): string {
+  return `
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 20px 0 0; border: 1px solid ${LINE}; border-radius: 12px; overflow: hidden;">${rowsHtml}
+            </table>`;
+}
+
+// Minimal single-color list. `marker`: 'check' (accent) or 'dot' (muted).
+function bulletList(items: string[], marker: 'check' | 'dot' = 'check'): string {
+  const glyph =
+    marker === 'check'
+      ? `<span style="color: ${BRAND}; font-weight: 700; padding-right: 12px;">&#10003;</span>`
+      : `<span style="color: ${MUTED}; padding-right: 12px;">&bull;</span>`;
+  const rows = items
+    .map(
+      (it) =>
+        `<tr><td style="padding: 7px 0; font-size: 14px; line-height: 1.5; color: ${BODY};">${glyph}${it}</td></tr>`
+    )
+    .join('');
+  return `
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 18px 0 0;">${rows}
+            </table>`;
+}
+
 // New submission notification email
 export function getNewSubmissionEmail(
   userName: string,
@@ -56,65 +141,23 @@ export function getNewSubmissionEmail(
 ) {
   const dataRows = Object.entries(submissionData)
     .slice(0, 10) // Limit to 10 fields to keep email clean
-    .map(
-      ([key, value]) => `
-      <tr>
-        <td style="padding: 10px 16px; color: #6b7280; font-size: 13px; border-bottom: 1px solid #f3f4f6; width: 40%;">${escapeHtml(key)}</td>
-        <td style="padding: 10px 16px; color: #1f2937; font-size: 13px; border-bottom: 1px solid #f3f4f6; font-weight: 500;">${escapeHtml(String(value).substring(0, 100))}</td>
-      </tr>`
+    .map(([key, value]) =>
+      kvRow(escapeHtml(key), escapeHtml(String(value).substring(0, 100)))
     )
     .join('');
 
   const sheetButton = googleSheetUrl
-    ? `<div style="text-align: center; margin: 32px 0;">
-        <a href="${escapeHtml(googleSheetUrl)}" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 14px; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);">
-          📊 Buka Google Sheet
-        </a>
-      </div>`
+    ? button(escapeHtml(googleSheetUrl), 'Buka Google Sheet')
     : '';
 
-  const content = `
-        <!-- Header -->
-        <tr>
-          <td style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); padding: 40px 40px 30px; text-align: center;">
-            <div style="margin-bottom: 16px;">
-              <div style="font-size: 56px; margin-bottom: 16px;">📬</div>
-            </div>
-            <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 700;">Response Baru!</h1>
-            <p style="margin: 12px 0 0 0; color: rgba(255,255,255,0.9); font-size: 15px;">${escapeHtml(formTitle)}</p>
-          </td>
-        </tr>
-        
-        <!-- Body -->
-        <tr>
-          <td style="padding: 40px;">
-            <p style="margin: 0 0 20px 0; color: #1f2937; font-size: 16px; line-height: 1.6;">
-              Hai <strong>${escapeHtml(userName)}</strong> 👋
-            </p>
-            
-            <p style="margin: 0 0 24px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
-              Borang <strong>"${escapeHtml(formTitle)}"</strong> baru sahaja menerima response baru.
-            </p>
-            
-            <!-- Data Table -->
-            <div style="background: #f9fafb; border-radius: 12px; overflow: hidden; margin: 24px 0;">
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="padding: 12px 16px; background: #f3f4f6; color: #374151; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Field</td>
-                  <td style="padding: 12px 16px; background: #f3f4f6; color: #374151; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Response</td>
-                </tr>
-                ${dataRows}
-              </table>
-            </div>
-            
+  const content = cardBody(`
+            ${eyebrow('Response Baru')}
+            ${heading('Anda menerima response baru')}
+            ${para(`Hai <strong style="color:${INK};">${escapeHtml(userName)}</strong>, borang <strong style="color:${INK};">&ldquo;${escapeHtml(formTitle)}&rdquo;</strong> baru sahaja menerima satu response.`)}
+            ${kvTable(dataRows)}
             ${sheetButton}
-            
-            <p style="margin: 24px 0 0 0; color: #9ca3af; font-size: 13px; text-align: center;">
-              Email ini dihantar secara automatik oleh KlikForm
-            </p>
-          </td>
-        </tr>
-    `;
+            ${caption('Email automatik daripada KlikForm.')}
+  `);
 
   return {
     subject: `📬 Response baru: ${formTitle}`,
@@ -129,48 +172,14 @@ export function getEditLinkEmail(
   editUrl: string,
   expiryDays: number
 ) {
-  const content = `
-        <!-- Header -->
-        <tr>
-          <td style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); padding: 40px 40px 30px; text-align: center;">
-            <div style="font-size: 56px; margin-bottom: 16px;">✏️</div>
-            <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 700;">Sunting Jawapan Anda</h1>
-            <p style="margin: 12px 0 0 0; color: rgba(255,255,255,0.9); font-size: 15px;">${escapeHtml(formTitle)}</p>
-          </td>
-        </tr>
-
-        <!-- Body -->
-        <tr>
-          <td style="padding: 40px;">
-            <p style="margin: 0 0 20px 0; color: #1f2937; font-size: 16px; line-height: 1.6;">
-              Hai 👋
-            </p>
-            <p style="margin: 0 0 24px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
-              Terima kasih kerana menghantar jawapan untuk borang
-              <strong>"${escapeHtml(formTitle)}"</strong>. Jika anda perlu mengubah jawapan,
-              klik butang di bawah dalam tempoh <strong>${expiryDays} hari</strong>.
-            </p>
-
-            <div style="text-align: center; margin: 32px 0;">
-              <a href="${editUrl}" style="display: inline-block; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 14px; box-shadow: 0 4px 14px rgba(14, 165, 233, 0.3);">
-                🔗 Sunting Jawapan
-              </a>
-            </div>
-
-            <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 6px; margin: 24px 0;">
-              <p style="margin: 0; color: #78350f; font-size: 13px; line-height: 1.5;">
-                ⚠️ Pautan ini hanya boleh digunakan <strong>sekali sahaja</strong>
-                dan akan luput dalam ${expiryDays} hari. Jangan kongsi pautan ini
-                dengan orang lain.
-              </p>
-            </div>
-
-            <p style="margin: 24px 0 0 0; color: #9ca3af; font-size: 13px; text-align: center;">
-              Jika anda tidak menghantar borang ini, abaikan email ini.
-            </p>
-          </td>
-        </tr>
-    `;
+  const content = cardBody(`
+            ${eyebrow('Sunting Jawapan')}
+            ${heading('Sunting jawapan anda')}
+            ${para(`Terima kasih kerana menghantar jawapan untuk borang <strong style="color:${INK};">&ldquo;${escapeHtml(formTitle)}&rdquo;</strong>. Jika anda perlu membuat perubahan, klik butang di bawah dalam tempoh <strong style="color:${INK};">${expiryDays} hari</strong>.`)}
+            ${button(editUrl, 'Sunting Jawapan')}
+            ${note(`Pautan ini hanya boleh digunakan <strong>sekali sahaja</strong> dan akan luput dalam ${expiryDays} hari. Jangan kongsi dengan orang lain.`)}
+            ${caption('Jika anda tidak menghantar borang ini, abaikan email ini.')}
+  `);
 
   return {
     subject: `✏️ Sunting jawapan anda: ${formTitle}`,
@@ -191,53 +200,30 @@ export function getRespondentConfirmationEmail(
   const summaryRows = summary
     ? Object.entries(summary)
         .slice(0, 12) // keep the email tidy
-        .map(
-          ([key, value]) => `
-      <tr>
-        <td style="padding: 10px 16px; color: #6b7280; font-size: 13px; border-bottom: 1px solid #f3f4f6; width: 40%;">${escapeHtml(key)}</td>
-        <td style="padding: 10px 16px; color: #1f2937; font-size: 13px; border-bottom: 1px solid #f3f4f6; font-weight: 500;">${escapeHtml(String(value).substring(0, 200))}</td>
-      </tr>`
+        .map(([key, value]) =>
+          kvRow(escapeHtml(key), escapeHtml(String(value).substring(0, 200)))
         )
         .join('')
     : '';
 
   const summaryBlock = summaryRows
-    ? `<p style="margin: 24px 0 8px 0; color: #374151; font-size: 14px; font-weight: 600;">Ringkasan jawapan anda:</p>
-       <div style="background: #f9fafb; border-radius: 12px; overflow: hidden; margin: 8px 0 0 0;">
-         <table width="100%" cellpadding="0" cellspacing="0">${summaryRows}</table>
-       </div>`
+    ? `<p style="margin: 8px 0 0; font-size: 14px; font-weight: 600; color: ${INK};">Ringkasan jawapan anda:</p>${kvTable(summaryRows)}`
     : '';
 
   const messageBlock = customMessage
-    ? `<p style="margin: 0 0 24px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">${escapeHtml(customMessage)}</p>`
-    : `<p style="margin: 0 0 24px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
-         Terima kasih! Jawapan anda untuk borang <strong>"${escapeHtml(formTitle)}"</strong> telah kami terima.
-       </p>`;
+    ? para(escapeHtml(customMessage))
+    : para(
+        `Terima kasih! Jawapan anda untuk borang <strong style="color:${INK};">&ldquo;${escapeHtml(formTitle)}&rdquo;</strong> telah kami terima.`
+      );
 
-  const content = `
-        <!-- Header -->
-        <tr>
-          <td style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 40px 30px; text-align: center;">
-            <div style="font-size: 56px; margin-bottom: 16px;">✅</div>
-            <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 700;">Jawapan Diterima</h1>
-            <p style="margin: 12px 0 0 0; color: rgba(255,255,255,0.9); font-size: 15px;">${escapeHtml(formTitle)}</p>
-          </td>
-        </tr>
-
-        <!-- Body -->
-        <tr>
-          <td style="padding: 40px;">
-            <p style="margin: 0 0 20px 0; color: #1f2937; font-size: 16px; line-height: 1.6;">
-              Hai 👋
-            </p>
+  const content = cardBody(`
+            ${eyebrow('Pengesahan')}
+            ${heading('Jawapan diterima')}
+            <p style="margin: 0 0 18px; font-size: 13px; color: ${MUTED};">Borang: <strong style="color:${INK}; font-weight:600;">&ldquo;${escapeHtml(formTitle)}&rdquo;</strong></p>
             ${messageBlock}
             ${summaryBlock}
-            <p style="margin: 24px 0 0 0; color: #9ca3af; font-size: 13px; text-align: center;">
-              Email ini dihantar secara automatik oleh KlikForm sebagai pengesahan.
-            </p>
-          </td>
-        </tr>
-    `;
+            ${caption('Email automatik daripada KlikForm sebagai pengesahan.')}
+  `);
 
   return {
     subject: `✅ Pengesahan: ${formTitle}`,
@@ -260,7 +246,17 @@ function escapeHtml(input: string): string {
     .replace(/'/g, '&#39;');
 }
 
-// Base email template wrapper.
+// Card body wrapper — a single padded section. Every email shares this layout
+// (no per-email colored headers; the accent comes from the eyebrow + button).
+function cardBody(inner: string): string {
+  return `
+        <tr>
+          <td class="kf-card-pad" style="padding: 44px 44px 40px;">${inner}
+          </td>
+        </tr>`;
+}
+
+// Base email template wrapper — light, airy, single-color.
 // `content` is a sequence of <tr> rows rendered inside the white card.
 // `preheader` is the hidden inbox-preview snippet (optional but recommended).
 function emailWrapper(content: string, preheader?: string) {
@@ -290,26 +286,26 @@ function emailWrapper(content: string, preheader?: string) {
         <style>
           a { text-decoration: none; }
           @media only screen and (max-width: 600px) {
-            .kf-card-pad { padding: 28px 24px !important; }
+            .kf-card-pad { padding: 32px 26px !important; }
           }
         </style>
       </head>
-      <body style="margin: 0; padding: 0; background-color: #0f172a; -webkit-font-smoothing: antialiased; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+      <body style="margin: 0; padding: 0; background-color: #f4f4f5; -webkit-font-smoothing: antialiased; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
         ${preheaderBlock}
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(160deg, #0f172a 0%, #1e293b 55%, #312e81 100%); background-color: #0f172a; width: 100%;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f5; width: 100%;">
           <tr>
-            <td align="center" style="padding: 44px 20px; vertical-align: top;">
-              <!-- Logo -->
+            <td align="center" style="padding: 40px 20px; vertical-align: top;">
+              <!-- Wordmark -->
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 520px;">
                 <tr>
-                  <td align="center" style="padding-bottom: 28px;">
+                  <td align="center" style="padding-bottom: 24px;">
                     <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
                       <tr>
-                        <td style="vertical-align: middle; padding-right: 12px;">
-                          <img src="https://klikform.com/logo.png" alt="KlikForm" width="42" height="42" style="display: block; border: 0; border-radius: 12px;" />
+                        <td style="vertical-align: middle; padding-right: 10px;">
+                          <img src="https://klikform.com/logo.png" alt="KlikForm" width="34" height="34" style="display: block; border: 0; border-radius: 9px;" />
                         </td>
                         <td style="vertical-align: middle;">
-                          <span style="color: #ffffff; font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">KlikForm</span>
+                          <span style="color: ${INK}; font-size: 21px; font-weight: 800; letter-spacing: -0.4px;">KlikForm</span>
                         </td>
                       </tr>
                     </table>
@@ -318,25 +314,28 @@ function emailWrapper(content: string, preheader?: string) {
               </table>
 
               <!-- Main Card -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 520px; background: #ffffff; border-radius: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.55);">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 520px; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid ${LINE}; box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 12px 32px -12px rgba(16,24,40,0.12);">
+                <tr>
+                  <td style="height: 4px; line-height: 4px; font-size: 0; background: ${BRAND};">&nbsp;</td>
+                </tr>
                 ${content}
               </table>
 
               <!-- Footer -->
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 520px;">
                 <tr>
-                  <td align="center" style="padding: 28px 20px 8px;">
-                    <p style="margin: 0 0 6px 0; color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 600;">
-                      KlikForm — Borang &amp; e-Sijil tanpa kerumitan ✨
+                  <td align="center" style="padding: 26px 20px 6px;">
+                    <p style="margin: 0 0 6px 0; color: ${BODY}; font-size: 13px; font-weight: 600;">
+                      KlikForm — Borang &amp; e-Sijil tanpa kerumitan
                     </p>
-                    <p style="margin: 0; color: rgba(255,255,255,0.45); font-size: 12px;">
-                      <a href="https://klikform.com" style="color: rgba(255,255,255,0.6); text-decoration: underline;">klikform.com</a>
+                    <p style="margin: 0; font-size: 12px;">
+                      <a href="https://klikform.com" style="color: ${BRAND}; text-decoration: none; font-weight: 500;">klikform.com</a>
                     </p>
                   </td>
                 </tr>
                 <tr>
-                  <td align="center" style="padding: 12px 20px 0;">
-                    <p style="margin: 0; color: rgba(255,255,255,0.35); font-size: 11px;">
+                  <td align="center" style="padding: 10px 20px 0;">
+                    <p style="margin: 0; color: ${MUTED}; font-size: 11px;">
                       © ${year} KlikForm. Hak cipta terpelihara.
                     </p>
                   </td>
@@ -350,281 +349,93 @@ function emailWrapper(content: string, preheader?: string) {
     `;
 }
 
-// Email templates
+// Subscription expiring reminder
 export function getSubscriptionReminderEmail(
   userName: string,
   daysRemaining: number,
   renewUrl: string
 ) {
-  const content = `
-        <!-- Header -->
-        <tr>
-          <td style="background: linear-gradient(135deg, #f59e0b 0%, #eab308 100%); padding: 40px 40px 30px; text-align: center;">
-            <div style="font-size: 56px; margin-bottom: 16px;">⏰</div>
-            <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 700;">Peringatan Langganan</h1>
-            <p style="margin: 12px 0 0 0; color: rgba(255,255,255,0.9); font-size: 15px;">Langganan Pro anda hampir tamat</p>
-          </td>
-        </tr>
-        
-        <!-- Body -->
-        <tr>
-          <td style="padding: 40px;">
-            <p style="margin: 0 0 20px 0; color: #1f2937; font-size: 16px; line-height: 1.6;">
-              Hai <strong>${userName}</strong> 👋
-            </p>
-            
-            <!-- Alert Box -->
-            <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 16px; padding: 24px; margin: 24px 0; border-left: 4px solid #f59e0b;">
-              <p style="margin: 0; color: #92400e; font-size: 15px; font-weight: 600;">
-                ⚠️ Langganan Pro anda akan tamat dalam <span style="background: #f59e0b; color: white; padding: 2px 10px; border-radius: 20px; font-weight: 700;">${daysRemaining} hari</span>
-              </p>
-            </div>
-            
-            <p style="margin: 24px 0 16px 0; color: #374151; font-size: 15px; font-weight: 600;">Selepas tamat, anda akan:</p>
-            
-            <div style="background: #f9fafb; border-radius: 12px; padding: 20px;">
-              <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                <span style="color: #ef4444; margin-right: 12px;">✕</span>
-                <span style="color: #4b5563; font-size: 14px;">Tidak boleh create form baru</span>
-              </div>
-              <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                <span style="color: #ef4444; margin-right: 12px;">✕</span>
-                <span style="color: #4b5563; font-size: 14px;">Akses features Pro disekat</span>
-              </div>
-              <div style="display: flex; align-items: center;">
-                <span style="color: #10b981; margin-right: 12px;">✓</span>
-                <span style="color: #4b5563; font-size: 14px;">Form sedia ada kekal (terhad)</span>
-              </div>
-            </div>
-            
-            <!-- CTA Button -->
-            <div style="text-align: center; margin: 32px 0;">
-              <a href="${renewUrl}" style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);">
-                Renew Sekarang →
-              </a>
-            </div>
-            
-            <p style="margin: 24px 0 0 0; color: #9ca3af; font-size: 13px; text-align: center;">
-              Renew sebelum tamat untuk elak gangguan perkhidmatan
-            </p>
-          </td>
-        </tr>
-    `;
+  const content = cardBody(`
+            ${eyebrow('Langganan')}
+            ${heading('Langganan Pro hampir tamat')}
+            ${para(`Hai <strong style="color:${INK};">${escapeHtml(userName)}</strong>, langganan Pro anda akan tamat dalam <strong style="color:${INK};">${daysRemaining} hari</strong>.`)}
+            ${para('Selepas tamat, anda tidak lagi boleh:', 8)}
+            ${bulletList(['Mencipta borang baharu', 'Mengakses ciri-ciri Pro'], 'dot')}
+            ${para('Borang sedia ada anda kekal (secara terhad).', 18)}
+            ${button(renewUrl, 'Renew Sekarang')}
+            ${caption('Renew sebelum tamat untuk elak gangguan perkhidmatan.')}
+  `);
 
   return {
-    subject: `⏰ Langganan Pro KlikForm anda akan tamat dalam ${daysRemaining} hari`,
-    html: emailWrapper(content),
+    subject: `⏰ Langganan Pro KlikForm akan tamat dalam ${daysRemaining} hari`,
+    html: emailWrapper(content, `Langganan Pro anda akan tamat dalam ${daysRemaining} hari.`),
   };
 }
 
+// Grace period started (subscription expired)
 export function getGracePeriodStartedEmail(userName: string, graceDays: number, renewUrl: string) {
-  const content = `
-        <!-- Header -->
-        <tr>
-          <td style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); padding: 40px 40px 30px; text-align: center;">
-            <div style="font-size: 56px; margin-bottom: 16px;">🚨</div>
-            <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 700;">Langganan Telah Tamat!</h1>
-            <p style="margin: 12px 0 0 0; color: rgba(255,255,255,0.9); font-size: 15px;">Grace period telah bermula</p>
-          </td>
-        </tr>
-        
-        <!-- Body -->
-        <tr>
-          <td style="padding: 40px;">
-            <p style="margin: 0 0 20px 0; color: #1f2937; font-size: 16px; line-height: 1.6;">
-              Hai <strong>${userName}</strong>,
-            </p>
-            
-            <!-- Alert Box -->
-            <div style="background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-radius: 16px; padding: 24px; margin: 24px 0; border-left: 4px solid #dc2626;">
-              <p style="margin: 0 0 8px 0; color: #991b1b; font-size: 15px; font-weight: 600;">
-                ⚠️ Langganan Pro anda telah tamat!
-              </p>
-              <p style="margin: 0; color: #b91c1c; font-size: 14px;">
-                Anda mempunyai <span style="background: #dc2626; color: white; padding: 2px 10px; border-radius: 20px; font-weight: 700;">${graceDays} hari</span> untuk renew sebelum akaun disekat.
-              </p>
-            </div>
-            
-            <!-- Countdown Timer Look -->
-            <div style="text-align: center; margin: 30px 0;">
-              <div style="display: inline-block; background: linear-gradient(135deg, #1f2937 0%, #111827 100%); border-radius: 16px; padding: 24px 40px;">
-                <p style="margin: 0 0 8px 0; color: #9ca3af; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Masa Berbaki</p>
-                <p style="margin: 0; color: white; font-size: 42px; font-weight: 800;">${graceDays} HARI</p>
-              </div>
-            </div>
-            
-            <p style="margin: 24px 0 16px 0; color: #374151; font-size: 15px; font-weight: 600;">Status akaun anda:</p>
-            
-            <div style="background: #f9fafb; border-radius: 12px; padding: 20px;">
-              <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                <span style="color: #ef4444; margin-right: 12px;">✕</span>
-                <span style="color: #4b5563; font-size: 14px;">Tidak boleh create form/certificate baru</span>
-              </div>
-              <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                <span style="color: #f59e0b; margin-right: 12px;">⏳</span>
-                <span style="color: #4b5563; font-size: 14px;">Form sedia ada masih active (sementara)</span>
-              </div>
-              <div style="display: flex; align-items: center;">
-                <span style="color: #ef4444; margin-right: 12px;">⚠️</span>
-                <span style="color: #4b5563; font-size: 14px;">Selepas ${graceDays} hari = akaun disekat</span>
-              </div>
-            </div>
-            
-            <!-- CTA Button -->
-            <div style="text-align: center; margin: 32px 0;">
-              <a href="${renewUrl}" style="display: inline-block; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4); animation: pulse 2s infinite;">
-                🔓 Renew Sekarang
-              </a>
-            </div>
-            
-            <p style="margin: 24px 0 0 0; color: #9ca3af; font-size: 13px; text-align: center;">
-              Jangan biar pelanggan anda terganggu!
-            </p>
-          </td>
-        </tr>
-    `;
+  const content = cardBody(`
+            ${eyebrow('Langganan Tamat')}
+            ${heading('Langganan Pro anda telah tamat')}
+            ${para(`Hai <strong style="color:${INK};">${escapeHtml(userName)}</strong>, anda mempunyai <strong style="color:${INK};">${graceDays} hari</strong> untuk renew sebelum akaun disekat.`)}
+            ${para('Status akaun anda sekarang:', 8)}
+            ${bulletList([
+              'Tidak boleh mencipta borang/sijil baharu',
+              'Borang sedia ada masih aktif (sementara)',
+              `Selepas ${graceDays} hari, akaun akan disekat`,
+            ], 'dot')}
+            ${button(renewUrl, 'Renew Sekarang')}
+            ${caption('Jangan biarkan perkhidmatan anda terganggu.')}
+  `);
 
   return {
-    subject: `🚨 URGENT: Langganan KlikForm tamat - ${graceDays} hari untuk renew`,
-    html: emailWrapper(content),
+    subject: `🚨 Langganan KlikForm tamat — ${graceDays} hari untuk renew`,
+    html: emailWrapper(content, `Anda mempunyai ${graceDays} hari untuk renew sebelum akaun disekat.`),
   };
 }
 
+// Account blocked (grace period over)
 export function getAccountBlockedEmail(userName: string, renewUrl: string) {
-  const content = `
-        <!-- Header -->
-        <tr>
-          <td style="background: linear-gradient(135deg, #1f2937 0%, #111827 100%); padding: 40px 40px 30px; text-align: center;">
-            <div style="font-size: 56px; margin-bottom: 16px;">🔒</div>
-            <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 700;">Akaun Disekat</h1>
-            <p style="margin: 12px 0 0 0; color: rgba(255,255,255,0.7); font-size: 15px;">Grace period telah tamat</p>
-          </td>
-        </tr>
-        
-        <!-- Body -->
-        <tr>
-          <td style="padding: 40px;">
-            <p style="margin: 0 0 20px 0; color: #1f2937; font-size: 16px; line-height: 1.6;">
-              Hai <strong>${userName}</strong>,
-            </p>
-            
-            <!-- Alert Box -->
-            <div style="background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-radius: 16px; padding: 24px; margin: 24px 0; border-left: 4px solid #374151;">
-              <p style="margin: 0; color: #374151; font-size: 15px; font-weight: 600;">
-                🔒 Akaun anda telah disekat kerana langganan Pro tamat.
-              </p>
-            </div>
-            
-            <p style="margin: 24px 0 16px 0; color: #374151; font-size: 15px; font-weight: 600;">Apa yang berlaku:</p>
-            
-            <div style="background: #f9fafb; border-radius: 12px; padding: 20px;">
-              <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                <span style="color: #ef4444; margin-right: 12px;">✕</span>
-                <span style="color: #4b5563; font-size: 14px;">Tidak boleh create form/certificate</span>
-              </div>
-              <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                <span style="color: #ef4444; margin-right: 12px;">✕</span>
-                <span style="color: #4b5563; font-size: 14px;">Form tidak boleh terima submission</span>
-              </div>
-              <div style="display: flex; align-items: center;">
-                <span style="color: #10b981; margin-right: 12px;">✓</span>
-                <span style="color: #4b5563; font-size: 14px;">Data anda selamat & boleh dipulihkan</span>
-              </div>
-            </div>
-            
-            <!-- Reassurance -->
-            <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-radius: 12px; padding: 20px; margin: 24px 0; text-align: center;">
-              <p style="margin: 0; color: #065f46; font-size: 14px;">
-                💾 <strong>Data anda selamat!</strong><br>
-                Renew bila-bila untuk akses semula semua forms dan data anda.
-              </p>
-            </div>
-            
-            <!-- CTA Button -->
-            <div style="text-align: center; margin: 32px 0;">
-              <a href="${renewUrl}" style="display: inline-block; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);">
-                🔓 Unlock Akaun Sekarang
-              </a>
-            </div>
-            
-            <p style="margin: 24px 0 0 0; color: #9ca3af; font-size: 13px; text-align: center;">
-              Hanya RM29/bulan untuk akses penuh semula
-            </p>
-          </td>
-        </tr>
-    `;
+  const content = cardBody(`
+            ${eyebrow('Akaun Disekat')}
+            ${heading('Akaun anda telah disekat')}
+            ${para(`Hai <strong style="color:${INK};">${escapeHtml(userName)}</strong>, akaun anda disekat kerana langganan Pro telah tamat.`)}
+            ${para('Apa yang berlaku:', 8)}
+            ${bulletList([
+              'Tidak boleh mencipta borang/sijil',
+              'Borang tidak boleh menerima response',
+            ], 'dot')}
+            ${note('<strong>Data anda selamat.</strong> Renew bila-bila masa untuk akses semula semua borang dan data anda.')}
+            ${button(renewUrl, 'Unlock Akaun')}
+            ${caption('Hanya RM29/bulan untuk akses penuh semula.')}
+  `);
 
   return {
-    subject: `🔒 Akaun KlikForm disekat - Unlock sekarang`,
-    html: emailWrapper(content),
+    subject: `🔒 Akaun KlikForm disekat — Unlock sekarang`,
+    html: emailWrapper(content, 'Akaun anda disekat. Data anda selamat — renew untuk akses semula.'),
   };
 }
 
 // Welcome email for new Pro subscribers
 export function getWelcomeProEmail(userName: string, dashboardUrl: string) {
-  const content = `
-        <!-- Header -->
-        <tr>
-          <td style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); padding: 40px 40px 30px; text-align: center;">
-            <div style="font-size: 56px; margin-bottom: 16px;">🎉</div>
-            <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 700;">Selamat Datang ke Pro!</h1>
-            <p style="margin: 12px 0 0 0; color: rgba(255,255,255,0.9); font-size: 15px;">Terima kasih kerana upgrade</p>
-          </td>
-        </tr>
-        
-        <!-- Body -->
-        <tr>
-          <td style="padding: 40px;">
-            <p style="margin: 0 0 20px 0; color: #1f2937; font-size: 16px; line-height: 1.6;">
-              Hai <strong>${userName}</strong> 👋
-            </p>
-            
-            <p style="margin: 0 0 24px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
-              Tahniah! Akaun anda telah diupgrade ke <strong style="color: #6366f1;">KlikForm Pro</strong>. Anda kini boleh menikmati semua features premium.
-            </p>
-            
-            <p style="margin: 24px 0 16px 0; color: #374151; font-size: 15px; font-weight: 600;">✨ Features Pro anda:</p>
-            
-            <div style="background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); border-radius: 12px; padding: 20px;">
-              <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                <span style="color: #6366f1; margin-right: 12px;">✓</span>
-                <span style="color: #4b5563; font-size: 14px;"><strong>Unlimited Forms</strong> - create tanpa had</span>
-              </div>
-              <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                <span style="color: #6366f1; margin-right: 12px;">✓</span>
-                <span style="color: #4b5563; font-size: 14px;"><strong>Unlimited Submissions</strong> - terima response tanpa limit</span>
-              </div>
-              <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                <span style="color: #6366f1; margin-right: 12px;">✓</span>
-                <span style="color: #4b5563; font-size: 14px;"><strong>E-Certificate Builder</strong> - design sijil profesional</span>
-              </div>
-              <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                <span style="color: #6366f1; margin-right: 12px;">✓</span>
-                <span style="color: #4b5563; font-size: 14px;"><strong>Remove Branding</strong> - no KlikForm watermark</span>
-              </div>
-              <div style="display: flex; align-items: center;">
-                <span style="color: #6366f1; margin-right: 12px;">✓</span>
-                <span style="color: #4b5563; font-size: 14px;"><strong>Priority Support</strong> - fast response time</span>
-              </div>
-            </div>
-            
-            <!-- CTA Button -->
-            <div style="text-align: center; margin: 32px 0;">
-              <a href="${dashboardUrl}" style="display: inline-block; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);">
-                Mula Sekarang →
-              </a>
-            </div>
-            
-            <p style="margin: 24px 0 0 0; color: #9ca3af; font-size: 13px; text-align: center;">
-              Ada soalan? Reply email ini untuk bantuan.
-            </p>
-          </td>
-        </tr>
-    `;
+  const content = cardBody(`
+            ${eyebrow('Selamat Datang')}
+            ${heading('Selamat datang ke KlikForm Pro')}
+            ${para(`Hai <strong style="color:${INK};">${escapeHtml(userName)}</strong>, tahniah! Akaun anda kini Pro. Inilah yang anda boleh nikmati:`)}
+            ${bulletList([
+              '<strong>Borang tanpa had</strong> — cipta seberapa banyak yang perlu',
+              '<strong>Response tanpa had</strong> — terima tanpa limit',
+              '<strong>E-Certificate Builder</strong> — reka sijil profesional',
+              '<strong>Tanpa jenama</strong> — buang watermark KlikForm',
+              '<strong>Sokongan keutamaan</strong> — respons pantas',
+            ], 'check')}
+            ${button(dashboardUrl, 'Mula Sekarang')}
+            ${caption('Ada soalan? Balas email ini untuk bantuan.')}
+  `);
 
   return {
-    subject: `🎉 Welcome to KlikForm Pro, ${userName}!`,
-    html: emailWrapper(content),
+    subject: `🎉 Selamat datang ke KlikForm Pro, ${userName}`,
+    html: emailWrapper(content, 'Akaun anda kini Pro — nikmati semua ciri premium.'),
   };
 }
 
@@ -635,122 +446,44 @@ export function getPaymentSuccessEmail(
   renewalDate: string,
   receiptUrl: string
 ) {
-  const content = `
-        <!-- Header -->
-        <tr>
-          <td style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 40px 30px; text-align: center;">
-            <div style="font-size: 56px; margin-bottom: 16px;">✅</div>
-            <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 700;">Pembayaran Berjaya!</h1>
-            <p style="margin: 12px 0 0 0; color: rgba(255,255,255,0.9); font-size: 15px;">Terima kasih atas pembayaran anda</p>
-          </td>
-        </tr>
-        
-        <!-- Body -->
-        <tr>
-          <td style="padding: 40px;">
-            <p style="margin: 0 0 20px 0; color: #1f2937; font-size: 16px; line-height: 1.6;">
-              Hai <strong>${userName}</strong>,
-            </p>
-            
-            <p style="margin: 0 0 24px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
-              Pembayaran anda untuk langganan KlikForm Pro telah berjaya diproses.
-            </p>
-            
-            <!-- Receipt Box -->
-            <div style="background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%); border-radius: 16px; padding: 24px; margin: 24px 0;">
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Jumlah Dibayar</td>
-                  <td style="padding: 8px 0; color: #1f2937; font-size: 14px; font-weight: 600; text-align: right;">${amount}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Pelan</td>
-                  <td style="padding: 8px 0; color: #6366f1; font-size: 14px; font-weight: 600; text-align: right;">Pro Monthly</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Renewal Date</td>
-                  <td style="padding: 8px 0; color: #1f2937; font-size: 14px; font-weight: 600; text-align: right;">${renewalDate}</td>
-                </tr>
-              </table>
-            </div>
-            
-            <!-- CTA Button -->
-            <div style="text-align: center; margin: 32px 0;">
-              <a href="${receiptUrl}" style="display: inline-block; background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 14px;">
-                📄 View Receipt
-              </a>
-            </div>
-            
-            <p style="margin: 24px 0 0 0; color: #9ca3af; font-size: 13px; text-align: center;">
-              Simpan email ini sebagai bukti pembayaran
-            </p>
-          </td>
-        </tr>
-    `;
+  const rows =
+    kvRow('Jumlah Dibayar', escapeHtml(amount)) +
+    kvRow('Pelan', 'Pro Monthly') +
+    kvRow('Tarikh Pembaharuan', escapeHtml(renewalDate));
+
+  const content = cardBody(`
+            ${eyebrow('Pembayaran')}
+            ${heading('Pembayaran berjaya')}
+            ${para(`Hai <strong style="color:${INK};">${escapeHtml(userName)}</strong>, pembayaran anda untuk langganan KlikForm Pro telah berjaya diproses.`)}
+            ${kvTable(rows)}
+            ${button(receiptUrl, 'Lihat Resit')}
+            ${caption('Simpan email ini sebagai bukti pembayaran.')}
+  `);
 
   return {
-    subject: `✅ Pembayaran KlikForm Pro berjaya - ${amount}`,
-    html: emailWrapper(content),
+    subject: `✅ Pembayaran KlikForm Pro berjaya — ${amount}`,
+    html: emailWrapper(content, `Pembayaran anda sebanyak ${amount} telah berjaya.`),
   };
 }
 
 // Re-engagement email for inactive users (2 weeks)
 export function getInactivityReminderEmail(userName: string, loginUrl: string) {
-  const content = `
-        <!-- Header -->
-        <tr>
-          <td style="background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%); padding: 40px 40px 30px; text-align: center;">
-            <div style="font-size: 56px; margin-bottom: 16px;">👋</div>
-            <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 700;">Kami Rindu Anda!</h1>
-            <p style="margin: 12px 0 0 0; color: rgba(255,255,255,0.9); font-size: 15px;">Dah lama tak nampak anda di KlikForm</p>
-          </td>
-        </tr>
-        
-        <!-- Body -->
-        <tr>
-          <td style="padding: 40px;">
-            <p style="margin: 0 0 20px 0; color: #1f2937; font-size: 16px; line-height: 1.6;">
-              Hai <strong>${userName}</strong> 👋
-            </p>
-            
-            <p style="margin: 0 0 24px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
-              Anda belum log masuk ke KlikForm selama 2 minggu. Jangan biarkan borang dan data anda terbiar!
-            </p>
-            
-            <!-- Feature reminder -->
-            <div style="background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); border-radius: 16px; padding: 24px; margin: 24px 0;">
-              <p style="margin: 0 0 16px 0; color: #5b21b6; font-size: 15px; font-weight: 600;">Apa yang menunggu anda:</p>
-              <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                <span style="color: #7C3AED; margin-right: 12px;">📋</span>
-                <span style="color: #4b5563; font-size: 14px;">Semak responses borang anda</span>
-              </div>
-              <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                <span style="color: #7C3AED; margin-right: 12px;">📊</span>
-                <span style="color: #4b5563; font-size: 14px;">Lihat statistik terkini</span>
-              </div>
-              <div style="display: flex; align-items: center;">
-                <span style="color: #7C3AED; margin-right: 12px;">🏆</span>
-                <span style="color: #4b5563; font-size: 14px;">Hantar sijil digital kepada peserta</span>
-              </div>
-            </div>
-            
-            <!-- CTA Button -->
-            <div style="text-align: center; margin: 32px 0;">
-              <a href="${loginUrl}" style="display: inline-block; background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%); color: white; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 14px rgba(124, 58, 237, 0.4);">
-                Log Masuk Sekarang →
-              </a>
-            </div>
-            
-            <p style="margin: 24px 0 0 0; color: #9ca3af; font-size: 13px; text-align: center;">
-              Jika anda tidak mahu menerima email ini, anda boleh abaikannya.
-            </p>
-          </td>
-        </tr>
-    `;
+  const content = cardBody(`
+            ${eyebrow('Kami Rindu Anda')}
+            ${heading('Dah lama tak nampak anda')}
+            ${para(`Hai <strong style="color:${INK};">${escapeHtml(userName)}</strong>, anda belum log masuk ke KlikForm selama 2 minggu. Inilah yang menunggu anda:`)}
+            ${bulletList([
+              'Semak response borang anda',
+              'Lihat statistik terkini',
+              'Hantar sijil digital kepada peserta',
+            ], 'check')}
+            ${button(loginUrl, 'Log Masuk Sekarang')}
+            ${caption('Jika anda tidak mahu menerima email ini, abaikan sahaja.')}
+  `);
 
   return {
-    subject: `👋 Kami rindu anda, ${userName}! Log masuk ke KlikForm`,
-    html: emailWrapper(content),
+    subject: `👋 Kami rindu anda, ${userName} — log masuk ke KlikForm`,
+    html: emailWrapper(content, 'Dah 2 minggu — log masuk semula ke KlikForm.'),
   };
 }
 
@@ -760,70 +493,22 @@ export function getAccountDeletionWarningEmail(
   deletionDate: string,
   loginUrl: string
 ) {
-  const content = `
-        <!-- Header -->
-        <tr>
-          <td style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); padding: 40px 40px 30px; text-align: center;">
-            <div style="font-size: 56px; margin-bottom: 16px;">⚠️</div>
-            <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 700;">Akaun Akan Dipadam!</h1>
-            <p style="margin: 12px 0 0 0; color: rgba(255,255,255,0.9); font-size: 15px;">Tindakan diperlukan dalam masa 3 hari</p>
-          </td>
-        </tr>
-        
-        <!-- Body -->
-        <tr>
-          <td style="padding: 40px;">
-            <p style="margin: 0 0 20px 0; color: #1f2937; font-size: 16px; line-height: 1.6;">
-              Hai <strong>${userName}</strong>,
-            </p>
-            
-            <!-- Alert Box -->
-            <div style="background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-radius: 16px; padding: 24px; margin: 24px 0; border-left: 4px solid #dc2626;">
-              <p style="margin: 0 0 8px 0; color: #991b1b; font-size: 15px; font-weight: 600;">
-                🗑️ Akaun anda dijadualkan untuk dipadam pada:
-              </p>
-              <p style="margin: 0; color: #b91c1c; font-size: 20px; font-weight: 800;">
-                ${deletionDate}
-              </p>
-            </div>
-            
-            <p style="margin: 0 0 24px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
-              Akaun anda telah <strong>tidak aktif selama 1 bulan</strong> dan tiada sebarang borang yang dicipta. Untuk mengelakkan pemadaman, sila log masuk sekarang.
-            </p>
-            
-            <!-- What will be lost -->
-            <div style="background: #f9fafb; border-radius: 12px; padding: 20px; margin: 24px 0;">
-              <p style="margin: 0 0 12px 0; color: #374151; font-size: 14px; font-weight: 600;">Jika dipadam, anda akan kehilangan:</p>
-              <div style="display: flex; align-items: center; margin-bottom: 10px;">
-                <span style="color: #ef4444; margin-right: 12px;">✕</span>
-                <span style="color: #4b5563; font-size: 14px;">Semua data akaun anda</span>
-              </div>
-              <div style="display: flex; align-items: center; margin-bottom: 10px;">
-                <span style="color: #ef4444; margin-right: 12px;">✕</span>
-                <span style="color: #4b5563; font-size: 14px;">Semua borang (jika ada)</span>
-              </div>
-              <div style="display: flex; align-items: center;">
-                <span style="color: #ef4444; margin-right: 12px;">✕</span>
-                <span style="color: #4b5563; font-size: 14px;">Semua responses dan data</span>
-              </div>
-            </div>
-            
-            <!-- CTA Button -->
-            <div style="text-align: center; margin: 32px 0;">
-              <a href="${loginUrl}" style="display: inline-block; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4);">
-                🔓 Log Masuk & Simpan Akaun
-              </a>
-            </div>
-            
-            <p style="margin: 24px 0 0 0; color: #9ca3af; font-size: 13px; text-align: center;">
-              Log masuk sebelum ${deletionDate} untuk mengelakkan pemadaman akaun.
-            </p>
-          </td>
-        </tr>
-    `;
+  const content = cardBody(`
+            ${eyebrow('Tindakan Diperlukan')}
+            ${heading('Akaun anda akan dipadam')}
+            ${para(`Hai <strong style="color:${INK};">${escapeHtml(userName)}</strong>, akaun anda dijadualkan untuk dipadam pada <strong style="color:${INK};">${escapeHtml(deletionDate)}</strong> kerana tidak aktif selama 1 bulan.`)}
+            ${para('Jika dipadam, anda akan kehilangan:', 8)}
+            ${bulletList([
+              'Semua data akaun anda',
+              'Semua borang (jika ada)',
+              'Semua response dan data',
+            ], 'dot')}
+            ${button(loginUrl, 'Log Masuk & Simpan Akaun')}
+            ${caption(`Log masuk sebelum ${escapeHtml(deletionDate)} untuk mengelakkan pemadaman.`)}
+  `);
 
   return {
-    subject: `⚠️ URGENT: Akaun KlikForm anda akan dipadam pada ${deletionDate}`,
-    html: emailWrapper(content),
+    subject: `⚠️ Akaun KlikForm anda akan dipadam pada ${deletionDate}`,
+    html: emailWrapper(content, `Log masuk sebelum ${deletionDate} untuk mengelakkan pemadaman akaun.`),
   };
 }

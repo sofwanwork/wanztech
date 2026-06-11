@@ -591,11 +591,14 @@ Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build c
 - Verified: tsc clean, lint 0, 164/164 tests, production build clean.
 
 
-## Email template beautification (2026-06-11)
-- Transactional (in-code): redesigned the shared `emailWrapper()` in `lib/email/index.ts` — lifts ALL transactional emails at once (magic edit-link, respondent confirmation, owner notification, subscription/lifecycle emails). Changes: richer 3-stop slate→indigo gradient bg, refined logo header, white card with subtle border + softer shadow, fuller footer with klikform.com link + dynamic `© year`, mobile padding media query, light-only color-scheme + MSO/Outlook namespaces. Added optional 2nd param `preheader` (hidden inbox-preview snippet, escaped). Wired preheaders into the 3 user-facing emails: new-submission, edit-link, respondent-confirmation. Each template keeps its own colored header row in `${content}` (unchanged contract).
-  - Gotcha fixed: respondent-confirmation preheader initially hardcoded the default "telah kami terima" phrase, which broke a test asserting that phrase is absent when a custom message is set. Fix: preheader = `customMessage || default`.
-- Auth emails (Supabase-rendered, NOT in code): created ready-to-paste HTML in `supabase/templates/` — `confirm-signup.html` (emerald), `reset-password.html` (indigo), `magic-link.html` (sky, only if `signInWithOtp` is enabled later), plus `README.md` with paste instructions. Use `{{ .ConfirmationURL }}`. These must be pasted into Supabase Dashboard → Authentication → Emails (HTML lives in Supabase, not the repo). App login currently uses password + Google OAuth (no magic-link login).
-- Verified: tsc clean, lint 0, 164/164 tests, production build clean.
+## Email redesign: minimalist single-color (indigo) (2026-06-11)
+- User wanted a premium, minimalist, single-theme-color look (no more per-email colored gradient headers).
+- Rewrote `lib/email/index.ts` design system: ONE accent (`BRAND #4f46e5` indigo) + neutral ink/whitespace on a light `#f4f4f5` bg. White card, 1px hairline border, soft shadow, 4px indigo top accent strip, plain wordmark header (no big emoji headers). Shared helpers: `eyebrow()` (uppercase accent label), `heading()`, `para()`, `button()` (bulletproof single-color CTA), `note()` (accent-tinted box), `caption()`, `kvRow()/kvTable()`, `bulletList(items, 'check'|'dot')`, `cardBody()`. All 10 templates rebuilt on these.
+- Subjects keep a single leading emoji for inbox scannability (body stays emoji-free). Confirmation subject MUST start with ✅ (test spec).
+- Test-driven constraints rediscovered: `getRespondentConfirmationEmail` subject must match `/^✅/` AND the escaped `formTitle` must appear in the HTML (tests/respondent-notification.test.ts). Fix: kept ✅ in subject + render `formTitle` (escaped) as a "Borang: …" line in the body. Also the custom-message test forbids the default phrase leaking — preheader uses `customMessage || default`.
+- Updated the 3 Supabase auth templates (`supabase/templates/*.html`) to match the new light minimalist design (confirm-signup, reset-password, magic-link). Same indigo accent, must be pasted into Supabase dashboard.
+- Removed unused `divider()` helper (lint). Verified: tsc clean, lint 0, 164/164 tests, production build clean.
+- (History) An earlier pass added preheaders + a darker gradient wrapper; that has been SUPERSEDED by this minimalist single-color redesign. `supabase/templates/README.md` exists with paste instructions; `{{ .ConfirmationURL }}` is the Supabase variable used.
 
 
 ## Form Builder Advanced Settings UI Simplification (2026-06-11)
