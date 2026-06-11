@@ -30,6 +30,16 @@ export function EditLinkCard({ form, onChange }: EditLinkCardProps) {
     onChange({ ...cfg, ...patch });
   };
 
+  const handleToggle = (checked: boolean) => {
+    // Auto-select the first email field when enabling, so the magic link has a
+    // destination even if the owner doesn't open the dropdown.
+    if (checked && !cfg.emailFieldId && emailFields.length > 0) {
+      update({ enabled: true, emailFieldId: emailFields[0].id });
+    } else {
+      update({ enabled: checked });
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -46,7 +56,7 @@ export function EditLinkCard({ form, onChange }: EditLinkCardProps) {
           </div>
           <Switch
             checked={cfg.enabled}
-            onCheckedChange={(checked) => update({ enabled: checked })}
+            onCheckedChange={handleToggle}
             aria-label="Toggle edit link"
           />
         </div>

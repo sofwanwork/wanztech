@@ -516,15 +516,23 @@ export async function submitFormAction(
     // a single-use magic link and email it to them.
     try {
       const editCfg = form.editLinkSettings;
-      if (editCfg?.enabled && editCfg.emailFieldId) {
-        // Find the email value: the email field's *label* is what dbData
-        // is keyed by, so look up label from the schema first.
-        const emailField = form.fields.find((f) => f.id === editCfg.emailFieldId);
+      if (editCfg?.enabled) {
+        // Resolve the email field: the owner's explicit choice, else fall back
+        // to the first email-type field. This prevents a silent no-send when the
+        // owner enabled the feature but forgot to pick a field in the builder.
+        const emailField =
+          form.fields.find((f) => f.id === editCfg.emailFieldId) ||
+          form.fields.find((f) => f.type === 'email');
+        // dbData is keyed by the field *label*, so look up by label.
         const emailValue = emailField
           ? String(dbData[emailField.label] ?? '').trim()
           : '';
         const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue);
-        if (isEmail) {
+        if (!emailField) {
+          console.warn('Edit-link enabled but no email field found on the form.');
+        } else if (!isEmail) {
+          console.warn('Edit-link enabled but respondent email is empty/invalid.');
+        } else {
           const { createEditToken } = await import('@/lib/storage/edit-tokens');
           const snapshot: Record<string, string> = {};
           for (const [k, v] of Object.entries(dbData)) {
@@ -545,15 +553,18 @@ export async function submitFormAction(
           const editUrl = `${origin.replace(/\/$/, '')}/edit/${token}`;
           const { getEditLinkEmail } = await import('@/lib/email');
           const email = getEditLinkEmail(form.title, editUrl, editCfg.expiryDays ?? 7);
-          await sendEmail({
+          const sent = await sendEmail({
             to: emailValue,
             subject: email.subject,
             html: email.html,
           });
+          if (!sent.success) {
+            console.error('Edit-link email failed to send:', sent.error);
+          }
         }
       }
     } catch (editErr) {
-      console.warn('Edit-link token / email failed:', editErr);
+      console.error('Edit-link token / email failed:', editErr);
     }
 
     // --- Respondent confirmation email (fire-and-forget) ---

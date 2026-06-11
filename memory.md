@@ -571,6 +571,18 @@ Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build c
 - Verified: tsc clean, lint 0, 164/164 tests, production build clean.
 
 
+## Fix: magic-link (edit-link) email not sent on submit (2026-06-11)
+- Symptom: user submits form, no email when magic link (edit link) is ON. Submission still succeeds.
+- Two likely root causes addressed (couldn't confirm which fired in prod without logs):
+  - (C) Silent missing `emailFieldId`: builder let owner toggle ON without picking an email field (Select defaulted to ''), so server guard `editCfg.enabled && editCfg.emailFieldId` short-circuited with no send/warning.
+  - (A) `createEditToken` throws (migration/RLS/service-key) → jumped to `catch` that only `console.warn`'d; email never attempted.
+- Fixes:
+  - `actions/forms.ts` (~514): guard now `editCfg?.enabled` only; resolves email field as `find(id === emailFieldId) || find(type === 'email')` (fallback to first email field). Added explicit warns for no-field / invalid-email, surfaced `sendEmail` failure via `console.error`, and upgraded the catch to `console.error`.
+  - `components/forms/edit-link-card.tsx`: new `handleToggle` auto-selects the first email field when enabling if none chosen.
+- Note for prod: check server logs for `[edit-token] create error:` to confirm whether the `response_edit_tokens` migration (`20260529040000_add_response_edit_tokens.sql`) + `SUPABASE_SERVICE_ROLE_KEY` are correctly applied in the failing env. If token creation is the failure, the email still won't send (the link needs the token) — that's a config/migration issue, not code.
+- Verified: tsc clean, lint 0, 164/164 tests, production build clean.
+
+
 ## Form Builder Advanced Settings UI Simplification (2026-06-11)
 - **Feature**: Collapsed the advanced "Validation Rules" and "Conditional Logic" settings inside each question card in the Form Builder by default to clean up the interface for non-technical users.
 - **Accordion Integration**: Wrapped both sections in a multi-expandable `<Accordion type="multiple">` from `@/components/ui/accordion`.
