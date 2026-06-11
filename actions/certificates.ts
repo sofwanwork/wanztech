@@ -16,7 +16,23 @@ export interface CertificateCheckResult {
   programName?: string;
   /** Respondent's answer to the category field (for category-based templates). */
   category?: string;
+  /** The participant's real IC from the sheet (independent of search method). */
+  ic?: string;
   error?: string;
+}
+
+/** Matches common IC / NRIC column headers (MY + EN variants). */
+function isIcHeader(h: string) {
+  const lower = h.toLowerCase().trim();
+  return (
+    lower === 'ic' ||
+    lower === 'no ic' ||
+    lower === 'no. ic' ||
+    lower === 'no.ic' ||
+    lower === 'ic number' ||
+    lower.includes('kad pengenalan') ||
+    lower.includes('nric')
+  );
 }
 
 function formatPrivateKey(key: string) {
@@ -140,22 +156,17 @@ export async function checkCertificateByICOrEmail(
         return { found: false, error: 'Field Email tidak dijumpai dalam Google Sheet' };
       }
     } else {
-      targetColumnIndex = headers.findIndex((h) => {
-        const lower = h.toLowerCase().trim();
-        return (
-          lower === 'ic' ||
-          lower === 'no ic' ||
-          lower === 'no. ic' ||
-          lower === 'no.ic' ||
-          lower === 'ic number' ||
-          lower.includes('kad pengenalan') ||
-          lower.includes('nric')
-        );
-      });
+      targetColumnIndex = headers.findIndex(isIcHeader);
       if (targetColumnIndex === -1) {
         return { found: false, error: 'Field IC tidak dijumpai dalam Google Sheet' };
       }
     }
+
+    // Resolve the IC column index regardless of search method, so the real IC
+    // can be returned (used by {No. KP} placeholder and serial generation).
+    const icColumnIndex = isEmailSearch
+      ? headers.findIndex(isIcHeader)
+      : targetColumnIndex;
 
     // Find Name column
     const nameColumnIndex = headers.findIndex(
@@ -282,6 +293,10 @@ export async function checkCertificateByICOrEmail(
           name: name.toString(),
           date: date?.toString(),
           programName: form.title,
+          ic:
+            icColumnIndex !== -1
+              ? (row.get(headers[icColumnIndex]) || '').toString().trim() || undefined
+              : undefined,
           category: (() => {
             // Read the respondent's category answer (the Sheet column is keyed
             // by the field's LABEL) so the client can pick the right template.

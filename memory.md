@@ -523,9 +523,16 @@ Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build c
 - Bulk: `bulk/client.tsx` passes `serial: generateCertSerial(template.id, ic)` (no formId in bulk context, so keyed by template id).
 - Builder sidebar: new "Nombor Siri" placeholder button (Hash icon) → `placeholderType: 'serial'`. `PLACEHOLDER_LABELS.serial = '{No. Siri}'`.
 - lint 0, 164/164 tests, build clean. Commit `1afffb9`, pushed.
-- **Outstanding migration still pending**: `20260607040000_add_certificate_category.sql` (`supabase db push`).
+- ~~Outstanding migration pending~~: `20260607040000_add_certificate_category.sql` — **DONE** (applied to production, confirmed 2026-06-11).
 
 
 ## "Default" badge on selected certificate template (2026-06-11)
 - `app/builder/[id]/client.tsx` (~line 992): added a "Default" badge (top-right, primary pill + `CheckCircle2` icon) on the selected cert template card in the "Select Certificate Template" gallery. Shows only when `form.eCertificateTemplate === cert.id`. Makes the default-template selection explicit beyond the existing blue border/ring.
 - `CheckCircle2` already imported from lucide-react. tsc --noEmit clean.
+
+
+## Fix: {No. KP} / serial showed email when searching by email (2026-06-11)
+- Root cause: `check/[formId]/client.tsx` passed `ic={identifier}` (raw search input). When a visitor searched by EMAIL, the IC placeholder + serial used the email, not the real IC.
+- `actions/certificates.ts`: added `ic?` to `CertificateCheckResult`; extracted `isIcHeader()` helper (reused for IC search + email-search IC lookup). On match, resolve `icColumnIndex` regardless of search method and return the real IC from the sheet row.
+- `check/[formId]/client.tsx`: both `<CertificateTemplate>` instances (preview + hidden capture) now use `ic={result.ic || identifier}` — real IC when available, falls back to identifier.
+- Serial (`generateCertSerial(formId, ic)`) is now stable per person regardless of search method. tsc clean, 164/164 tests pass.
