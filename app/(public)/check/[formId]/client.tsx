@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -51,6 +51,8 @@ export function CertificateCheckClient({
 
   const certificateRef = useRef<HTMLDivElement>(null);
   const hiddenCertificateRef = useRef<HTMLDivElement>(null);
+  const previewWrapperRef = useRef<HTMLDivElement>(null);
+  const [previewScale, setPreviewScale] = useState(0.5);
 
   // Pick the template based on the respondent's category answer; fall back to
   // the form's default template when there's no category mapping/match.
@@ -63,6 +65,30 @@ export function CertificateCheckClient({
     );
     return (tplId && templatesById?.[tplId]) || customTemplateData || null;
   })();
+
+  // Orientation of the active certificate. Falls back to landscape when the
+  // template has no explicit dimensions.
+  const tplWidth = activeTemplate?.width ?? 1123;
+  const tplHeight = activeTemplate?.height ?? 794;
+  const isPortrait = tplHeight > tplWidth;
+  // Full-size capture dimensions (A4 @ ~96dpi), matched to orientation.
+  const captureWidth = isPortrait ? 794 : 1123;
+  const captureHeight = isPortrait ? 1123 : 794;
+
+  // Measure the preview wrapper and scale the full-size certificate to fit its
+  // width. Works for both landscape and portrait without hardcoded breakpoints.
+  useEffect(() => {
+    const wrapper = previewWrapperRef.current;
+    if (!wrapper) return;
+    const update = () => {
+      const available = wrapper.clientWidth;
+      if (available > 0) setPreviewScale(available / captureWidth);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(wrapper);
+    return () => ro.disconnect();
+  }, [captureWidth, result?.found]);
 
   const handleCheck = async () => {
     if (!identifier.trim()) {
@@ -89,10 +115,9 @@ export function CertificateCheckClient({
     try {
       const html2canvas = (await import('html2canvas-pro')).default;
 
-      // Dynamically detect orientation from the hidden container before capture
-      const isPortrait = hiddenCertificateRef.current.offsetHeight > hiddenCertificateRef.current.offsetWidth;
-      const tWidth = isPortrait ? 794 : 1123;
-      const tHeight = isPortrait ? 1123 : 794;
+      // Orientation is derived from the active template dimensions.
+      const tWidth = captureWidth;
+      const tHeight = captureHeight;
 
       // Capture the hidden full-size certificate directly using onclone
       // This prevents the element from visually appearing on the user's screen during capturing
@@ -140,10 +165,9 @@ export function CertificateCheckClient({
       const html2canvas = (await import('html2canvas-pro')).default;
       const { jsPDF } = await import('jspdf');
 
-      // Dynamically detect orientation from the hidden container before capture
-      const isPortrait = hiddenCertificateRef.current.offsetHeight > hiddenCertificateRef.current.offsetWidth;
-      const tWidth = isPortrait ? 794 : 1123;
-      const tHeight = isPortrait ? 1123 : 794;
+      // Orientation is derived from the active template dimensions.
+      const tWidth = captureWidth;
+      const tHeight = captureHeight;
 
       // Capture the hidden full-size certificate directly
       // Using scale 3 is usually the "sweet spot" for HD text without crashing on mobile devices
@@ -312,12 +336,20 @@ export function CertificateCheckClient({
                 <CardContent className="p-0 bg-gray-200">
                   {/* Scroll wrapper for mobile */}
                   <div className="flex justify-center w-full bg-gray-200 py-8 px-4 overflow-visible">
-                    {/* Responsive Height Wrapper - eliminating ghost space */}
-                    <div className="relative w-full h-[230px] sm:h-[397px] md:h-[360px] lg:h-[420px] xl:h-[480px] transition-all duration-300">
-                      {/* Scaled ID Card - Absolute Positioned */}
+                    {/* Responsive wrapper - height tracks the scaled certificate */}
+                    <div
+                      ref={previewWrapperRef}
+                      className="relative w-full transition-all duration-300"
+                      style={{ height: `${captureHeight * previewScale}px` }}
+                    >
+                      {/* Scaled certificate - measured to fit, orientation-aware */}
                       <div
-                        className="absolute top-0 left-1/2 -translate-x-1/2 origin-top shadow-2xl scale-[0.28] sm:scale-[0.5] md:scale-[0.45] lg:scale-[0.52] xl:scale-[0.6] transition-transform"
-                        style={{ width: '1123px', height: '794px' }}
+                        className="absolute top-0 left-1/2 -translate-x-1/2 origin-top shadow-2xl transition-transform"
+                        style={{
+                          width: `${captureWidth}px`,
+                          height: `${captureHeight}px`,
+                          transform: `translateX(-50%) scale(${previewScale})`,
+                        }}
                       >
                         <div ref={certificateRef} className="w-full h-full">
                           <CertificateTemplate
@@ -349,8 +381,8 @@ export function CertificateCheckClient({
                 position: 'absolute',
                 top: '-9999px',
                 left: '-9999px',
-                width: '1123px',
-                height: '794px',
+                width: `${captureWidth}px`,
+                height: `${captureHeight}px`,
                 zIndex: -1,
                 overflow: 'hidden',
               }}

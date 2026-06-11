@@ -551,3 +551,10 @@ Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build c
 - Public render `app/(public)/form/[id]/client.tsx`: destructured `backgroundImage` from theme; added `getBackgroundStyle()` helper that layers color + optional pattern + optional photo. Photo uses `getProxiedImageUrl` (Google Drive support), `background-size: cover`, `background-attachment: fixed`. When a pattern is also set, pattern gradient overlays the photo (`repeat, no-repeat`). Wrapper div now uses `getBackgroundStyle()` instead of inline color+pattern.
 - Builder `app/builder/[id]/client.tsx`: added "Background Image URL" field + live preview + Remove button in the Theme Settings card (after Background Pattern), matching the cover-image URL-input pattern.
 - URL-input approach (no uploader) — consistent with cover image & logo. Verified: tsc clean, lint 0, 164/164 tests, production build clean.
+
+
+## Fix: portrait certificate broken in check-page live preview + download (2026-06-11)
+- Bug: `app/(public)/check/[formId]/client.tsx` hardcoded landscape `1123x794` in 3 places — preview box, Tailwind `scale-[...]` breakpoints, and the hidden capture container. Portrait certs (height > width) rendered distorted, and PNG/PDF download used wrong orientation (the old DOM-offset `isPortrait` check always read landscape because dims were forced).
+- Root: the `CertificateRenderer` itself is orientation-agnostic (percent-based, `100%`), and the cert builder has a portrait/landscape toggle (`toolbar.tsx`). Only the check page assumed landscape.
+- Fix: derive orientation from `activeTemplate.width/height` → `isPortrait`, `captureWidth/captureHeight`. Replaced fragile `scale-[...]` breakpoints with a measured scale: `previewWrapperRef` + `ResizeObserver` computes `previewScale = availableWidth / captureWidth`; wrapper height = `captureHeight * previewScale`. Hidden capture container + both download handlers now use `captureWidth/Height`; jsPDF uses the component-level `isPortrait`.
+- Verified: tsc clean, lint 0, 164/164 tests, production build clean.
