@@ -591,6 +591,13 @@ Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build c
 - Verified: tsc clean, lint 0, 164/164 tests, production build clean.
 
 
+## Email template beautification (2026-06-11)
+- Transactional (in-code): redesigned the shared `emailWrapper()` in `lib/email/index.ts` — lifts ALL transactional emails at once (magic edit-link, respondent confirmation, owner notification, subscription/lifecycle emails). Changes: richer 3-stop slate→indigo gradient bg, refined logo header, white card with subtle border + softer shadow, fuller footer with klikform.com link + dynamic `© year`, mobile padding media query, light-only color-scheme + MSO/Outlook namespaces. Added optional 2nd param `preheader` (hidden inbox-preview snippet, escaped). Wired preheaders into the 3 user-facing emails: new-submission, edit-link, respondent-confirmation. Each template keeps its own colored header row in `${content}` (unchanged contract).
+  - Gotcha fixed: respondent-confirmation preheader initially hardcoded the default "telah kami terima" phrase, which broke a test asserting that phrase is absent when a custom message is set. Fix: preheader = `customMessage || default`.
+- Auth emails (Supabase-rendered, NOT in code): created ready-to-paste HTML in `supabase/templates/` — `confirm-signup.html` (emerald), `reset-password.html` (indigo), `magic-link.html` (sky, only if `signInWithOtp` is enabled later), plus `README.md` with paste instructions. Use `{{ .ConfirmationURL }}`. These must be pasted into Supabase Dashboard → Authentication → Emails (HTML lives in Supabase, not the repo). App login currently uses password + Google OAuth (no magic-link login).
+- Verified: tsc clean, lint 0, 164/164 tests, production build clean.
+
+
 ## Form Builder Advanced Settings UI Simplification (2026-06-11)
 - **Feature**: Collapsed the advanced "Validation Rules" and "Conditional Logic" settings inside each question card in the Form Builder by default to clean up the interface for non-technical users.
 - **Accordion Integration**: Wrapped both sections in a multi-expandable `<Accordion type="multiple">` from `@/components/ui/accordion`.

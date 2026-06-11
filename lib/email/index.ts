@@ -118,7 +118,7 @@ export function getNewSubmissionEmail(
 
   return {
     subject: `📬 Response baru: ${formTitle}`,
-    html: emailWrapper(content),
+    html: emailWrapper(content, `Anda menerima response baru untuk "${formTitle}".`),
   };
 }
 
@@ -174,7 +174,7 @@ export function getEditLinkEmail(
 
   return {
     subject: `✏️ Sunting jawapan anda: ${formTitle}`,
-    html: emailWrapper(content),
+    html: emailWrapper(content, `Klik untuk menyunting jawapan anda bagi "${formTitle}".`),
   };
 }
 
@@ -241,7 +241,10 @@ export function getRespondentConfirmationEmail(
 
   return {
     subject: `✅ Pengesahan: ${formTitle}`,
-    html: emailWrapper(content),
+    html: emailWrapper(
+      content,
+      customMessage || `Jawapan anda untuk "${formTitle}" telah kami terima.`
+    ),
   };
 }
 
@@ -257,14 +260,23 @@ function escapeHtml(input: string): string {
     .replace(/'/g, '&#39;');
 }
 
-// Base email template wrapper
-function emailWrapper(content: string) {
+// Base email template wrapper.
+// `content` is a sequence of <tr> rows rendered inside the white card.
+// `preheader` is the hidden inbox-preview snippet (optional but recommended).
+function emailWrapper(content: string, preheader?: string) {
+  const year = new Date().getFullYear();
+  const preheaderBlock = preheader
+    ? `<div style="display: none; max-height: 0; overflow: hidden; opacity: 0; mso-hide: all;">${escapeHtml(preheader)}&#8202;&#8203;&#8204;&#8205;&#8206;&#8207;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;</div>`
+    : '';
   return `
     <!DOCTYPE html>
-    <html lang="ms">
+    <html lang="ms" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="color-scheme" content="light only">
+        <meta name="supported-color-schemes" content="light only">
         <title>KlikForm</title>
         <!--[if mso]>
         <noscript>
@@ -275,43 +287,57 @@ function emailWrapper(content: string) {
           </xml>
         </noscript>
         <![endif]-->
+        <style>
+          a { text-decoration: none; }
+          @media only screen and (max-width: 600px) {
+            .kf-card-pad { padding: 28px 24px !important; }
+          }
+        </style>
       </head>
-      <body style="margin: 0; padding: 0; background-color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); background-color: #0f172a; width: 100%;">
+      <body style="margin: 0; padding: 0; background-color: #0f172a; -webkit-font-smoothing: antialiased; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+        ${preheaderBlock}
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(160deg, #0f172a 0%, #1e293b 55%, #312e81 100%); background-color: #0f172a; width: 100%;">
           <tr>
-            <td align="center" style="padding: 40px 20px; vertical-align: top;">
+            <td align="center" style="padding: 44px 20px; vertical-align: top;">
               <!-- Logo -->
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 520px;">
                 <tr>
-                  <td align="center" style="padding-bottom: 30px;">
+                  <td align="center" style="padding-bottom: 28px;">
                     <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
                       <tr>
-                        <td style="vertical-align: middle; padding-right: 10px;">
-                          <img src="https://klikform.com/logo.png" alt="KlikForm" width="44" height="44" style="display: block; border: 0; border-radius: 12px;" />
+                        <td style="vertical-align: middle; padding-right: 12px;">
+                          <img src="https://klikform.com/logo.png" alt="KlikForm" width="42" height="42" style="display: block; border: 0; border-radius: 12px;" />
                         </td>
                         <td style="vertical-align: middle;">
-                          <span style="color: white; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">KlikForm</span>
+                          <span style="color: #ffffff; font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">KlikForm</span>
                         </td>
                       </tr>
                     </table>
                   </td>
                 </tr>
               </table>
-              
+
               <!-- Main Card -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 520px; background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 520px; background: #ffffff; border-radius: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.55);">
                 ${content}
               </table>
-              
+
               <!-- Footer -->
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 520px;">
                 <tr>
-                  <td align="center" style="padding: 30px 20px;">
-                    <p style="margin: 0 0 10px 0; color: rgba(255,255,255,0.6); font-size: 14px;">
-                      © 2026 KlikForm. All rights reserved.
+                  <td align="center" style="padding: 28px 20px 8px;">
+                    <p style="margin: 0 0 6px 0; color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 600;">
+                      KlikForm — Borang &amp; e-Sijil tanpa kerumitan ✨
                     </p>
-                    <p style="margin: 0; color: rgba(255,255,255,0.4); font-size: 12px;">
-                      Create forms, collect data seamlessly ✨
+                    <p style="margin: 0; color: rgba(255,255,255,0.45); font-size: 12px;">
+                      <a href="https://klikform.com" style="color: rgba(255,255,255,0.6); text-decoration: underline;">klikform.com</a>
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding: 12px 20px 0;">
+                    <p style="margin: 0; color: rgba(255,255,255,0.35); font-size: 11px;">
+                      © ${year} KlikForm. Hak cipta terpelihara.
                     </p>
                   </td>
                 </tr>
