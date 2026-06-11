@@ -149,12 +149,23 @@ export async function submitEditedResponseAction(
   const sheetId = match[1];
   const pk = settings.googlePrivateKey ? formatPrivateKey(settings.googlePrivateKey) : undefined;
 
+  // Google OAuth access tokens expire ~1h. A magic edit link is typically
+  // opened much later, so the stored token is usually dead — refresh it (and
+  // persist) before touching Sheets, otherwise Google returns a 401.
+  const { getValidAccessToken } = await import('@/lib/api/google-auth');
+  const accessToken = await getValidAccessToken({
+    accessToken: settings.googleAccessToken,
+    refreshToken: settings.googleRefreshToken,
+    tokenExpiry: settings.googleTokenExpiry,
+    userId: form.userId,
+  });
+
   const result = await updateSheetRow(
     {
       sheetId,
       clientEmail: settings.googleClientEmail,
       privateKey: pk,
-      accessToken: settings.googleAccessToken,
+      accessToken,
     },
     '_submission_id',
     tokenRow.submissionId,

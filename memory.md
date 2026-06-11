@@ -571,6 +571,14 @@ Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build c
 - Verified: tsc clean, lint 0, 164/164 tests, production build clean.
 
 
+## Fix: magic edit-link returns Google 401 on submit (2026-06-11)
+- Symptom: respondent opens magic edit link, edits, submits → "Google API error - [401] Request had invalid authentication credentials. Expected OAuth 2 access token...".
+- Root cause: `actions/edit-response.ts` passed the stored `settings.googleAccessToken` straight to `updateSheetRow` with NO refresh. Google OAuth access tokens live ~1h; a magic link is opened later, so the token is dead. `updateSheetRow`/`appendToSheet` check `if (config.accessToken)` FIRST, so a stale token short-circuits the service-account fallback → 401. The normal `submitFormAction` works only because it refreshes the token first.
+- Fix: added shared helper `getValidAccessToken({accessToken, refreshToken, tokenExpiry, userId})` in `lib/api/google-auth.ts` — refreshes when expiring within 5 min and persists the new token to the owner's settings row (dynamic imports of admin client + encrypt to keep it server-safe). `edit-response.ts` now calls it before `updateSheetRow`.
+- Deliberately did NOT refactor the working `submitFormAction`/cert-check inline refresh blocks (avoid regressions on the critical submit path); the helper exists for future consolidation.
+- Verified: tsc clean, lint 0, 164/164 tests, production build clean.
+
+
 ## Fix: magic-link (edit-link) email not sent on submit (2026-06-11)
 - Symptom: user submits form, no email when magic link (edit link) is ON. Submission still succeeds.
 - Two likely root causes addressed (couldn't confirm which fired in prod without logs):

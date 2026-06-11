@@ -45,3 +45,50 @@ export async function refreshAccessToken(refreshToken: string) {
     const { credentials } = await oauth2Client.refreshAccessToken();
     return credentials;
 }
+
+/**
+ * Resolve a usable Google access token. Google OAuth access tokens live ~1h,
+ * so any flow that runs long after "Connect with Google" (e.g. a respondent
+ * opening a magic edit link) must refresh before calling Sheets/Drive, or it
+ * gets a 401. Refreshes when expiring within 5 minutes and persists the new
+ * token to the owner's settings row. Returns the (possibly refreshed) token,
+ * or the original when no refresh is needed/possible.
+ */
+export async function getValidAccessToken(params: {
+    accessToken?: string;
+    refreshToken?: string;
+    tokenExpiry?: number;
+    userId?: string;
+}): Promise<string | undefined> {
+    let accessToken = params.accessToken;
+    const { refreshToken, tokenExpiry, userId } = params;
+
+    if (accessToken && refreshToken && tokenExpiry) {
+        // 5-minute safety window before actual expiry.
+        if (Date.now() > tokenExpiry - 300000) {
+            try {
+                const newCreds = await refreshAccessToken(refreshToken);
+                if (newCreds.access_token) {
+                    accessToken = newCreds.access_token;
+                    const { createAdminClient } = await import('@/utils/supabase/admin');
+                    const { encrypt } = await import('@/lib/encryption');
+                    const updateData: Record<string, unknown> = {
+                        google_access_token: encrypt(accessToken),
+                        updated_at: new Date().toISOString(),
+                    };
+                    if (newCreds.expiry_date) {
+                        updateData.google_token_expiry = newCreds.expiry_date;
+                    }
+                    if (userId) {
+                        const admin = createAdminClient();
+                        await admin.from('settings').update(updateData).eq('user_id', userId);
+                    }
+                }
+            } catch (e) {
+                console.error('Token refresh failed:', e);
+            }
+        }
+    }
+
+    return accessToken;
+}
