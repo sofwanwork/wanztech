@@ -558,3 +558,9 @@ Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build c
 - Root: the `CertificateRenderer` itself is orientation-agnostic (percent-based, `100%`), and the cert builder has a portrait/landscape toggle (`toolbar.tsx`). Only the check page assumed landscape.
 - Fix: derive orientation from `activeTemplate.width/height` → `isPortrait`, `captureWidth/captureHeight`. Replaced fragile `scale-[...]` breakpoints with a measured scale: `previewWrapperRef` + `ResizeObserver` computes `previewScale = availableWidth / captureWidth`; wrapper height = `captureHeight * previewScale`. Hidden capture container + both download handlers now use `captureWidth/Height`; jsPDF uses the component-level `isPortrait`.
 - Verified: tsc clean, lint 0, 164/164 tests, production build clean.
+
+
+## Fix follow-up: portrait cert overflowing the preview card (2026-06-11)
+- After the orientation fix, portrait certs still overflowed because `previewScale` was width-only (`availableWidth / captureWidth`), making tall portrait certs taller than the card.
+- Fix: scale now "contains" within BOTH width and a capped max height: `maxHeight = min(520, innerHeight*0.6)`, `previewScale = min(available/captureWidth, maxHeight/captureHeight)`. Added window resize listener (in addition to ResizeObserver) and `captureHeight` to the effect deps.
+- Verified: tsc clean, lint 0, 164/164 tests, production build clean.

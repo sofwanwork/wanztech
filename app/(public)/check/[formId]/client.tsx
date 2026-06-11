@@ -75,20 +75,29 @@ export function CertificateCheckClient({
   const captureWidth = isPortrait ? 794 : 1123;
   const captureHeight = isPortrait ? 1123 : 794;
 
-  // Measure the preview wrapper and scale the full-size certificate to fit its
-  // width. Works for both landscape and portrait without hardcoded breakpoints.
+  // Measure the preview wrapper and scale the full-size certificate to "fit"
+  // within both the available width and a max height. This keeps portrait
+  // certificates from overflowing the card while landscape still fills width.
   useEffect(() => {
     const wrapper = previewWrapperRef.current;
     if (!wrapper) return;
     const update = () => {
       const available = wrapper.clientWidth;
-      if (available > 0) setPreviewScale(available / captureWidth);
+      if (available <= 0) return;
+      const maxHeight = Math.min(520, window.innerHeight * 0.6);
+      const fitWidth = available / captureWidth;
+      const fitHeight = maxHeight / captureHeight;
+      setPreviewScale(Math.min(fitWidth, fitHeight));
     };
     update();
     const ro = new ResizeObserver(update);
     ro.observe(wrapper);
-    return () => ro.disconnect();
-  }, [captureWidth, result?.found]);
+    window.addEventListener('resize', update);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', update);
+    };
+  }, [captureWidth, captureHeight, result?.found]);
 
   const handleCheck = async () => {
     if (!identifier.trim()) {
