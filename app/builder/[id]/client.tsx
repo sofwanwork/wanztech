@@ -44,6 +44,8 @@ import {
   AlertTriangle,
   Loader2,
   CheckCircle2,
+  Pencil,
+  Lock,
 } from 'lucide-react';
 
 import Link from 'next/link';
@@ -92,6 +94,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
   const [deleting, setDeleting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [pendingTemplateId, setPendingTemplateId] = useState<string | null>(null);
+  const [sheetUrlEditable, setSheetUrlEditable] = useState(false);
   const [isNavigating, startTransition] = useTransition();
 
   const [mounted, setMounted] = useState(false);
@@ -566,13 +569,48 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                 </div>
                 <div className="space-y-2" id="tour-google-sheet">
                   <Label htmlFor="google-sheet-url">Google Sheet Share URL</Label>
-                  <Input
-                    id="google-sheet-url"
-                    name="googleSheetUrl"
-                    placeholder="https://docs.google.com/spreadsheets/d/..."
-                    value={form.googleSheetUrl || ''}
-                    onChange={(e) => setForm((f) => ({ ...f, googleSheetUrl: e.target.value }))}
-                  />
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="google-sheet-url"
+                      name="googleSheetUrl"
+                      placeholder="https://docs.google.com/spreadsheets/d/..."
+                      value={form.googleSheetUrl || ''}
+                      onChange={(e) => setForm((f) => ({ ...f, googleSheetUrl: e.target.value }))}
+                      readOnly={!sheetUrlEditable}
+                      className={!sheetUrlEditable ? 'bg-muted/50 cursor-default' : undefined}
+                    />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      title="Copy URL"
+                      disabled={!form.googleSheetUrl}
+                      onClick={async () => {
+                        const copied = await copyToClipboard(form.googleSheetUrl || '');
+                        if (copied) toast.success('Google Sheet URL copied!');
+                        else toast.error('Failed to copy URL');
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant={sheetUrlEditable ? 'default' : 'outline'}
+                      title={sheetUrlEditable ? 'Lock field' : 'Edit URL'}
+                      onClick={() => setSheetUrlEditable((v) => !v)}
+                    >
+                      {sheetUrlEditable ? (
+                        <Lock className="h-4 w-4" />
+                      ) : (
+                        <Pencil className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Field dikunci untuk elak terpadam. Tekan{' '}
+                    <Pencil className="inline h-3 w-3" /> untuk edit.
+                  </p>
                   {!useManualKeys && (
                     <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-sm">
                       <p className="font-medium text-blue-800 dark:text-blue-200 mb-2">

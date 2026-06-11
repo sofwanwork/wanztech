@@ -564,3 +564,8 @@ Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build c
 - After the orientation fix, portrait certs still overflowed because `previewScale` was width-only (`availableWidth / captureWidth`), making tall portrait certs taller than the card.
 - Fix: scale now "contains" within BOTH width and a capped max height: `maxHeight = min(520, innerHeight*0.6)`, `previewScale = min(available/captureWidth, maxHeight/captureHeight)`. Added window resize listener (in addition to ResizeObserver) and `captureHeight` to the effect deps.
 - Verified: tsc clean, lint 0, 164/164 tests, production build clean.
+
+
+## Google Sheet URL field: copy + lock-to-edit (2026-06-11)
+- `app/builder/[id]/client.tsx` (~line 570): Google Sheet Share URL `<Input>` is now `readOnly` by default (muted bg) to prevent accidental edits/deletion that break Sheet access. Wrapped in a flex row with two icon buttons: Copy (uses existing `copyToClipboard(form.googleSheetUrl)`, disabled when empty) and an Edit/Lock toggle (`sheetUrlEditable` state — Pencil when locked, Lock when editable). Added `Pencil` + `Lock` lucide imports and a helper caption.
+- Verified: tsc clean, lint 0, 164/164 tests, production build clean.
