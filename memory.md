@@ -617,3 +617,8 @@ Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build c
 - **Feature**: Added automatic dash-formatting (`XXXXXX-XX-XXXX`) to fields labeled "IC", "No IC", "No. IC", "Kad Pengenalan", or "NRIC" (or fields using the IC regex pattern preset) in the public form client (`app/(public)/form/[id]/client.tsx`).
 - Prefilled/initial values and live user typing are both formatted automatically.
 - **Verification**: Verified using `npm test` (all 164 tests passed).
+
+## Malaysian NRIC/IC Certificate Preview Dash Formatting (2026-06-18)
+- **Feature**: Automatically formats the `{No. KP}` (IC placeholder) value to include dashes (`XXXXXX-XX-XXXX`) in the certificate generator renderer (`components/certificates/renderer/index.tsx`). This ensures that generated certificates and public check page previews always display the IC with dashes even if stored without them in the source sheet.
+- **Mock Data**: Updated the mock preview value in the builder preview page (`app/(dashboard)/certificates/builder/[id]/preview/page.tsx`) to `901234-56-7890`.
+- **Verification**: Verified via local compilation (`npm run build`) and test suite runs (`npm test`).
