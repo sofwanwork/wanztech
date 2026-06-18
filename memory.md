@@ -622,3 +622,7 @@ Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build c
 - **Feature**: Automatically formats the `{No. KP}` (IC placeholder) value to include dashes (`XXXXXX-XX-XXXX`) in the certificate generator renderer (`components/certificates/renderer/index.tsx`). This ensures that generated certificates and public check page previews always display the IC with dashes even if stored without them in the source sheet.
 - **Mock Data**: Updated the mock preview value in the builder preview page (`app/(dashboard)/certificates/builder/[id]/preview/page.tsx`) to `901234-56-7890`.
 - **Verification**: Verified via local compilation (`npm run build`) and test suite runs (`npm test`).
+
+## Case-Insensitive Category-Based Certificate Matching (2026-06-18)
+- **Fix**: Updated `resolveCategoryTemplateId` in `lib/certificates/category.ts` to look up category mappings case-insensitively. This fixes the issue where sheet values like "peserta" or "urusetia" (lowercase or varying casing) failed to match mappings in the builder (such as "Peserta" or "Urusetia").
+- **Verification**: Added unit test in `tests/certificate-category.test.ts` verifying case-insensitive resolution. All 165 tests passed, and local build was verified clean.
