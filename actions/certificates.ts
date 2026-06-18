@@ -8,6 +8,7 @@ import { headers as getNextHeaders } from 'next/headers';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { encrypt } from '@/lib/encryption';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
+import { isIcHeader } from '@/lib/certificates/headers';
 
 export interface CertificateCheckResult {
   found: boolean;
@@ -19,20 +20,6 @@ export interface CertificateCheckResult {
   /** The participant's real IC from the sheet (independent of search method). */
   ic?: string;
   error?: string;
-}
-
-/** Matches common IC / NRIC column headers (MY + EN variants). */
-function isIcHeader(h: string) {
-  const lower = h.toLowerCase().trim();
-  return (
-    lower === 'ic' ||
-    lower === 'no ic' ||
-    lower === 'no. ic' ||
-    lower === 'no.ic' ||
-    lower === 'ic number' ||
-    lower.includes('kad pengenalan') ||
-    lower.includes('nric')
-  );
 }
 
 function formatPrivateKey(key: string) {

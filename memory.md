@@ -626,3 +626,9 @@ Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build c
 ## Case-Insensitive Category-Based Certificate Matching (2026-06-18)
 - **Fix**: Updated `resolveCategoryTemplateId` in `lib/certificates/category.ts` to look up category mappings case-insensitively. This fixes the issue where sheet values like "peserta" or "urusetia" (lowercase or varying casing) failed to match mappings in the builder (such as "Peserta" or "Urusetia").
 - **Verification**: Added unit test in `tests/certificate-category.test.ts` verifying case-insensitive resolution. All 165 tests passed, and local build was verified clean.
+
+## Fix: Email displayed instead of IC on Certificate (2026-06-18)
+- **Bug**: When searching a certificate by email, if the IC column in the Google Sheet wasn't detected, the check page fell back to the search input (`identifier`), printing the respondent's email address on the certificate's `{No. KP}` placeholder.
+- **Fix (Utility)**: Created [headers.ts](file:///c:/Users/Sofwan/Desktop/klikform/lib/certificates/headers.ts) with `isIcHeader(h: string)`. It extends matching to common Malaysian abbreviations (`kp`, `no kp`, `no. kp`, `no.kp`, `nombor kp`) and uses word-boundary regexes (`/\bkp\b/`, `/\bic\b/`) to match compound headers (e.g. `IC/Passport`, `No. KP/Passport`) securely without false positives on other fields like `office` or `timestamp`.
+- **Fix (Frontend)**: Updated [client.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/(public)/check/[formId]/client.tsx) to prevent email addresses from being passed as `ic`. The template now uses `ic={result.ic || (identifier.includes('@') ? '' : identifier)}`.
+- **Verification**: Created [certificate-headers.test.ts](file:///c:/Users/Sofwan/Desktop/klikform/tests/certificate-headers.test.ts) covering matches, boundary cases, and negative cases. All 171 tests passed, and `tsc --noEmit` compiles cleanly.

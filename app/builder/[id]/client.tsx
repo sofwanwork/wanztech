@@ -1012,8 +1012,9 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                             <strong>&quot;Nama&quot;</strong> for the certificate name
                           </li>
                           <li>
-                            Your form needs a field <strong>&quot;IC&quot;</strong> or{' '}
-                            <strong>&quot;No IC&quot;</strong> for verification
+                            Your form needs a field <strong>&quot;IC&quot;</strong>,{' '}
+                            <strong>&quot;No IC&quot;</strong>, or{' '}
+                            <strong>&quot;No. KP&quot;</strong> for verification
                           </li>
                         </ul>
                       </div>

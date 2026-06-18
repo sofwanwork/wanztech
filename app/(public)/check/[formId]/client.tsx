@@ -372,7 +372,7 @@ export function CertificateCheckClient({
                               date={result.date}
                               id="check-preview"
                               customTemplateData={activeTemplate}
-                              ic={result.ic || identifier}
+                              ic={result.ic || (identifier.includes('@') ? '' : identifier)}
                               formId={formId}
                             />
                           </div>
@@ -408,7 +408,7 @@ export function CertificateCheckClient({
                 date={result.date}
                 id="hidden-certificate"
                 customTemplateData={activeTemplate}
-                ic={result.ic || identifier}
+                ic={result.ic || (identifier.includes('@') ? '' : identifier)}
                 formId={formId}
               />
             </div>
