@@ -612,3 +612,8 @@ Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build c
 - **Feature**: Added a pre-made "IC (MY)" regex validation pattern preset (`^[0-9]{6}-[0-9]{2}-[0-9]{4}$|^[0-9]{12}$`) in `components/forms/fields-editor/index.tsx`.
 - This enables form creators to easily enforce Malaysian IC format (either 12 digits or with dashes) without writing custom regular expressions.
 - **Verification**: Verified using `npm test` (all 164 tests passed).
+
+## Malaysian IC Input Auto-Formatting (2026-06-18)
+- **Feature**: Added automatic dash-formatting (`XXXXXX-XX-XXXX`) to fields labeled "IC", "No IC", "No. IC", "Kad Pengenalan", or "NRIC" (or fields using the IC regex pattern preset) in the public form client (`app/(public)/form/[id]/client.tsx`).
+- Prefilled/initial values and live user typing are both formatted automatically.
+- **Verification**: Verified using `npm test` (all 164 tests passed).
