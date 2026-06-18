@@ -589,6 +589,7 @@ function SortableField({
                               <SelectItem value="^[a-zA-Z]+$">Letters</SelectItem>
                               <SelectItem value="^[^@]+@[^@]+\.[^@]+$">Email</SelectItem>
                               <SelectItem value="^(\+?6?01)[0-46-9]-*[0-9]{7,8}$">Phone (MY)</SelectItem>
+                              <SelectItem value="^[0-9]{6}-[0-9]{2}-[0-9]{4}$|^[0-9]{12}$">IC (MY)</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>

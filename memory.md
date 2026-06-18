@@ -608,3 +608,7 @@ Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build c
 - **Clean Layout**: Removed duplicate headings and dividers from both sections, optimizing space when expanded.
 - **Verified**: `npm run lint` clean (0 warnings), `npm test` clean (164/164 tests passing), and production build `npm run build` clean.
 
+## Added NRIC/IC Regex Pattern Preset (2026-06-18)
+- **Feature**: Added a pre-made "IC (MY)" regex validation pattern preset (`^[0-9]{6}-[0-9]{2}-[0-9]{4}$|^[0-9]{12}$`) in `components/forms/fields-editor/index.tsx`.
+- This enables form creators to easily enforce Malaysian IC format (either 12 digits or with dashes) without writing custom regular expressions.
+- **Verification**: Verified using `npm test` (all 164 tests passed).
