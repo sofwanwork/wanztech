@@ -231,16 +231,16 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleInputChange = (id: string, value: any) => {
     let finalValue = value;
-    const field = form.fields.find((f) => f.id === id);
-    if (field && typeof value === 'string') {
-      const pattern = field.validation?.pattern;
+    const targetField = form.fields.find((f) => f.id === id);
+    if (targetField && typeof value === 'string') {
+      const pattern = targetField.validation?.pattern;
       const isIcField =
         pattern === '^[0-9]{6}-[0-9]{2}-[0-9]{4}$|^[0-9]{12}$' ||
-        field.label.toLowerCase() === 'ic' ||
-        field.label.toLowerCase() === 'no ic' ||
-        field.label.toLowerCase() === 'no. ic' ||
-        field.label.toLowerCase().includes('kad pengenalan') ||
-        field.label.toLowerCase().includes('nric');
+        targetField.label.toLowerCase() === 'ic' ||
+        targetField.label.toLowerCase() === 'no ic' ||
+        targetField.label.toLowerCase() === 'no. ic' ||
+        targetField.label.toLowerCase().includes('kad pengenalan') ||
+        targetField.label.toLowerCase().includes('nric');
       if (isIcField) {
         const clean = value.replace(/\D/g, '');
         if (clean.length <= 6) {
