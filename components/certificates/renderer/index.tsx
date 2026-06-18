@@ -69,7 +69,14 @@ export function CertificateRenderer({ template, data, id }: CertificateRendererP
     if (el.type === 'text') return el.content;
     if (el.type === 'placeholder') {
       const key = el.placeholderType as keyof typeof data;
-      return data[key] || el.content || '';
+      const val = data[key] || el.content || '';
+      if (el.placeholderType === 'ic' && typeof val === 'string') {
+        const clean = val.replace(/\D/g, '');
+        if (clean.length === 12) {
+          return `${clean.slice(0, 6)}-${clean.slice(6, 8)}-${clean.slice(8, 12)}`;
+        }
+      }
+      return val;
     }
     return '';
   };

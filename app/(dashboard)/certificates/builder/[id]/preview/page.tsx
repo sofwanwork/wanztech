@@ -28,7 +28,7 @@ const PLACEHOLDER_LABELS: Record<string, string> = {
   program: 'Program Latihan Kepimpinan',
   date: new Date().toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' }),
   signature: 'Tandatangan',
-  ic: '901234567890',
+  ic: '901234-56-7890',
   serial: 'CERT-001',
   expiry: new Date(Date.now() + 365 * 86400000).toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' }),
 };
