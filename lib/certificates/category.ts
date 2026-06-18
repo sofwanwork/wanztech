@@ -12,10 +12,13 @@ export function resolveCategoryTemplateId(
   categoryValue: string | undefined | null,
   defaultTemplateId: string | undefined
 ): string | undefined {
-  const value = (categoryValue ?? '').trim();
+  const value = (categoryValue ?? '').trim().toLowerCase();
   if (config?.map && value) {
-    const mapped = config.map[value];
-    if (mapped) return mapped;
+    for (const [key, templateId] of Object.entries(config.map)) {
+      if (key.trim().toLowerCase() === value && templateId) {
+        return templateId;
+      }
+    }
   }
   return defaultTemplateId;
 }

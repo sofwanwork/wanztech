@@ -33,6 +33,11 @@ describe('resolveCategoryTemplateId', () => {
     );
   });
 
+  it('ignores casing differences before matching', () => {
+    expect(resolveCategoryTemplateId(config, 'urusetia', 't-default')).toBe('t-staff');
+    expect(resolveCategoryTemplateId(config, 'PESERTA', 't-default')).toBe('t-participant');
+  });
+
   it('falls back to default when no config is set', () => {
     expect(resolveCategoryTemplateId(undefined, 'Penganjur', 't-default')).toBe(
       't-default'
