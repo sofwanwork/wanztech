@@ -53,7 +53,35 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [formData, setFormData] = useState<Record<string, any>>(() => initialValues ?? {});
+  const [formData, setFormData] = useState<Record<string, any>>(() => {
+    const initial = { ...(initialValues ?? {}) };
+    for (const field of form.fields) {
+      if (initial[field.id] && typeof initial[field.id] === 'string') {
+        const val = initial[field.id] as string;
+        const pattern = field.validation?.pattern;
+        const isIcField =
+          pattern === '^[0-9]{6}-[0-9]{2}-[0-9]{4}$|^[0-9]{12}$' ||
+          field.label.toLowerCase() === 'ic' ||
+          field.label.toLowerCase() === 'no ic' ||
+          field.label.toLowerCase() === 'no. ic' ||
+          field.label.toLowerCase().includes('kad pengenalan') ||
+          field.label.toLowerCase().includes('nric');
+        if (isIcField) {
+          const clean = val.replace(/\D/g, '');
+          if (clean.length > 6) {
+            if (clean.length <= 8) {
+              initial[field.id] = `${clean.slice(0, 6)}-${clean.slice(6)}`;
+            } else {
+              initial[field.id] = `${clean.slice(0, 6)}-${clean.slice(6, 8)}-${clean.slice(8, 12)}`;
+            }
+          } else {
+            initial[field.id] = clean;
+          }
+        }
+      }
+    }
+    return initial;
+  });
   const [mounted, setMounted] = useState(false);
   // PDPA consent — when the form enables PDPA, this must be true before submit.
   const pdpaEnabled = !editMode && !!form.pdpaSettings?.enabled;
@@ -202,7 +230,30 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleInputChange = (id: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [id]: value }));
+    let finalValue = value;
+    const field = form.fields.find((f) => f.id === id);
+    if (field && typeof value === 'string') {
+      const pattern = field.validation?.pattern;
+      const isIcField =
+        pattern === '^[0-9]{6}-[0-9]{2}-[0-9]{4}$|^[0-9]{12}$' ||
+        field.label.toLowerCase() === 'ic' ||
+        field.label.toLowerCase() === 'no ic' ||
+        field.label.toLowerCase() === 'no. ic' ||
+        field.label.toLowerCase().includes('kad pengenalan') ||
+        field.label.toLowerCase().includes('nric');
+      if (isIcField) {
+        const clean = value.replace(/\D/g, '');
+        if (clean.length <= 6) {
+          finalValue = clean;
+        } else if (clean.length <= 8) {
+          finalValue = `${clean.slice(0, 6)}-${clean.slice(6)}`;
+        } else {
+          finalValue = `${clean.slice(0, 6)}-${clean.slice(6, 8)}-${clean.slice(8, 12)}`;
+        }
+      }
+    }
+
+    setFormData((prev) => ({ ...prev, [id]: finalValue }));
 
     // Smart Auto-Scroll for single-selection fields
     const field = visibleFields.find(f => f.id === id);
