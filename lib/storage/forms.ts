@@ -34,8 +34,7 @@ export async function getForms(): Promise<Form[]> {
     description: string;
     cover_image: string | null;
     thank_you_message: string | null;
-    redirect_url: string | null;
-    redirect_button_text: string | null;
+    redirect_buttons: unknown | null;
     google_sheet_url: string | null;
     fields: unknown[] | null;
     created_at: string;
@@ -54,8 +53,7 @@ export async function getForms(): Promise<Form[]> {
     description: f.description,
     coverImage: f.cover_image ?? undefined,
     thankYouMessage: f.thank_you_message ?? undefined,
-    redirectUrl: f.redirect_url ?? undefined,
-    redirectButtonText: f.redirect_button_text ?? undefined,
+    redirectButtons: (f.redirect_buttons as Form['redirectButtons']) ?? undefined,
     googleSheetUrl: f.google_sheet_url ?? undefined,
     fields: (f.fields as Form['fields']) || [],
     createdAt: f.created_at,
@@ -144,8 +142,7 @@ export async function getFormById(id: string): Promise<Form | undefined> {
     description: data.description,
     coverImage: data.cover_image,
     thankYouMessage: data.thank_you_message,
-    redirectUrl: data.redirect_url,
-    redirectButtonText: data.redirect_button_text,
+    redirectButtons: (data.redirect_buttons as Form['redirectButtons']) ?? undefined,
     googleSheetUrl: data.google_sheet_url,
     allowMultipleSubmissions: data.allow_multiple_submissions,
     fields: data.fields || [], // Fallback to empty array if null
@@ -194,8 +191,7 @@ export async function getFormByShortCode(code: string): Promise<Form | undefined
     description: data.description,
     coverImage: data.cover_image,
     thankYouMessage: data.thank_you_message,
-    redirectUrl: data.redirect_url,
-    redirectButtonText: data.redirect_button_text,
+    redirectButtons: (data.redirect_buttons as Form['redirectButtons']) ?? undefined,
     googleSheetUrl: data.google_sheet_url,
     allowMultipleSubmissions: data.allow_multiple_submissions,
     fields: data.fields || [],
@@ -241,8 +237,7 @@ export async function saveForm(form: Form): Promise<void> {
     description: form.description,
     cover_image: form.coverImage,
     thank_you_message: form.thankYouMessage,
-    redirect_url: form.redirectUrl,
-    redirect_button_text: form.redirectButtonText,
+    redirect_buttons: form.redirectButtons,
     google_sheet_url: form.googleSheetUrl,
     allow_multiple_submissions: form.allowMultipleSubmissions,
     receive_email_notifications: form.receiveEmailNotifications ?? true,

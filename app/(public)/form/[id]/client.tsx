@@ -496,17 +496,18 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
             </CardDescription>
           </CardHeader>
           <CardFooter className="justify-center pb-8 flex-col gap-3">
-            {form.redirectUrl && (
+            {(form.redirectButtons || []).map((btn, index) => btn.url && (
               <Button
+                key={index}
                 asChild
                 className="w-full sm:w-auto bg-[var(--primary)] hover:opacity-90 text-white flex items-center gap-2 shadow-sm"
               >
-                <a href={formatRedirectUrl(form.redirectUrl)} target="_blank" rel="noopener noreferrer">
-                  {form.redirectButtonText || 'Layari Pautan'}
+                <a href={formatRedirectUrl(btn.url)} target="_blank" rel="noopener noreferrer">
+                  {btn.text || 'Layari Pautan'}
                   <ExternalLink className="h-4 w-4" />
                 </a>
               </Button>
-            )}
+            ))}
             {form.theme?.whatsappShareEnabled && (
               <Button
                 variant="default"

@@ -235,6 +235,11 @@ export interface CertificateCategoryConfig {
   map: Record<string, string>;
 }
 
+export interface RedirectButton {
+  text: string;
+  url: string;
+}
+
 /**
  * Complete Form definition
  */
@@ -245,8 +250,7 @@ export interface Form {
   description?: string;
   coverImage?: string;
   thankYouMessage?: string;
-  redirectUrl?: string;
-  redirectButtonText?: string;
+  redirectButtons?: RedirectButton[];
   googleSheetUrl?: string;
   allowMultipleSubmissions?: boolean;
   receiveEmailNotifications?: boolean;

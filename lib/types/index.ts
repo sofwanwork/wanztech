@@ -23,6 +23,7 @@ export type {
   RespondentNotificationSettings,
   PdpaSettings,
   CertificateCategoryConfig,
+  RedirectButton,
   Form,
 } from './forms';
 

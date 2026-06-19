@@ -36,7 +36,7 @@
 ### Database Tables (Supabase)
 | Table | Purpose |
 |---|---|
-| `forms` | Form definitions (fields, settings, theme, `is_active`, `receive_email_notifications`, `redirect_url`, `redirect_button_text`) |
+| `forms` | Form definitions (fields, settings, theme, `is_active`, `receive_email_notifications`, `redirect_buttons`) |
 | `settings` | Google credentials per user (encrypted) |
 | `subscriptions` | User tier (free/pro/enterprise), status, period |
 | `usage` | Monthly usage tracking (forms created, submissions count) |
@@ -633,10 +633,10 @@ Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build c
 - **Fix (Frontend)**: Updated [client.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/(public)/check/[formId]/client.tsx) to prevent email addresses from being passed as `ic`. The template now uses `ic={result.ic || (identifier.includes('@') ? '' : identifier)}`.
 - **Verification**: Created [certificate-headers.test.ts](file:///c:/Users/Sofwan/Desktop/klikform/tests/certificate-headers.test.ts) covering matches, boundary cases, and negative cases. All 171 tests passed, and `tsc --noEmit` compiles cleanly.
 
-## Custom Redirect Button on Thank You Page (2026-06-19)
-- **Feature**: Added a redirect button configuration that appears on the Thank You page after successful form submission.
-- **Database Schema**: Added nullable text columns `redirect_url` and `redirect_button_text` to the `forms` table in Supabase. Created migration `supabase/migrations/20260619144800_add_redirect_settings.sql`.
-- **Builder UI**: Added a settings card "Custom Thank You Button" under the custom thank you message in `app/builder/[id]/client.tsx`.
-- **Public Form Submitted View**: Displays a primary button with the custom button text (defaulting to "Layari Pautan") in the card footer if `redirectUrl` is configured.
-- **Formatting**: Implemented `formatRedirectUrl` helper in `app/(public)/form/[id]/client.tsx` to sanitize custom redirect URLs (e.g. prepending `https://` if the creator entered a domain without protocol).
+## Custom Redirect Buttons on Thank You Page (2026-06-19)
+- **Feature**: Added a redirect button configuration that appears on the Thank You page after successful form submission, supporting multiple redirect links.
+- **Database Schema**: Added nullable `redirect_buttons` JSONB column to the `forms` table in Supabase. Created migration `supabase/migrations/20260619144800_add_redirect_settings.sql` which drops the single-link columns and introduces the JSONB column.
+- **Builder UI**: Added a settings card "Custom Thank You Buttons" under the custom thank you message in `app/builder/[id]/client.tsx` that manages an array of button records (label and URL) with list controls.
+- **Public Form Submitted View**: Loops over and displays configured redirect buttons in the card footer of the success page.
+- **Formatting**: Implemented `formatRedirectUrl` helper in `app/(public)/form/[id]/client.tsx` to sanitize custom redirect URLs.
 - **Verification**: Verified using `npm test` (all 171 tests passed) and `npm run build` (compiled successfully).

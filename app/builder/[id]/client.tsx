@@ -675,37 +675,82 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
 
                 <div className="space-y-4 border p-4 rounded-lg bg-slate-50/50 dark:bg-slate-900/50">
                   <div className="space-y-1">
-                    <Label className="text-sm font-semibold">Custom Thank You Button</Label>
+                    <Label className="text-sm font-semibold">Custom Thank You Buttons</Label>
                     <p className="text-xs text-muted-foreground">
-                      Show a button to redirect respondents to another URL after they submit the form.
+                      Add buttons to direct respondents to other URLs after submission.
                     </p>
                   </div>
                   
-                  <div className="grid gap-3 pt-1">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="redirect-url" className="text-xs font-medium text-slate-500">
-                        Button URL
-                      </Label>
-                      <Input
-                        id="redirect-url"
-                        placeholder="https://example.com"
-                        type="url"
-                        value={form.redirectUrl || ''}
-                        onChange={(e) => setForm((f) => ({ ...f, redirectUrl: e.target.value }))}
-                      />
-                    </div>
-                    
-                    <div className="space-y-1.5">
-                      <Label htmlFor="redirect-btn-text" className="text-xs font-medium text-slate-500">
-                        Button Text
-                      </Label>
-                      <Input
-                        id="redirect-btn-text"
-                        placeholder="Visit our website"
-                        value={form.redirectButtonText || ''}
-                        onChange={(e) => setForm((f) => ({ ...f, redirectButtonText: e.target.value }))}
-                      />
-                    </div>
+                  <div className="space-y-3">
+                    {(form.redirectButtons || []).map((btn, index) => (
+                      <div key={index} className="grid gap-2 p-3 border rounded-md bg-white dark:bg-slate-800 relative">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-semibold text-slate-500">Button #{index + 1}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            type="button"
+                            className="h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
+                            onClick={() => {
+                              const newList = [...(form.redirectButtons || [])];
+                              newList.splice(index, 1);
+                              setForm((f) => ({ ...f, redirectButtons: newList }));
+                            }}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="grid gap-2">
+                          <div className="space-y-1.5">
+                            <Label htmlFor={`btn-url-${index}`} className="text-xs text-slate-400 font-medium">
+                              Button URL
+                            </Label>
+                            <Input
+                              id={`btn-url-${index}`}
+                              placeholder="https://example.com"
+                              type="url"
+                              value={btn.url || ''}
+                              onChange={(e) => {
+                                const newList = [...(form.redirectButtons || [])];
+                                newList[index] = { ...newList[index], url: e.target.value };
+                                setForm((f) => ({ ...f, redirectButtons: newList }));
+                              }}
+                            />
+                          </div>
+                          
+                          <div className="space-y-1.5">
+                            <Label htmlFor={`btn-text-${index}`} className="text-xs text-slate-400 font-medium">
+                              Button Text
+                            </Label>
+                            <Input
+                              id={`btn-text-${index}`}
+                              placeholder="Visit our website"
+                              value={btn.text || ''}
+                              onChange={(e) => {
+                                const newList = [...(form.redirectButtons || [])];
+                                newList[index] = { ...newList[index], text: e.target.value };
+                                setForm((f) => ({ ...f, redirectButtons: newList }));
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full border-dashed flex items-center justify-center bg-white dark:bg-slate-800"
+                      onClick={() => {
+                        const newList = [...(form.redirectButtons || [])];
+                        newList.push({ text: '', url: '' });
+                        setForm((f) => ({ ...f, redirectButtons: newList }));
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Link Button
+                    </Button>
                   </div>
                 </div>
 
