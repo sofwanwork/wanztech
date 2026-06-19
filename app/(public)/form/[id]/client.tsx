@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/select';
 import { cn, getProxiedImageUrl, sanitizeHtml } from '@/lib/utils';
 import { format } from 'date-fns';
-import { Loader2, CheckCircle2, List, Clock } from 'lucide-react';
+import { Loader2, CheckCircle2, List, Clock, ExternalLink } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { submitFormAction } from '@/actions/forms';
 import { toast } from 'sonner';
@@ -47,6 +47,15 @@ interface PublicFormClientProps {
   editMode?: { token: string };
   /** Initial values keyed by field.id. Used by edit mode. */
   initialValues?: Record<string, unknown>;
+}
+
+function formatRedirectUrl(url?: string) {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/')) {
+    return trimmed;
+  }
+  return `https://${trimmed}`;
 }
 
 export function PublicFormClient({ form, editMode, initialValues }: PublicFormClientProps) {
@@ -487,6 +496,17 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
             </CardDescription>
           </CardHeader>
           <CardFooter className="justify-center pb-8 flex-col gap-3">
+            {form.redirectUrl && (
+              <Button
+                asChild
+                className="w-full sm:w-auto bg-[var(--primary)] hover:opacity-90 text-white flex items-center gap-2 shadow-sm"
+              >
+                <a href={formatRedirectUrl(form.redirectUrl)} target="_blank" rel="noopener noreferrer">
+                  {form.redirectButtonText || 'Layari Pautan'}
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+              </Button>
+            )}
             {form.theme?.whatsappShareEnabled && (
               <Button
                 variant="default"

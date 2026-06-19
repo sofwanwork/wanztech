@@ -36,7 +36,7 @@
 ### Database Tables (Supabase)
 | Table | Purpose |
 |---|---|
-| `forms` | Form definitions (fields, settings, theme, `is_active`, `receive_email_notifications`) |
+| `forms` | Form definitions (fields, settings, theme, `is_active`, `receive_email_notifications`, `redirect_url`, `redirect_button_text`) |
 | `settings` | Google credentials per user (encrypted) |
 | `subscriptions` | User tier (free/pro/enterprise), status, period |
 | `usage` | Monthly usage tracking (forms created, submissions count) |
@@ -632,3 +632,11 @@ Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build c
 - **Fix (Utility)**: Created [headers.ts](file:///c:/Users/Sofwan/Desktop/klikform/lib/certificates/headers.ts) with `isIcHeader(h: string)`. It extends matching to common Malaysian abbreviations (`kp`, `no kp`, `no. kp`, `no.kp`, `nombor kp`) and uses word-boundary regexes (`/\bkp\b/`, `/\bic\b/`) to match compound headers (e.g. `IC/Passport`, `No. KP/Passport`) securely without false positives on other fields like `office` or `timestamp`.
 - **Fix (Frontend)**: Updated [client.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/(public)/check/[formId]/client.tsx) to prevent email addresses from being passed as `ic`. The template now uses `ic={result.ic || (identifier.includes('@') ? '' : identifier)}`.
 - **Verification**: Created [certificate-headers.test.ts](file:///c:/Users/Sofwan/Desktop/klikform/tests/certificate-headers.test.ts) covering matches, boundary cases, and negative cases. All 171 tests passed, and `tsc --noEmit` compiles cleanly.
+
+## Custom Redirect Button on Thank You Page (2026-06-19)
+- **Feature**: Added a redirect button configuration that appears on the Thank You page after successful form submission.
+- **Database Schema**: Added nullable text columns `redirect_url` and `redirect_button_text` to the `forms` table in Supabase. Created migration `supabase/migrations/20260619144800_add_redirect_settings.sql`.
+- **Builder UI**: Added a settings card "Custom Thank You Button" under the custom thank you message in `app/builder/[id]/client.tsx`.
+- **Public Form Submitted View**: Displays a primary button with the custom button text (defaulting to "Layari Pautan") in the card footer if `redirectUrl` is configured.
+- **Formatting**: Implemented `formatRedirectUrl` helper in `app/(public)/form/[id]/client.tsx` to sanitize custom redirect URLs (e.g. prepending `https://` if the creator entered a domain without protocol).
+- **Verification**: Verified using `npm test` (all 171 tests passed) and `npm run build` (compiled successfully).

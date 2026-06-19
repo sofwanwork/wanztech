@@ -245,6 +245,8 @@ export interface Form {
   description?: string;
   coverImage?: string;
   thankYouMessage?: string;
+  redirectUrl?: string;
+  redirectButtonText?: string;
   googleSheetUrl?: string;
   allowMultipleSubmissions?: boolean;
   receiveEmailNotifications?: boolean;

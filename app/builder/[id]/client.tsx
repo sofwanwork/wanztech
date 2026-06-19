@@ -673,6 +673,42 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                   </p>
                 </div>
 
+                <div className="space-y-4 border p-4 rounded-lg bg-slate-50/50 dark:bg-slate-900/50">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-semibold">Custom Thank You Button</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Show a button to redirect respondents to another URL after they submit the form.
+                    </p>
+                  </div>
+                  
+                  <div className="grid gap-3 pt-1">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="redirect-url" className="text-xs font-medium text-slate-500">
+                        Button URL
+                      </Label>
+                      <Input
+                        id="redirect-url"
+                        placeholder="https://example.com"
+                        type="url"
+                        value={form.redirectUrl || ''}
+                        onChange={(e) => setForm((f) => ({ ...f, redirectUrl: e.target.value }))}
+                      />
+                    </div>
+                    
+                    <div className="space-y-1.5">
+                      <Label htmlFor="redirect-btn-text" className="text-xs font-medium text-slate-500">
+                        Button Text
+                      </Label>
+                      <Input
+                        id="redirect-btn-text"
+                        placeholder="Visit our website"
+                        value={form.redirectButtonText || ''}
+                        onChange={(e) => setForm((f) => ({ ...f, redirectButtonText: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <div className="flex items-center space-x-2 border p-3 rounded-lg bg-slate-50">
                   <Switch
                     id="allow-multiple"
