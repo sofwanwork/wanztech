@@ -640,3 +640,12 @@ Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build c
 - **Public Form Submitted View**: Loops over and displays configured redirect buttons in the card footer of the success page.
 - **Formatting**: Implemented `formatRedirectUrl` helper in `app/(public)/form/[id]/client.tsx` to sanitize custom redirect URLs.
 - **Verification**: Verified using `npm test` (all 171 tests passed) and `npm run build` (compiled successfully).
+
+## Forced Malaysia Time (UTC+8) for Attendance Restrictions (2026-06-23)
+- **Feature**: Standardized the form opening/closing time restrictions (Attendance & Location feature) to evaluate against the Malaysia Timezone (UTC+8 / Asia/Kuala_Lumpur) rather than the local device timezone of the respondent.
+- **Implementation**:
+  - Added `parseMalaysiaTime` and `formatInMalaysiaTime` helper functions in [client.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/(public)/form/[id]/client.tsx).
+  - Modified the time checks (startTime and endTime) to parse dates with a forced UTC+8 offset if no timezone offset is specified.
+  - Custom-formatted the access-denied date strings in the Malaysia Time timezone.
+  - Rewrote the Countdown Timer target date computation to utilize the forced UTC+8 offset.
+- **Verification**: Verified using `npm test` (all 171 tests passed) and `npm run build` (compiled successfully).

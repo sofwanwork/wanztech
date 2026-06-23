@@ -58,6 +58,30 @@ function formatRedirectUrl(url?: string) {
   return `https://${trimmed}`;
 }
 
+// Helpers to parse and format dates in Malaysia Time (UTC+8)
+const parseMalaysiaTime = (dateTimeStr: string): Date => {
+  if (!dateTimeStr) return new Date();
+  const hasTimezone = dateTimeStr.includes('+') || dateTimeStr.endsWith('Z');
+  return new Date(hasTimezone ? dateTimeStr : `${dateTimeStr}:00+08:00`);
+};
+
+const formatInMalaysiaTime = (date: Date): string => {
+  try {
+    return date.toLocaleString('en-US', {
+      timeZone: 'Asia/Kuala_Lumpur',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+  } catch (error) {
+    console.error('Failed to format in Malaysia Time:', error);
+    return format(date, 'PP pp');
+  }
+};
+
 export function PublicFormClient({ form, editMode, initialValues }: PublicFormClientProps) {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -311,10 +335,10 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
       // 1. Time Check
       const now = new Date();
       if (settings.startTime) {
-        const start = new Date(settings.startTime);
+        const start = parseMalaysiaTime(settings.startTime);
         if (now < start) {
           setAccessDenied(
-            `Form ini belum dibuka.\nSila tunggu sehingga: ${format(start, 'PP pp')}`
+            `Form ini belum dibuka.\nSila tunggu sehingga: ${formatInMalaysiaTime(start)}`
           );
           setCheckingAccess(false);
           setMounted(true);
@@ -322,9 +346,9 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
         }
       }
       if (settings.endTime) {
-        const end = new Date(settings.endTime);
+        const end = parseMalaysiaTime(settings.endTime);
         if (now > end) {
-          setAccessDenied(`Form ini telah ditutup pada: ${format(end, 'PP pp')}`);
+          setAccessDenied(`Form ini telah ditutup pada: ${formatInMalaysiaTime(end)}`);
           setCheckingAccess(false);
           setMounted(true);
           return;
@@ -382,7 +406,7 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
 
   useEffect(() => {
     if (!form.attendanceSettings?.endTime) return;
-    const endTime = new Date(form.attendanceSettings.endTime).getTime();
+    const endTime = parseMalaysiaTime(form.attendanceSettings.endTime).getTime();
 
     const interval = setInterval(() => {
       const now = new Date().getTime();
