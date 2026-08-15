@@ -56,7 +56,9 @@ supabase link --project-ref <ref>
 supabase db push
 ```
 
-Tables: `forms`, `settings`, `subscriptions`, `usage`, `certificate_templates`, `qr_codes`, `short_links`, `transactions`.
+Tables: `forms`, `settings`, `subscriptions`, `usage`, `certificate_templates`, `qr_codes`, `short_links`, `transactions`, `form_events`, `form_webhooks`, `response_edit_tokens`, `audit_logs`, `form_responses`.
+
+> `form_responses` is the durable local copy of every submission (write-first). Google Sheets is synced asynchronously from it via `after()` + the `/api/cron/sync-responses` retry cron — a Sheets outage never loses a response.
 
 ## Scripts
 
@@ -67,9 +69,12 @@ npm start            # Run built output
 npm run lint         # ESLint
 npm run lint:fix     # ESLint with autofix
 npm run format       # Prettier
+npm run typecheck    # tsc --noEmit
 npm test             # Vitest suite
 npm run test:watch   # Vitest watch mode
 ```
+
+CI (`.github/workflows/ci.yml`) runs lint → typecheck → test → build on every push/PR to `master`.
 
 ## Architecture
 
@@ -97,7 +102,9 @@ utils/supabase/ Supabase client factories — client / server / admin
 ## Security Posture
 
 - All dashboard routes auth-gated via `getUser()` + Supabase RLS (`user_id` filter).
-- BCL webhook verified via HMAC-SHA256 with timing-safe comparison (`app/api/payment/webhook/route.ts`).
+- BCL webhook verified via HMAC-SHA256 with timing-safe comparison (`app/api/payment/webhook/route.ts`), **idempotent** via `transactions.processed_at` (replays return 200 without re-granting), and uses the service-role client (provider webhooks carry no user session).
+- Form submissions: IP rate limit + honeypot (`_gotcha`) + ReDoS protection (1000-char text cap) + client-generated idempotency key (`_submission_key`) so double-submits are swallowed server-side.
+- Responses are written to `form_responses` (DB) FIRST, then synced to Google Sheets asynchronously (`after()` + retry cron) — no data loss on Sheets failure.
 - Form submissions: IP rate limit + honeypot (`_gotcha`) + ReDoS protection (1000-char text cap).
 - Google Sheets formula injection guard (`=`, `+`, `-`, `@` prefixed inputs forced to plaintext).
 - Open redirect guards in `proxy.ts` and `/api/auth/callback` (relative paths only).

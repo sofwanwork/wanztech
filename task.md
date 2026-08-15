@@ -203,3 +203,55 @@ Lima feature bebas konflik. Tiap satu mesti ada: jenis, storage, server action, 
 - [x] 4. Kemas kini `ConditionalLogicEditor` untuk membuang tajuk berganda.
 - [x] 5. Uji secara manual dan jalankan `npm test` serta `npm run build` untuk memastikan tiada masalah.
 
+---
+
+# Fasa D — Hardening Batch (2026-07-01) ✅ SIAP
+
+Sembilan pembetulan risiko/kualiti dari audit penuh (lihat `memory.md` untuk butiran reka bentuk).
+
+## 1. form_responses — write-first, sync-async ✅
+- [x] Migration `20260701010000_add_form_responses.sql` (jadual + partial index + prune + RLS owner-only SELECT).
+- [x] `lib/storage/form-responses.ts` — insert (idempotent, 23505=duplicate), markSynced, markSyncFailed({final}), listPendingSyncResponses (join forms+settings).
+- [x] `submitFormAction`: tulis DB dahulu → Sheets sync + webhooks + 3 emel dalam `after()`.
+- [x] Cron `/api/cron/sync-responses` (*/10) + entri `vercel.json`.
+
+## 2. Payment webhook idempotency ✅
+- [x] Migration `20260701020000_payment_webhook_idempotency.sql` (`processed_at` + backfill + unique `provider_reference`).
+- [x] Route: duplicate → 200 `{duplicate:true}` tanpa kesan sampingan; `processed_at` diset serentak dengan status; SEMUA DB via admin client (fix anon/RLS silent failure).
+- [x] Initiate: `PRO_PRICE` + `KLIK-${randomUUID()}` + buang fake phone.
+
+## 3. Conditional-required fix ✅
+- [x] `lib/forms/validate-submission.ts` (pure) — reuse `evaluateConditional`, skip layout-only, ReDoS cap.
+- [x] `submitFormAction` guna modul baharu.
+
+## 4. Duplicate submit protection ✅
+- [x] Client jana `_submission_key` (randomUUID per page-load, sessionStorage); action guna sebagai submission_id (unique constraint menelan double-submit).
+- [x] Key dikosong selepas success ("Submit another response" dapat key baru).
+
+## 5. CI ✅
+- [x] `.github/workflows/ci.yml` — lint → typecheck → test → build (push/PR master).
+
+## 6. Error boundaries ✅
+- [x] `app/error.tsx`, `app/global-error.tsx`, `app/not-found.tsx`.
+
+## 7. Konsolidasi harga ✅
+- [x] `lib/constants/pricing.ts` (PRO_PRICE) — initiate, pricing page, modal, plan-card semua import dari satu tempat.
+
+## 8. React cache() dedupe ✅
+- [x] `getFormById` / `getFormByShortCode` dibalut `cache()`.
+
+## 9. Tooling ✅
+- [x] Skrip `typecheck`; deps pembangunan dipindah ke devDependencies.
+
+## Verifikasi akhir ✅
+- [x] `npm run lint` — 0 warnings
+- [x] `npm run typecheck` — clean
+- [x] `npm test` — 206/206 (25 suites; was 171)
+- [x] `npm run build` — clean, 45 routes (+`/api/cron/sync-responses`)
+
+### Reviu
+- **Write-first**: DB ialah source of truth baharu; Sheet jadi "view" yang akhirnya konsisten (cron retry). Responden tidak pernah lagi kehilangan jawapan atau menunggu webhook lambat.
+- **Idempotency**: ditetapkan sebelum sebarang geran supaya crash mid-handler tidak boleh double-grant; completed lama di-backfill `processed_at`.
+- **Admin client fix**: webhook BCL tiada cookie — anon client + RLS owner-only = silent 404; service role satu-satunya pilihan betul.
+- **Tinggal (Fasa E cadangan)**: Turnstile optional per-form, zod di semua action files, dekomposisi client.tsx (1,354 baris) + builder client (1,551 baris), responses dashboard baca form_responses, export/backup UI dari form_responses, a11y audit builder, i18n konsisten (lang="ms" pada page English), renewal/cancel flow.
+

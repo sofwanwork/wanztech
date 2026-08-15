@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, Crown, Zap, Users, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { PRO_PRICE } from '@/lib/constants/pricing';
 
 interface PricingModalProps {
   children: React.ReactNode;
@@ -48,10 +49,10 @@ const plans = [
   },
   {
     name: 'Pro',
-    price: 'RM 5',
-    period: '/ month',
-    periodDetail: 'for first 3 months (50% discount)',
-    priceDetail: 'then RM 10 / month',
+    price: PRO_PRICE.display,
+    period: PRO_PRICE.period,
+    periodDetail: PRO_PRICE.periodDetail,
+    priceDetail: PRO_PRICE.priceDetail,
     description: 'For professionals and growing teams',
     icon: Crown,
     color: 'bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800',

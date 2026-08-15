@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { Form, Profile } from '@/lib/types';
+import { cache } from 'react';
 
 // Helper to get user ID
 async function getUser() {
@@ -114,7 +115,11 @@ export async function getFormsSummary(): Promise<Form[]> {
   }));
 }
 
-export async function getFormById(id: string): Promise<Form | undefined> {
+// React cache(): dedupes concurrent identical calls within one request.
+// The public form page calls getFormById twice (generateMetadata + render);
+// without this, each page view ran the query + tier lookup twice.
+// Also exported as getFormByShortCode variant since both share the shape.
+export const getFormById = cache(async (id: string): Promise<Form | undefined> => {
   const supabase = await createClient();
   const { data, error } = await supabase.from('forms').select('*').eq('id', id).single();
 
@@ -161,9 +166,9 @@ export async function getFormById(id: string): Promise<Form | undefined> {
     eCertificateCategory: data.e_certificate_category ?? undefined,
     userTier: (subscription?.tier as Form['userTier']) || 'free',
   };
-}
+});
 
-export async function getFormByShortCode(code: string): Promise<Form | undefined> {
+export const getFormByShortCode = cache(async (code: string): Promise<Form | undefined> => {
   const supabase = await createClient();
   const { data, error } = await supabase.from('forms').select('*').eq('short_code', code).single();
 
@@ -210,7 +215,7 @@ export async function getFormByShortCode(code: string): Promise<Form | undefined
     eCertificateCategory: data.e_certificate_category ?? undefined,
     userTier: (subscription?.tier as Form['userTier']) || 'free',
   };
-}
+});
 
 export async function saveForm(form: Form): Promise<void> {
   const { supabase, user } = await getUser();

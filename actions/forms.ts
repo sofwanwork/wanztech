@@ -6,6 +6,7 @@ import { Form, Settings } from '@/lib/types';
 import { appendToSheet } from '@/lib/api/google-sheets';
 import { uploadToDrive } from '@/lib/api/google-drive';
 import { redirect } from 'next/navigation';
+import { after } from 'next/server';
 import {
   canCreateForm,
   incrementFormCount,
@@ -20,7 +21,13 @@ import { sanitizeHtml } from '@/lib/utils'; // Import sanitization
 import { headers as getNextHeaders } from 'next/headers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { requiresPdpaConsent, isPdpaSubmissionAllowed } from '@/lib/forms/pdpa';
+import { validateSubmission } from '@/lib/forms/validate-submission';
 import { logAudit } from '@/lib/storage/audit';
+import {
+  insertFormResponse,
+  markResponseSynced,
+  markResponseSyncFailed,
+} from '@/lib/storage/form-responses';
 
 // --- Settings Storage for Credentials ---
 // Replaced by lib/storage which uses Supabase
@@ -140,9 +147,17 @@ const ALLOWED_MIME_TYPES = [
   'text/csv',
 ];
 
+function formatPrivateKey(key: string) {
+  let clean = key.trim();
+  if (clean.startsWith('"') && clean.endsWith('"')) clean = clean.slice(1, -1);
+  if (clean.includes('\\n')) clean = clean.replace(/\\n/g, '\n');
+  return clean;
+}
+
 export async function submitFormAction(
   formId: string,
-  formDataOrObj: FormData | Record<string, string | number | boolean>
+  formDataOrObj: FormData | Record<string, string | number | boolean>,
+  clientSubmissionId?: string
 ) {
   // Security: IP-based rate limiting to prevent spam/flood of public forms
   const headersList = await getNextHeaders();
@@ -214,66 +229,24 @@ export async function submitFormAction(
     Object.assign(inputData, formDataOrObj);
   }
 
-  // Validate against Form Fields
-  for (const field of form.fields) {
-    // Skip hidden/inactive fields logic for now (too complex to simulate client condition logic perfectly on server without massive duplication)
-    // But we MUST enforce 'required' and 'validity' for fields that ARE submitted.
-
-    const value = inputData[field.label] || inputData[field.id]; // client sends label or id? client.tsx sends label usually
-    // Wait, client.tsx sends `formDataToSend.append(field.label, value)`
-    // So we key off label. This is fragile if labels change, but that's how it is built.
-    // Let's key off label for now.
-
-    // Check Required
-    if (field.required && !value && value !== 0 && value !== false) {
-      // Basic server-side validation: If required, it must have a value.
-      // We skip this check ONLY if we can determine the field was hidden (not sent).
-      // However, HTML forms usually don't send anything for empty fields anyway.
-      // If we want to be strict, we assume all required fields MUST be present.
-      // Conditional logic is hard to replicate here without the full rules engine.
-      // For now, we enforce "If it's in the schema as required, it must be provided".
-      // This might break if conditional logic hides it on client side.
-      // Trade-off: Security vs Complexity.
-      // Allow bypass if value is strictly null/undefined/empty string.
-      // Client usually appends empty string for empty text inputs.
-
-      return { success: false, error: `${field.label} is required.` };
-    }
-
-    // Validate String constraints
-    if (typeof value === 'string') {
-      if (field.validation?.minLength && value.length < field.validation.minLength) {
-        return { success: false, error: `${field.label} is too short.` };
-      }
-      if (field.validation?.maxLength && value.length > field.validation.maxLength) {
-        return { success: false, error: `${field.label} is too long.` };
-      }
-      if (field.validation?.pattern) {
-        try {
-          // Security: Limit string length before running user-supplied regex
-          // to mitigate potential ReDoS (Regex Denial of Service) attacks.
-          const MAX_REGEX_INPUT = 1000;
-          const testValue = value.length > MAX_REGEX_INPUT ? value.slice(0, MAX_REGEX_INPUT) : value;
-          const regex = new RegExp(field.validation.pattern);
-          if (!regex.test(testValue)) {
-            return { success: false, error: `${field.label} format is invalid.` };
-          }
-        } catch {
-          // If the stored regex pattern is invalid, skip pattern validation
-          // rather than crashing the server.
-          console.warn(`Invalid regex pattern for field "${field.label}". Skipping pattern check.`);
-        }
-      }
-    }
+  // Validate against the form schema. Reuses the SAME conditional-logic
+  // evaluator as the public client, so a required field hidden by
+  // conditional rules is no longer rejected server-side, and layout-only
+  // fields are skipped.
+  const validation = validateSubmission(form.fields, inputData);
+  if (!validation.ok) {
+    return { success: false, error: validation.error ?? 'Validation failed.' };
   }
 
   // --- Process & Upload ---
   let dbData: Record<string, string | number | boolean | null | undefined> = {};
 
-  // Stable submission id — kept in a hidden Sheet column so the edit-link
-  // flow can locate this row later. Generated before any I/O so it stays
-  // identical for the Sheets row + the edit token snapshot.
-  const submissionId = uuidv4();
+  // Stable submission id — used as the idempotency key (duplicate submits
+  // are silently swallowed) and kept in a hidden Sheet column so the
+  // edit-link flow can locate this row later.
+  const submissionId = clientSubmissionId && /^[0-9a-f-]{32,36}$/i.test(clientSubmissionId)
+    ? clientSubmissionId
+    : uuidv4();
 
   // Use getSettingsByFormId for public form submission (no auth required)
   // This now uses admin client internally to fetch settings safely
@@ -309,8 +282,6 @@ export async function submitFormAction(
             updateData.google_token_expiry = newCreds.expiry_date;
           }
 
-          // We need form owner ID. getSettingsByFormId doesn't return it, but form object has it.
-          // form.userId is available from getFormById check above
           if (form.userId) {
             await adminSupabase
               .from('settings')
@@ -384,79 +355,117 @@ export async function submitFormAction(
     }
   }
 
-  // 2. Send to Google Sheet
-  if (form.googleSheetUrl && settings) {
-    if (accessToken || (settings.googleClientEmail && settings.googlePrivateKey)) {
-      const match = form.googleSheetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
+  // ============================================================
+  // WRITE-FIRST: persist locally BEFORE touching Google Sheets.
+  //
+  // Previously the response went straight to Sheets and was lost forever
+  // on failure (the "Saved locally but failed to sync" message was a lie —
+  // nothing was saved). Now the DB row is the durable source of truth and
+  // the Sheet sync happens in the background via after(). If Sheets is
+  // down, the respondent still succeeds and the retry cron catches up.
+  // ============================================================
+  if (form.userId) {
+    const stringData: Record<string, string> = {};
+    for (const [k, v] of Object.entries(dbData)) {
+      if (v !== null && v !== undefined) stringData[k] = String(v);
+    }
 
-      function formatPrivateKey(key: string) {
-        let clean = key.trim();
-        if (clean.startsWith('"') && clean.endsWith('"')) clean = clean.slice(1, -1);
-        if (clean.includes('\\n')) clean = clean.replace(/\\n/g, '\n');
-        return clean;
-      }
+    const insertResult = await insertFormResponse({
+      submissionId,
+      formId: form.id,
+      userId: form.userId,
+      data: stringData,
+    });
 
-      if (match && match[1]) {
-        const sheetId = match[1];
-        const pk = settings.googlePrivateKey ? formatPrivateKey(settings.googlePrivateKey) : undefined;
-
-        try {
-          const result = await appendToSheet(
-            {
-              sheetId,
-              clientEmail: settings.googleClientEmail,
-              privateKey: pk,
-              accessToken: accessToken, // Use the (potentially refreshed) accessToken
-            },
-            dbData
-          );
-
-          if (!result.success) {
-            return {
-              success: false,
-              error: 'Saved locally but failed to sync to Sheets: ' + result.error,
-            };
-          }
-        } catch (e) {
-          return { success: false, error: 'Unexpected error: ' + e };
-        }
-      } else {
-        return { success: false, error: 'Invalid Google Sheet URL' };
-      }
-    } else {
-      console.warn('Google Sheet URL present but credentials missing.');
-      return { success: false, error: 'Google credentials not configured.' };
+    if (insertResult === 'duplicate') {
+      // Same submission already stored (double-click / double-send).
+      // Idempotent success — do not double-write the Sheet or re-send emails.
+      console.warn('[submit] duplicate submission swallowed:', submissionId);
+      return { success: true };
+    }
+    if (insertResult === 'error') {
+      return {
+        success: false,
+        error: 'Gagal menyimpan jawapan anda. Sila cuba sebentar lagi.',
+      };
     }
   }
 
   // Increment Usage Stats if successful
   if (form.userId) {
     await incrementSubmissionCount(form.userId);
+  }
 
-    // --- Outgoing webhooks (fire-and-forget) ---
-    // Dispatched after Sheets sync + quota increment so a webhook receiver
-    // sees the same data we kept. Failures here must never affect the
-    // respondent's success state.
+  // Snapshot everything the background work needs BEFORE after() — the
+  // request context (headers etc.) is not safe to read once the response
+  // has been flushed.
+  const origin =
+    headersList.get('origin') ||
+    (process.env.NEXT_PUBLIC_APP_URL ?? 'https://klikform.com');
+
+  const formSnapshot: Form = form;
+  const settingsSnapshot: Settings | undefined = settings;
+  const accessTokenSnapshot = accessToken;
+  const dbDataSnapshot: Record<string, string | number | boolean | null | undefined> = dbData;
+
+  // --- Background work: Sheets sync + webhooks + 3 email flows ---
+  // All moved off the respondent's critical path via after(). A slow webhook
+  // receiver (5s × 3 retries ≈ 15s+) previously blocked their HTTP response
+  // and risked serverless timeouts.
+  after(async () => {
+    if (!formSnapshot.userId) return;
+
+    // 1. Google Sheets sync (best-effort now; retry cron catches failures)
+    if (formSnapshot.googleSheetUrl && settingsSnapshot) {
+      if (accessTokenSnapshot || (settingsSnapshot.googleClientEmail && settingsSnapshot.googlePrivateKey)) {
+        const match = formSnapshot.googleSheetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
+        if (match && match[1]) {
+          const sheetId = match[1];
+          const pk = settingsSnapshot.googlePrivateKey
+            ? formatPrivateKey(settingsSnapshot.googlePrivateKey)
+            : undefined;
+          try {
+            const result = await appendToSheet(
+              {
+                sheetId,
+                clientEmail: settingsSnapshot.googleClientEmail,
+                privateKey: pk,
+                accessToken: accessTokenSnapshot,
+              },
+              dbDataSnapshot
+            );
+            if (result.success) {
+              await markResponseSynced(submissionId);
+            } else {
+              // stays 'pending' → picked up by the /api/cron/sync-responses retry
+              await markResponseSyncFailed(submissionId, result.error ?? 'unknown');
+            }
+          } catch (e) {
+            await markResponseSyncFailed(submissionId, e instanceof Error ? e.message : 'unknown');
+          }
+        }
+      }
+    }
+
+    // 2. Outgoing webhooks (fire-and-forget)
     try {
       const { listWebhooksForDispatch, recordWebhookResult } = await import(
         '@/lib/storage/webhooks'
       );
       const { dispatchWebhook } = await import('@/lib/webhooks/dispatch');
-      const hooks = await listWebhooksForDispatch(form.id, form.userId, 'submission');
+      const hooks = await listWebhooksForDispatch(formSnapshot.id, formSnapshot.userId, 'submission');
       if (hooks.length > 0) {
         const stringData: Record<string, string> = {};
-        for (const [k, v] of Object.entries(dbData)) {
+        for (const [k, v] of Object.entries(dbDataSnapshot)) {
           if (v !== null && v !== undefined) stringData[k] = String(v);
         }
         const payload = {
           event: 'submission' as const,
-          formId: form.id,
-          formTitle: form.title,
+          formId: formSnapshot.id,
+          formTitle: formSnapshot.title,
           submittedAt: new Date().toISOString(),
           data: stringData,
         };
-        // Run dispatches in parallel; await all so we record results, but
-        // never let the throw bubble out of submitFormAction.
         await Promise.all(
           hooks.map(async (hook) => {
             const result = await dispatchWebhook({
@@ -475,11 +484,11 @@ export async function submitFormAction(
       console.warn('Webhook dispatch failed:', whErr);
     }
 
-    // Send email notification (awaited so serverless doesn't kill it before completion)
+    // 3. Owner email notification
     try {
-      if (form.receiveEmailNotifications !== false) {
+      if (formSnapshot.receiveEmailNotifications !== false) {
         const admin = createAdminClient();
-        const { data: userData } = await admin.auth.admin.getUserById(form.userId!);
+        const { data: userData } = await admin.auth.admin.getUserById(formSnapshot.userId!);
         const ownerEmail = userData?.user?.email;
         const ownerName =
           userData?.user?.user_metadata?.full_name ||
@@ -488,16 +497,16 @@ export async function submitFormAction(
 
         if (ownerEmail) {
           const submissionSummary: Record<string, string> = {};
-          for (const [key, val] of Object.entries(dbData)) {
+          for (const [key, val] of Object.entries(dbDataSnapshot)) {
             if (val !== null && val !== undefined) {
               submissionSummary[key] = String(val);
             }
           }
           const emailContent = getNewSubmissionEmail(
             ownerName,
-            form.title,
+            formSnapshot.title,
             submissionSummary,
-            form.googleSheetUrl
+            formSnapshot.googleSheetUrl
           );
           await sendEmail({
             to: ownerEmail,
@@ -511,21 +520,15 @@ export async function submitFormAction(
       console.warn('Submission email notification failed:', emailErr);
     }
 
-    // --- Edit-link token (fire-and-forget) ---
-    // If the form opted in AND the respondent provided their email, create
-    // a single-use magic link and email it to them.
+    // 4. Edit-link token + email
     try {
-      const editCfg = form.editLinkSettings;
+      const editCfg = formSnapshot.editLinkSettings;
       if (editCfg?.enabled) {
-        // Resolve the email field: the owner's explicit choice, else fall back
-        // to the first email-type field. This prevents a silent no-send when the
-        // owner enabled the feature but forgot to pick a field in the builder.
         const emailField =
-          form.fields.find((f) => f.id === editCfg.emailFieldId) ||
-          form.fields.find((f) => f.type === 'email');
-        // dbData is keyed by the field *label*, so look up by label.
+          formSnapshot.fields.find((f) => f.id === editCfg.emailFieldId) ||
+          formSnapshot.fields.find((f) => f.type === 'email');
         const emailValue = emailField
-          ? String(dbData[emailField.label] ?? '').trim()
+          ? String(dbDataSnapshot[emailField.label] ?? '').trim()
           : '';
         const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue);
         if (!emailField) {
@@ -535,24 +538,21 @@ export async function submitFormAction(
         } else {
           const { createEditToken } = await import('@/lib/storage/edit-tokens');
           const snapshot: Record<string, string> = {};
-          for (const [k, v] of Object.entries(dbData)) {
+          for (const [k, v] of Object.entries(dbDataSnapshot)) {
             if (v !== null && v !== undefined) snapshot[k] = String(v);
           }
           const token = await createEditToken({
-            formId: form.id,
-            userId: form.userId!,
+            formId: formSnapshot.id,
+            userId: formSnapshot.userId!,
             submissionId,
             email: emailValue,
             snapshot,
             expiryDays: Math.max(1, Math.min(365, editCfg.expiryDays ?? 7)),
           });
 
-          const origin =
-            headersList.get('origin') ||
-            (process.env.NEXT_PUBLIC_APP_URL ?? 'https://klikform.com');
           const editUrl = `${origin.replace(/\/$/, '')}/edit/${token}`;
           const { getEditLinkEmail } = await import('@/lib/email');
-          const email = getEditLinkEmail(form.title, editUrl, editCfg.expiryDays ?? 7);
+          const email = getEditLinkEmail(formSnapshot.title, editUrl, editCfg.expiryDays ?? 7);
           const sent = await sendEmail({
             to: emailValue,
             subject: email.subject,
@@ -567,22 +567,20 @@ export async function submitFormAction(
       console.error('Edit-link token / email failed:', editErr);
     }
 
-    // --- Respondent confirmation email (fire-and-forget) ---
-    // Separate from the owner notification above. Sends an acknowledgement to
-    // the *respondent* when the form opted in AND a valid email was provided.
+    // 5. Respondent confirmation email
     try {
-      const respCfg = form.respondentNotification;
+      const respCfg = formSnapshot.respondentNotification;
       if (respCfg?.enabled && respCfg.emailFieldId) {
-        const emailField = form.fields.find((f) => f.id === respCfg.emailFieldId);
+        const emailField = formSnapshot.fields.find((f) => f.id === respCfg.emailFieldId);
         const emailValue = emailField
-          ? String(dbData[emailField.label] ?? '').trim()
+          ? String(dbDataSnapshot[emailField.label] ?? '').trim()
           : '';
         const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue);
         if (isEmail) {
           let summary: Record<string, string> | undefined;
           if (respCfg.includeSummary) {
             summary = {};
-            for (const [k, v] of Object.entries(dbData)) {
+            for (const [k, v] of Object.entries(dbDataSnapshot)) {
               // Skip internal bookkeeping keys (e.g. _submission_id).
               if (k.startsWith('_')) continue;
               if (v !== null && v !== undefined) summary[k] = String(v);
@@ -590,7 +588,7 @@ export async function submitFormAction(
           }
           const { getRespondentConfirmationEmail } = await import('@/lib/email');
           const email = getRespondentConfirmationEmail(
-            form.title,
+            formSnapshot.title,
             respCfg.message,
             summary
           );
@@ -604,7 +602,7 @@ export async function submitFormAction(
     } catch (respErr) {
       console.warn('Respondent confirmation email failed:', respErr);
     }
-  }
+  });
 
   return { success: true };
 }

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Check, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { PRO_PRICE } from '@/lib/constants/pricing';
 import { createClient } from '@/utils/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
@@ -134,7 +135,7 @@ export function PlanCard({ plan, user: initialUser }: PlanCardProps) {
           </div>
           {plan.name === 'Pro' && (
             <div className="text-right">
-              <span className="block text-xs text-gray-400 line-through">RM 10</span>
+              <span className="block text-xs text-gray-400 line-through">{PRO_PRICE.regularDisplay}</span>
               <span className="block text-xs font-bold text-green-600">50% OFF!</span>
             </div>
           )}

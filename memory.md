@@ -649,3 +649,44 @@ Empat track dihantar dalam satu pass. Lint 0, 121/121 tests (14 suites), build c
   - Custom-formatted the access-denied date strings in the Malaysia Time timezone.
   - Rewrote the Countdown Timer target date computation to utilize the forced UTC+8 offset.
 - **Verification**: Verified using `npm test` (all 171 tests passed) and `npm run build` (compiled successfully).
+
+## Fasa D — Hardening Batch (2026-07-01)
+
+Sembilan pembetulan risiko/kualiti dari audit penuh sistem. Semua verified: lint 0, typecheck clean, 206/206 tests, build clean (45 routes).
+
+### 1. form_responses — write-first, sync-async (data loss fix)
+- **Masalah**: respons hanya hidup dalam Google Sheets; `appendToSheet` gagal = respons hilang selamanya (mesej "Saved locally but failed to sync" adalah palsu).
+- **Migration** `20260701010000_add_form_responses.sql`: jadual `form_responses` (submission_id UNIQUE, data jsonb, sheet_sync_status pending/synced/failed) + partial index untuk cron + `prune_form_responses()` (400 hari) + RLS owner-only SELECT (tulis via service role sahaja, corak audit_logs).
+- **Storage** `lib/storage/form-responses.ts`: `insertFormResponse` return `'inserted' | 'duplicate' | 'error'` (duplicate = unique violation 23505), `markResponseSynced`, `markResponseSyncFailed(id, err, {final})`, `listPendingSyncResponses` (join forms+settings sekali).
+- **submitFormAction** tulis ke DB SEBELUM Sheets; Sheets sync + webhooks + 3 emel berpindah ke `after()` (responden tak lagi menunggu ~15s webhook; tiada lagi risiko serverless timeout).
+- **Cron baharu** `/api/cron/sync-responses` (*/10 minit di vercel.json): retry row 'pending', refresh OAuth token, kekal gagal selamanya ditanda `final` (tiada sheet URL / tiada kredensial).
+- Baseline migrasi: sedia ada `processed_at` juga di-backfill untuk transaksi completed supaya replay pertama selepas deploy tidak double-process.
+
+### 2. Payment webhook idempotency + admin client
+- **Masalah**: replay webhook = +1 bulan percuma + emel berulang. JUGA bug tersembunyi: route guna `createClient()` (anon, tiada cookie) tetapi RLS transactions/subscriptions owner/service_role sahaja — webhook gagal jumpa transaksi secara senyap dalam production.
+- **Migration** `20260701020000_payment_webhook_idempotency.sql`: kolum `processed_at` + backfill completed + unique index `provider_reference`.
+- **Route**: `processed_at` diset DALAM update yang sama dengan status completed (crash mid-handler tak boleh double-grant); duplicate → `{success:true, duplicate:true}` 200 tanpa sebarang kesan sampingan; SEMUA query DB kini melalui `createAdminClient()`.
+- **Order number**: `KLIK-${randomUUID()}` (tidak boleh berlanggar) menggantikan Date.now()+random(0-999).
+- Fake phone `+60123456789` → placeholder `+60110000000` yang jelas.
+
+### 3. Conditional-required fix server-side
+- **Masalah**: field wajib yang disembunyikan oleh conditional logic ditolak server-side ("X is required") walaupun responden tak pernah nampak medan itu.
+- **Modul tulen** `lib/forms/validate-submission.ts` (`validateSubmission`, `isLayoutOnlyField`): guna semula `evaluateConditional` yang sama dengan client, re-key input label→id, skip layout-only fields, kekalkan ReDoS cap 1000 aksara. `submitFormAction` + test suite penuh (12 ujian) menggunakan modul ini.
+
+### 4. Duplicate submit protection (idempotency)
+- Client jana `crypto.randomUUID()` sekali per page-load (sessionStorage `klikform-sub-key-<formId>`), hantar sebagai `_submission_key`; action terima parameter ketiga `clientSubmissionId` dan guna ia sebagai submission_id → unique constraint menelan double-click/double-send secara senyap (return success tanpa re-sync/re-email). Key dikosongkan selepas success supaya "Submit another response" dapat key baharu.
+
+### 5. CI GitHub Actions
+- `.github/workflows/ci.yml`: lint → typecheck → test → build pada setiap push/PR ke master, npm cache, placeholder env. Fail quality gate tak lagi bergantung pada disiplin manual.
+
+### 6. Error boundaries + not-found
+- `app/error.tsx` (reset + digest ref), `app/global-error.tsx` (inline styles, html/body sendiri), `app/not-found.tsx` (404 branded). Sebelum ini runtime error = skrin crash default Next.
+
+### 7. Konsolidasi harga
+- `lib/constants/pricing.ts` (`PRO_PRICE`) jadi satu-satunya sumber harga; digunakan oleh initiate route, pricing page, pricing modal, plan-card. Habis era harga hardcoded di 3 tempat + TIER_PRICING mati.
+
+### 8. React cache() dedupe
+- `getFormById`/`getFormByShortCode` dibalut `cache()` — public form page (generateMetadata + render) kini satu query + satu tier lookup sebelum dua.
+
+### 9. Tooling
+- Skrip `typecheck` baharu; `@eslint/eslintrc`, `@types/uuid`, `typescript-eslint`, `cross-env` dipindah ke devDependencies (ia ada dalam dependencies sebelum ini).

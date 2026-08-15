@@ -213,6 +213,28 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
       const formDataToSend = new FormData();
       formDataToSend.append('timestamp', new Date().toISOString());
 
+      // Idempotency key: stable per page-load so a double-click or retried
+      // request with the same answers is silently de-duplicated server-side
+      // (unique submission_id in form_responses) instead of double-writing.
+      if (!editMode) {
+        const key = `klikform-sub-key-${form.id}`;
+        let subKey = sessionStorage.getItem(key);
+        if (!subKey) {
+          subKey =
+            typeof crypto !== 'undefined' && 'randomUUID' in crypto
+              ? crypto.randomUUID()
+              : `${Date.now()}-${Math.random().toString(16).slice(2)}${Math.random()
+                  .toString(16)
+                  .slice(2)}`;
+          try {
+            sessionStorage.setItem(key, subKey);
+          } catch {
+            /* private mode — best effort */
+          }
+        }
+        formDataToSend.append('_submission_key', subKey);
+      }
+
       // Only append visible fields
       visibleFields.forEach((field) => {
         let value = formData[field.id];
@@ -245,11 +267,24 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
         ? await (
             await import('@/actions/edit-response')
           ).submitEditedResponseAction(editMode.token, formDataToSend)
-        : await submitFormAction(form.id, formDataToSend);
+        : await submitFormAction(
+            form.id,
+            formDataToSend,
+            (formDataToSend.get('_submission_key') as string) ?? undefined
+          );
 
       if (result.success) {
         setSubmitted(true);
-        if (!editMode) trackSubmit();
+        if (!editMode) {
+          trackSubmit();
+          // Clear the idempotency key so "Submit another response" gets a
+          // fresh one and isn't swallowed as a duplicate.
+          try {
+            sessionStorage.removeItem(`klikform-sub-key-${form.id}`);
+          } catch {
+            /* ignore */
+          }
+        }
         toast.success(editMode ? 'Jawapan dikemas kini!' : 'Submitted successfully!');
       } else {
         toast.error(result.error || 'Something went wrong');

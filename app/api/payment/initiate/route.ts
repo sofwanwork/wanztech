@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { PRO_PRICE } from '@/lib/constants/pricing';
+import { randomUUID } from 'crypto';
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,9 +24,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
     }
 
-    // Amount and description
-    const amount = 5.0; // BCL expects number
-    const description = 'KlikForm Pro Plan - Monthly Subscription (50% Promo)';
+    // Amount and description — single source of truth in lib/constants/pricing.ts
+    const amount = PRO_PRICE.amount;
+    const description = PRO_PRICE.description;
 
     // BCL API Configuration
     const bclToken = process.env.BCL_API_TOKEN;
@@ -44,8 +46,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Generate unique order number
-    const orderNumber = `KLIK-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    // Generate unique order number — randomUUID (collision-impossible) instead
+    // of the old Date.now()+random(0-999) which could collide under load.
+    const orderNumber = `KLIK-${randomUUID()}`;
 
     // Create a transaction record first (pending)
     const { data: transaction, error: txError } = await supabase
@@ -75,7 +78,9 @@ export async function POST(req: NextRequest) {
       amount: amount,
       payer_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
       payer_email: user.email || '',
-      payer_telephone_number: user.user_metadata?.phone || '+60123456789',
+      // BCL requires the field but works fine with an obviously-placeholder
+      // local number when the profile has none (was a fake '+60123456789').
+      payer_telephone_number: user.user_metadata?.phone || '+60110000000',
       portal_key: bclPortalKey,
       remarks: `KlikForm Pro Subscription - User: ${user.id}`,
       // Optional: let_user_choose_payment: true // Allow user to choose payment method
@@ -119,7 +124,6 @@ export async function POST(req: NextRequest) {
         })
         .eq('id', transaction.id);
     }
-
     // Return the payment URL
     const paymentUrl = data.data?.payment_link;
 

@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { addMonths } from 'date-fns';
 import crypto from 'crypto';
 
 // BCL Payment Gateway Webhook
-// Security: Verifies webhook authenticity via HMAC signature or IP allowlist
+// Security: Verifies webhook authenticity via HMAC signature
 
 export async function GET() {
   // BCL might use GET for redirect callback
@@ -74,7 +73,12 @@ export async function POST(req: NextRequest) {
 
     // Parse the verified body
     const body = JSON.parse(rawBody);
-    const supabase = await createClient();
+
+    // IMPORTANT: use the ADMIN (service-role) client for ALL webhook DB work.
+    // The request arrives from BCL's servers with no user cookies, so the
+    // anon/SSR client is subject to owner-only RLS and silently finds nothing
+    // (transactions SELECT is owner/service_role only).
+    const supabase = createAdminClient();
     const { id: transactionId } = Object.fromEntries(req.nextUrl.searchParams);
 
     // Verify payment status
@@ -85,12 +89,13 @@ export async function POST(req: NextRequest) {
       body.record_type === 'transaction.successful';
 
     // Identify transaction
-    let transaction;
+    let transaction: { id: string; user_id: string; amount: number | null; status: string } | null =
+      null;
 
     if (transactionId) {
       const { data, error } = await supabase
         .from('transactions')
-        .select()
+        .select('id, user_id, amount, status, processed_at')
         .eq('id', transactionId)
         .single();
 
@@ -101,7 +106,7 @@ export async function POST(req: NextRequest) {
     if (!transaction && body.order_number) {
       const { data, error } = await supabase
         .from('transactions')
-        .select()
+        .select('id, user_id, amount, status, processed_at')
         .eq('provider_reference', body.order_number)
         .single();
 
@@ -112,19 +117,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
     }
 
+    // ================================================
+    // IDEMPOTENCY: a replayed/duplicated webhook must never
+    // re-extend the subscription (+1 free month) or re-send emails.
+    // processed_at marks the transaction as fully handled.
+    // ================================================
     if (isSuccessful) {
-      // 1. Update Transaction
+      if ((transaction as { processed_at?: string | null }).processed_at) {
+        console.log('Duplicate payment webhook ignored (already processed):', transaction.id);
+        return NextResponse.json({ success: true, duplicate: true });
+      }
+
+      // 1. Update Transaction — set processed_at FIRST so a crash mid-handler
+      // can't double-grant. (Status alone is not enough: a 'completed' txn from
+      // a partial failure before this migration must still be re-processable.)
       const { error: txError } = await supabase
         .from('transactions')
         .update({
           status: 'completed',
           metadata: body,
+          processed_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
         .eq('id', transaction.id);
 
       if (txError) {
         console.error('Error updating transaction:', txError);
+        // 500 → BCL retries later; nothing has been granted yet.
         return NextResponse.json({ error: 'Transaction update failed' }, { status: 500 });
       }
 
@@ -154,20 +173,17 @@ export async function POST(req: NextRequest) {
         const { getPaymentSuccessEmail, getWelcomeProEmail, sendEmail } = await import(
           '@/lib/email'
         );
-        const adminSupabase = createAdminClient();
-        
+
         // Fetch user data via Admin API bypassing RLS
-        const { data: userData } = await adminSupabase.auth.admin.getUserById(
-          transaction.user_id
-        );
-        
+        const { data: userData } = await supabase.auth.admin.getUserById(transaction.user_id);
+
         const userEmail = userData?.user?.email || body.customer_email || body.payer_email;
         const userName =
           userData?.user?.user_metadata?.full_name ||
           body.customer_name ||
           body.payer_name ||
           'Pelanggan Pro';
-          
+
         if (userEmail) {
           const receiptUrl = body.receipt_url || body.payment_url || '#';
 
@@ -178,7 +194,7 @@ export async function POST(req: NextRequest) {
             new Date(currentPeriodEnd).toLocaleDateString('ms-MY'),
             receiptUrl
           );
-          
+
           await sendEmail({
             to: userEmail,
             subject: receiptEmail.subject,
@@ -195,6 +211,8 @@ export async function POST(req: NextRequest) {
         }
       } catch (emailErr) {
         console.error('Failed to send payment emails:', emailErr);
+        // Non-fatal: subscription is already granted. A duplicate webhook is
+        // now idempotent, so BCL retrying this event will NOT re-send emails.
       }
     } else {
       // Handle failed payment
