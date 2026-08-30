@@ -1,4 +1,5 @@
 import { CertificateTemplate, CertificateElement } from '@/lib/types';
+import { getProgramFontSize } from '@/components/certificates/types';
 import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import {
@@ -104,7 +105,10 @@ export function CertificateRenderer({ template, data, id }: CertificateRendererP
             width:
               el.type === 'image' || el.type === 'shape' || el.type === 'qr' || el.type === 'icon'
                 ? `${(Number(el.width) / safeWidth) * 100}%`
-                : 'auto', // Auto width for text to allow centering
+                : el.width && el.width > 0
+                  ? `${(Number(el.width) / safeWidth) * 100}%`
+                  : 'auto',
+            maxWidth: el.type === 'text' || el.type === 'placeholder' ? '92%' : undefined,
             height:
               el.type === 'image' || el.type === 'shape' || el.type === 'qr' || el.type === 'icon'
                 ? `${(Number(el.height) / safeHeight) * 100}%`
@@ -118,14 +122,21 @@ export function CertificateRenderer({ template, data, id }: CertificateRendererP
             borderRadius: `${el.borderRadius ?? 0}px`,
             whiteSpace: el.type === 'text' || el.type === 'placeholder' ? 'pre-line' : 'nowrap',
             wordBreak: el.type === 'text' || el.type === 'placeholder' ? 'break-word' : undefined,
-            // Apply specific text styles
-            fontSize: el.fontSize ? `${Number(el.fontSize)}px` : undefined,
+            // Apply specific text styles (with smart scaling for program placeholder)
+            fontSize: (() => {
+              if (!el.fontSize) return undefined;
+              const base = Number(el.fontSize);
+              if (el.type === 'placeholder' && el.placeholderType === 'program') {
+                return `${getProgramFontSize(data.program || el.content, base)}px`;
+              }
+              return `${base}px`;
+            })(),
             fontFamily: el.fontFamily,
             fontWeight: el.fontWeight,
             fontStyle: el.fontStyle,
             color: el.color,
             textAlign: el.textAlign,
-            lineHeight: el.lineHeight ?? undefined,
+            lineHeight: el.lineHeight ?? 1.2,
             letterSpacing: el.letterSpacing ? `${el.letterSpacing}px` : undefined,
             textDecoration: el.textDecoration,
             WebkitTextStroke: el.textStrokeWidth
@@ -197,7 +208,7 @@ export function CertificateRenderer({ template, data, id }: CertificateRendererP
 
           {/* Text & Placeholder */}
           {(el.type === 'text' || el.type === 'placeholder') && (
-            <div className="whitespace-pre-line break-words" style={{ pointerEvents: 'none' }}>
+            <div className="whitespace-pre-line break-words [text-wrap:balance]" style={{ pointerEvents: 'none' }}>
               {resolveContent(el)}
             </div>
           )}

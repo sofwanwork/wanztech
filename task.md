@@ -292,6 +292,20 @@ Membolehkan tajuk program dipaparkan dalam 2 baris atau lebih pada preview sijil
 - **Templat Sijil Pra-Bina**: Kesemua 10 templat sijil (`Classic`, `Corporate`, `Creative`, `Elegant`, `Minimalist`, `Modern`, `Nature`, `Premium`, `Royal`, `Vintage`) dan templat legasi dikemas kini dengan `whitespace-pre-line break-words`.
 - **Pengesahan & Deployment**: 206 ujian unit lulus (termasuk ujian multi-line program identifier), 0 lint error, typecheck TypeScript bersih, dan berjaya dideploy ke pengeluaran Vercel (`https://www.klikform.com`).
 
+---
+
+# Auto-Scale Tajuk Panjang & Canva-Style Drag-To-Scale
+
+Memperkemas paparan tajuk panjang pada sijil secara automatik dan menambah kawalan penskalaan interaktif seperti Canva pada E-Cert Builder.
+
+- [ ] 1. Cipta modul типоgrafi sijil `lib/certificates/typography.ts` dengan fungsi `getProgramFontSize`.
+- [ ] 2. Kemas kini kesemua 10 templat sijil pra-bina dan templat legasi dengan `getProgramFontSize` dan `[text-wrap:balance]`.
+- [ ] 3. Kemas kini `components/certificates/renderer/index.tsx` dengan `textWrap: 'balance'` dan `maxWidth: '92%'`.
+- [ ] 4. Laksanakan pemegang penskalaan Canva (4 bucu + pemegang sisi) serta logik penskalaan fon dan dimensi dalam `app/(dashboard)/certificates/builder/[id]/client.tsx`.
+- [ ] 5. Tulis ujian unit di `tests/certificate-typography.test.ts` dan jalankan `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`.
+- [ ] 6. Deploy ke Vercel production dan tolak ke git `origin/master`.
+
+
 
 
 

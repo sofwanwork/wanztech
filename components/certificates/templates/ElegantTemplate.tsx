@@ -1,6 +1,7 @@
-import { TemplateProps } from '../types';
+import { TemplateProps, getProgramFontSize } from '../types';
 
 export function ElegantTemplate({ id, name, program, formattedDate }: TemplateProps) {
+  const programFontSize = getProgramFontSize(program, 36);
   return (
     <div
       id={id}
@@ -97,7 +98,10 @@ export function ElegantTemplate({ id, name, program, formattedDate }: TemplatePr
         <p className="text-lg mb-1" style={{ color: '#4b5563' }}>
           In recognition of outstanding participation in
         </p>
-        <h3 className="font-serif italic whitespace-pre-line break-words" style={{ color: '#713f12', fontSize: '36px' }}>
+        <h3
+          className="font-serif italic whitespace-pre-line break-words max-w-2xl mx-auto leading-tight [text-wrap:balance]"
+          style={{ color: '#713f12', fontSize: `${programFontSize}px` }}
+        >
           {program}
         </h3>
       </div>

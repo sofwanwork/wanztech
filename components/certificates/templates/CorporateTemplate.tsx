@@ -1,6 +1,7 @@
-import { TemplateProps } from '../types';
+import { TemplateProps, getProgramFontSize } from '../types';
 
 export function CorporateTemplate({ id, name, program, formattedDate }: TemplateProps) {
+  const programFontSize = getProgramFontSize(program, 40);
   return (
     <div
       id={id}
@@ -135,7 +136,10 @@ export function CorporateTemplate({ id, name, program, formattedDate }: Template
 
       {/* Program Section */}
       <div className="absolute top-[390px] left-0 z-10 text-center w-full px-16">
-        <h3 className="font-serif font-semibold whitespace-pre-line break-words" style={{ color: '#ffffff', fontSize: '40px' }}>
+        <h3
+          className="font-serif font-semibold whitespace-pre-line break-words max-w-2xl mx-auto leading-tight [text-wrap:balance]"
+          style={{ color: '#ffffff', fontSize: `${programFontSize}px` }}
+        >
           {program}
         </h3>
       </div>

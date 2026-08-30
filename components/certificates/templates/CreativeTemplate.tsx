@@ -1,6 +1,7 @@
-import { TemplateProps } from '../types';
+import { TemplateProps, getProgramFontSize } from '../types';
 
 export function CreativeTemplate({ id, name, program, formattedDate }: TemplateProps) {
+  const programFontSize = getProgramFontSize(program, 44);
   return (
     <div
       id={id}
@@ -81,8 +82,8 @@ export function CreativeTemplate({ id, name, program, formattedDate }: TemplateP
           for participating in
         </p>
         <h3
-          className="font-semibold italic max-w-2xl mx-auto whitespace-pre-line break-words"
-          style={{ color: '#374151', fontSize: '48px' }}
+          className="font-semibold italic max-w-2xl mx-auto whitespace-pre-line break-words leading-tight [text-wrap:balance]"
+          style={{ color: '#374151', fontSize: `${programFontSize}px` }}
         >
           {program}
         </h3>

@@ -1,4 +1,5 @@
 import { templateRegistry, templateList } from './certificates';
+import { getProgramFontSize } from './certificates/types';
 import { CertificateTemplate as CertificateTemplateType } from '@/lib/types';
 import { CertificateRenderer } from './certificates/renderer';
 import { generateCertSerial } from '@/lib/certificates/serial';
@@ -82,8 +83,12 @@ export function CertificateTemplate({
             Program:
           </p>
           <h2
-            className="text-2xl md:text-3xl text-gray-900 font-bold mb-8 whitespace-pre-line break-words"
-            style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.8)' }}
+            className="font-bold mb-8 whitespace-pre-line break-words max-w-2xl mx-auto leading-snug [text-wrap:balance]"
+            style={{
+              fontSize: `${getProgramFontSize(program, 32)}px`,
+              color: '#111827',
+              textShadow: '1px 1px 2px rgba(255,255,255,0.8)',
+            }}
           >
             {program}
           </h2>

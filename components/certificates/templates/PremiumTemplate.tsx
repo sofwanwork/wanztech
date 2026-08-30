@@ -1,6 +1,7 @@
-import { TemplateProps } from '../types';
+import { TemplateProps, getProgramFontSize } from '../types';
 
 export function PremiumTemplate({ id, name, program, formattedDate }: TemplateProps) {
+  const programFontSize = getProgramFontSize(program, 36);
   return (
     <div
       id={id}
@@ -87,7 +88,10 @@ export function PremiumTemplate({ id, name, program, formattedDate }: TemplatePr
         <p className="text-sm mb-2" style={{ color: 'rgba(255,255,255,0.6)' }}>
           has achieved remarkable success in
         </p>
-        <h3 className="font-serif whitespace-pre-line break-words" style={{ color: '#ffffff', fontSize: '36px' }}>
+        <h3
+          className="font-serif whitespace-pre-line break-words max-w-2xl mx-auto leading-tight [text-wrap:balance]"
+          style={{ color: '#ffffff', fontSize: `${programFontSize}px` }}
+        >
           {program}
         </h3>
       </div>

@@ -1,6 +1,7 @@
-import { TemplateProps } from '../types';
+import { TemplateProps, getProgramFontSize } from '../types';
 
 export function VintageTemplate({ id, name, program, formattedDate }: TemplateProps) {
+  const programFontSize = getProgramFontSize(program, 36);
   return (
     <div
       id={id}
@@ -95,7 +96,10 @@ export function VintageTemplate({ id, name, program, formattedDate }: TemplatePr
         <p className="font-serif italic text-base mb-2" style={{ color: '#8b4513' }}>
           has successfully completed
         </p>
-        <h3 className="font-serif whitespace-pre-line break-words" style={{ color: '#5c3317', fontSize: '36px' }}>
+        <h3
+          className="font-serif whitespace-pre-line break-words max-w-2xl mx-auto leading-tight [text-wrap:balance]"
+          style={{ color: '#5c3317', fontSize: `${programFontSize}px` }}
+        >
           {program}
         </h3>
       </div>

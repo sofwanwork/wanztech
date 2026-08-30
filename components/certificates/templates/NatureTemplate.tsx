@@ -1,6 +1,7 @@
-import { TemplateProps } from '../types';
+import { TemplateProps, getProgramFontSize } from '../types';
 
 export function NatureTemplate({ id, name, program, formattedDate }: TemplateProps) {
+  const programFontSize = getProgramFontSize(program, 36);
   return (
     <div
       id={id}
@@ -127,7 +128,10 @@ export function NatureTemplate({ id, name, program, formattedDate }: TemplatePro
         <p className="text-base mb-2" style={{ color: '#4ade80' }}>
           has participated in
         </p>
-        <h3 className="font-serif whitespace-pre-line break-words" style={{ color: '#14532d', fontSize: '36px' }}>
+        <h3
+          className="font-serif whitespace-pre-line break-words max-w-2xl mx-auto leading-tight [text-wrap:balance]"
+          style={{ color: '#14532d', fontSize: `${programFontSize}px` }}
+        >
           {program}
         </h3>
       </div>

@@ -1,6 +1,7 @@
-import { TemplateProps } from '../types';
+import { TemplateProps, getProgramFontSize } from '../types';
 
 export function ModernTemplate({ id, name, program, formattedDate }: TemplateProps) {
+  const programFontSize = getProgramFontSize(program, 36);
   return (
     <div
       id={id}
@@ -78,7 +79,10 @@ export function ModernTemplate({ id, name, program, formattedDate }: TemplatePro
         <p className="mb-2 text-lg" style={{ color: '#4b5563' }}>
           For successfully organizing/participating in
         </p>
-        <h3 className="font-bold whitespace-pre-line break-words" style={{ color: '#1e40af', fontSize: '36px' }}>
+        <h3
+          className="font-bold whitespace-pre-line break-words max-w-2xl mx-auto leading-tight [text-wrap:balance]"
+          style={{ color: '#1e40af', fontSize: `${programFontSize}px` }}
+        >
           {program}
         </h3>
       </div>

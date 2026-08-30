@@ -1,6 +1,7 @@
-import { TemplateProps } from '../types';
+import { TemplateProps, getProgramFontSize } from '../types';
 
 export function MinimalistTemplate({ id, name, program, formattedDate }: TemplateProps) {
+  const programFontSize = getProgramFontSize(program, 32);
   return (
     <div
       id={id}
@@ -49,7 +50,10 @@ export function MinimalistTemplate({ id, name, program, formattedDate }: Templat
         <p className="text-sm mb-2" style={{ color: '#9ca3af' }}>
           for completing
         </p>
-        <h3 className="font-light whitespace-pre-line break-words" style={{ color: '#374151', fontSize: '32px' }}>
+        <h3
+          className="font-light whitespace-pre-line break-words max-w-2xl mx-auto leading-tight [text-wrap:balance]"
+          style={{ color: '#374151', fontSize: `${programFontSize}px` }}
+        >
           {program}
         </h3>
       </div>

@@ -58,6 +58,20 @@ const ICON_MAP: Record<string, React.ElementType> = {
   Flag,
 };
 
+type ResizeHandleType = 'nw' | 'ne' | 'sw' | 'se' | 'n' | 's' | 'e' | 'w';
+
+interface ResizeState {
+  handle: ResizeHandleType;
+  startX: number;
+  startY: number;
+  initialX: number;
+  initialY: number;
+  initialWidth: number;
+  initialHeight: number;
+  initialFontSize: number;
+  elementType: CertificateElement['type'];
+}
+
 export function CertificateBuilderClient({
   template: initialTemplate,
 }: CertificateBuilderClientProps) {
@@ -68,6 +82,7 @@ export function CertificateBuilderClient({
   // 2. UI/Interaction State
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
+  const [resizeState, setResizeState] = useState<ResizeState | null>(null);
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
 
@@ -280,15 +295,29 @@ export function CertificateBuilderClient({
     moveElement: nudgeElement,
   });
 
-  // Resize handle mouse down
-  const handleResizeMouseDown = (e: React.MouseEvent, el: CertificateElement) => {
+  // Canva-style Resize handle mouse down
+  const handleResizeMouseDown = (
+    e: React.MouseEvent,
+    el: CertificateElement,
+    handle: ResizeHandleType
+  ) => {
     e.stopPropagation();
+    e.preventDefault();
     setSelectedId(el.id);
     setIsResizing(true);
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (rect) {
-      // Store initial offset for resize
-    }
+    setIsDragging(false);
+
+    setResizeState({
+      handle,
+      startX: e.clientX,
+      startY: e.clientY,
+      initialX: Number(el.x) || 0,
+      initialY: Number(el.y) || 0,
+      initialWidth: Math.max(30, Number(el.width) || (el.type === 'text' || el.type === 'placeholder' ? 250 : 100)),
+      initialHeight: Math.max(20, Number(el.height) || (el.type === 'text' || el.type === 'placeholder' ? 50 : 100)),
+      initialFontSize: Number(el.fontSize) || 16,
+      elementType: el.type,
+    });
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -361,29 +390,97 @@ export function CertificateBuilderClient({
       });
 
       setTemplate({ ...template, elements: newElements });
-    } else if (isResizing) {
-      const el = template.elements.find((el) => el.id === selectedId);
-      if (el) {
-        let newWidth = Math.max(30, (e.clientX - rect.left) / scale - el.x + el.width / 2);
-        let newHeight = Math.max(20, (e.clientY - rect.top) / scale - el.y + el.height / 2);
+    } else if (isResizing && resizeState && selectedId) {
+      const {
+        handle,
+        startX,
+        startY,
+        initialX,
+        initialY,
+        initialWidth,
+        initialHeight,
+        initialFontSize,
+        elementType,
+      } = resizeState;
 
-        // Shift key = maintain aspect ratio
-        if (e.shiftKey && el.width > 0 && el.height > 0) {
-          const aspectRatio = el.width / el.height;
-          // Use the larger change to determine the resize direction
-          const widthChange = Math.abs(newWidth - el.width);
-          const heightChange = Math.abs(newHeight - el.height);
+      const dx = (e.clientX - startX) / scale;
+      const dy = (e.clientY - startY) / scale;
 
-          if (widthChange > heightChange) {
-            // Width changed more, adjust height to match
-            newHeight = newWidth / aspectRatio;
-          } else {
-            // Height changed more, adjust width to match
-            newWidth = newHeight * aspectRatio;
-          }
+      const isText = elementType === 'text' || elementType === 'placeholder';
+      const isCorner = handle === 'nw' || handle === 'ne' || handle === 'sw' || handle === 'se';
+
+      if (isText) {
+        if (isCorner) {
+          // Canva-style corner scaling for text: scales font size and width proportionally
+          let delta = 0;
+          if (handle === 'se') delta = (dx + dy) / 2;
+          else if (handle === 'nw') delta = (-dx - dy) / 2;
+          else if (handle === 'ne') delta = (dx - dy) / 2;
+          else if (handle === 'sw') delta = (-dx + dy) / 2;
+
+          const scaleFactor = Math.max(0.2, (initialWidth + delta * 2) / initialWidth);
+          const newWidth = Math.max(40, Math.round(initialWidth * scaleFactor));
+          const newFontSize = Math.max(8, Math.min(140, Math.round(initialFontSize * scaleFactor)));
+
+          updateElement(selectedId, { width: newWidth, fontSize: newFontSize });
+        } else if (handle === 'e' || handle === 'w') {
+          // Side handle: adjusts text box wrap width without changing font size
+          const newWidth = Math.max(40, Math.round(handle === 'e' ? initialWidth + dx * 2 : initialWidth - dx * 2));
+          updateElement(selectedId, { width: newWidth });
+        }
+      } else {
+        // Shapes, Images, Icons, QR
+        const aspectRatio = initialWidth / (initialHeight || 1);
+        const isProportional = isCorner || e.shiftKey || elementType === 'qr' || elementType === 'icon';
+
+        let newWidth = initialWidth;
+        let newHeight = initialHeight;
+        let newX = initialX;
+        let newY = initialY;
+
+        if (handle === 'se') {
+          newWidth = Math.max(20, initialWidth + dx);
+          newHeight = isProportional ? newWidth / aspectRatio : Math.max(20, initialHeight + dy);
+          newX = initialX + (newWidth - initialWidth) / 2;
+          newY = initialY + (newHeight - initialHeight) / 2;
+        } else if (handle === 'nw') {
+          newWidth = Math.max(20, initialWidth - dx);
+          newHeight = isProportional ? newWidth / aspectRatio : Math.max(20, initialHeight - dy);
+          newX = initialX - (newWidth - initialWidth) / 2;
+          newY = initialY - (newHeight - initialHeight) / 2;
+        } else if (handle === 'ne') {
+          newWidth = Math.max(20, initialWidth + dx);
+          newHeight = isProportional ? newWidth / aspectRatio : Math.max(20, initialHeight - dy);
+          newX = initialX + (newWidth - initialWidth) / 2;
+          newY = initialY - (newHeight - initialHeight) / 2;
+        } else if (handle === 'sw') {
+          newWidth = Math.max(20, initialWidth - dx);
+          newHeight = isProportional ? newWidth / aspectRatio : Math.max(20, initialHeight + dy);
+          newX = initialX - (newWidth - initialWidth) / 2;
+          newY = initialY + (newHeight - initialHeight) / 2;
+        } else if (handle === 'e') {
+          newWidth = Math.max(20, initialWidth + dx);
+          newX = initialX + (newWidth - initialWidth) / 2;
+        } else if (handle === 'w') {
+          newWidth = Math.max(20, initialWidth - dx);
+          newX = initialX - (newWidth - initialWidth) / 2;
+        } else if (handle === 's') {
+          newHeight = Math.max(20, initialHeight + dy);
+          newY = initialY + (newHeight - initialHeight) / 2;
+        } else if (handle === 'n') {
+          newHeight = Math.max(20, initialHeight - dy);
+          newY = initialY - (newHeight - initialHeight) / 2;
         }
 
-        updateElement(selectedId, { width: newWidth, height: newHeight });
+        newX = Math.max(0, Math.min(template.width, newX));
+        newY = Math.max(0, Math.min(template.height, newY));
+
+        updateElement(selectedId, {
+          width: Math.round(newWidth),
+          height: Math.round(newHeight),
+          x: Math.round(newX),
+          y: Math.round(newY),
+        });
       }
     }
   };
@@ -394,6 +491,7 @@ export function CertificateBuilderClient({
     }
     setIsDragging(false);
     setIsResizing(false);
+    setResizeState(null);
     setDragStartPos(null);
     setInitialElementPositions({});
     setAlignmentGuides({ x: [], y: [] });
@@ -560,15 +658,67 @@ export function CertificateBuilderClient({
                       }}
                     />
                   )}
-                  {isSelected && el.type !== 'text' && el.type !== 'placeholder' && (
-                    <>
-                      {/* Resize Handle - Bottom Right */}
+                  {/* Canva-Style Selection Box & Scaling Handles */}
+                  {isSelected && selectedId === el.id && (
+                    <div className="absolute inset-0 pointer-events-none border border-primary z-30">
+                      {/* 4 Corner Handles (Scaling font size for text, proportional size for elements) */}
                       <div
-                        className="absolute bottom-0 right-0 w-4 h-4 bg-white border-2 border-primary rounded-full translate-x-1/2 translate-y-1/2 cursor-se-resize z-50 hover:bg-primary/10"
-                        onMouseDown={(e) => handleResizeMouseDown(e, el)}
+                        className="pointer-events-auto absolute -top-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-primary rounded-full shadow cursor-nwse-resize hover:scale-125 transition-transform"
+                        onMouseDown={(e) => handleResizeMouseDown(e, el, 'nw')}
                         onClick={(e) => e.stopPropagation()}
+                        title="Tarik untuk skala"
                       />
-                    </>
+                      <div
+                        className="pointer-events-auto absolute -top-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-primary rounded-full shadow cursor-nesw-resize hover:scale-125 transition-transform"
+                        onMouseDown={(e) => handleResizeMouseDown(e, el, 'ne')}
+                        onClick={(e) => e.stopPropagation()}
+                        title="Tarik untuk skala"
+                      />
+                      <div
+                        className="pointer-events-auto absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-primary rounded-full shadow cursor-nesw-resize hover:scale-125 transition-transform"
+                        onMouseDown={(e) => handleResizeMouseDown(e, el, 'sw')}
+                        onClick={(e) => e.stopPropagation()}
+                        title="Tarik untuk skala"
+                      />
+                      <div
+                        className="pointer-events-auto absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-primary rounded-full shadow cursor-nwse-resize hover:scale-125 transition-transform"
+                        onMouseDown={(e) => handleResizeMouseDown(e, el, 'se')}
+                        onClick={(e) => e.stopPropagation()}
+                        title="Tarik untuk skala"
+                      />
+
+                      {/* Left and Right Pill Handles (Width) */}
+                      <div
+                        className="pointer-events-auto absolute top-1/2 -left-1 -translate-y-1/2 w-1.5 h-4 bg-white border-2 border-primary rounded-full shadow cursor-ew-resize hover:scale-125 transition-transform"
+                        onMouseDown={(e) => handleResizeMouseDown(e, el, 'w')}
+                        onClick={(e) => e.stopPropagation()}
+                        title="Laras lebar"
+                      />
+                      <div
+                        className="pointer-events-auto absolute top-1/2 -right-1 -translate-y-1/2 w-1.5 h-4 bg-white border-2 border-primary rounded-full shadow cursor-ew-resize hover:scale-125 transition-transform"
+                        onMouseDown={(e) => handleResizeMouseDown(e, el, 'e')}
+                        onClick={(e) => e.stopPropagation()}
+                        title="Laras lebar"
+                      />
+
+                      {/* Top and Bottom Pill Handles (Only for shapes and images) */}
+                      {el.type !== 'text' && el.type !== 'placeholder' && el.type !== 'qr' && el.type !== 'icon' && (
+                        <>
+                          <div
+                            className="pointer-events-auto absolute -top-1 left-1/2 -translate-x-1/2 h-1.5 w-4 bg-white border-2 border-primary rounded-full shadow cursor-ns-resize hover:scale-125 transition-transform"
+                            onMouseDown={(e) => handleResizeMouseDown(e, el, 'n')}
+                            onClick={(e) => e.stopPropagation()}
+                            title="Laras tinggi"
+                          />
+                          <div
+                            className="pointer-events-auto absolute -bottom-1 left-1/2 -translate-x-1/2 h-1.5 w-4 bg-white border-2 border-primary rounded-full shadow cursor-ns-resize hover:scale-125 transition-transform"
+                            onMouseDown={(e) => handleResizeMouseDown(e, el, 's')}
+                            onClick={(e) => e.stopPropagation()}
+                            title="Laras tinggi"
+                          />
+                        </>
+                      )}
+                    </div>
                   )}
                   {el.type === 'image' && el.src && (
                     <div
