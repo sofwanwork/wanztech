@@ -717,7 +717,9 @@ Membolehkan pengguna memasukkan tajuk borang (Form Title) dalam 2 baris atau leb
   - `npm run typecheck`: Bersih (0 errors).
   - `npm run build`: Bersih (Next 16.2.6, Turbopack, 45 laluan).
 - **Deployment**:
-  - Commit `fe41f5e` dipush ke cawangan `master` pada remote `origin` (GitHub `sofwanwork/wanztech`).
-  - Vercel CI/CD automatik membina dan mengemaskini `https://www.klikform.com`.
+  - Berjaya dideploy ke Vercel Production: `https://klikform-j7rwf9o0k-sofwan-jailanis-projects.vercel.app` (Deployment ID: `dpl_Ekc5nK9r81i7frCCUKrTWMeGc3C5`).
+  - Aliased terus ke domain pengeluaran: `https://www.klikform.com`.
+  - Cron `sync-responses` di `vercel.json` dilaraskan ke harian (`0 10 * * *`) untuk menepati had pelan Vercel Hobby.
+
 
 
