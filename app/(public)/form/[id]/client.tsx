@@ -538,7 +538,7 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={getProxiedImageUrl(form.coverImage)}
-                alt={form.title}
+                alt={form.title?.replace(/\r?\n/g, ' ') || 'Cover'}
                 className="w-full h-auto"
               />
             </div>
@@ -784,7 +784,7 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
                 </div>
               )}
               <CardTitle
-                className="text-2xl font-black text-gray-900 leading-tight"
+                className="text-2xl font-black text-gray-900 leading-tight whitespace-pre-line break-words"
                 style={{
                   fontFamily:
                     form.theme?.headerFont === 'playfair'

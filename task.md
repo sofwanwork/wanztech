@@ -255,3 +255,22 @@ Sembilan pembetulan risiko/kualiti dari audit penuh (lihat `memory.md` untuk but
 - **Admin client fix**: webhook BCL tiada cookie — anon client + RLS owner-only = silent 404; service role satu-satunya pilihan betul.
 - **Tinggal (Fasa E cadangan)**: Turnstile optional per-form, zod di semua action files, dekomposisi client.tsx (1,354 baris) + builder client (1,551 baris), responses dashboard baca form_responses, export/backup UI dari form_responses, a11y audit builder, i18n konsisten (lang="ms" pada page English), renewal/cancel flow.
 
+---
+
+# Form Title 2 Baris (Multi-line Support)
+
+Membolehkan Form Title ditulis dan dipaparkan dalam 2 baris atau lebih.
+
+- [x] 1. Tukar input Form Title di `app/builder/[id]/client.tsx` kepada `<Textarea>` dengan `rows={2}`.
+- [x] 2. Kemas kini `app/(public)/form/[id]/client.tsx` dengan `whitespace-pre-line break-words` pada `<CardTitle>`.
+- [x] 3. Kemas kini `components/dashboard/form-card.tsx` dan `app/(dashboard)/responses/client.tsx` dengan `line-clamp-2 break-words whitespace-pre-line`.
+- [x] 4. Kemas kini komponen/halaman lain yang memaparkan tajuk borang (`check`, `verify`, `analytics`, `certificate-qr-card`) dan sanitasi nama metadata / muat turun / Sheet.
+- [x] 5. Uji dengan `npm test`, `npm run lint`, `npm run typecheck` dan semak manual.
+
+### Reviu
+- **Form Builder**: Input tajuk borang kini menggunakan `<Textarea rows={2}>` yang membolehkan pengguna menekan Enter untuk memasukkan baris baru secara semulajadi.
+- **Rendering**: Paparan tajuk pada borang awam, kad dashboard, semakan sijil, verifikasi dan analitik kini menyokong `whitespace-pre-line break-words` (dan `line-clamp-2` pada kad dashboard).
+- **Sanitasi**: Tajuk yang digunakan pada tag metadata `<head>`, nama fail Google Sheets, fail muat turun QR kod, serta subjek emel disanitasi secara automatik untuk menukar `\n` kepada ruang kosong (` `) supaya tiada isu pemecahan header / karakter tidak sah.
+- **Kualiti**: 206/206 ujian lulus, lint 0 ralat/amaran, typecheck bersih.
+
+

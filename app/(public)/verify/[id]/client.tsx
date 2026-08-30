@@ -25,7 +25,7 @@ export function VerifyClient({ certificateId, formData }: VerifyClientProps) {
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
               <Award className="h-8 w-8 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">{formData.title}</h1>
+            <h1 className="text-2xl font-bold text-gray-900 whitespace-pre-line break-words">{formData.title}</h1>
             <p className="text-gray-600 mt-2">Certificate Verification</p>
           </div>
 

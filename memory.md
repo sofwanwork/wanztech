@@ -690,3 +690,29 @@ Sembilan pembetulan risiko/kualiti dari audit penuh sistem. Semua verified: lint
 
 ### 9. Tooling
 - Skrip `typecheck` baharu; `@eslint/eslintrc`, `@types/uuid`, `typescript-eslint`, `cross-env` dipindah ke devDependencies (ia ada dalam dependencies sebelum ini).
+
+## System Improvements (2026-08-30 — Sokongan Form Title 2 Baris / Multi-line)
+
+Membolehkan pengguna memasukkan tajuk borang (Form Title) dalam 2 baris atau lebih dengan menekan Enter dalam Form Builder serta memastikan rendering merentas semua muka surat dipaparkan dengan betul.
+
+- **Form Builder (`app/builder/[id]/client.tsx`)**:
+  - Medan input tajuk ditukar daripada `<Input>` (single-line) kepada `<Textarea rows={2} className="resize-y min-h-[60px]">` supaya pengguna boleh menekan Enter untuk baris kedua.
+  - Nama fail muat turun QR kod disanitasi (`replace(/\r?\n/g, ' ')`) untuk mengelakkan newline dalam nama fail.
+- **Borang Awam (`app/(public)/form/[id]/client.tsx`)**:
+  - Ditambah kelas Tailwind `whitespace-pre-line break-words` pada `<CardTitle>` utama supaya line breaks (`\n`) dipaparkan pada baris baharu secara semulajadi.
+  - Atribut `alt` pada imej disanitasi.
+- **Papan Pemuka & Kad Borang (`components/dashboard/form-card.tsx` & `app/(dashboard)/responses/client.tsx`)**:
+  - `CardTitle` dikemas kini daripada `truncate` kepada `line-clamp-2 break-words whitespace-pre-line` supaya kad borang boleh memaparkan sehingga 2 baris tajuk.
+- **Komponen & Muka Surat Berkaitan**:
+  - `components/certificate-qr-card.tsx`: Ditambah `line-clamp-2 break-words whitespace-pre-line` pada tajuk dan sanitasi nama fail muat turun QR.
+  - `app/(public)/check/[formId]/client.tsx`: Ditambah `whitespace-pre-line break-words` pada tajuk semakan sijil.
+  - `app/(public)/verify/[id]/client.tsx`: Ditambah `whitespace-pre-line break-words` pada tajuk verifikasi sijil.
+  - `app/(dashboard)/responses/[id]/analytics/page.tsx`: Ditambah `whitespace-pre-line break-words` pada tajuk analitik.
+  - `actions/sheets.ts`: Tajuk Google Sheet spreadsheet baru disanitasi dengan membuang newline.
+  - `app/(public)/form/[id]/page.tsx` & `app/(public)/s/[code]/page.tsx`: `generateMetadata` disanitasi untuk membuang newline pada tag `<title>` / OpenGraph.
+  - `lib/email/index.ts`: Subjek dan preheader email disanitasi bagi mengelakkan karakter newline dalam header emel.
+- **Verifikasi**:
+  - `npm test`: 206/206 lulus (25 test suites).
+  - `npm run lint`: 0 ralat / amaran.
+  - `npm run typecheck`: Bersih (0 errors).
+

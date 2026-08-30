@@ -159,9 +159,11 @@ export function getNewSubmissionEmail(
             ${caption('Email automatik daripada KlikForm.')}
   `);
 
+  const cleanTitle = (formTitle || 'Borang').replace(/\r?\n/g, ' ').trim();
+
   return {
-    subject: `📬 Response baru: ${formTitle}`,
-    html: emailWrapper(content, `Anda menerima response baru untuk "${formTitle}".`),
+    subject: `📬 Response baru: ${cleanTitle}`,
+    html: emailWrapper(content, `Anda menerima response baru untuk "${cleanTitle}".`),
   };
 }
 
@@ -172,6 +174,7 @@ export function getEditLinkEmail(
   editUrl: string,
   expiryDays: number
 ) {
+  const cleanTitle = (formTitle || 'Borang').replace(/\r?\n/g, ' ').trim();
   const content = cardBody(`
             ${eyebrow('Sunting Jawapan')}
             ${heading('Sunting jawapan anda')}
@@ -182,8 +185,8 @@ export function getEditLinkEmail(
   `);
 
   return {
-    subject: `✏️ Sunting jawapan anda: ${formTitle}`,
-    html: emailWrapper(content, `Klik untuk menyunting jawapan anda bagi "${formTitle}".`),
+    subject: `✏️ Sunting jawapan anda: ${cleanTitle}`,
+    html: emailWrapper(content, `Klik untuk menyunting jawapan anda bagi "${cleanTitle}".`),
   };
 }
 
@@ -195,6 +198,7 @@ export function getRespondentConfirmationEmail(
   message?: string,
   summary?: Record<string, string>
 ) {
+  const cleanTitle = (formTitle || 'Borang').replace(/\r?\n/g, ' ').trim();
   const customMessage = (message ?? '').trim();
 
   const summaryRows = summary
@@ -226,10 +230,10 @@ export function getRespondentConfirmationEmail(
   `);
 
   return {
-    subject: `✅ Pengesahan: ${formTitle}`,
+    subject: `✅ Pengesahan: ${cleanTitle}`,
     html: emailWrapper(
       content,
-      customMessage || `Jawapan anda untuk "${formTitle}" telah kami terima.`
+      customMessage || `Jawapan anda untuk "${cleanTitle}" telah kami terima.`
     ),
   };
 }

@@ -88,7 +88,7 @@ export function ResponsesClient({ forms, hasGoogleOAuth }: ResponsesClientProps)
                         >
                             <CardHeader className="pb-2 pt-4 px-5">
                                 <div className="flex items-start justify-between gap-3">
-                                    <CardTitle className="text-base font-semibold text-gray-900 truncate flex-1">
+                                    <CardTitle className="text-base font-semibold text-gray-900 line-clamp-2 break-words whitespace-pre-line flex-1">
                                         {form.title}
                                     </CardTitle>
                                     <Link href={`/responses/${form.id}/analytics`} className="shrink-0">

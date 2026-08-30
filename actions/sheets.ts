@@ -64,7 +64,7 @@ export async function createSheetForFormAction(formId: string) {
         const response = await sheets.spreadsheets.create({
             requestBody: {
                 properties: {
-                    title: `${form.title} - Responses`,
+                    title: `${(form.title || 'Form').replace(/\r?\n/g, ' ').trim()} - Responses`,
                 },
                 sheets: [
                     {

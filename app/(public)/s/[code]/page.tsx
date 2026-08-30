@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: ShortLinkPageProps): Promise<
     };
   }
 
-  const title = form.title || 'Form';
+  const title = (form.title || 'Form').replace(/\r?\n/g, ' ').trim();
   const description = form.description
     ? form.description.replace(/<[^>]*>/g, '').substring(0, 160)
     : 'Please fill out this form.';

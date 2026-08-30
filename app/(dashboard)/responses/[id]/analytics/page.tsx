@@ -36,7 +36,7 @@ export default async function FormAnalyticsPage({ params }: PageProps) {
           >
             ← Back to Responses
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight mt-2">
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight mt-2 whitespace-pre-line break-words">
             {form.title}
           </h1>
           <p className="text-gray-500 mt-1 text-sm">Analytics — last 30 days</p>

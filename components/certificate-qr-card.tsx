@@ -39,7 +39,8 @@ export function CertificateQrCard({ formId, formTitle, templateName }: Certifica
       const url = canvas.toDataURL('image/png');
       const link = document.createElement('a');
       link.href = url;
-      link.download = `qr-semakan-sijil-${formTitle.replace(/\s+/g, '-').toLowerCase()}.png`;
+      const safeTitle = (formTitle || 'form').replace(/\r?\n/g, ' ').replace(/\s+/g, '-').toLowerCase();
+      link.download = `qr-semakan-sijil-${safeTitle}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -56,7 +57,7 @@ export function CertificateQrCard({ formId, formTitle, templateName }: Certifica
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader>
-        <CardTitle className="text-lg">{formTitle}</CardTitle>
+        <CardTitle className="text-lg line-clamp-2 break-words whitespace-pre-line">{formTitle}</CardTitle>
         <CardDescription>Template: {templateName}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

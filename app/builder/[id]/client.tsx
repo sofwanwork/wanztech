@@ -224,8 +224,9 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
         // Scale up the image
         ctx?.drawImage(img, 0, 0, highResSize, highResSize);
         const pngFile = canvas.toDataURL('image/png');
+        const safeTitle = (form.title || 'form').replace(/\r?\n/g, ' ').trim();
         const downloadLink = document.createElement('a');
-        downloadLink.download = `${form.title}-qr-highres.png`;
+        downloadLink.download = `${safeTitle}-qr-highres.png`;
         downloadLink.href = pngFile;
         downloadLink.click();
         toast.success('QR Code dimuat turun! (1000x1000px)');
@@ -412,9 +413,12 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
               <CardContent className="space-y-4">
                 <div className="space-y-2" id="tour-form-title">
                   <Label htmlFor="form-title">Form Title</Label>
-                  <Input
+                  <Textarea
                     id="form-title"
                     name="title"
+                    rows={2}
+                    placeholder="Enter form title..."
+                    className="resize-y min-h-[60px]"
                     value={form.title}
                     onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                   />

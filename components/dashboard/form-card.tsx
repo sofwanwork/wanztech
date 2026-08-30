@@ -65,7 +65,7 @@ export function FormCard({ form }: FormCardProps) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={getProxiedImageUrl(form.coverImage)}
-              alt={form.title}
+              alt={form.title?.replace(/\r?\n/g, ' ') || 'Cover'}
               className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
             />
           </>
@@ -102,7 +102,7 @@ export function FormCard({ form }: FormCardProps) {
       {/* Card Content */}
       <CardHeader className="p-5 pb-3 overflow-hidden">
         <div className="flex justify-between items-start gap-2 overflow-hidden">
-          <CardTitle className="truncate text-lg font-semibold text-gray-900 leading-tight max-w-[calc(100%-8px)]">
+          <CardTitle className="line-clamp-2 break-words whitespace-pre-line text-lg font-semibold text-gray-900 leading-tight max-w-[calc(100%-8px)]">
             {form.title}
           </CardTitle>
           {/* Option menu trigger could go here */}
