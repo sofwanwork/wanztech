@@ -273,4 +273,25 @@ Membolehkan Form Title ditulis dan dipaparkan dalam 2 baris atau lebih.
 - **Sanitasi**: Tajuk yang digunakan pada tag metadata `<head>`, nama fail Google Sheets, fail muat turun QR kod, serta subjek emel disanitasi secara automatik untuk menukar `\n` kepada ruang kosong (` `) supaya tiada isu pemecahan header / karakter tidak sah.
 - **Kualiti**: 206/206 ujian lulus, lint 0 ralat/amaran, typecheck bersih.
 
+---
+
+# Tajuk Program 2 Baris Pada Sijil & E-Cert
+
+Membolehkan tajuk program dipaparkan dalam 2 baris atau lebih pada preview sijil, certificate builder, dan renderer e-cert.
+
+- [x] 1. Kemas kini `components/certificates/renderer/index.tsx` untuk menyokong `whitespace-pre-line` dan `break-words` pada elemen teks dan placeholder.
+- [x] 2. Kemas kini canvas di `app/(dashboard)/certificates/builder/[id]/client.tsx` dan `preview/page.tsx` untuk membuang `whitespace-nowrap` dan menambah sokongan baris baru.
+- [x] 3. Kemas kini panel penyunting teks di `components/certificates/builder/properties.tsx` kepada `<Textarea rows={2}>`.
+- [x] 4. Kemas kini semua 10 templat pra-bina (`ClassicTemplate`, `CorporateTemplate`, dsb.) dan templat warisan dengan `whitespace-pre-line break-words`.
+- [x] 5. Jalankan verifikasi ujian automatik (`npm test`, `npm run lint`, `npm run typecheck`, `npm run build`).
+
+### Reviu
+- **Certificate Renderer & Canvas**: `whiteSpace: 'nowrap'` telah ditukar kepada dinamik (`pre-line` untuk teks & placeholder, `nowrap` untuk lain-lain) berserta `wordBreak: 'break-word'`, membolehkan tajuk program memaparkan 2 baris secara automatik atau mengikut `\n`.
+- **Builder & Preview Page**: Kelas `whitespace-nowrap` pada canvas dan halaman preview digantikan dengan `whitespace-pre-line break-words`.
+- **Properties Editor**: Input teks kini menggunakan `<Textarea rows={2}>` dengan kebolehan resize y untuk memudahkan pengguna memasukkan tajuk berbilang baris secara langsung.
+- **Templat Sijil Pra-Bina**: Kesemua 10 templat sijil (`Classic`, `Corporate`, `Creative`, `Elegant`, `Minimalist`, `Modern`, `Nature`, `Premium`, `Royal`, `Vintage`) dan templat legasi dikemas kini dengan `whitespace-pre-line break-words`.
+- **Pengesahan & Deployment**: 206 ujian unit lulus (termasuk ujian multi-line program identifier), 0 lint error, typecheck TypeScript bersih, dan berjaya dideploy ke pengeluaran Vercel (`https://www.klikform.com`).
+
+
+
 

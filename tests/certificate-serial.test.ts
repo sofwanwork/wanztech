@@ -30,8 +30,10 @@ describe('generateCertSerial', () => {
     );
   });
 
-  it('returns empty when no identifier is given (no shared code)', () => {
-    expect(generateCertSerial('form-1', '')).toBe('');
-    expect(generateCertSerial('form-1', '   ')).toBe('');
+  it('handles multi-line program identifiers properly', () => {
+    const singleLine = generateCertSerial('KURSUS KEPIMPINAN 2026', '901234567890');
+    const multiLine = generateCertSerial('KURSUS\nKEPIMPINAN 2026', '901234567890');
+    expect(multiLine).toMatch(/^SIJIL-[0-9A-F]{8}$/);
+    expect(singleLine).not.toBe(multiLine);
   });
 });

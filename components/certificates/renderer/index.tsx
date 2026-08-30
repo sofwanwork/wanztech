@@ -116,7 +116,8 @@ export function CertificateRenderer({ template, data, id }: CertificateRendererP
               ? `${el.shadow.offsetX}px ${el.shadow.offsetY}px ${el.shadow.blur}px ${el.shadow.color}`
               : undefined,
             borderRadius: `${el.borderRadius ?? 0}px`,
-            whiteSpace: 'nowrap', // Prevent wrapping usually
+            whiteSpace: el.type === 'text' || el.type === 'placeholder' ? 'pre-line' : 'nowrap',
+            wordBreak: el.type === 'text' || el.type === 'placeholder' ? 'break-word' : undefined,
             // Apply specific text styles
             fontSize: el.fontSize ? `${Number(el.fontSize)}px` : undefined,
             fontFamily: el.fontFamily,
@@ -196,7 +197,9 @@ export function CertificateRenderer({ template, data, id }: CertificateRendererP
 
           {/* Text & Placeholder */}
           {(el.type === 'text' || el.type === 'placeholder') && (
-            <div style={{ pointerEvents: 'none' }}>{resolveContent(el)}</div>
+            <div className="whitespace-pre-line break-words" style={{ pointerEvents: 'none' }}>
+              {resolveContent(el)}
+            </div>
           )}
         </div>
       ))}

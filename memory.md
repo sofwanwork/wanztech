@@ -721,5 +721,30 @@ Membolehkan pengguna memasukkan tajuk borang (Form Title) dalam 2 baris atau leb
   - Aliased terus ke domain pengeluaran: `https://www.klikform.com`.
   - Cron `sync-responses` di `vercel.json` dilaraskan ke harian (`0 10 * * *`) untuk menepati had pelan Vercel Hobby.
 
+## System Improvements (2026-08-30 — Sokongan Tajuk Program 2 Baris Pada Preview Sijil & E-Cert)
+
+Membolehkan tajuk program (program name / `{PROGRAM_NAME}`) pada sijil digital (e-cert), pratonton pembina sijil (*Certificate Builder*), dan halaman pratonton sijil (*Preview*) dipaparkan dengan sempurna dalam 2 baris atau lebih apabila mengandungi baris baru (`\n`) atau teks panjang.
+
+- **Certificate Renderer (`components/certificates/renderer/index.tsx`)**:
+  - Menukar `whiteSpace: 'nowrap'` kepada dinamik: `whiteSpace: el.type === 'text' || el.type === 'placeholder' ? 'pre-line' : 'nowrap'` dan `wordBreak: el.type === 'text' || el.type === 'placeholder' ? 'break-word' : undefined`.
+  - Menambah kelas `whitespace-pre-line break-words` pada bekas render teks & placeholder.
+- **Canvas Pembina Sijil (`app/(dashboard)/certificates/builder/[id]/client.tsx`)**:
+  - Menggantikan `whitespace-nowrap` pada elemen teks dan placeholder dengan `whitespace-pre-line break-words`.
+- **Halaman Pratonton Sijil (`app/(dashboard)/certificates/builder/[id]/preview/page.tsx`)**:
+  - Menggantikan `whitespace-nowrap` pada elemen teks dan placeholder dengan `whitespace-pre-line break-words`.
+- **Panel Ciri Pembina Sijil (`components/certificates/builder/properties.tsx`)**:
+  - Menukar `<Input>` teks kepada `<Textarea rows={2} className="resize-y min-h-[60px]">` supaya pengguna boleh menekan Enter untuk memasukkan teks berbilang baris secara langsung.
+- **Templat Sijil Pra-Bina & Legasi (`components/certificates/templates/*.tsx` & `components/certificate-template.tsx`)**:
+  - Mengemas kini tajuk `{program}` dan `{name}` dengan kelas `whitespace-pre-line break-words` pada semua 10 templat pra-bina (`Classic`, `Corporate`, `Creative`, `Elegant`, `Minimalist`, `Modern`, `Nature`, `Premium`, `Royal`, `Vintage`) dan templat URL legasi.
+- **Verifikasi**:
+  - `npm test`: 206/206 lulus (25 test suites, termasuk ujian pensijilan multi-line).
+  - `npm run lint`: 0 ralat / amaran.
+  - `npm run typecheck`: Bersih (0 errors).
+  - `npm run build`: Bersih (Next 16.2.6, Turbopack, 45 laluan).
+- **Deployment**:
+  - Berjaya dideploy ke Vercel Production: `https://klikform-3k76l654y-sofwan-jailanis-projects.vercel.app` (Deployment ID: `dpl_AJDoeTBJrfnNEdmnd2gN4MFHwPZF`).
+  - Aliased terus ke domain pengeluaran: `https://www.klikform.com`.
+
+
 
 

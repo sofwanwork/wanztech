@@ -87,7 +87,7 @@ export function PremiumTemplate({ id, name, program, formattedDate }: TemplatePr
         <p className="text-sm mb-2" style={{ color: 'rgba(255,255,255,0.6)' }}>
           has achieved remarkable success in
         </p>
-        <h3 className="font-serif" style={{ color: '#ffffff', fontSize: '36px' }}>
+        <h3 className="font-serif whitespace-pre-line break-words" style={{ color: '#ffffff', fontSize: '36px' }}>
           {program}
         </h3>
       </div>

@@ -113,7 +113,7 @@ export function RoyalTemplate({ id, name, program, formattedDate }: TemplateProp
         <p className="text-sm mb-2" style={{ color: 'rgba(255,255,255,0.7)' }}>
           for outstanding achievement in
         </p>
-        <h3 className="font-serif" style={{ color: '#ffffff', fontSize: '36px' }}>
+        <h3 className="font-serif whitespace-pre-line break-words" style={{ color: '#ffffff', fontSize: '36px' }}>
           {program}
         </h3>
       </div>

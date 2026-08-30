@@ -81,7 +81,7 @@ export function CreativeTemplate({ id, name, program, formattedDate }: TemplateP
           for participating in
         </p>
         <h3
-          className="font-semibold italic max-w-2xl mx-auto"
+          className="font-semibold italic max-w-2xl mx-auto whitespace-pre-line break-words"
           style={{ color: '#374151', fontSize: '48px' }}
         >
           {program}

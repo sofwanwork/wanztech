@@ -127,7 +127,7 @@ export function NatureTemplate({ id, name, program, formattedDate }: TemplatePro
         <p className="text-base mb-2" style={{ color: '#4ade80' }}>
           has participated in
         </p>
-        <h3 className="font-serif" style={{ color: '#14532d', fontSize: '36px' }}>
+        <h3 className="font-serif whitespace-pre-line break-words" style={{ color: '#14532d', fontSize: '36px' }}>
           {program}
         </h3>
       </div>

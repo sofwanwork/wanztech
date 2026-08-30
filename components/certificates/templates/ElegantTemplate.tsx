@@ -97,7 +97,7 @@ export function ElegantTemplate({ id, name, program, formattedDate }: TemplatePr
         <p className="text-lg mb-1" style={{ color: '#4b5563' }}>
           In recognition of outstanding participation in
         </p>
-        <h3 className="font-serif italic" style={{ color: '#713f12', fontSize: '36px' }}>
+        <h3 className="font-serif italic whitespace-pre-line break-words" style={{ color: '#713f12', fontSize: '36px' }}>
           {program}
         </h3>
       </div>

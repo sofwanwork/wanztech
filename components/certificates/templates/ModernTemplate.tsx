@@ -78,7 +78,7 @@ export function ModernTemplate({ id, name, program, formattedDate }: TemplatePro
         <p className="mb-2 text-lg" style={{ color: '#4b5563' }}>
           For successfully organizing/participating in
         </p>
-        <h3 className="font-bold" style={{ color: '#1e40af', fontSize: '36px' }}>
+        <h3 className="font-bold whitespace-pre-line break-words" style={{ color: '#1e40af', fontSize: '36px' }}>
           {program}
         </h3>
       </div>

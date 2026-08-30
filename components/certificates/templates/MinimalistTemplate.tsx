@@ -49,7 +49,7 @@ export function MinimalistTemplate({ id, name, program, formattedDate }: Templat
         <p className="text-sm mb-2" style={{ color: '#9ca3af' }}>
           for completing
         </p>
-        <h3 className="font-light" style={{ color: '#374151', fontSize: '32px' }}>
+        <h3 className="font-light whitespace-pre-line break-words" style={{ color: '#374151', fontSize: '32px' }}>
           {program}
         </h3>
       </div>

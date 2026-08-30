@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Trash2,
   Copy,
@@ -453,10 +454,11 @@ export function CertificateEditorProperties({
             {selectedElement.type === 'text' && (
               <div>
                 <Label className="text-sm">Teks</Label>
-                <Input
+                <Textarea
+                  rows={2}
                   value={selectedElement.content || ''}
                   onChange={(e) => updateElement(selectedElement.id, { content: e.target.value })}
-                  className="mt-1"
+                  className="mt-1 resize-y min-h-[60px]"
                 />
               </div>
             )}

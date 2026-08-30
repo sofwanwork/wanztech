@@ -113,7 +113,7 @@ export default async function CertificatePreviewPage({ params }: PageProps) {
                 {/* Text */}
                 {el.type === 'text' && (
                   <div
-                    className="whitespace-nowrap"
+                    className="whitespace-pre-line break-words"
                     style={{
                       fontSize: `${(el.fontSize || 16) * previewScale}px`,
                       fontFamily: el.fontFamily,
@@ -136,7 +136,7 @@ export default async function CertificatePreviewPage({ params }: PageProps) {
                 {/* Placeholder */}
                 {el.type === 'placeholder' && (
                   <div
-                    className="whitespace-nowrap"
+                    className="whitespace-pre-line break-words"
                     style={{
                       fontSize: `${(el.fontSize || 16) * previewScale}px`,
                       fontFamily: el.fontFamily,

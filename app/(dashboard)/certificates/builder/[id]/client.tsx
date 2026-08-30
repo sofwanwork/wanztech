@@ -508,7 +508,7 @@ export function CertificateBuilderClient({
                 >
                   {el.type === 'text' && (
                     <div
-                      className="whitespace-nowrap"
+                      className="whitespace-pre-line break-words"
                       style={{
                         fontSize: `${(el.fontSize || 16) * scale}px`,
                         fontFamily: el.fontFamily,
@@ -529,7 +529,7 @@ export function CertificateBuilderClient({
                   )}
                   {el.type === 'placeholder' && (
                     <div
-                      className="border-2 border-dashed border-primary/40 bg-primary/5 px-2 py-1 rounded whitespace-nowrap"
+                      className="border-2 border-dashed border-primary/40 bg-primary/5 px-2 py-1 rounded whitespace-pre-line break-words"
                       style={{
                         fontSize: `${(el.fontSize || 16) * scale}px`,
                         fontFamily: el.fontFamily,

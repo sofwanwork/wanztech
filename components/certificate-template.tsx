@@ -70,7 +70,7 @@ export function CertificateTemplate({
         />
         <div className="relative z-10 flex flex-col items-center justify-center h-full pt-16 px-12">
           <h1
-            className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 uppercase tracking-wider"
+            className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 uppercase tracking-wider whitespace-pre-line break-words"
             style={{ textShadow: '2px 2px 4px rgba(255,255,255,0.8)' }}
           >
             {uppercaseName}
@@ -82,7 +82,7 @@ export function CertificateTemplate({
             Program:
           </p>
           <h2
-            className="text-2xl md:text-3xl text-gray-900 font-bold mb-8"
+            className="text-2xl md:text-3xl text-gray-900 font-bold mb-8 whitespace-pre-line break-words"
             style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.8)' }}
           >
             {program}

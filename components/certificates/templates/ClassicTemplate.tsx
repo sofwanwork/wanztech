@@ -70,7 +70,7 @@ export function ClassicTemplate({ id, name, program, formattedDate }: TemplatePr
       </div>
 
       <div className="absolute top-[390px] left-0 z-10 text-center w-full px-12">
-        <h3 className="font-bold font-serif" style={{ color: '#1e293b', fontSize: '48px' }}>
+        <h3 className="font-bold font-serif whitespace-pre-line break-words" style={{ color: '#1e293b', fontSize: '48px' }}>
           {program}
         </h3>
       </div>

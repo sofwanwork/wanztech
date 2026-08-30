@@ -135,7 +135,7 @@ export function CorporateTemplate({ id, name, program, formattedDate }: Template
 
       {/* Program Section */}
       <div className="absolute top-[390px] left-0 z-10 text-center w-full px-16">
-        <h3 className="font-serif font-semibold" style={{ color: '#ffffff', fontSize: '40px' }}>
+        <h3 className="font-serif font-semibold whitespace-pre-line break-words" style={{ color: '#ffffff', fontSize: '40px' }}>
           {program}
         </h3>
       </div>

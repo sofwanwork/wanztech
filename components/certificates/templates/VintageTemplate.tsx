@@ -95,7 +95,7 @@ export function VintageTemplate({ id, name, program, formattedDate }: TemplatePr
         <p className="font-serif italic text-base mb-2" style={{ color: '#8b4513' }}>
           has successfully completed
         </p>
-        <h3 className="font-serif" style={{ color: '#5c3317', fontSize: '36px' }}>
+        <h3 className="font-serif whitespace-pre-line break-words" style={{ color: '#5c3317', fontSize: '36px' }}>
           {program}
         </h3>
       </div>
