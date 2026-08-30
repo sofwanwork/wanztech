@@ -16,6 +16,7 @@ import {
   Link as LinkIcon,
   ClipboardList,
   ScrollText,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createFormAction } from '@/actions/forms';
@@ -92,6 +93,12 @@ export function DashboardSidebar({ profile, onNavigate, isMobile = false }: Side
       href: '/shortener',
       icon: LinkIcon,
       active: pathname === '/shortener',
+    },
+    {
+      title: 'Bio Links',
+      href: '/bio',
+      icon: Sparkles,
+      active: pathname.startsWith('/bio'),
     },
     {
       title: 'Audit Log',

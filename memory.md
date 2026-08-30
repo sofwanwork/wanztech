@@ -252,6 +252,26 @@ tests/webhook-dispatch.test.ts
 task.md
 ```
 
+## System Improvements (2026-08-30 — Sijil & E-Cert Auto-Scaling Typography & Canva-Style Drag-To-Scale Builder)
+- **Auto-Scaling Font Size Tajuk Program Panjang**:
+  - Dicipta algoritma `getProgramFontSize` (`components/certificates/types.ts`) untuk mengira saiz fon optimum secara pintar berasaskan panjang teks, baris teks, dan kepanjangan baris terpanjang:
+    - Tajuk pendek (<28 aksara, 1 baris): saiz penuh asas (36px - 44px).
+    - Tajuk sederhana (28-44 aksara): skala ~88% (~32px - 38px).
+    - Tajuk 2 baris / sederhana panjang (45-79 aksara): skala ~75% (~26px - 32px).
+    - Tajuk sangat panjang (80+ aksara / 3 baris): skala ~58% (~20px - 24px).
+  - Dilengkapi `[text-wrap:balance]`, `leading-tight` / `leading-snug`, dan `max-w-2xl mx-auto` merentas kesemua 10 templat sijil pra-bina (`Classic`, `Corporate`, `Creative`, `Elegant`, `Minimalist`, `Modern`, `Nature`, `Premium`, `Royal`, `Vintage`), templat sijil legasi (`components/certificate-template.tsx`), dan renderer tersuai (`components/certificates/renderer/index.tsx`).
+- **Canva-Style Drag-To-Scale & Resize Handles dalam Certificate Builder**:
+  - Menggantikan pemegang tunggal lama dengan sistem pemegang penskalaan Canva penuh (`app/(dashboard)/certificates/builder/[id]/client.tsx`):
+    - 4 Pemegang Sudut Bulat (*Corner Handles*): Top-Left (`nw`), Top-Right (`ne`), Bottom-Left (`sw`), Bottom-Right (`se`).
+    - Pemegang Sisi (*Pill Side Handles*): Middle-Left (`w`), Middle-Right (`e`), Middle-Top (`n`), Middle-Bottom (`s`).
+  - **Penskalaan Teks**: Menarik mana-mana bucu teks/placeholder akan membesarkan/mengecilkan saiz font (`fontSize`) dan lebar kotak secara berkadar seiring gerakan tetikus (sama seperti Canva). Menarik pemegang sisi melaraskan lebar balutan teks (*text wrap width*).
+  - **Penskalaan Imej & Bentuk**: Menarik bucu menskalakan dimensi dengan mengekalkan nisbah aspek dan berlabuh pada bucu bertentangan; menarik pemegang sisi melaraskan dimensi paksi tunggal.
+- **Ujian & Kualiti**:
+  - Ditambah ujian unit baharu di `tests/certificate-typography.test.ts`.
+  - 211 / 211 ujian unit lulus merentas 26 suite ujian.
+  - 0 ralat ESLint, 0 ralat TypeScript, kompilasi Next.js 16 bersih.
+  - Berjaya dideploy ke pengeluaran Vercel (`https://www.klikform.com`, deployment `dpl_3q5feFFHarJGiYZ42n2tqNKzvTaV`) dan ditolak ke git `origin/master` (`f6db6c3`).
+
 ## System Improvements (2026-06-05 — Bug Fixes: Account Creation, OAuth Form Creation & Forms Save Trigger)
 - **Account Creation Database Error**: Fixed a critical database error during user signup. The `handle_new_user()` trigger function on `auth.users` attempted to seed the `usage` table using the incorrect column name `total_forms` (should be `forms_created`) and omitted the `NOT NULL` column `month`, which caused the database transactions to abort. Created migration `supabase/migrations/20260605000000_fix_handle_new_user_trigger.sql` to resolve this.
 - **Form Creation Block for OAuth Users**: Fixed a bug where users who connected their Google Account via Google OAuth ("Connect with Google") were blocked from creating a form and redirected back to Settings. The check in `createFormAction` in `actions/forms.ts` strictly demanded manual service account keys (`googleClientEmail` + `googlePrivateKey`). Rewrote the validation to allow form creation if either OAuth (`googleAccessToken` exists) or Service Account credentials exist.
@@ -744,6 +764,36 @@ Membolehkan tajuk program (program name / `{PROGRAM_NAME}`) pada sijil digital (
 - **Deployment**:
   - Berjaya dideploy ke Vercel Production: `https://klikform-3k76l654y-sofwan-jailanis-projects.vercel.app` (Deployment ID: `dpl_AJDoeTBJrfnNEdmnd2gN4MFHwPZF`).
   - Aliased terus ke domain pengeluaran: `https://www.klikform.com`.
+
+## System Improvements (2026-08-30 — Ciri KlikBio: Linktree-Style Bio Links / Kad Pautan)
+
+Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan pengguna mengumpulkan borang KlikForm, pautan WhatsApp, pautan tersuai, dan media sosial dalam satu URL profil peribadi (cth: `klikform.com/bio/username` dan `klikform.com/b/username`).
+
+- **Pangkalan Data Supabase (`supabase/migrations/20260830000000_add_bio_links.sql`)**:
+  - `bio_pages`: `id`, `user_id`, `username` (unique), `title`, `bio`, `avatar_url`, `theme`, `theme_config`, `social_links`, `is_active`, `views`, timestamps.
+  - `bio_links`: `id`, `bio_page_id`, `user_id`, `type` (`link`, `whatsapp`, `form`, `header`), `title`, `url`, `icon`, `highlight`, `is_active`, `clicks`, `order_index`, timestamps.
+  - Indeks prestasi pada `(user_id)`, `(username)`, `(bio_page_id, order_index)`.
+  - Polisi RLS: Pemilik ada akses CRUD penuh; pelawat awam dibenarkan SELECT pada halaman & pautan yang `is_active = true`.
+  - Trigger `updated_at` dengan `security definer` dan `set search_path = ''`.
+- **Modul Tema & Utiliti (`lib/bio-links/themes.ts`)**:
+  - 8 Tema visual pra-bina: `Emerald Luxe` (signature KlikForm), `Onyx Dark`, `Sunset Glow`, `Deep Ocean`, `Minimal Light`, `Lavender Dusk`, `Cyber Neon`, `Midnight Gold`.
+  - 6 Gaya bentuk butang: `Full Pill`, `Rounded XL`, `Subtle Round`, `Outline Border`, `Elevated Shadow`, `Glassmorphism`.
+  - Fungsi penentu URL media sosial pintar `resolveSocialUrl` (format nombor WhatsApp ke `wa.me`, handle IG/TikTok/FB/X/Telegram/YouTube/LinkedIn/GitHub/Email/Website).
+  - Validasi dan sanitasi slug username (`isValidBioUsername`, `cleanBioUsername`).
+- **Lapisan Storan & Server Actions (`lib/storage/bio-links.ts` & `actions/bio-links.ts`)**:
+  - `getBioPages`, `getBioPageById`, `getBioPageByUsername` (menggunakan service role admin client untuk pelawat awam bagi melepasi RLS), `createBioPage`, `updateBioPage`, `deleteBioPage`.
+  - `createBioLink`, `updateBioLink`, `deleteBioLink`, `reorderBioLinks`, `incrementBioPageView`, `incrementBioLinkClick`.
+  - Gating had pelan langganan (`maxBioPages: 1` untuk Free, `-1` untuk Pro/Enterprise).
+- **Dashboard & Interactive Builder (`app/(dashboard)/bio/` & `app/(dashboard)/bio-builder/[id]/`)**:
+  - `/bio`: Kad profil bio, statistik jumlah paparan (*views*), penunjuk status draf/aktif, dialog Kod QR segera (SVG & muat turun PNG bersaiz tinggi), butang Salin Pautan.
+  - `/bio-builder/[id]`: Pembina interaktif 2 lajur. Lajur kiri mengandungi tab Pautan (dengan `@dnd-kit` drag-and-drop sortable, jenis WhatsApp direct, Form picker KlikForm), tab Reka Bentuk (8 preset tema & 6 bentuk butang), tab Profil & Media Sosial (11 platform sosial), dan tab Kongsi & Kod QR. Lajur kanan memaparkan **Live Interactive Mobile Mockup** yang responsif terhadap sebarang perubahan masa nyata.
+- **Halaman Awam (`app/(public)/bio/[username]/` & `app/(public)/b/[username]/`)**:
+  - Paparan ultra-responsif untuk pelawat awam dengan metadata dinamik OpenGraph dan Twitter card.
+  - Animasi lancar `framer-motion`, penjejakan klik (*click tracking*), butang kongsi terapung (*floating share button*), dan lencana *Powered by KlikForm*.
+- **Ujian & Kualiti**:
+  - Ujian unit di `tests/bio-links.test.ts` dan `tests/bio-storage.test.ts`.
+  - 224 / 224 ujian unit lulus merentas 28 suite ujian.
+  - 0 ralat ESLint, 0 ralat TypeScript, 49 laluan dikompilasi bersih dalam Next.js 16 (Turbopack).
 
 
 

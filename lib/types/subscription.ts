@@ -44,4 +44,5 @@ export interface TierLimits {
   maxCertificates: number;
   maxQRCodes: number;
   maxShortLinks: number;
+  maxBioPages: number;
 }

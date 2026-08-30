@@ -55,5 +55,17 @@ export type { Profile, Settings } from './common';
 // Audit log types
 export type { AuditAction, AuditLog } from './audit';
 
+// Bio Links types
+export type {
+  BioLinkType,
+  BioTheme,
+  BioButtonStyle,
+  BioThemeConfig,
+  BioSocialLinks,
+  BioPage,
+  BioLink,
+  BioPageWithLinks,
+} from './bio-links';
+
 // Re-export constants (will be moved to lib/constants later)
 export { TIER_LIMITS } from '../constants/subscription-tiers';
