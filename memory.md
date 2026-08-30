@@ -715,4 +715,9 @@ Membolehkan pengguna memasukkan tajuk borang (Form Title) dalam 2 baris atau leb
   - `npm test`: 206/206 lulus (25 test suites).
   - `npm run lint`: 0 ralat / amaran.
   - `npm run typecheck`: Bersih (0 errors).
+  - `npm run build`: Bersih (Next 16.2.6, Turbopack, 45 laluan).
+- **Deployment**:
+  - Commit `fe41f5e` dipush ke cawangan `master` pada remote `origin` (GitHub `sofwanwork/wanztech`).
+  - Vercel CI/CD automatik membina dan mengemaskini `https://www.klikform.com`.
+
 
