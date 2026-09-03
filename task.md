@@ -379,7 +379,7 @@ Isu: Butang "Copy Link" terkeluar (*overflow*) ke bahagian luar sebelah kiri mod
 - [x] 2. Baiki susun atur butang dalam Dialog Modal di `app/(dashboard)/bio/client.tsx` (kod serupa).
 - [x] 3. Jalankan pengesahan kualiti (`npm run typecheck`, `npm run lint`, `npm test`).
 - [x] 4. Kemas kini `lessons.md`, `memory.md`, dan `task.md`.
-- [ ] 5. Deploy perubahan ke Vercel Production.
+- [x] 5. Deploy perubahan ke Vercel Production.
 
 ---
 

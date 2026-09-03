@@ -839,3 +839,4 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - Menaik taraf kelebaran dialog daripada `sm:max-w-xs` (320px) kepada `sm:max-w-sm` (384px) untuk ruang dalaman yang lebih kemas dan selesa.
   - Memperbaiki kedua-dua fail: `app/(public)/bio/[username]/client.tsx` dan `app/(dashboard)/bio/client.tsx`.
   - Pengesahan: `npm test` lulus 230/230 ujian, 0 ralat TypeScript (`tsc`), 0 amaran lint.
+  - Deployment Vercel: Commit `975d98e` berjaya dideploy ke Production (`dpl_62TxGvtsTnU5T7oyv8snzYFZ6iWA`) & aliased ke `https://www.klikform.com`.
