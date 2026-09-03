@@ -824,7 +824,7 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
      - `npm run lint`: 0 amaran & 0 ralat.
      - `npm run typecheck`: 0 ralat TypeScript.
      - `npm run build`: Kompilasi Turbopack Next.js 16 bersih (49 laluan).
-
-
-
-
+  5. **Deployment Vercel Production**:
+     - Commit Git: `5eea096` (`fix(bio-links): resolve invisible text on light themes with glassmorphism and outline buttons`) dipush ke `origin master`.
+     - Vercel Production Deployment: `https://klikform-ghepqc36q-sofwan-jailanis-projects.vercel.app` (Deployment ID: `dpl_5DytASE63J4HLvo6u6kV7nGJutCN`).
+     - Aliased terus ke domain pengeluaran: `https://www.klikform.com`.
