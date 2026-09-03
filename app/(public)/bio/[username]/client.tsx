@@ -10,8 +10,8 @@ import {
 } from '@/lib/types/bio-links';
 import {
   BIO_THEMES,
-  BUTTON_STYLES,
   resolveSocialUrl,
+  getBioButtonClass,
 } from '@/lib/bio-links/themes';
 import { trackBioClickAction } from '@/actions/bio-links';
 import { Button } from '@/components/ui/button';
@@ -52,9 +52,6 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
   const qrRef = useRef<SVGSVGElement>(null);
 
   const theme = BIO_THEMES[page.theme] || BIO_THEMES.emerald;
-  const buttonStyle =
-    BUTTON_STYLES[page.themeConfig?.buttonStyle || 'rounded-full'] ||
-    BUTTON_STYLES['rounded-full'];
 
   const activeLinks = page.links.filter((l) => l.isActive);
 
@@ -221,13 +218,11 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
                   onClick={() => handleLinkClick(link)}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className={`w-full py-4 px-5 font-semibold text-sm sm:text-base flex items-center justify-between transition-all duration-200 cursor-pointer ${
-                    buttonStyle.class
-                  } ${
+                  className={`w-full py-4 px-5 font-semibold text-sm sm:text-base flex items-center justify-between transition-all duration-200 cursor-pointer ${getBioButtonClass(
+                    theme,
+                    page.themeConfig?.buttonStyle || 'rounded-full',
                     isHighlight
-                      ? `${theme.highlightButtonClass} animate-pulse`
-                      : theme.buttonClass
-                  }`}
+                  )} ${isHighlight ? 'animate-pulse' : ''}`}
                 >
                   <div className="w-5 shrink-0 flex items-center justify-center">
                     {getLinkTypeIcon(link.type)}

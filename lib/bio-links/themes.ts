@@ -125,10 +125,88 @@ export const BUTTON_STYLES: Record<BioButtonStyle, { name: string; class: string
   'rounded-full': { name: 'Full Pill', class: 'rounded-full' },
   'rounded-xl': { name: 'Rounded XL', class: 'rounded-2xl' },
   'rounded-md': { name: 'Subtle Round', class: 'rounded-md' },
-  'outline': { name: 'Outline Border', class: 'border-2 bg-transparent backdrop-blur-sm' },
+  'outline': { name: 'Outline Border', class: 'rounded-2xl border-2 bg-transparent backdrop-blur-sm' },
   'shadow-lg': { name: 'Elevated Shadow', class: 'rounded-xl shadow-xl' },
-  'glass': { name: 'Glassmorphism', class: 'rounded-2xl backdrop-blur-xl bg-white/10 border border-white/20' },
+  'glass': { name: 'Glassmorphism', class: 'rounded-2xl backdrop-blur-xl bg-white/40 border border-white/60 shadow-sm' },
 };
+
+/**
+ * Resolves the complete CSS class for bio link buttons based on theme, button shape/style, and highlight status.
+ * Ensures text remains high-contrast and legible across all light/dark themes and translucent styles like Glassmorphism.
+ */
+export function getBioButtonClass(
+  theme: ThemeDefinition | BioTheme,
+  buttonStyle: BioButtonStyle = 'rounded-full',
+  isHighlight = false
+): string {
+  const themeDef = typeof theme === 'string' ? BIO_THEMES[theme] || BIO_THEMES.emerald : theme;
+  const isLight = themeDef.id === 'minimal';
+  const baseShape = BUTTON_STYLES[buttonStyle]?.class || BUTTON_STYLES['rounded-full'].class;
+
+  // 1. Glassmorphism button style
+  if (buttonStyle === 'glass') {
+    if (isLight) {
+      if (isHighlight) {
+        return 'rounded-2xl backdrop-blur-xl bg-white/90 hover:bg-white text-slate-950 font-bold border-2 border-slate-900/30 shadow-md ring-2 ring-slate-900/10';
+      }
+      return 'rounded-2xl backdrop-blur-xl bg-white/70 hover:bg-white/85 text-slate-900 font-medium border border-white/80 shadow-sm';
+    }
+
+    if (isHighlight) {
+      const highlightText =
+        themeDef.id === 'neon'
+          ? 'text-emerald-300 border-emerald-400/60 ring-emerald-400/20'
+          : themeDef.id === 'midnight'
+          ? 'text-amber-200 border-amber-400/60 ring-amber-400/20'
+          : 'text-white border-white/40 ring-white/20';
+
+      return `rounded-2xl backdrop-blur-xl bg-white/20 hover:bg-white/25 ${highlightText} font-bold border-2 shadow-xl shadow-black/30 ring-2`;
+    }
+
+    const glassTextColor =
+      themeDef.id === 'neon'
+        ? 'text-emerald-300'
+        : themeDef.id === 'midnight'
+        ? 'text-amber-200'
+        : 'text-white';
+
+    return `rounded-2xl backdrop-blur-xl bg-white/10 hover:bg-white/20 ${glassTextColor} font-medium border border-white/20 shadow-lg`;
+  }
+
+  // 2. Outline Border button style
+  if (buttonStyle === 'outline') {
+    if (isLight) {
+      if (isHighlight) {
+        return 'rounded-2xl border-2 backdrop-blur-sm bg-slate-900/10 hover:bg-slate-900/15 text-slate-950 font-bold border-slate-900 shadow-sm';
+      }
+      return 'rounded-2xl border-2 backdrop-blur-sm bg-transparent hover:bg-slate-900/5 text-slate-900 font-medium border-slate-300 hover:border-slate-400 shadow-sm';
+    }
+
+    if (isHighlight) {
+      const outlineHighlightColor =
+        themeDef.id === 'neon'
+          ? 'text-emerald-300 border-emerald-400'
+          : themeDef.id === 'midnight'
+          ? 'text-amber-200 border-amber-400'
+          : 'text-white border-white';
+
+      return `rounded-2xl border-2 backdrop-blur-sm bg-white/15 hover:bg-white/25 ${outlineHighlightColor} font-bold shadow-lg shadow-white/10`;
+    }
+
+    const outlineColor =
+      themeDef.id === 'neon'
+        ? 'text-emerald-300 border-emerald-500/50 hover:border-emerald-400'
+        : themeDef.id === 'midnight'
+        ? 'text-amber-200 border-amber-500/40 hover:border-amber-400'
+        : 'text-white border-white/30 hover:border-white/50';
+
+    return `rounded-2xl border-2 backdrop-blur-sm bg-transparent hover:bg-white/10 font-medium ${outlineColor} shadow-sm`;
+  }
+
+  // 3. Standard button styles (Full Pill, Rounded XL, Subtle Round, Elevated Shadow)
+  const themeClass = isHighlight ? themeDef.highlightButtonClass : themeDef.buttonClass;
+  return `${baseShape} ${themeClass}`;
+}
 
 /**
  * Validate username format for Bio Links

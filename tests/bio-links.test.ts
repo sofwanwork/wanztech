@@ -5,6 +5,7 @@ import {
   resolveSocialUrl,
   BIO_THEMES,
   BUTTON_STYLES,
+  getBioButtonClass,
 } from '@/lib/bio-links/themes';
 import { BioTheme, BioButtonStyle } from '@/lib/types/bio-links';
 
@@ -111,5 +112,70 @@ describe('KlikBio — Themes & Styles Definition', () => {
       expect(style.name).toBeTruthy();
       expect(style.class).toBeTruthy();
     }
+  });
+});
+
+describe('KlikBio — Button Class Generator & Contrast Guard', () => {
+  it('prevents invisible white text on Minimal Light theme with Glassmorphism', () => {
+    // Normal state
+    const normalClass = getBioButtonClass('minimal', 'glass', false);
+    expect(normalClass).toContain('backdrop-blur-xl');
+    expect(normalClass).toContain('text-slate-900');
+    expect(normalClass).not.toContain('text-white');
+
+    // Highlighted state
+    const highlightClass = getBioButtonClass('minimal', 'glass', true);
+    expect(highlightClass).toContain('backdrop-blur-xl');
+    expect(highlightClass).toContain('text-slate-950');
+    expect(highlightClass).not.toContain('text-white');
+  });
+
+  it('prevents invisible white text on Minimal Light theme with Outline style', () => {
+    const normalClass = getBioButtonClass('minimal', 'outline', false);
+    expect(normalClass).toContain('text-slate-900');
+    expect(normalClass).not.toContain('text-white');
+
+    const highlightClass = getBioButtonClass('minimal', 'outline', true);
+    expect(highlightClass).toContain('text-slate-950');
+    expect(highlightClass).not.toContain('text-white');
+  });
+
+  it('renders high-contrast white text for dark themes with Glassmorphism', () => {
+    const darkThemes: BioTheme[] = ['emerald', 'dark', 'sunset', 'ocean', 'lavender'];
+    for (const themeId of darkThemes) {
+      const normalClass = getBioButtonClass(themeId, 'glass', false);
+      expect(normalClass).toContain('text-white');
+      expect(normalClass).toContain('backdrop-blur-xl');
+
+      const highlightClass = getBioButtonClass(themeId, 'glass', true);
+      expect(highlightClass).toContain('text-white');
+      expect(highlightClass).toContain('backdrop-blur-xl');
+    }
+  });
+
+  it('renders theme-accent text for Cyber Neon and Midnight Gold with Glassmorphism', () => {
+    const neonClass = getBioButtonClass('neon', 'glass', false);
+    expect(neonClass).toContain('text-emerald-300');
+
+    const midnightClass = getBioButtonClass('midnight', 'glass', false);
+    expect(midnightClass).toContain('text-amber-200');
+  });
+
+  it('accepts both ThemeDefinition object and theme string identifier', () => {
+    const fromString = getBioButtonClass('minimal', 'glass', false);
+    const fromObj = getBioButtonClass(BIO_THEMES.minimal, 'glass', false);
+    expect(fromString).toBe(fromObj);
+  });
+
+  it('applies standard button styles correctly with theme classes', () => {
+    const fullPill = getBioButtonClass('minimal', 'rounded-full', false);
+    expect(fullPill).toContain('rounded-full');
+    expect(fullPill).toContain('text-slate-900');
+
+    const roundedXl = getBioButtonClass('minimal', 'rounded-xl', false);
+    expect(roundedXl).toContain('rounded-2xl');
+
+    const shadowLg = getBioButtonClass('minimal', 'shadow-lg', false);
+    expect(shadowLg).toContain('shadow-xl');
   });
 });

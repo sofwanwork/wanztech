@@ -34,6 +34,7 @@ import {
   BUTTON_STYLES,
   cleanBioUsername,
   isValidBioUsername,
+  getBioButtonClass,
 } from '@/lib/bio-links/themes';
 import {
   updateBioPageAction,
@@ -129,7 +130,6 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
 
   const publicUrl = `${appUrl}/bio/${page.username}`;
   const theme = BIO_THEMES[page.theme] || BIO_THEMES.emerald;
-  const buttonStyle = BUTTON_STYLES[page.themeConfig?.buttonStyle || 'rounded-full'] || BUTTON_STYLES['rounded-full'];
 
   // DnD Sensors setup
   const sensors = useSensors(
@@ -664,7 +664,6 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
               page={page}
               links={links}
               theme={theme}
-              buttonStyle={buttonStyle}
             />
           </div>
         </div>
@@ -677,7 +676,6 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
             page={page}
             links={links}
             theme={theme}
-            buttonStyle={buttonStyle}
           />
         </DialogContent>
       </Dialog>
@@ -1189,14 +1187,12 @@ interface MobileMockupViewProps {
   page: BioPageWithLinks;
   links: BioLink[];
   theme: typeof BIO_THEMES['emerald'];
-  buttonStyle: typeof BUTTON_STYLES['rounded-full'];
 }
 
 function MobileMockupView({
   page,
   links,
   theme,
-  buttonStyle,
 }: MobileMockupViewProps) {
   const activeLinks = links.filter((l) => l.isActive);
 
@@ -1283,9 +1279,11 @@ function MobileMockupView({
                 return (
                   <div
                     key={l.id}
-                    className={`w-full py-3 px-4 font-medium text-xs flex items-center justify-between transition-all select-none ${buttonStyle.class} ${
-                      isHighlight ? theme.highlightButtonClass : theme.buttonClass
-                    }`}
+                    className={`w-full py-3 px-4 font-medium text-xs flex items-center justify-between transition-all select-none ${getBioButtonClass(
+                      theme,
+                      page.themeConfig?.buttonStyle || 'rounded-full',
+                      isHighlight
+                    )} ${isHighlight ? 'animate-pulse' : ''}`}
                   >
                     <span className="truncate flex-1 text-center font-medium">{l.title}</span>
                   </div>

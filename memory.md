@@ -794,6 +794,36 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - Ujian unit di `tests/bio-links.test.ts` dan `tests/bio-storage.test.ts`.
   - 224 / 224 ujian unit lulus merentas 28 suite ujian.
   - 0 ralat ESLint, 0 ralat TypeScript, 49 laluan dikompilasi bersih dalam Next.js 16 (Turbopack).
+- **Deployment**:
+  - Berjaya dideploy ke Vercel Production: `https://klikform-6eput2cxt-sofwan-jailanis-projects.vercel.app` (Deployment ID: `dpl_25xXEjJvuysBQvhCkw1hW1FMQFwA`).
+  - Aliased terus ke domain pengeluaran: `https://www.klikform.com`.
+
+---
+
+## 2026-09-03 — Pembaikan Kontras Glassmorphism & Outline Butang KlikBio
+- **Laporan Masalah Pengguna**:
+  - Pengguna melaporkan "bila tekan dekat glassmorphism jadi tak nampak tulisan" (disertai tangkapan skrin telefon mockup dalam `/bio-builder/[id]`).
+  - Analisis piksel membuktikan teks butang "klikform" berwarna putih tulen `rgb(255,255,255)` di atas butang frosted putih `rgb(242,246,250)` dengan latar belakang halaman Minimal Light `rgb(241,245,249)` (`#f1f5f9`), menyebabkan teks tidak kelihatan.
+- **Punca Asal**:
+  1. `BUTTON_STYLES['glass'].class` mengandungi kelas `bg-white/10 border border-white/20`.
+  2. Apabila digabungkan dengan pautan yang mempunyai status highlight (`isHighlight: true`) pada tema Minimal Light, `highlightButtonClass` menetapkan `text-white`.
+  3. Kelas `bg-white/10` menindih latar gelap, meninggalkan teks putih di atas latar lutsinar putih.
+- **Penyelesaian Dilaksanakan**:
+  1. Membina fungsi `getBioButtonClass(theme, buttonStyle, isHighlight)` dalam `lib/bio-links/themes.ts` untuk mengira padanan warna dan kelegapan butang berasaskan tema secara kontekstual:
+     - Tema Cerah (`Minimal Light`):
+       - Normal: `rounded-2xl backdrop-blur-xl bg-white/70 hover:bg-white/85 text-slate-900 font-medium border border-white/80 shadow-sm`
+       - Highlight: `rounded-2xl backdrop-blur-xl bg-white/90 hover:bg-white text-slate-950 font-bold border-2 border-slate-900/30 shadow-md ring-2 ring-slate-900/10`
+     - Tema Gelap:
+       - Normal: `rounded-2xl backdrop-blur-xl bg-white/10 hover:bg-white/20 ${glassTextColor} font-medium border border-white/20 shadow-lg`
+       - Highlight: `rounded-2xl backdrop-blur-xl bg-white/20 hover:bg-white/25 ${highlightText} font-bold border-2 shadow-xl shadow-black/30 ring-2`
+     - Gaya Outline turut diperbaharui dengan kawalan kontras tema serupa bagi menghalang teks pudar.
+  2. Mengemas kini `MobileMockupView` di `app/(dashboard)/bio-builder/[id]/client.tsx` dan `PublicBioClient` di `app/(public)/bio/[username]/client.tsx` untuk menggunakan `getBioButtonClass`.
+  3. Menambah suite ujian unit baharu `KlikBio — Button Class Generator & Contrast Guard` di `tests/bio-links.test.ts`.
+  4. Pengesahan Kualiti:
+     - `npm test`: 230 / 230 ujian lulus (28 suite ujian).
+     - `npm run lint`: 0 amaran & 0 ralat.
+     - `npm run typecheck`: 0 ralat TypeScript.
+     - `npm run build`: Kompilasi Turbopack Next.js 16 bersih (49 laluan).
 
 
 
