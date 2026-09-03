@@ -828,3 +828,14 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
      - Commit Git: `5eea096` (`fix(bio-links): resolve invisible text on light themes with glassmorphism and outline buttons`) dipush ke `origin master`.
      - Vercel Production Deployment: `https://klikform-ghepqc36q-sofwan-jailanis-projects.vercel.app` (Deployment ID: `dpl_5DytASE63J4HLvo6u6kV7nGJutCN`).
      - Aliased terus ke domain pengeluaran: `https://www.klikform.com`.
+
+### 2026-09-03: Pembaikan Butang Melimpah Keluar (Overflow) Dalam Modal Share & QR
+- **Punca Isu**:
+  - `DialogFooter` daripada shadcn mengandungi kelas lalai `sm:flex-row sm:justify-end`.
+  - Komponen `Button` mempunyai `shrink-0` (`flex-shrink: 0`), dan kedua-dua butang diberi `w-full` (100% lebar).
+  - Dalam modal sempit `sm:max-w-xs` (320px lebar), jumlah lebar 2 butang melebihi 540px. Apabila disusun secara mendatar (`sm:flex-row`) dengan penjajaran kanan (`sm:justify-end`), butang pertama ("Copy Link") ditolak ~260px melimpah keluar ke sebelah kiri modal dialog ke kawasan skrin gelap.
+- **Penyelesaian**:
+  - Menggantikan `DialogFooter` dengan `<div className="grid grid-cols-2 gap-2 w-full pt-1">` yang membahagikan kedua-dua butang secara seimbang 50%-50% di dalam bekas dialog.
+  - Menaik taraf kelebaran dialog daripada `sm:max-w-xs` (320px) kepada `sm:max-w-sm` (384px) untuk ruang dalaman yang lebih kemas dan selesa.
+  - Memperbaiki kedua-dua fail: `app/(public)/bio/[username]/client.tsx` dan `app/(dashboard)/bio/client.tsx`.
+  - Pengesahan: `npm test` lulus 230/230 ujian, 0 ralat TypeScript (`tsc`), 0 amaran lint.

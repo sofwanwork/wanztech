@@ -19,7 +19,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -257,7 +256,7 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
 
       {/* Share Modal Dialog */}
       <Dialog open={shareOpen} onOpenChange={setShareOpen}>
-        <DialogContent className="sm:max-w-xs text-center">
+        <DialogContent className="sm:max-w-sm text-center">
           <DialogHeader>
             <DialogTitle className="text-center text-lg">Share @{page.username}</DialogTitle>
             <DialogDescription className="text-center text-xs">
@@ -278,12 +277,12 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
             </p>
           </div>
 
-          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+          <div className="grid grid-cols-2 gap-2 w-full pt-1">
             <Button
               variant="outline"
               size="sm"
               onClick={handleCopy}
-              className="w-full gap-1.5 text-xs"
+              className="w-full gap-1.5 text-xs shadow-xs"
             >
               <Copy className="h-3.5 w-3.5" />
               {copied ? 'Link Copied!' : 'Copy Link'}
@@ -291,12 +290,12 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
             <Button
               size="sm"
               onClick={downloadQR}
-              className="w-full gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700"
+              className="w-full gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
             >
               <Download className="h-3.5 w-3.5" />
               Save QR
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </main>

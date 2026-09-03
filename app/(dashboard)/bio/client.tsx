@@ -415,7 +415,7 @@ export function BioPageCard({ page, appUrl }: BioPageCardProps) {
 
       {/* QR Code Dialog */}
       <Dialog open={qrOpen} onOpenChange={setQrOpen}>
-        <DialogContent className="sm:max-w-xs text-center">
+        <DialogContent className="sm:max-w-sm text-center">
           <DialogHeader>
             <DialogTitle className="text-center text-lg">QR Code for @{page.username}</DialogTitle>
             <DialogDescription className="text-center text-xs">
@@ -436,12 +436,12 @@ export function BioPageCard({ page, appUrl }: BioPageCardProps) {
             </p>
           </div>
 
-          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+          <div className="grid grid-cols-2 gap-2 w-full pt-1">
             <Button
               variant="outline"
               size="sm"
               onClick={handleCopy}
-              className="w-full gap-1.5 text-xs"
+              className="w-full gap-1.5 text-xs shadow-xs"
             >
               <Share2 className="h-3.5 w-3.5" />
               {copied ? 'Copied Link!' : 'Copy Link'}
@@ -449,12 +449,12 @@ export function BioPageCard({ page, appUrl }: BioPageCardProps) {
             <Button
               size="sm"
               onClick={downloadQR}
-              className="w-full gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700"
+              className="w-full gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
             >
               <Download className="h-3.5 w-3.5" />
               Download PNG
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
