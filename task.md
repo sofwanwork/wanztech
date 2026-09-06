@@ -408,5 +408,35 @@ Membolehkan pengguna memilih corak latar belakang (dots, grid, stripes, waves, c
 - [x] 4. Kemas kini `app/(public)/bio/[username]/client.tsx`: paparkan corak latar belakang pada `PublicBioClient`.
 - [x] 5. Tulis ujian unit di `tests/bio-links.test.ts` untuk `getBioPatternStyle`.
 - [x] 6. Pengesahan kualiti: `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`.
-- [ ] 7. Commit conventional commit & deploy ke Vercel Production.
-- [ ] 8. Kemas kini `memory.md` dan `task.md`.
+- [x] 7. Commit conventional commit & deploy ke Vercel Production.
+- [x] 8. Kemas kini `memory.md` dan `task.md`.
+
+---
+
+## Reviu Ciri Corak Latar Belakang KlikBio
+
+**Ringkasan Pelaksanaan**:
+1. **Pilihan Corak (8 Corak)**:
+   - `none`: Latar belakang rata tanpa corak.
+   - `dots`: Polka Dots halus (`radial-gradient`).
+   - `grid`: Modern Grid (`linear-gradient`).
+   - `stripes`: Diagonal Stripes (`repeating-linear-gradient`).
+   - `waves`: Topography Waves (vektor kontur SVG data URI).
+   - `crosses`: Minimal Crosses (tanda tambah geometri SVG data URI).
+   - `stars`: Starry Sparkles (kerlipan bintang SVG data URI).
+   - `circuit`: Tech Circuit (papan litar digital SVG data URI).
+2. **Kawalan Kontras Pintar Berasaskan Tema**:
+   - Fungsi `getBioPatternStyle(pattern, theme)` mengesan sama ada tema aktif adalah cerah (`minimal`) atau gelap/warna terang (`emerald`, `dark`, `sunset`, dll.).
+   - Tema cerah menggunakan dakwat gelap legap rendah (`rgba(15, 23, 42, 0.04 - 0.09)`), manakala tema gelap menggunakan dakwat putih lembut (`rgba(255, 255, 255, 0.06 - 0.14)`).
+   - Semua lapisan corak menggunakan `pointer-events-none` supaya tidak menghalang interaksi, klik pautan, mahupun skrol.
+3. **Penyatuan UI Builder & Halaman Awam**:
+   - Tab 2 (Design & Theme) di `bio-builder/[id]` dilengkapi kad interaktif "Background Patterns / Corak Latar" dengan preview langsung setiap corak menggunakan warna tema semasa pengguna.
+   - `MobileMockupView` memaparkan corak latar secara langsung di skrin telefon mockup.
+   - Halaman awam `/bio/[username]` memaparkan corak tetap (`fixed inset-0`) sebagai tekstur latar yang anggun.
+4. **Pengesahan & Deployment**:
+   - `npm test`: 235 / 235 ujian unit lulus (28 suite ujian).
+   - `npm run typecheck`: 0 ralat TypeScript.
+   - `npm run lint`: 0 amaran linter.
+   - `npm run build`: Kompilasi Turbopack Next.js 16 bersih (49 laluan).
+   - Git Commit: `5e6fbe7` dipush ke `origin master`.
+   - Vercel Production: `dpl_7pV17fX4R8mjatScQiiDn7hYCiCh` (`https://www.klikform.com`).

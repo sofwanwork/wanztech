@@ -902,4 +902,43 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - Vercel Production Deployment: `https://klikform-kb5f2s8qc-sofwan-jailanis-projects.vercel.app` (Deployment ID: `dpl_4LrasAe3KSNFyrE1SRXudY26KxE4`).
   - Aliased terus ke domain pengeluaran: `https://www.klikform.com`.
 
+---
 
+## 2026-09-06: Ciri Corak Latar Belakang KlikBio (Background Patterns)
+- **Pertanyaan / Keperluan Pengguna**:
+  - "yg background tu boleh ke nak ada corak2?"
+  - Memerlukan sokongan pilihan corak latar belakang estetik (dots, grid, stripes, waves, crosses, stars, circuit, atau none) untuk menghiasi halaman profil KlikBio dengan kontras warna pintar mengikut tema cerah atau gelap.
+- **Penyelesaian & Ciri Dilaksanakan**:
+  1. **Jenis & Konfigurasi** (`lib/types/bio-links.ts` & `lib/types/index.ts`):
+     - Menambah jenis `BioPattern` (`'none' | 'dots' | 'grid' | 'stripes' | 'waves' | 'crosses' | 'stars' | 'circuit'`).
+     - Menambah medan pilihan `pattern?: BioPattern` di dalam `BioThemeConfig` (disimpan secara automatik dalam kolum `jsonb` `bio_pages.theme_config` tanpa memerlukan migrasi pangkalan data).
+     - Di-re-export daripada barrel types `lib/types/index.ts`.
+  2. **Penjana Corak & Kontras Pintar** (`lib/bio-links/themes.ts`):
+     - Menyediakan definisi `BIO_PATTERNS` untuk 8 corak:
+       - `none`: Plain theme background without texture.
+       - `dots`: Polka Dots halus (`radial-gradient`).
+       - `grid`: Modern Grid (`linear-gradient`).
+       - `stripes`: Diagonal Stripes (`repeating-linear-gradient`).
+       - `waves`: Topography Waves (kontur SVG data URI).
+       - `crosses`: Minimal Crosses (tanda tambah SVG data URI).
+       - `stars`: Starry Sparkles (kerlipan bintang SVG data URI).
+       - `circuit`: Tech Circuit (garisan papan litar SVG data URI).
+     - Fungsi `getBioPatternStyle(pattern, theme)` mengesan kecerahan tema:
+       - Tema cerah (`minimal`): menggunakan warna dakwat gelap legap rendah (`rgba(15, 23, 42, ...)`).
+       - Tema gelap/vibrant: menggunakan warna dakwat putih lembut (`rgba(255, 255, 255, ...)`).
+  3. **Antara Muka Pengguna Builder** (`app/(dashboard)/bio-builder/[id]/client.tsx`):
+     - Di bawah Tab 2 ("Design & Theme"), ditambah bahagian kad interaktif "Background Patterns / Corak Latar".
+     - Setiap pilihan corak memaparkan thumbnail pratonton dinamik menggunakan latar belakang tema semasa yang aktif, dengan cincin hijau dan lencana penunjuk aktif bagi corak yang dipilih.
+     - `MobileMockupView` dilengkapi lapisan overlay corak dengan `pointer-events-none` dan `z-0` di bawah kandungan profil.
+  4. **Halaman Awam Responsif** (`app/(public)/bio/[username]/client.tsx`):
+     - Dilengkapi lapisan `fixed inset-0 pointer-events-none z-0` dengan gaya corak yang dipilih supaya corak kekal rata sebagai wallpaper estetik semasa skrol tanpa mengganggu klik pautan atau butang.
+  5. **Ujian Unit & Pengesahan Kualiti**:
+     - Ditambah suite ujian unit `KlikBio — Background Patterns & Contrast Generator` dalam `tests/bio-links.test.ts`.
+     - `npm test`: 235 / 235 ujian lulus (28 suite ujian).
+     - `npm run typecheck`: 0 ralat TypeScript.
+     - `npm run lint`: 0 amaran linter.
+     - `npm run build`: Kompilasi Turbopack Next.js 16 berjaya (49 routes).
+  6. **Deployment Vercel Production**:
+     - Git Commit: `5e6fbe7` dipush ke `origin master`.
+     - Vercel Production Deployment: `https://klikform-6tfzvb627-sofwan-jailanis-projects.vercel.app` (Deployment ID: `dpl_7pV17fX4R8mjatScQiiDn7hYCiCh`).
+     - Aliased ke: `https://www.klikform.com`.
