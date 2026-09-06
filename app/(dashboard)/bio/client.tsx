@@ -296,13 +296,21 @@ export function BioPageCard({ page, appUrl }: BioPageCardProps) {
               <img
                 src={page.avatarUrl}
                 alt={page.title}
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                  const fallback = (e.target as HTMLElement).nextElementSibling as HTMLElement;
+                  if (fallback) fallback.style.display = 'flex';
+                }}
                 className="w-14 h-14 rounded-full object-cover ring-4 ring-white shadow-md bg-gray-100"
               />
-            ) : (
-              <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold text-xl flex items-center justify-center ring-4 ring-white shadow-md">
-                {(page.title || page.username).charAt(0).toUpperCase()}
-              </div>
-            )}
+            ) : null}
+            <div
+              className={`w-14 h-14 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold text-xl flex items-center justify-center ring-4 ring-white shadow-md ${
+                page.avatarUrl ? 'hidden' : ''
+              }`}
+            >
+              {(page.title || page.username).charAt(0).toUpperCase()}
+            </div>
           </div>
           <div className="flex-1 pt-6 min-w-0">
             <h3 className="font-semibold text-gray-900 truncate text-base leading-tight">

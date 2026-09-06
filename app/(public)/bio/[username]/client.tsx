@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
 import {
@@ -48,7 +48,12 @@ interface PublicBioClientProps {
 export function PublicBioClient({ page }: PublicBioClientProps) {
   const [shareOpen, setShareOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const qrRef = useRef<SVGSVGElement>(null);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [page.avatarUrl]);
 
   const theme = BIO_THEMES[page.theme] || BIO_THEMES.emerald;
 
@@ -119,11 +124,12 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
           transition={{ duration: 0.3 }}
           className="relative"
         >
-          {page.avatarUrl ? (
+          {page.avatarUrl && !imgError ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={page.avatarUrl}
               alt={page.title || page.username}
+              onError={() => setImgError(true)}
               className={`w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover shadow-2xl mx-auto ${theme.avatarBorder}`}
             />
           ) : (

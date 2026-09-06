@@ -104,7 +104,13 @@ import {
   Linkedin,
   Smartphone,
   CheckCircle2,
+  Upload,
+  Loader2,
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { createClient } from '@/utils/supabase/client';
+import { compressImage } from '@/utils/image-compression';
+import { v4 as uuidv4 } from 'uuid';
 
 interface FormSummaryItem {
   id: string;
@@ -182,6 +188,98 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
         setSavedStatus('idle');
       }
     });
+  };
+
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const supabase = createClient();
+
+  const deleteOldAvatar = async (url: string) => {
+    try {
+      const bucketName = 'qr_logos';
+      const parts = url.split(`/${bucketName}/`);
+      if (parts.length === 2) {
+        const path = parts[1];
+        await supabase.storage.from(bucketName).remove([path]);
+      }
+    } catch (e) {
+      console.warn('Failed to cleanup old avatar:', e);
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const oldAvatarUrl = page.avatarUrl;
+
+      if (!file.type.startsWith('image/')) {
+        toast.error('Sila muat naik fail gambar (PNG, JPG, WEBP).');
+        return;
+      }
+
+      try {
+        setIsUploadingAvatar(true);
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          if (event.target?.result) {
+            setAvatarPreview(event.target.result as string);
+          }
+        };
+        reader.readAsDataURL(file);
+
+        const compressedFile = await compressImage(file, 1);
+        const fileExt = file.name.split('.').pop() || 'png';
+        const fileName = `bio-avatar-${uuidv4()}.${fileExt}`;
+
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        const dir = user ? user.id : 'public';
+        const filePath = `${dir}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('qr_logos')
+          .upload(filePath, compressedFile, {
+            cacheControl: '3600',
+            upsert: false,
+          });
+
+        if (uploadError) throw uploadError;
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from('qr_logos').getPublicUrl(filePath);
+
+        setPage((p) => ({ ...p, avatarUrl: publicUrl }));
+        setAvatarPreview(publicUrl);
+        handleSavePage({ avatarUrl: publicUrl });
+
+        toast.success('Gambar profil berjaya dimuat naik!');
+
+        if (oldAvatarUrl && oldAvatarUrl.includes('/qr_logos/')) {
+          await deleteOldAvatar(oldAvatarUrl);
+        }
+      } catch (error) {
+        console.error('Error uploading avatar:', error);
+        toast.error('Gagal memuat naik gambar profil.');
+      } finally {
+        setIsUploadingAvatar(false);
+      }
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    const oldAvatarUrl = page.avatarUrl;
+    setPage((p) => ({ ...p, avatarUrl: '' }));
+    setAvatarPreview(null);
+    handleSavePage({ avatarUrl: '' });
+
+    if (oldAvatarUrl && oldAvatarUrl.includes('/qr_logos/')) {
+      await deleteOldAvatar(oldAvatarUrl);
+    }
+    toast.success('Gambar profil dibuang.');
   };
 
   const downloadQR = () => {
@@ -496,18 +594,102 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                       />
                     </div>
 
-                    <div className="space-y-1.5">
-                      <Label htmlFor="edit-avatar">Avatar Image URL</Label>
-                      <Input
-                        id="edit-avatar"
-                        value={page.avatarUrl}
-                        onChange={(e) => setPage((p) => ({ ...p, avatarUrl: e.target.value }))}
-                        onBlur={() => handleSavePage({ avatarUrl: page.avatarUrl })}
-                        placeholder="https://example.com/avatar.jpg"
-                      />
-                      <p className="text-[11px] text-muted-foreground">
-                        Paste any public image URL for your profile picture.
-                      </p>
+                    <div className="space-y-2">
+                      <Label>Profile Picture / Avatar</Label>
+                      <div className="flex items-center gap-3.5 p-3 rounded-xl border border-gray-200 bg-gray-50/50">
+                        {/* Current avatar preview */}
+                        <div className="relative shrink-0">
+                          {avatarPreview || page.avatarUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={avatarPreview || page.avatarUrl}
+                              alt="Avatar preview"
+                              className="w-14 h-14 rounded-full object-cover border-2 border-emerald-500/30 shadow-sm bg-white"
+                            />
+                          ) : (
+                            <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 text-white font-bold text-lg flex items-center justify-center border-2 border-gray-200 shadow-sm">
+                              {(page.title || page.username).charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Controls */}
+                        <div className="flex-1 min-w-0 space-y-1.5">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              id="avatar-upload"
+                              onChange={handleAvatarUpload}
+                              disabled={isUploadingAvatar}
+                            />
+                            <Button
+                              asChild
+                              variant="outline"
+                              size="sm"
+                              disabled={isUploadingAvatar}
+                              className="gap-1.5 cursor-pointer bg-white text-xs h-8"
+                            >
+                              <Label htmlFor="avatar-upload" className="cursor-pointer flex items-center gap-1.5">
+                                {isUploadingAvatar ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-600" />
+                                ) : (
+                                  <Upload className="h-3.5 w-3.5 text-emerald-600" />
+                                )}
+                                {isUploadingAvatar
+                                  ? 'Uploading...'
+                                  : page.avatarUrl
+                                  ? 'Change Photo'
+                                  : 'Upload Photo'}
+                              </Label>
+                            </Button>
+
+                            {(page.avatarUrl || avatarPreview) && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleRemoveAvatar}
+                                disabled={isUploadingAvatar}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs h-8 px-2"
+                              >
+                                <Trash2 className="h-3.5 w-3.5 mr-1" />
+                                Remove
+                              </Button>
+                            )}
+                          </div>
+                          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                            <span>PNG, JPG, WEBP (Auto-optimized)</span>
+                            <button
+                              type="button"
+                              onClick={() => setShowUrlInput(!showUrlInput)}
+                              className="text-emerald-600 hover:underline hover:text-emerald-700 font-medium ml-2"
+                            >
+                              {showUrlInput ? 'Hide URL' : 'Paste URL instead'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {showUrlInput && (
+                        <div className="space-y-1 pt-1">
+                          <Input
+                            id="edit-avatar"
+                            value={page.avatarUrl}
+                            onChange={(e) => {
+                              setPage((p) => ({ ...p, avatarUrl: e.target.value }));
+                              setAvatarPreview(e.target.value);
+                            }}
+                            onBlur={() => handleSavePage({ avatarUrl: page.avatarUrl })}
+                            placeholder="https://example.com/avatar.jpg"
+                            className="text-xs h-8"
+                          />
+                          <p className="text-[10px] text-muted-foreground">
+                            Make sure it is a direct public image link (.png, .jpg, .webp).
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1195,6 +1377,11 @@ function MobileMockupView({
   theme,
 }: MobileMockupViewProps) {
   const activeLinks = links.filter((l) => l.isActive);
+  const [imgError, setImgError] = React.useState(false);
+
+  React.useEffect(() => {
+    setImgError(false);
+  }, [page.avatarUrl]);
 
   return (
     <div className="w-[320px] sm:w-[350px] h-[660px] rounded-[48px] border-[10px] border-gray-900 bg-gray-900 shadow-2xl p-2.5 relative flex flex-col justify-between overflow-hidden">
@@ -1210,11 +1397,12 @@ function MobileMockupView({
         <div className="w-full space-y-4 pt-4">
           {/* Avatar Profile */}
           <div className="relative inline-block">
-            {page.avatarUrl ? (
+            {page.avatarUrl && !imgError ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={page.avatarUrl}
-                alt={page.title}
+                alt={page.title || page.username}
+                onError={() => setImgError(true)}
                 className={`w-20 h-20 rounded-full object-cover shadow-lg mx-auto ${theme.avatarBorder}`}
               />
             ) : (

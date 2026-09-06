@@ -872,3 +872,30 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - Vercel Production Deployment: `https://klikform-nyx8rtk36-sofwan-jailanis-projects.vercel.app` (Deployment ID: `dpl_2eeofcarS91f7rT2yYnG54Ab4MWt`).
   - Aliased terus ke domain pengeluaran: `https://www.klikform.com`.
 
+---
+
+## 2026-09-06: Penggantian Avatar URL Kepada Muat Naik Terus Supabase Storage (Mirrored QR Builder)
+- **Pertanyaan & Keperluan Pengguna**:
+  - Pengguna bertanya mengapa meletakkan URL gambar avatar tidak memaparkan imej, dan meminta sama ada boleh digantikan dengan muat naik fail ke storage seperti yang terdapat pada bahagian muat naik logo QR Builder.
+- **Punca Avatar URL Gagal**:
+  - Pautan imej luaran yang disalin pengguna (cth. Google Drive viewer links, Facebook/Instagram CDNs) bukanlah fail gambar terus (.png/.jpg) dan menyekat *hotlinking* (CORS / `Cross-Origin-Resource-Policy: same-origin`).
+  - Elemen `<img>` tidak mempunyai pengendali ralat `onError` untuk memaparkan avatar gantian (fallback) jika imej gagal dimuat.
+- **Penyelesaian & Ciri Dilaksanakan**:
+  1. **Muat Naik Gambar Profil Menggunakan Supabase Storage** (`app/(dashboard)/bio-builder/[id]/client.tsx`):
+     - Membina sistem muat naik berpandukan corak QR Builder:
+       - Memampatkan imej di sisi klien menggunakan `compressImage(file, 1)` (maksimum 1MB, format web optimum).
+       - Memuat naik ke bucket awam Supabase Storage (`qr_logos`) di bawah folder pengguna (`${userId}/bio-avatar-${uuid}.${ext}`).
+       - Mendapatkan URL awam secara kekal dan menyimpan terus ke profil via `handleSavePage({ avatarUrl: publicUrl })`.
+       - Menghapuskan imej avatar lama daripada storan (`deleteOldAvatar`) secara automatik apabila digantikan atau dibuang.
+     - Menyediakan kad UI dengan paparan thumbnail avatar bulatan 14x14, butang "Upload Photo" / "Change Photo", dan butang "Remove".
+     - Menyimpan pilihan "Paste URL instead" bagi pengguna yang masih ingin menggunakan pautan imej luar.
+  2. **Pengendali Ralat & Fallback Elegan (`onError`)**:
+     - Dilengkapi pada `MobileMockupView` (`bio-builder`), `PublicBioClient` (`/bio/[username]`), dan `BioPageCard` (`/bio`).
+     - Jika imej avatar gagal dimuat atas apa jua sebab, paparan secara automatik kembali kepada bulatan avatar huruf awal (*initial letter*) tanpa menampilkan ikon gambar rosak.
+- **Pengesahan**:
+  - `npm run lint`: 0 ralat, 0 amaran.
+  - `npx tsc --noEmit`: 0 ralat TypeScript.
+  - `npm test`: 230 / 230 ujian lulus (28 test suites).
+  - `npm run build`: Kompilasi Turbopack Next.js 16 berjaya (49 routes).
+
+
