@@ -974,10 +974,14 @@ function SortableBioLinkItem({
 
   const handleSaveEdit = (e: React.FormEvent) => {
     e.preventDefault();
+    let finalUrl = url.trim();
+    if (type === 'link' && finalUrl && !finalUrl.startsWith('http://') && !finalUrl.startsWith('https://') && !finalUrl.startsWith('/') && !finalUrl.startsWith('mailto:')) {
+      finalUrl = `https://${finalUrl}`;
+    }
     startUpdate(async () => {
       const res = await updateBioLinkAction(link.id, link.bioPageId, {
         title,
-        url,
+        url: finalUrl,
         type,
         highlight,
       });
@@ -1098,11 +1102,11 @@ function SortableBioLinkItem({
                   <div className="space-y-2">
                     <Label>Choose KlikForm Form</Label>
                     <Select
-                      value={forms.find((f) => url.includes(f.shortCode || f.id))?.id || ''}
+                      value={forms.find((f) => (f.shortCode && url.includes(f.shortCode)) || url.includes(f.id))?.id || ''}
                       onValueChange={(formId) => {
                         const chosenForm = forms.find((f) => f.id === formId);
                         if (chosenForm) {
-                          setUrl(`/form/${chosenForm.shortCode || chosenForm.id}`);
+                          setUrl(chosenForm.shortCode ? `/s/${chosenForm.shortCode}` : `/form/${chosenForm.id}`);
                         }
                       }}
                     >
@@ -1234,7 +1238,7 @@ function AddLinkDialog({
     const chosenForm = forms.find((f) => f.id === formId);
     if (chosenForm) {
       if (!title) setTitle(chosenForm.title);
-      setUrl(`/form/${chosenForm.shortCode || chosenForm.id}`);
+      setUrl(chosenForm.shortCode ? `/s/${chosenForm.shortCode}` : `/form/${chosenForm.id}`);
     }
   };
 
@@ -1247,6 +1251,8 @@ function AddLinkDialog({
       finalUrl = `https://wa.me/${cleanPhone}${
         waMessage ? `?text=${encodeURIComponent(waMessage)}` : ''
       }`;
+    } else if (type === 'link' && finalUrl && !finalUrl.startsWith('http://') && !finalUrl.startsWith('https://') && !finalUrl.startsWith('/') && !finalUrl.startsWith('mailto:')) {
+      finalUrl = `https://${finalUrl}`;
     }
 
     startTransition(async () => {

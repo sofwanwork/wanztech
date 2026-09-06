@@ -440,3 +440,20 @@ Membolehkan pengguna memilih corak latar belakang (dots, grid, stripes, waves, c
    - `npm run build`: Kompilasi Turbopack Next.js 16 bersih (49 laluan).
    - Git Commit: `5e6fbe7` dipush ke `origin master`.
    - Vercel Production: `dpl_7pV17fX4R8mjatScQiiDn7hYCiCh` (`https://www.klikform.com`).
+
+---
+
+# Bug Fix: 404 Page Not Found Bila Tekan Pautan Borang KlikForm di KlikBio (2026-09-06)
+
+Isu: Pengguna mendapati bila menekan pautan borang KlikForm ("klikform form") pada halaman KlikBio, paparan menunjukkan ralat 404 "Page not found".
+
+- [x] 1. Kenal pasti punca asal ralat 404 (laluan `/form/[id]` hanya menyokong UUID pangkalan data dan menolak `short_code`, manakala `bio-builder` menyimpan `/form/${chosenForm.shortCode}`).
+- [x] 2. Bina helper `getFormByIdOrShortCode` dalam `lib/storage/forms.ts` (menggunakan `cache()` dan pengesanan regex UUID untuk mencari borang secara pintar mengikut ID UUID atau short code tanpa ralat PostgreSQL).
+- [x] 3. Kemas kini `app/(public)/form/[id]/page.tsx` untuk menggunakan `getFormByIdOrShortCode` bagi `generateMetadata` dan `PublicFormPage`.
+- [x] 4. Kemas kini `app/(public)/s/[code]/page.tsx` untuk menggunakan `getFormByIdOrShortCode` supaya kedua-dua laluan `/form/...` dan `/s/...` menyokong kedua-dua format ID dan short code.
+- [x] 5. Kemas kini `app/(dashboard)/bio-builder/[id]/client.tsx` untuk menjana pautan `/s/${shortCode}` secara piawai, dan membetulkan pengesanan pemilihan borang dalam dropdown.
+- [x] 6. Kemas kini `app/(public)/bio/[username]/client.tsx` untuk membuka pautan borang dalam tab baharu (`target="_blank"`) bagi mengekalkan halaman bio pelawat.
+- [x] 7. Tulis ujian unit dalam `tests/form-lookup.test.ts`.
+- [x] 8. Pengesahan kualiti: `npm test` (239/239 lulus), `npm run typecheck` (0 ralat), `npm run lint` (0 amaran), `npm run build` (bersih).
+- [ ] 9. Commit conventional commit & deploy ke Vercel Production.
+- [ ] 10. Kemas kini `memory.md`, `lessons.md`, dan `task.md`.

@@ -217,6 +217,25 @@ export const getFormByShortCode = cache(async (code: string): Promise<Form | und
   };
 });
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/**
+ * Resolves a form by either its UUID id or human-readable short_code.
+ * Wrapped in cache() to dedupe concurrent lookups in server components (e.g. metadata + page render).
+ */
+export const getFormByIdOrShortCode = cache(async (identifier: string): Promise<Form | undefined> => {
+  if (!identifier) return undefined;
+  if (UUID_REGEX.test(identifier)) {
+    const byId = await getFormById(identifier);
+    if (byId) return byId;
+    return getFormByShortCode(identifier);
+  } else {
+    const byCode = await getFormByShortCode(identifier);
+    if (byCode) return byCode;
+    return getFormById(identifier);
+  }
+});
+
 export async function saveForm(form: Form): Promise<void> {
   const { supabase, user } = await getUser();
 

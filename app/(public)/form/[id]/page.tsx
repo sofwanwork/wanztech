@@ -1,4 +1,4 @@
-import { getFormById } from '@/lib/storage/forms';
+import { getFormByIdOrShortCode } from '@/lib/storage/forms';
 import { notFound } from 'next/navigation';
 import { PublicFormClient } from './client';
 import type { Metadata } from 'next';
@@ -9,7 +9,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
-  const form = await getFormById(id);
+  const form = await getFormByIdOrShortCode(id);
 
   if (!form) {
     return {
@@ -56,7 +56,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function PublicFormPage({ params }: PageProps) {
   const { id } = await params;
-  const form = await getFormById(id);
+  const form = await getFormByIdOrShortCode(id);
 
   if (!form) return notFound();
 

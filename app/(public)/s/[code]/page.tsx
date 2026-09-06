@@ -1,4 +1,4 @@
-import { getFormByShortCode } from '@/lib/storage/forms';
+import { getFormByIdOrShortCode } from '@/lib/storage/forms';
 import { getShortLinkBySlug, incrementShortLinkClicks } from '@/lib/storage/short-links';
 import { notFound, redirect } from 'next/navigation';
 import { PublicFormClient } from '@/app/(public)/form/[id]/client'; // Import the client component
@@ -12,7 +12,7 @@ interface ShortLinkPageProps {
 
 export async function generateMetadata({ params }: ShortLinkPageProps): Promise<Metadata> {
   const { code } = await params;
-  const form = await getFormByShortCode(code);
+  const form = await getFormByIdOrShortCode(code);
 
   if (!form) {
     return {
@@ -81,8 +81,8 @@ export default async function ShortLinkPage({ params }: ShortLinkPageProps) {
     redirect(shortLink.original_url);
   }
 
-  // 2. Fallback to Form Short Code
-  const form = await getFormByShortCode(code);
+  // 2. Fallback to Form (Short Code or ID)
+  const form = await getFormByIdOrShortCode(code);
 
   if (!form) {
     notFound();

@@ -227,7 +227,7 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
                 <motion.a
                   key={link.id}
                   href={link.url}
-                  target={link.url.startsWith('http') ? '_blank' : '_self'}
+                  target={link.url.startsWith('http') || link.type === 'form' ? '_blank' : '_self'}
                   rel="noopener noreferrer"
                   onClick={() => handleLinkClick(link)}
                   whileHover={{ scale: 1.02 }}
