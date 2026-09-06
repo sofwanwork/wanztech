@@ -5,9 +5,11 @@ import {
   resolveSocialUrl,
   BIO_THEMES,
   BUTTON_STYLES,
+  BIO_PATTERNS,
   getBioButtonClass,
+  getBioPatternStyle,
 } from '@/lib/bio-links/themes';
-import { BioTheme, BioButtonStyle } from '@/lib/types/bio-links';
+import { BioTheme, BioButtonStyle, BioPattern } from '@/lib/types/bio-links';
 
 describe('KlikBio — Username Validation', () => {
   it('accepts valid usernames', () => {
@@ -177,5 +179,78 @@ describe('KlikBio — Button Class Generator & Contrast Guard', () => {
 
     const shadowLg = getBioButtonClass('minimal', 'shadow-lg', false);
     expect(shadowLg).toContain('shadow-xl');
+  });
+});
+
+describe('KlikBio — Background Patterns & Contrast Generator', () => {
+  const expectedPatterns: BioPattern[] = [
+    'none',
+    'dots',
+    'grid',
+    'stripes',
+    'waves',
+    'crosses',
+    'stars',
+    'circuit',
+  ];
+
+  it('contains all 8 background patterns', () => {
+    for (const patternKey of expectedPatterns) {
+      const pattern = BIO_PATTERNS[patternKey];
+      expect(pattern).toBeDefined();
+      expect(pattern.id).toBe(patternKey);
+      expect(pattern.name).toBeTruthy();
+      expect(pattern.description).toBeTruthy();
+    }
+  });
+
+  it('returns an empty object when pattern is none or undefined', () => {
+    expect(getBioPatternStyle('none', 'emerald')).toEqual({});
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(getBioPatternStyle(undefined as any, 'emerald')).toEqual({});
+  });
+
+  it('generates background styles for all active patterns', () => {
+    const activePatterns: BioPattern[] = [
+      'dots',
+      'grid',
+      'stripes',
+      'waves',
+      'crosses',
+      'stars',
+      'circuit',
+    ];
+
+    for (const patternKey of activePatterns) {
+      const style = getBioPatternStyle(patternKey, 'emerald');
+      expect(style.backgroundImage).toBeTruthy();
+      expect(typeof style.backgroundImage).toBe('string');
+    }
+  });
+
+  it('adapts pattern colors for Minimal Light theme with dark ink contrast', () => {
+    // Light theme (minimal) must use dark ink rgba (15, 23, 42)
+    const dotsLight = getBioPatternStyle('dots', 'minimal');
+    expect(dotsLight.backgroundImage).toContain('rgba(15, 23, 42');
+    expect(dotsLight.backgroundSize).toBe('20px 20px');
+
+    const gridLight = getBioPatternStyle('grid', 'minimal');
+    expect(gridLight.backgroundImage).toContain('rgba(15, 23, 42');
+    expect(gridLight.backgroundSize).toBe('24px 24px');
+
+    const wavesLight = getBioPatternStyle('waves', 'minimal');
+    expect(decodeURIComponent(wavesLight.backgroundImage as string)).toContain('rgba(15, 23, 42');
+  });
+
+  it('adapts pattern colors for dark/vibrant themes with white/bright ink contrast', () => {
+    // Dark theme (emerald) must use white ink rgba (255, 255, 255)
+    const dotsDark = getBioPatternStyle('dots', 'emerald');
+    expect(dotsDark.backgroundImage).toContain('rgba(255, 255, 255');
+
+    const gridDark = getBioPatternStyle('grid', 'dark');
+    expect(gridDark.backgroundImage).toContain('rgba(255, 255, 255');
+
+    const wavesDark = getBioPatternStyle('waves', 'sunset');
+    expect(decodeURIComponent(wavesDark.backgroundImage as string)).toContain('rgba(255, 255, 255');
   });
 });

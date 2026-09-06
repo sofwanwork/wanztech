@@ -22,9 +22,20 @@ export type BioButtonStyle =
   | 'shadow-lg'
   | 'glass';
 
+export type BioPattern =
+  | 'none'
+  | 'dots'
+  | 'grid'
+  | 'stripes'
+  | 'waves'
+  | 'crosses'
+  | 'stars'
+  | 'circuit';
+
 export interface BioThemeConfig {
   bgType?: 'preset' | 'color' | 'gradient';
   bgValue?: string;
+  pattern?: BioPattern;
   buttonStyle?: BioButtonStyle;
   textColor?: string;
   buttonColor?: string;

@@ -12,6 +12,7 @@ import {
   BIO_THEMES,
   resolveSocialUrl,
   getBioButtonClass,
+  getBioPatternStyle,
 } from '@/lib/bio-links/themes';
 import { trackBioClickAction } from '@/actions/bio-links';
 import { Button } from '@/components/ui/button';
@@ -102,6 +103,14 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
     <main
       className={`min-h-screen ${theme.bg} flex flex-col justify-between items-center px-4 py-8 relative selection:bg-emerald-500 selection:text-white`}
     >
+      {/* Background Pattern Overlay */}
+      {page.themeConfig?.pattern && page.themeConfig.pattern !== 'none' && (
+        <div
+          className="fixed inset-0 pointer-events-none z-0"
+          style={getBioPatternStyle(page.themeConfig.pattern, theme)}
+        />
+      )}
+
       {/* Floating Share Button */}
       <div className="absolute top-4 right-4 z-10">
         <Button
@@ -116,7 +125,7 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
       </div>
 
       {/* Main Container */}
-      <div className="w-full max-w-md mx-auto flex flex-col items-center space-y-6 pt-4">
+      <div className="w-full max-w-md mx-auto flex flex-col items-center space-y-6 pt-4 relative z-10">
         {/* Profile Avatar */}
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
@@ -246,7 +255,7 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
       </div>
 
       {/* Footer Branding */}
-      <footer className="pt-12 pb-4 text-center">
+      <footer className="pt-12 pb-4 text-center relative z-10">
         <a
           href="https://www.klikform.com"
           target="_blank"

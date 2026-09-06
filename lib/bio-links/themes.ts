@@ -1,4 +1,5 @@
-import { BioTheme, BioButtonStyle, BioSocialLinks } from '@/lib/types/bio-links';
+import type React from 'react';
+import { BioTheme, BioButtonStyle, BioSocialLinks, BioPattern } from '@/lib/types/bio-links';
 
 export interface ThemeDefinition {
   id: BioTheme;
@@ -272,5 +273,127 @@ export function resolveSocialUrl(platform: keyof BioSocialLinks, value: string):
       return `https://${trimmed}`;
     default:
       return `https://${trimmed}`;
+  }
+}
+
+export interface BioPatternDefinition {
+  id: BioPattern;
+  name: string;
+  description: string;
+}
+
+export const BIO_PATTERNS: Record<BioPattern, BioPatternDefinition> = {
+  none: {
+    id: 'none',
+    name: 'None',
+    description: 'Plain theme background without texture',
+  },
+  dots: {
+    id: 'dots',
+    name: 'Polka Dots',
+    description: 'Subtle dotted grid pattern',
+  },
+  grid: {
+    id: 'grid',
+    name: 'Modern Grid',
+    description: 'Clean architectural line grid',
+  },
+  stripes: {
+    id: 'stripes',
+    name: 'Diagonal Stripes',
+    description: 'Dynamic diagonal stripe lines',
+  },
+  waves: {
+    id: 'waves',
+    name: 'Topography Waves',
+    description: 'Curved contour line waves',
+  },
+  crosses: {
+    id: 'crosses',
+    name: 'Minimal Crosses',
+    description: 'Delicate geometric plus markers',
+  },
+  stars: {
+    id: 'stars',
+    name: 'Starry Sparkles',
+    description: 'Sparkling celestial star dots',
+  },
+  circuit: {
+    id: 'circuit',
+    name: 'Tech Circuit',
+    description: 'Futuristic digital board lines',
+  },
+};
+
+/**
+ * Generates pure CSS / SVG data URI background styles for KlikBio patterns.
+ * Adapts stroke/fill colors intelligently based on theme brightness to guarantee optimal contrast.
+ */
+export function getBioPatternStyle(
+  pattern: BioPattern = 'none',
+  theme: ThemeDefinition | BioTheme = 'emerald'
+): React.CSSProperties {
+  if (!pattern || pattern === 'none') {
+    return {};
+  }
+
+  const themeDef = typeof theme === 'string' ? BIO_THEMES[theme] || BIO_THEMES.emerald : theme;
+  const isLight = themeDef.id === 'minimal';
+
+  switch (pattern) {
+    case 'dots': {
+      const dotColor = isLight ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255, 255, 255, 0.12)';
+      return {
+        backgroundImage: `radial-gradient(${dotColor} 1.5px, transparent 1.5px)`,
+        backgroundSize: '20px 20px',
+      };
+    }
+    case 'grid': {
+      const gridColor = isLight ? 'rgba(15, 23, 42, 0.05)' : 'rgba(255, 255, 255, 0.07)';
+      return {
+        backgroundImage: `linear-gradient(to right, ${gridColor} 1px, transparent 1px), linear-gradient(to bottom, ${gridColor} 1px, transparent 1px)`,
+        backgroundSize: '24px 24px',
+      };
+    }
+    case 'stripes': {
+      const stripeColor = isLight ? 'rgba(15, 23, 42, 0.04)' : 'rgba(255, 255, 255, 0.06)';
+      return {
+        backgroundImage: `repeating-linear-gradient(45deg, ${stripeColor}, ${stripeColor} 2px, transparent 2px, transparent 14px)`,
+      };
+    }
+    case 'waves': {
+      const stroke = isLight ? 'rgba(15, 23, 42, 0.07)' : 'rgba(255, 255, 255, 0.09)';
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80"><path d="M0 20 Q 20 5, 40 20 T 80 20 M0 60 Q 20 45, 40 60 T 80 60" fill="none" stroke="${stroke}" stroke-width="1.5"/></svg>`;
+      return {
+        backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(svg)}")`,
+        backgroundSize: '80px 80px',
+      };
+    }
+    case 'crosses': {
+      const stroke = isLight ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255, 255, 255, 0.12)';
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"><path d="M16 20h8M20 16v8" fill="none" stroke="${stroke}" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+      return {
+        backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(svg)}")`,
+        backgroundSize: '40px 40px',
+      };
+    }
+    case 'stars': {
+      const fill = isLight ? 'rgba(15, 23, 42, 0.09)' : 'rgba(255, 255, 255, 0.14)';
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60"><path d="M30 16 Q 30 24 38 24 Q 30 24 30 32 Q 30 24 22 24 Q 30 24 30 16 Z M10 48 Q 10 52 14 52 Q 10 52 10 56 Q 10 52 6 52 Q 10 52 10 48 Z" fill="${fill}"/></svg>`;
+      return {
+        backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(svg)}")`,
+        backgroundSize: '60px 60px',
+      };
+    }
+    case 'circuit': {
+      const stroke = isLight ? 'rgba(15, 23, 42, 0.07)' : 'rgba(255, 255, 255, 0.1)';
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><path d="M0 32h20l8 8h16l8-8h12M32 0v16l-8 8v16l8 8v16" fill="none" stroke="${stroke}" stroke-width="1.2"/><circle cx="28" cy="40" r="2" fill="${stroke}"/><circle cx="24" cy="24" r="2" fill="${stroke}"/></svg>`;
+      return {
+        backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(svg)}")`,
+        backgroundSize: '64px 64px',
+      };
+    }
+    default:
+      return {};
   }
 }

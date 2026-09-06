@@ -393,3 +393,20 @@ Isu: Butang "Copy Link" terkeluar (*overflow*) ke bahagian luar sebelah kiri mod
   1. Menggantikan `DialogFooter` yang bersifat flex-end dengan grid semulajadi `<div className="grid grid-cols-2 gap-2 w-full pt-1">`.
   2. Meningkatkan saiz dialog daripada `sm:max-w-xs` (320px) kepada `sm:max-w-sm` (384px) untuk ruang bernafas dan susun atur yang lebih kemas.
   3. Memperbaiki kedua-dua fail: `app/(public)/bio/[username]/client.tsx` dan `app/(dashboard)/bio/client.tsx`.
+
+---
+
+# KlikBio — Corak Latar Belakang (Background Patterns)
+
+Membolehkan pengguna memilih corak latar belakang (dots, grid, stripes, waves, crosses, stars, circuit, atau none) untuk halaman KlikBio mereka dengan sokongan kontras pintar bagi tema cerah dan gelap.
+
+- [x] 1. Tambah `BioPattern` dalam `lib/types/index.ts` (barrel export).
+- [x] 2. Kemas kini `lib/bio-links/themes.ts`: eksport `BIO_PATTERNS` dan `getBioPatternStyle(pattern, theme)`.
+- [x] 3. Kemas kini `app/(dashboard)/bio-builder/[id]/client.tsx`:
+  - Tambah bahagian pemilih corak latar belakang pada Tab "Design & Theme".
+  - Paparkan corak latar belakang pada `MobileMockupView`.
+- [x] 4. Kemas kini `app/(public)/bio/[username]/client.tsx`: paparkan corak latar belakang pada `PublicBioClient`.
+- [x] 5. Tulis ujian unit di `tests/bio-links.test.ts` untuk `getBioPatternStyle`.
+- [x] 6. Pengesahan kualiti: `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`.
+- [ ] 7. Commit conventional commit & deploy ke Vercel Production.
+- [ ] 8. Kemas kini `memory.md` dan `task.md`.

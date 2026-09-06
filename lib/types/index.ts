@@ -60,6 +60,7 @@ export type {
   BioLinkType,
   BioTheme,
   BioButtonStyle,
+  BioPattern,
   BioThemeConfig,
   BioSocialLinks,
   BioPage,

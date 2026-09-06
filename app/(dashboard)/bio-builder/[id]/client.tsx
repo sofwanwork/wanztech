@@ -28,13 +28,16 @@ import {
   BioButtonStyle,
   BioSocialLinks,
   BioLinkType,
+  BioPattern,
 } from '@/lib/types/bio-links';
 import {
   BIO_THEMES,
   BUTTON_STYLES,
+  BIO_PATTERNS,
   cleanBioUsername,
   isValidBioUsername,
   getBioButtonClass,
+  getBioPatternStyle,
 } from '@/lib/bio-links/themes';
 import {
   updateBioPageAction,
@@ -535,6 +538,62 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                             Sample Button
                           </div>
                           <span className="text-xs">{b.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4 shadow-sm">
+                  <div>
+                    <h3 className="text-base font-semibold text-gray-900">Background Patterns / Corak Latar</h3>
+                    <p className="text-xs text-gray-500">Add subtle decorative textures over your page background.</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {(Object.keys(BIO_PATTERNS) as BioPattern[]).map((pKey) => {
+                      const p = BIO_PATTERNS[pKey];
+                      const currentPattern = page.themeConfig?.pattern || 'none';
+                      const isSelected = currentPattern === pKey;
+                      const activeTheme = BIO_THEMES[page.theme] || BIO_THEMES.emerald;
+
+                      return (
+                        <button
+                          key={pKey}
+                          type="button"
+                          onClick={() =>
+                            handleSavePage({
+                              themeConfig: { ...page.themeConfig, pattern: pKey },
+                            })
+                          }
+                          className={`relative flex flex-col p-3 rounded-xl border text-left transition-all ${
+                            isSelected
+                              ? 'border-emerald-600 bg-emerald-50/50 ring-2 ring-emerald-500/40 shadow-sm'
+                              : 'border-gray-200 hover:border-gray-300 bg-white'
+                          }`}
+                        >
+                          <div
+                            className={`h-14 w-full rounded-lg ${activeTheme.bg} relative overflow-hidden mb-2 shadow-inner flex items-center justify-center`}
+                          >
+                            {pKey !== 'none' ? (
+                              <div
+                                className="absolute inset-0"
+                                style={getBioPatternStyle(pKey, page.theme)}
+                              />
+                            ) : (
+                              <span className="text-[11px] font-medium text-white/50 relative z-10">
+                                None
+                              </span>
+                            )}
+                          </div>
+                          <span className="font-semibold text-xs text-gray-900">{p.name}</span>
+                          <span className="text-[10px] text-gray-500 truncate">{p.description}</span>
+                          {isSelected && (
+                            <span className="absolute top-2 right-2 flex h-2 w-2">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600" />
+                            </span>
+                          )}
                         </button>
                       );
                     })}
@@ -1394,7 +1453,15 @@ function MobileMockupView({
       <div
         className={`w-full h-full rounded-[38px] ${theme.bg} overflow-y-auto px-4 py-8 flex flex-col justify-between items-center text-center relative custom-scrollbar`}
       >
-        <div className="w-full space-y-4 pt-4">
+        {/* Background Pattern */}
+        {page.themeConfig?.pattern && page.themeConfig.pattern !== 'none' && (
+          <div
+            className="absolute inset-0 pointer-events-none rounded-[38px] min-h-full z-0"
+            style={getBioPatternStyle(page.themeConfig.pattern, theme)}
+          />
+        )}
+
+        <div className="w-full space-y-4 pt-4 relative z-10">
           {/* Avatar Profile */}
           <div className="relative inline-block">
             {page.avatarUrl && !imgError ? (
@@ -1482,7 +1549,7 @@ function MobileMockupView({
         </div>
 
         {/* Footer Brand */}
-        <div className="pt-6 pb-2">
+        <div className="pt-6 pb-2 relative z-10">
           <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/20 text-white/75 backdrop-blur-md text-[10px]">
             <Sparkles className="h-3 w-3 text-emerald-400" />
             <span>Powered by <strong>KlikForm</strong></span>
