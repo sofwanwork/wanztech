@@ -897,5 +897,9 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - `npx tsc --noEmit`: 0 ralat TypeScript.
   - `npm test`: 230 / 230 ujian lulus (28 test suites).
   - `npm run build`: Kompilasi Turbopack Next.js 16 berjaya (49 routes).
+- **Deployment Vercel Production**:
+  - Git Commit: `c1f8f42` (`feat(bio): add direct storage image upload for avatar with automatic compression`) dipush ke `origin master`.
+  - Vercel Production Deployment: `https://klikform-kb5f2s8qc-sofwan-jailanis-projects.vercel.app` (Deployment ID: `dpl_4LrasAe3KSNFyrE1SRXudY26KxE4`).
+  - Aliased terus ke domain pengeluaran: `https://www.klikform.com`.
 
 
