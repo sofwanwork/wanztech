@@ -840,3 +840,31 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - Memperbaiki kedua-dua fail: `app/(public)/bio/[username]/client.tsx` dan `app/(dashboard)/bio/client.tsx`.
   - Pengesahan: `npm test` lulus 230/230 ujian, 0 ralat TypeScript (`tsc`), 0 amaran lint.
   - Deployment Vercel: Commit `975d98e` berjaya dideploy ke Production (`dpl_62TxGvtsTnU5T7oyv8snzYFZ6iWA`) & aliased ke `https://www.klikform.com`.
+
+---
+
+## 2026-09-06: Pembaikan Dropdown Tajuk Borang Panjang Melimpah Keluar Modal (Overflow Fix)
+- **Laporan Isu Pengguna**:
+  - Pengguna melaporkan "kenapa jadi macam ni ya. bila choose klikform form tu panjang sgt" beserta gambar modal "Add New Link / Block" yang melimpah keluar ke kanan melepasi kotak modal (semua elemen borang seperti grid Block Type, Button Title, dan Highlight Animation tertarik melintang ke luar modal).
+- **Punca Asal (Root Causes)**:
+  1. Komponen `SelectTrigger` (`components/ui/select.tsx`) menggunakan kelas lalai `w-fit`, `whitespace-nowrap`, dan `*:data-[slot=select-value]:flex *:data-[slot=select-value]:line-clamp-1`. Dalam CSS, `display: flex` mengatasi `display: -webkit-box`, menyebabkan `line-clamp-1` tidak berfungsi dan teks tidak terpotong (tidak berlaku ellipsis).
+  2. Apabila tajuk borang sangat panjang (cth: "PROGRAM SAMBUTAN HARI METEOROLOGI SEDUNIA 2026 SERTA PERASMIAN SISTEM MODEL AIR QUALITY MONITORING..."), `w-fit` mengembangkan `SelectTrigger` kepada kelebaran semula jadi teks (~1000px).
+  3. `DialogContent` (`components/ui/dialog.tsx`) adalah CSS Grid container yang secara lalai mempunyai `min-width: auto` pada setiap elemen anak. Tanpa `min-w-0 max-w-full` atau `overflow-x-hidden`, elemen `<form>` mengembang mengikut kelebaran `SelectTrigger`, menyebabkan semua grid `grid-cols-2`, input, dan kad pilihan ditarik melimpah keluar melepasi kotak putih dialog.
+- **Penyelesaian**:
+  1. `components/ui/select.tsx`:
+     - Menukar `SelectTrigger` daripada `w-fit` kepada `w-full min-w-0`.
+     - Menggantikan konflik `flex` pada `select-value` kepada `truncate min-w-0 text-left flex-1`.
+     - Memastikan ikon panah ke bawah mengekalkan `shrink-0`.
+     - Mengemas kini `SelectValue` dengan `truncate min-w-0 text-left` dan `SelectItem` dengan `truncate min-w-0`.
+     - Menetapkan `max-w-[calc(100vw-2rem)]` pada `SelectContent`.
+  2. `components/ui/dialog.tsx`:
+     - Menambah `overflow-x-hidden` pada `DialogContent` sebagai benteng keselamatan CSS.
+  3. `app/(dashboard)/bio-builder/[id]/client.tsx`:
+     - Mengemas kini kedua-dua `AddLinkDialog` dan `EditLinkDialog` dengan `max-h-[90vh] overflow-y-auto` dan `<form className="min-w-0 max-w-full">`.
+     - Menetapkan `<SelectTrigger className="w-full">` dan `<SelectContent position="popper" className="max-w-[var(--radix-select-trigger-width)]">`.
+     - Menambah `truncate` dan atribut `title={f.title}` pada setiap `<SelectItem>` untuk pengalaman tooltip asli yang kemas.
+- **Pengesahan**:
+  - `npm run lint`: 0 ralat, 0 amaran.
+  - `npm test`: 230/230 ujian lulus (28 test suite).
+  - `npm run build`: Kompilasi Turbopack Next.js 16 bersih (49 routes).
+

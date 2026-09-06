@@ -830,18 +830,18 @@ function SortableBioLinkItem({
               <Edit2 className="h-3.5 w-3.5" />
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <form onSubmit={handleSaveEdit}>
+          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+            <form onSubmit={handleSaveEdit} className="min-w-0 max-w-full">
               <DialogHeader>
                 <DialogTitle>Edit Link Block</DialogTitle>
                 <DialogDescription>Update link title, destination URL, or styling.</DialogDescription>
               </DialogHeader>
 
-              <div className="space-y-4 py-4">
+              <div className="space-y-4 py-4 min-w-0">
                 <div className="space-y-2">
                   <Label>Block Type</Label>
                   <Select value={type} onValueChange={(val) => setType(val as BioLinkType)}>
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -865,13 +865,13 @@ function SortableBioLinkItem({
                         }
                       }}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select a form" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent position="popper" className="max-w-[var(--radix-select-trigger-width)]">
                         {forms.map((f) => (
-                          <SelectItem key={f.id} value={f.id}>
-                            {f.title}
+                          <SelectItem key={f.id} value={f.id} title={f.title}>
+                            <span className="truncate">{f.title}</span>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -1038,8 +1038,8 @@ function AddLinkDialog({
           {buttonText}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <form onSubmit={handleAdd}>
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <form onSubmit={handleAdd} className="min-w-0 max-w-full">
           <DialogHeader>
             <DialogTitle>Add New Link / Block</DialogTitle>
             <DialogDescription>
@@ -1047,7 +1047,7 @@ function AddLinkDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 min-w-0">
             <div className="space-y-2">
               <Label>Block Type</Label>
               <div className="grid grid-cols-2 gap-2">
@@ -1063,17 +1063,17 @@ function AddLinkDialog({
                       key={id}
                       type="button"
                       onClick={() => setType(id as BioLinkType)}
-                      className={`flex flex-col text-left p-3 rounded-xl border transition-all ${
+                      className={`flex flex-col text-left p-3 rounded-xl border transition-all min-w-0 ${
                         isSelected
                           ? 'border-emerald-600 bg-emerald-50 ring-2 ring-emerald-500/30'
                           : 'border-gray-200 hover:border-gray-300 bg-white'
                       }`}
                     >
-                      <div className="flex items-center gap-1.5 font-semibold text-xs text-gray-900 mb-0.5">
-                        <Icon className="h-3.5 w-3.5 text-emerald-600" />
-                        {label}
+                      <div className="flex items-center gap-1.5 font-semibold text-xs text-gray-900 mb-0.5 min-w-0">
+                        <Icon className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                        <span className="truncate">{label}</span>
                       </div>
-                      <span className="text-[11px] text-gray-500">{desc}</span>
+                      <span className="text-[11px] text-gray-500 truncate">{desc}</span>
                     </button>
                   );
                 })}
@@ -1084,13 +1084,13 @@ function AddLinkDialog({
               <div className="space-y-2">
                 <Label>Choose KlikForm Form</Label>
                 <Select value={selectedFormId} onValueChange={handleFormSelect}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a form from your account" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper" className="max-w-[var(--radix-select-trigger-width)]">
                     {forms.map((f) => (
-                      <SelectItem key={f.id} value={f.id}>
-                        {f.title}
+                      <SelectItem key={f.id} value={f.id} title={f.title}>
+                        <span className="truncate">{f.title}</span>
                       </SelectItem>
                     ))}
                   </SelectContent>
