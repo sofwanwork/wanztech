@@ -450,10 +450,236 @@ Isu: Pengguna mendapati bila menekan pautan borang KlikForm ("klikform form") pa
 - [x] 1. Kenal pasti punca asal ralat 404 (laluan `/form/[id]` hanya menyokong UUID pangkalan data dan menolak `short_code`, manakala `bio-builder` menyimpan `/form/${chosenForm.shortCode}`).
 - [x] 2. Bina helper `getFormByIdOrShortCode` dalam `lib/storage/forms.ts` (menggunakan `cache()` dan pengesanan regex UUID untuk mencari borang secara pintar mengikut ID UUID atau short code tanpa ralat PostgreSQL).
 - [x] 3. Kemas kini `app/(public)/form/[id]/page.tsx` untuk menggunakan `getFormByIdOrShortCode` bagi `generateMetadata` dan `PublicFormPage`.
+---
+
+# Form Title 2 Baris (Multi-line Support)
+
+Membolehkan Form Title ditulis dan dipaparkan dalam 2 baris atau lebih.
+
+- [x] 1. Tukar input Form Title di `app/builder/[id]/client.tsx` kepada `<Textarea>` dengan `rows={2}`.
+- [x] 2. Kemas kini `app/(public)/form/[id]/client.tsx` dengan `whitespace-pre-line break-words` pada `<CardTitle>`.
+- [x] 3. Kemas kini `components/dashboard/form-card.tsx` dan `app/(dashboard)/responses/client.tsx` dengan `line-clamp-2 break-words whitespace-pre-line`.
+- [x] 4. Kemas kini komponen/halaman lain yang memaparkan tajuk borang (`check`, `verify`, `analytics`, `certificate-qr-card`) dan sanitasi nama metadata / muat turun / Sheet.
+- [x] 5. Uji dengan `npm test`, `npm run lint`, `npm run typecheck` dan semak manual.
+
+### Reviu
+- **Form Builder**: Input tajuk borang kini menggunakan `<Textarea rows={2}>` yang membolehkan pengguna menekan Enter untuk memasukkan baris baru secara semulajadi.
+- **Rendering**: Paparan tajuk pada borang awam, kad dashboard, semakan sijil, verifikasi dan analitik kini menyokong `whitespace-pre-line break-words` (dan `line-clamp-2` pada kad dashboard).
+- **Sanitasi**: Tajuk yang digunakan pada tag metadata `<head>`, nama fail Google Sheets, fail muat turun QR kod, serta subjek emel disanitasi secara automatik untuk menukar `\n` kepada ruang kosong (` `) supaya tiada isu pemecahan header / karakter tidak sah.
+- **Kualiti**: 206/206 ujian lulus, lint 0 ralat/amaran, typecheck bersih.
+
+---
+
+# Tajuk Program 2 Baris Pada Sijil & E-Cert
+
+Membolehkan tajuk program dipaparkan dalam 2 baris atau lebih pada preview sijil, certificate builder, dan renderer e-cert.
+
+- [x] 1. Kemas kini `components/certificates/renderer/index.tsx` untuk menyokong `whitespace-pre-line` dan `break-words` pada elemen teks dan placeholder.
+- [x] 2. Kemas kini canvas di `app/(dashboard)/certificates/builder/[id]/client.tsx` dan `preview/page.tsx` untuk membuang `whitespace-nowrap` dan menambah sokongan baris baru.
+- [x] 3. Kemas kini panel penyunting teks di `components/certificates/builder/properties.tsx` kepada `<Textarea rows={2}>`.
+- [x] 4. Kemas kini semua 10 templat pra-bina (`ClassicTemplate`, `CorporateTemplate`, dsb.) dan templat warisan dengan `whitespace-pre-line break-words`.
+- [x] 5. Jalankan verifikasi ujian automatik (`npm test`, `npm run lint`, `npm run typecheck`, `npm run build`).
+
+### Reviu
+- **Certificate Renderer & Canvas**: `whiteSpace: 'nowrap'` telah ditukar kepada dinamik (`pre-line` untuk teks & placeholder, `nowrap` untuk lain-lain) berserta `wordBreak: 'break-word'`, membolehkan tajuk program memaparkan 2 baris secara automatik atau mengikut `\n`.
+- **Builder & Preview Page**: Kelas `whitespace-nowrap` pada canvas dan halaman preview digantikan dengan `whitespace-pre-line break-words`.
+- **Properties Editor**: Input teks kini menggunakan `<Textarea rows={2}>` dengan kebolehan resize y untuk memudahkan pengguna memasukkan tajuk berbilang baris secara langsung.
+- **Templat Sijil Pra-Bina**: Kesemua 10 templat sijil (`Classic`, `Corporate`, `Creative`, `Elegant`, `Minimalist`, `Modern`, `Nature`, `Premium`, `Royal`, `Vintage`) dan templat legasi dikemas kini dengan `whitespace-pre-line break-words`.
+- **Pengesahan & Deployment**: 206 ujian unit lulus (termasuk ujian multi-line program identifier), 0 lint error, typecheck TypeScript bersih, dan berjaya dideploy ke pengeluaran Vercel (`https://www.klikform.com`).
+
+---
+
+# Auto-Scale Tajuk Panjang & Canva-Style Drag-To-Scale
+
+Memperkemas paparan tajuk panjang pada sijil secara automatik dan menambah kawalan penskalaan interaktif seperti Canva pada E-Cert Builder.
+
+- [x] 1. Cipta modul типоgrafi sijil dengan fungsi `getProgramFontSize` (`components/certificates/types.ts`).
+- [x] 2. Kemas kini kesemua 10 templat sijil pra-bina dan templat legasi dengan `getProgramFontSize` dan `[text-wrap:balance]`.
+- [x] 3. Kemas kini `components/certificates/renderer/index.tsx` dengan `textWrap: 'balance'` dan `maxWidth: '92%'`.
+- [x] 4. Laksanakan pemegang penskalaan Canva (4 bucu + pemegang sisi) serta logik penskalaan fon dan dimensi dalam `app/(dashboard)/certificates/builder/[id]/client.tsx`.
+- [x] 5. Tulis ujian unit di `tests/certificate-typography.test.ts` dan jalankan `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`.
+---
+
+# KlikBio — Ciri Linktree / Bio Links ✅ SIAP
+
+Membina ciri mikro-landing page (Link-in-bio) lengkap untuk KlikForm dengan live preview mockup, drag-and-drop links, preset tema, pengurusan profil & media sosial, integrasi QR kod, dan halaman awam responsif.
+
+- [x] 1. Cipta skrip migrasi pangkalan data Supabase `supabase/migrations/20260830000000_add_bio_links.sql` (`bio_pages` dan `bio_links` tables + RLS + indexes).
+- [x] 2. Kemas kini jenis TypeScript di `lib/types/bio-links.ts`, `lib/types/subscription.ts`, `lib/constants/subscription-tiers.ts`, dan re-export di `lib/types/index.ts`.
+- [x] 3. Cipta modul utiliti & tema di `lib/bio-links/themes.ts`.
+- [x] 4. Cipta lapisan storan Supabase CRUD di `lib/storage/bio-links.ts`.
+- [x] 5. Cipta Server Actions di `actions/bio-links.ts` (CRUD halaman, pautan, reorder, click tracking).
+- [x] 6. Cipta halaman senarai profil dashboard di `app/(dashboard)/bio/page.tsx` dan `client.tsx`.
+- [x] 7. Cipta halaman pembina profil interaktif di `app/(dashboard)/bio-builder/[id]/page.tsx` dan `client.tsx` (dengan live mobile preview & `@dnd-kit` sortable).
+- [x] 8. Cipta halaman awam di `app/(public)/bio/[username]/page.tsx`, `client.tsx` dan laluan pintas `app/(public)/b/[username]/page.tsx`.
+- [x] 9. Kemas kini menu bar sisi di `components/dashboard/sidebar.tsx` dan laluan kawalan keselamatan di `proxy.ts`.
+- [x] 10. Tulis ujian unit di `tests/bio-links.test.ts` dan `tests/bio-storage.test.ts`.
+- [x] 11. Jalankan pengesahan kualiti (`npm run typecheck`, `npm run lint`, `npm test`, `npm run build`).
+- [x] 12. Kemas kini `memory.md` dan `task.md`.
+
+---
+
+## Reviu Pelaksanaan KlikBio
+
+**Skop & Ciri Utama Dihantar**:
+1. **Pangkalan Data Supabase**: Jadual `bio_pages` dan `bio_links` dengan integriti kekunci asing (`ON DELETE CASCADE`), indeks laju pada `user_id`, `username`, dan `(bio_page_id, order_index)`, kawalan keselamatan RLS per-pemilik, serta trigger pengemaskinian `updated_at`.
+2. **Preset Tema & Reka Bentuk Visual**: 8 tema warna profesional (`Emerald Luxe`, `Onyx Dark`, `Sunset Glow`, `Deep Ocean`, `Minimal Light`, `Lavender Dusk`, `Cyber Neon`, `Midnight Gold`) serta 6 gaya butang (`Full Pill`, `Rounded XL`, `Subtle Round`, `Outline Border`, `Elevated Shadow`, `Glassmorphism`).
+3. **Penyusun Pautan Interaktif (Drag & Drop)**: Menggunakan `@dnd-kit` untuk susun atur kad pautan yang lancar, sokongan jenis pautan kustom, pautan terus WhatsApp (dengan mesej awal), pemilihan borang KlikForm secara dinamik, dan pemisah tajuk seksyen (*section header*).
+4. **Live Mobile Mockup Preview**: Paparan telefon pintar masa nyata (*instant real-time mockup*) yang mengemas kini perubahan tajuk, bio, avatar, ikon media sosial, tema, dan urutan pautan secara automatik.
+5. **Halaman Awam Responsif**: Laluan pantas `/bio/[username]` dan `/b/[username]` dengan metadata OpenGraph/Twitter dinamik, animasi `framer-motion`, penjejakan klik (*click tracking*), dan dialog perkongsian Kod QR.
+6. **Kawalan Had Langganan**: Gating automatik (`maxBioPages: 1` untuk Pelan Percuma, `-1` tanpa had untuk Pro & Enterprise).
+7. **Pengesahan & Ujian Kualiti**:
+   - `npm run typecheck` — 0 ralat TypeScript.
+   - `npm run lint` — 0 amaran ESLint.
+   - `npm test` — 224 / 224 ujian lulus merentas 28 suite ujian.
+   - `npm run build` — 49 laluan dikompilasi bersih dengan Next.js 16 (Turbopack).
+
+---
+
+# Bug Fix: Glassmorphism & Button Style Contrast (2026-09-03)
+
+Isu: Bila pengguna memilih gaya butang "Glassmorphism" (terutamanya pada tema cerah "Minimal Light" dan pautan dengan "Highlight Animation"), teks tajuk pautan menjadi putih di atas latar belakang putih/lutsinar sehingga tidak kelihatan langsung ("tak nampak tulisan").
+
+- [x] 1. Cipta fungsi penentu gaya butang pintar `getBioButtonClass` di `lib/bio-links/themes.ts` yang menyelaraskan warna teks dan tahap lutsinar latar belakang berasaskan tema (cerah vs gelap), bentuk butang, dan status highlight.
+- [x] 2. Kemas kini `BUTTON_STYLES` di `lib/bio-links/themes.ts` untuk memastikan gaya `outline` dan `glass` mempunyai corner radius yang betul tanpa pertembungan warna teks.
+- [x] 3. Kemas kini Live Mobile Mockup di `app/(dashboard)/bio-builder/[id]/client.tsx` untuk menggunakan `getBioButtonClass`.
+- [x] 4. Kemas kini Halaman Awam KlikBio di `app/(public)/bio/[username]/client.tsx` untuk menggunakan `getBioButtonClass`.
+- [x] 5. Tambah ujian unit di `tests/bio-links.test.ts` bagi mengesahkan kontras teks pada gaya `glass`, `outline`, dan tema cerah/gelap dengan atau tanpa highlight.
+- [x] 6. Jalankan pengesahan kualiti (`npm test`, `npm run lint`, `npm run typecheck`, `npm run build`).
+- [x] 7. Kemas kini `memory.md`, `lessons.md` dan `task.md`.
+
+---
+
+## Reviu Bug Fix: Glassmorphism Contrast
+- **Punca Masalah**:
+  1. `BUTTON_STYLES['glass'].class` sebelum ini mengandungi kelas `bg-white/10 border border-white/20` yang digabungkan terus secara rentetan (*string concatenation*) dengan `theme.highlightButtonClass` atau `theme.buttonClass`.
+  2. Apabila tema cerah seperti "Minimal Light" (`bg-slate-100`) dipilih dan pautan mempunyai status highlight aktif (`highlight: true`), `highlightButtonClass` menyuntik `text-white` (kerana asalnya direka untuk butang legap gelap `bg-slate-900`).
+  3. Kelas `bg-white/10` daripada Glassmorphism mengatasi warna latar belakang gelap, meninggalkan teks `text-white` di atas latar belakang butang putih separa lutsinar dan skrin kelabu cerah (#f1f5f9). Ini menyebabkan teks "klikform" berwarna putih tulen `rgb(255,255,255)` dan langsung tidak kelihatan.
+- **Penyelesaian**:
+  1. Dicipta fungsi `getBioButtonClass(theme, buttonStyle, isHighlight)` di `lib/bio-links/themes.ts` yang pintar mengira kelas Tailwind berasaskan kontras tema:
+     - Untuk tema cerah (`minimal`), gaya `glass` kini menggunakan latar belakang kaca frosted berkontras tinggi (`bg-white/70` atau `bg-white/90`) dengan teks gelap yang jelas (`text-slate-900` atau `text-slate-950 font-bold`).
+     - Untuk tema gelap, gaya `glass` mengekalkan frosted glass estetik (`bg-white/10` atau `bg-white/20`) dengan teks putih/aksen tema yang berkontras tinggi.
+     - Gaya `outline` turut diselaraskan supaya tidak menghasilkan teks putih di atas latar lutsinar pada tema cerah.
+  2. Kedua-dua komponen pemaparan (`MobileMockupView` di builder dan `PublicBioClient` di halaman awam) kini menggunakan `getBioButtonClass`.
+  3. Ujian unit ditambah di `tests/bio-links.test.ts` untuk memastikan teks pada tema cerah tidak sesekali mengandungi `text-white`.
+  4. 230 / 230 ujian unit lulus (28 suite ujian), 0 ralat lint, typecheck bersih, build Next.js 16 bersih.
+
+---
+
+# Bug Fix: Share / QR Modal Button Overflow (2026-09-03)
+
+Isu: Butang "Copy Link" terkeluar (*overflow*) ke bahagian luar sebelah kiri modal "Share @username" pada paparan desktop.
+
+- [x] 1. Baiki susun atur butang dalam Dialog Modal di `app/(public)/bio/[username]/client.tsx` dengan menggunakan grid `grid-cols-2` yang terhad di dalam kad modal, mengelakkan pertembungan kelas `DialogFooter` (`sm:flex-row sm:justify-end`).
+- [x] 2. Baiki susun atur butang dalam Dialog Modal di `app/(dashboard)/bio/client.tsx` (kod serupa).
+- [x] 3. Jalankan pengesahan kualiti (`npm run typecheck`, `npm run lint`, `npm test`).
+- [x] 4. Kemas kini `lessons.md`, `memory.md`, dan `task.md`.
+- [x] 5. Deploy perubahan ke Vercel Production.
+
+---
+
+## Reviu Bug Fix: Share / QR Modal Button Overflow
+- **Punca Masalah**:
+  1. `DialogFooter` daripada shadcn mengandungi kelas lalai `sm:flex-row sm:justify-end`.
+  2. Komponen `Button` mempunyai kelas `shrink-0` (`flex-shrink: 0`), dan setiap butang di dalam dialog diberi kelas `w-full` (100% lebar).
+  3. Dalam modal sempit `sm:max-w-xs` (320px), dua butang `w-full` dengan `shrink-0` memerlukan lebih 540px jika diletakkan bersebelahan secara mendatar (`sm:flex-row`).
+  4. Oleh sebab `sm:justify-end` menyusun anak elemen ke kanan (`justify-content: flex-end`), butang kedua ("Save QR") berada di sebelah kanan di dalam dialog, manakala butang pertama ("Copy Link") ditolak sejauh ~260px melimpah keluar (*overflow*) ke sebelah kiri skrin.
+- **Penyelesaian**:
+  1. Menggantikan `DialogFooter` yang bersifat flex-end dengan grid semulajadi `<div className="grid grid-cols-2 gap-2 w-full pt-1">`.
+  2. Meningkatkan saiz dialog daripada `sm:max-w-xs` (320px) kepada `sm:max-w-sm` (384px) untuk ruang bernafas dan susun atur yang lebih kemas.
+  3. Memperbaiki kedua-dua fail: `app/(public)/bio/[username]/client.tsx` dan `app/(dashboard)/bio/client.tsx`.
+
+---
+
+# KlikBio — Corak Latar Belakang (Background Patterns)
+
+Membolehkan pengguna memilih corak latar belakang (dots, grid, stripes, waves, crosses, stars, circuit, atau none) untuk halaman KlikBio mereka dengan sokongan kontras pintar bagi tema cerah dan gelap.
+
+- [x] 1. Tambah `BioPattern` dalam `lib/types/index.ts` (barrel export).
+- [x] 2. Kemas kini `lib/bio-links/themes.ts`: eksport `BIO_PATTERNS` dan `getBioPatternStyle(pattern, theme)`.
+- [x] 3. Kemas kini `app/(dashboard)/bio-builder/[id]/client.tsx`:
+  - Tambah bahagian pemilih corak latar belakang pada Tab "Design & Theme".
+  - Paparkan corak latar belakang pada `MobileMockupView`.
+- [x] 4. Kemas kini `app/(public)/bio/[username]/client.tsx`: paparkan corak latar belakang pada `PublicBioClient`.
+- [x] 5. Tulis ujian unit di `tests/bio-links.test.ts` untuk `getBioPatternStyle`.
+- [x] 6. Pengesahan kualiti: `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`.
+- [x] 7. Commit conventional commit & deploy ke Vercel Production.
+- [x] 8. Kemas kini `memory.md` dan `task.md`.
+
+---
+
+## Reviu Ciri Corak Latar Belakang KlikBio
+
+**Ringkasan Pelaksanaan**:
+1. **Pilihan Corak (8 Corak)**:
+   - `none`: Latar belakang rata tanpa corak.
+   - `dots`: Polka Dots halus (`radial-gradient`).
+   - `grid`: Modern Grid (`linear-gradient`).
+   - `stripes`: Diagonal Stripes (`repeating-linear-gradient`).
+   - `waves`: Topography Waves (vektor kontur SVG data URI).
+   - `crosses`: Minimal Crosses (tanda tambah geometri SVG data URI).
+   - `stars`: Starry Sparkles (kerlipan bintang SVG data URI).
+   - `circuit`: Tech Circuit (papan litar digital SVG data URI).
+2. **Kawalan Kontras Pintar Berasaskan Tema**:
+   - Fungsi `getBioPatternStyle(pattern, theme)` mengesan sama ada tema aktif adalah cerah (`minimal`) atau gelap/warna terang (`emerald`, `dark`, `sunset`, dll.).
+   - Tema cerah menggunakan dakwat gelap legap rendah (`rgba(15, 23, 42, 0.04 - 0.09)`), manakala tema gelap menggunakan dakwat putih lembut (`rgba(255, 255, 255, 0.06 - 0.14)`).
+   - Semua lapisan corak menggunakan `pointer-events-none` supaya tidak menghalang interaksi, klik pautan, mahupun skrol.
+3. **Penyatuan UI Builder & Halaman Awam**:
+   - Tab 2 (Design & Theme) di `bio-builder/[id]` dilengkapi kad interaktif "Background Patterns / Corak Latar" dengan preview langsung setiap corak menggunakan warna tema semasa pengguna.
+   - `MobileMockupView` memaparkan corak latar secara langsung di skrin telefon mockup.
+   - Halaman awam `/bio/[username]` memaparkan corak tetap (`fixed inset-0`) sebagai tekstur latar yang anggun.
+4. **Pengesahan & Deployment**:
+   - `npm test`: 235 / 235 ujian unit lulus (28 suite ujian).
+   - `npm run typecheck`: 0 ralat TypeScript.
+   - `npm run lint`: 0 amaran linter.
+   - `npm run build`: Kompilasi Turbopack Next.js 16 bersih (49 laluan).
+   - Git Commit: `5e6fbe7` dipush ke `origin master`.
+   - Vercel Production: `dpl_7pV17fX4R8mjatScQiiDn7hYCiCh` (`https://www.klikform.com`).
+
+---
+
+# Bug Fix: 404 Page Not Found Bila Tekan Pautan Borang KlikForm di KlikBio (2026-09-06)
+
+Isu: Pengguna mendapati bila menekan pautan borang KlikForm ("klikform form") pada halaman KlikBio, paparan menunjukkan ralat 404 "Page not found".
+
+- [x] 1. Kenal pasti punca asal ralat 404 (laluan `/form/[id]` hanya menyokong UUID pangkalan data dan menolak `short_code`, manakala `bio-builder` menyimpan `/form/${chosenForm.shortCode}`).
+- [x] 2. Bina helper `getFormByIdOrShortCode` dalam `lib/storage/forms.ts` (menggunakan `cache()` dan pengesanan regex UUID untuk mencari borang secara pintar mengikut ID UUID atau short code tanpa ralat PostgreSQL).
+- [x] 3. Kemas kini `app/(public)/form/[id]/page.tsx` untuk menggunakan `getFormByIdOrShortCode` bagi `generateMetadata` dan `PublicFormPage`.
 - [x] 4. Kemas kini `app/(public)/s/[code]/page.tsx` untuk menggunakan `getFormByIdOrShortCode` supaya kedua-dua laluan `/form/...` dan `/s/...` menyokong kedua-dua format ID dan short code.
 - [x] 5. Kemas kini `app/(dashboard)/bio-builder/[id]/client.tsx` untuk menjana pautan `/s/${shortCode}` secara piawai, dan membetulkan pengesanan pemilihan borang dalam dropdown.
 - [x] 6. Kemas kini `app/(public)/bio/[username]/client.tsx` untuk membuka pautan borang dalam tab baharu (`target="_blank"`) bagi mengekalkan halaman bio pelawat.
 - [x] 7. Tulis ujian unit dalam `tests/form-lookup.test.ts`.
 - [x] 8. Pengesahan kualiti: `npm test` (239/239 lulus), `npm run typecheck` (0 ralat), `npm run lint` (0 amaran), `npm run build` (bersih).
-- [ ] 9. Commit conventional commit & deploy ke Vercel Production.
-- [ ] 10. Kemas kini `memory.md`, `lessons.md`, dan `task.md`.
+- [x] 9. Commit conventional commit & deploy ke Vercel Production.
+- [x] 10. Kemas kini `memory.md`, `lessons.md`, dan `task.md`.
+
+---
+
+## Reviu Pembaikan Ralat 404 Pautan Borang KlikBio
+
+**Punca Masalah**:
+1. Apabila pengguna memilih borang di bawah blok jenis "KlikForm Form" dalam Bio Builder, kod menetapkan pautan kepada `/form/${chosenForm.shortCode || chosenForm.id}`.
+2. Kerana kebanyakan borang mempunyai `shortCode` (cth: `daftarkursus`), pautan yang dijana adalah `/form/daftarkursus`.
+3. Di sisi pelayan, laluan `app/(public)/form/[id]/page.tsx` hanya memanggil `getFormById(id)` di mana lajur `forms.id` adalah jenis UUID PostgreSQL.
+4. Nilai `short_code` bukan UUID, menyebabkan carian PostgreSQL gagal (ralat 22P02) dan mengembalikan `undefined`, lalu memicu `notFound()` yang memaparkan skrin 404 "Page not found".
+5. Pautan borang sedia ada yang telah disimpan oleh pengguna dalam profil KlikBio mereka turut terjejas dengan ralat 404 ini.
+
+**Penyelesaian & Pencegahan Menyeluruh**:
+1. **Penyelesai Dwifungsi Pintar (`getFormByIdOrShortCode`)**:
+   - Dicipta fungsi `getFormByIdOrShortCode(identifier)` dalam `lib/storage/forms.ts` dibungkus dengan React `cache()`.
+   - Mengesan sama ada rentetan adalah format UUID menggunakan regex (`UUID_REGEX`). Jika UUID, carian ID dijalankan dahulu dengan fallback kepada short code; jika bukan UUID, carian short code dijalankan dahulu dengan fallback kepada ID.
+   - Mengelakkan ralat PostgreSQL uuid syntax sama sekali.
+2. **Kemas Kini Laluan Borang Awam**:
+   - `app/(public)/form/[id]/page.tsx`: Kini menggunakan `getFormByIdOrShortCode` dalam kedua-dua `generateMetadata` dan `PublicFormPage`.
+   - `app/(public)/s/[code]/page.tsx`: Turut menggunakan `getFormByIdOrShortCode` untuk fallback pencarian borang.
+   - Hasilnya: Sama ada pelawat mengakses `/form/[short_code]`, `/form/[uuid]`, `/s/[short_code]`, atau `/s/[uuid]`, borang sentiasa ditemui dan dimuatkan serta-merta tanpa 404!
+3. **Penyelarasan URL & UX Bio Builder**:
+   - Di `app/(dashboard)/bio-builder/[id]/client.tsx`, pemilihan borang kini menjana pautan `/s/${shortCode}` secara piawai.
+   - Pautan `type === 'link'` dinormalisasikan secara automatik dengan prefix `https://` jika pengguna tidak memasukkan protokol.
+   - Di `app/(public)/bio/[username]/client.tsx`, pautan borang dibuka dalam tab baharu (`target="_blank"`) supaya pelawat tidak kehilangan direktori halaman bio asal mereka.
+4. **Kualiti & Ujian**:
+   - Ditambah ujian unit baharu di `tests/form-lookup.test.ts` (4 ujian).
+   - `npm test`: 239/239 ujian unit lulus merentas 29 suite ujian.
+   - `npm run typecheck` & `npm run lint`: 0 ralat / 0 amaran.
+   - `npm run build`: Kompilasi Turbopack Next.js 16 bersih (49 laluan).
+   - Deployment Vercel Production: `dpl_6AwDtoTQjEM2k9GKSfPAWeeQwGoz` (`https://www.klikform.com`).

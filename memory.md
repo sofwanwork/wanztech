@@ -942,3 +942,37 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
      - Git Commit: `5e6fbe7` dipush ke `origin master`.
      - Vercel Production Deployment: `https://klikform-6tfzvb627-sofwan-jailanis-projects.vercel.app` (Deployment ID: `dpl_7pV17fX4R8mjatScQiiDn7hYCiCh`).
      - Aliased ke: `https://www.klikform.com`.
+
+---
+
+## 2026-09-06: Pembaikan Ralat 404 Bila Tekan Pautan Borang KlikForm di Halaman Bio (Dual UUID/ShortCode Lookup)
+- **Laporan Isu Pengguna**:
+  - Pengguna melaporkan "kenapa jadi macam ni ya bila tekan klikform form" bersama tangkapan skrin 404 "Page not found: The page you are looking for doesn't exist, may have been removed, or the link is incorrect...".
+- **Punca Asal (Root Cause)**:
+  1. Dalam Bio Builder (`app/(dashboard)/bio-builder/[id]/client.tsx`), apabila pengguna memilih borang akaun mereka di bawah blok "KlikForm Form", kod menetapkan URL sebagai `/form/${chosenForm.shortCode || chosenForm.id}`.
+  2. Kebanyakan borang dijana dengan `short_code` (cth: `daftarkursus`), menghasilkan URL `/form/daftarkursus`.
+  3. Namun, laluan Next.js `app/(public)/form/[id]/page.tsx` hanya menjalankan `getFormById(id)` di mana kolum `forms.id` dalam Supabase PostgreSQL adalah jenis data `UUID`.
+  4. Apabila PostgreSQL menerima carian rentetan bukan-UUID (`eq('id', 'daftarkursus')`), ia menghasilkan ralat `22P02 invalid input syntax for type uuid`, menyebabkan `getFormById` mengembalikan `undefined` dan Next.js memanggil `notFound()` (skrin 404).
+  5. Mana-mana pautan borang yang telah disimpan sebelum ini dalam pangkalan data `bio_links` dengan format `/form/${shortCode}` turut gagal dimuatkan.
+- **Penyelesaian & Pencegahan**:
+  1. **Helper Carian Dwi-Moden (`getFormByIdOrShortCode`)** (`lib/storage/forms.ts`):
+     - Menggunakan `cache()` daripada React untuk deduping metadata dan render halaman.
+     - Menggunakan regex `UUID_REGEX` untuk mengesan sama ada parameter adalah UUID sah:
+       - Jika UUID: mencari mengikut `id` terlebih dahulu; jika tidak dijumpai, mencuba `short_code`.
+       - Jika bukan UUID: mencari mengikut `short_code` terlebih dahulu; jika tidak dijumpai, mencuba `id`.
+     - Menghapuskan ralat sintaks UUID PostgreSQL sama sekali.
+  2. **Kemas Kini Laluan Awam (`/form/[id]` & `/s/[code]`)**:
+     - `app/(public)/form/[id]/page.tsx`: Menggunakan `getFormByIdOrShortCode(id)` untuk `generateMetadata` dan `PublicFormPage`. Ini serta-merta membetulkan SEMUA pautan sedia ada `/form/[short_code]` tanpa memerlukan pengguna mengedit semula pautan bio mereka.
+     - `app/(public)/s/[code]/page.tsx`: Menggunakan `getFormByIdOrShortCode(code)` sebagai fallback supaya kedua-dua laluan menyokong kedua-dua ID dan short code secara saling bertukar ganti.
+  3. **Piawaian URL Bio Builder & UX Klik Awam**:
+     - Di `app/(dashboard)/bio-builder/[id]/client.tsx`, pautan dijana sebagai `/s/${shortCode}` secara piawai.
+     - Di `app/(public)/bio/[username]/client.tsx`, pautan jenis `form` dibuka dalam tab baharu (`target="_blank"`) supaya pelawat tidak terkeluar dari halaman direktori bio mereka.
+  4. **Ujian Unit & Kualiti**:
+     - Ditambah fail ujian unit baharu `tests/form-lookup.test.ts` (4 ujian: UUID lookup, short_code lookup, UUID fallback, empty identifier guard).
+     - `npm test`: 239 / 239 ujian unit lulus (29 suite ujian).
+     - `npm run typecheck` & `npm run lint`: 0 ralat / 0 amaran.
+     - `npm run build`: Kompilasi Turbopack Next.js 16 bersih (49 routes).
+  5. **Deployment Vercel Production**:
+     - Git Commit: `1a55b52` dipush ke `origin master`.
+     - Vercel Production Deployment: `https://klikform-hzi80coui-sofwan-jailanis-projects.vercel.app` (Deployment ID: `dpl_6AwDtoTQjEM2k9GKSfPAWeeQwGoz`).
+     - Aliased terus ke domain pengeluaran: `https://www.klikform.com`.
