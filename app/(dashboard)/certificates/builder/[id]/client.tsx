@@ -741,14 +741,16 @@ export function CertificateBuilderClient({
               const scale = currentScale;
               return template.elements.map((el) => {
               const isSelected = el.id === selectedId || additionalSelectedIds.includes(el.id);
+              const isPrimarySelected = el.id === selectedId;
 
               return (
                 <div
                   key={el.id}
-                  className={`absolute cursor-move transition-shadow select-none ${isSelected
-                    ? 'ring-2 ring-primary ring-offset-2'
-                    : 'hover:ring-1 hover:ring-gray-300'
-                    }`}
+                  className={`absolute cursor-move select-none group transition-all duration-150 ${
+                    isSelected
+                      ? ''
+                      : 'hover:ring-1 hover:ring-primary/60 hover:ring-offset-1 rounded-sm'
+                  }`}
                   style={{
                     left: `${(el.x / template.width) * 100}%`,
                     top: `${(el.y / template.height) * 100}%`,
@@ -769,7 +771,7 @@ export function CertificateBuilderClient({
                 >
                   {el.type === 'text' && (
                     <div
-                      className="whitespace-pre-line break-words"
+                      className="whitespace-pre-line break-words px-1 py-0.5"
                       style={{
                         fontSize: `${(el.fontSize || 16) * scale}px`,
                         fontFamily: el.fontFamily,
@@ -790,7 +792,11 @@ export function CertificateBuilderClient({
                   )}
                   {el.type === 'placeholder' && (
                     <div
-                      className="border-2 border-dashed border-primary/40 bg-primary/5 px-2 py-1 rounded whitespace-pre-line break-words"
+                      className={`whitespace-pre-line break-words rounded transition-colors duration-150 px-1 py-0.5 ${
+                        isSelected || exporting || exportingPdf
+                          ? 'border border-transparent bg-transparent'
+                          : 'border border-dashed border-primary/30 bg-primary/[0.03] group-hover:border-primary/60 group-hover:bg-primary/[0.06]'
+                      }`}
                       style={{
                         fontSize: `${(el.fontSize || 16) * scale}px`,
                         fontFamily: el.fontFamily,
@@ -822,29 +828,29 @@ export function CertificateBuilderClient({
                     />
                   )}
                   {/* Canva-Style Selection Box & Scaling Handles */}
-                  {isSelected && selectedId === el.id && (
-                    <div className="absolute inset-0 pointer-events-none border border-primary z-30">
+                  {isPrimarySelected && (
+                    <div className="absolute -inset-0.5 pointer-events-none border-[1.5px] border-primary z-30 rounded-[2px]">
                       {/* 4 Corner Handles (Scaling font size for text, proportional size for elements) */}
                       <div
-                        className="pointer-events-auto absolute -top-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-primary rounded-full shadow cursor-nwse-resize hover:scale-125 transition-transform"
+                        className="pointer-events-auto absolute top-0 left-0 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white border-[1.5px] border-primary rounded-full shadow-sm cursor-nwse-resize hover:scale-125 transition-transform"
                         onMouseDown={(e) => handleResizeMouseDown(e, el, 'nw')}
                         onClick={(e) => e.stopPropagation()}
                         title="Tarik untuk skala"
                       />
                       <div
-                        className="pointer-events-auto absolute -top-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-primary rounded-full shadow cursor-nesw-resize hover:scale-125 transition-transform"
+                        className="pointer-events-auto absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white border-[1.5px] border-primary rounded-full shadow-sm cursor-nesw-resize hover:scale-125 transition-transform"
                         onMouseDown={(e) => handleResizeMouseDown(e, el, 'ne')}
                         onClick={(e) => e.stopPropagation()}
                         title="Tarik untuk skala"
                       />
                       <div
-                        className="pointer-events-auto absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-primary rounded-full shadow cursor-nesw-resize hover:scale-125 transition-transform"
+                        className="pointer-events-auto absolute bottom-0 left-0 -translate-x-1/2 translate-y-1/2 w-2.5 h-2.5 bg-white border-[1.5px] border-primary rounded-full shadow-sm cursor-nesw-resize hover:scale-125 transition-transform"
                         onMouseDown={(e) => handleResizeMouseDown(e, el, 'sw')}
                         onClick={(e) => e.stopPropagation()}
                         title="Tarik untuk skala"
                       />
                       <div
-                        className="pointer-events-auto absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-primary rounded-full shadow cursor-nwse-resize hover:scale-125 transition-transform"
+                        className="pointer-events-auto absolute bottom-0 right-0 translate-x-1/2 translate-y-1/2 w-2.5 h-2.5 bg-white border-[1.5px] border-primary rounded-full shadow-sm cursor-nwse-resize hover:scale-125 transition-transform"
                         onMouseDown={(e) => handleResizeMouseDown(e, el, 'se')}
                         onClick={(e) => e.stopPropagation()}
                         title="Tarik untuk skala"
@@ -852,13 +858,13 @@ export function CertificateBuilderClient({
 
                       {/* Left and Right Pill Handles (Width) */}
                       <div
-                        className="pointer-events-auto absolute top-1/2 -left-1 -translate-y-1/2 w-1.5 h-4 bg-white border-2 border-primary rounded-full shadow cursor-ew-resize hover:scale-125 transition-transform"
+                        className="pointer-events-auto absolute top-1/2 left-0 -translate-x-1/2 -translate-y-1/2 w-1.5 h-4 bg-white border-[1.5px] border-primary rounded-full shadow-sm cursor-ew-resize hover:scale-125 transition-transform"
                         onMouseDown={(e) => handleResizeMouseDown(e, el, 'w')}
                         onClick={(e) => e.stopPropagation()}
                         title="Laras lebar"
                       />
                       <div
-                        className="pointer-events-auto absolute top-1/2 -right-1 -translate-y-1/2 w-1.5 h-4 bg-white border-2 border-primary rounded-full shadow cursor-ew-resize hover:scale-125 transition-transform"
+                        className="pointer-events-auto absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2 w-1.5 h-4 bg-white border-[1.5px] border-primary rounded-full shadow-sm cursor-ew-resize hover:scale-125 transition-transform"
                         onMouseDown={(e) => handleResizeMouseDown(e, el, 'e')}
                         onClick={(e) => e.stopPropagation()}
                         title="Laras lebar"
@@ -868,13 +874,13 @@ export function CertificateBuilderClient({
                       {el.type !== 'text' && el.type !== 'placeholder' && el.type !== 'qr' && el.type !== 'icon' && (
                         <>
                           <div
-                            className="pointer-events-auto absolute -top-1 left-1/2 -translate-x-1/2 h-1.5 w-4 bg-white border-2 border-primary rounded-full shadow cursor-ns-resize hover:scale-125 transition-transform"
+                            className="pointer-events-auto absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 h-1.5 w-4 bg-white border-[1.5px] border-primary rounded-full shadow-sm cursor-ns-resize hover:scale-125 transition-transform"
                             onMouseDown={(e) => handleResizeMouseDown(e, el, 'n')}
                             onClick={(e) => e.stopPropagation()}
                             title="Laras tinggi"
                           />
                           <div
-                            className="pointer-events-auto absolute -bottom-1 left-1/2 -translate-x-1/2 h-1.5 w-4 bg-white border-2 border-primary rounded-full shadow cursor-ns-resize hover:scale-125 transition-transform"
+                            className="pointer-events-auto absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 h-1.5 w-4 bg-white border-[1.5px] border-primary rounded-full shadow-sm cursor-ns-resize hover:scale-125 transition-transform"
                             onMouseDown={(e) => handleResizeMouseDown(e, el, 's')}
                             onClick={(e) => e.stopPropagation()}
                             title="Laras tinggi"
@@ -882,6 +888,11 @@ export function CertificateBuilderClient({
                         </>
                       )}
                     </div>
+                  )}
+
+                  {/* Multi-selection bounding box for secondary elements */}
+                  {isSelected && !isPrimarySelected && (
+                    <div className="absolute -inset-0.5 pointer-events-none border border-dashed border-primary/80 z-20 rounded-[2px]" />
                   )}
                   {el.type === 'image' && el.src && (
                     <div

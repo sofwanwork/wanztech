@@ -802,4 +802,16 @@ Memperbaiki susun atur studio rekaan e-Sijil pada skrin 14 inci (dan komputer ri
 6. **Orientasi Pintar & Koordinat Berpusat**:
    - Pertukaran orientasi Landskap ↔ Potret kini menskalakan koordinat elemen ($X$ dan $Y$) secara berkadar terus supaya elemen kekal berpusat dan tidak terkeluar dari sempadan kanvas.
    - `DEFAULT_ELEMENTS` dikemas kini dengan koordinat berpusat tepat pada $X = 561$ (1123 / 2).
-
+- [x] Pengindahan Gaya Hover & Pilihan Elemen (Hover & Selection Styling) di E-Cert Builder:
+  - [x] 1. Rombak keadaan pilihan (*selected state*): Hapuskan pertindihan dwi/tiga garisan sempadan (buang `ring-2 ring-primary ring-offset-2` luar yang bertindih dengan kotak pilihan dalam).
+  - [x] 2. Rombak gaya pemegang skala (*Canva-style handles*):
+    - Pusatkan pemegang secara tepat pada bucu menggunakan `translate` (bukan koordinat *hardcoded*).
+    - Gunakan pemegang bulatan putih bersih dengan sempadan nipis 1.5px dan bayang halus `shadow-sm`.
+    - Gunakan pemegang pil menegak/mendatar yang kemas pada sisi kiri, kanan, atas, dan bawah.
+  - [x] 3. Perhalusi elemen pemboleh ubah (*placeholder*):
+    - Apabila dipilih (*selected*): buang kotak *dashed* dalam dan warna latar ungu supaya teks kelihatan bersih dalam bingkai pilihan.
+    - Apabila tidak dipilih (*unselected*): gantikan kotak tebal kasar ungu dengan garisan *dashed* halus yang elegan (`border-dashed border-primary/30 bg-primary/[0.03]`).
+    - Sembunyikan sempadan pemboleh ubah sepenuhnya sewaktu eksport PNG/PDF.
+  - [x] 4. Tingkatkan keadaan *hover*: Tambah sorotan bingkai halus (*smooth primary outline/ring highlight*) dengan transisi lancar pada elemen yang tidak dipilih.
+  - [x] 5. Sahkan kualiti (`npm test`, `npm run typecheck`, `npm run lint`, `npm run build`).
+  - [ ] 6. Deploy ke Vercel production dan kemas kini dokumentasi.

@@ -1048,3 +1048,41 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
      - `npm test`: 252 / 252 ujian lulus merentas 30 suites.
      - `npm run typecheck` & `npm run lint`: 0 ralat / 0 amaran.
      - `npm run build`: Kompilasi Next.js 16 (Turbopack) bersih (49 routes).
+
+---
+
+## 2026-09-07: Pengindahan Gaya Hover & Pilihan Elemen (Canva/Figma Grade) di E-Cert Builder
+- **Permintaan Pengguna**:
+  - "cantikkan hover boleh ke, bila tekan apa2 element, bagi kemas sikit" bersama tangkapan skrin bulatan merah pada elemen `{Nama Peserta}` yang menonjolkan masalah sempadan berlapis dan pemegang skala yang comot.
+- **Punca Masalah Visual (Root Causes)**:
+  1. **Pertindihan Tiga Lapis Garisan Sempadan**:
+     - Pembungkus elemen luar mempunyai `ring-2 ring-primary ring-offset-2`.
+     - Lapisan pilihan dalam mempunyai `border border-primary inset-0`.
+     - Komponen pemboleh ubah (*placeholder*) mempunyai `border-2 border-dashed border-primary/40 bg-primary/5`.
+     - Ketiga-tiga sempadan ini bertindih serentak apabila sesuatu elemen dipilih, menghasilkan paparan yang sangat berserabut dan comot.
+  2. **Kotak Wayar Kekal pada Elemen Pemboleh Ubah**:
+     - Semua placeholder (`{No. Siri}`, `{Nama Program}`, `{No. KP}`) sentiasa memaparkan kotak ungu bergaris putus-putus (*dashed*) tebal dan berlatarbelakangkan ungu walaupun tidak dipilih.
+  3. **Keadaan Tetikus (*Hover*) Kusam**:
+     - Menggunakan `hover:ring-1 hover:ring-gray-300` yang terlalu samar dan tidak responsif.
+  4. **Pemegang Skala (*Resize Handles*) Kasar & Tidak Berpusat**:
+     - Pemegang sudut menggunakan koordinat luar `-top-1.5 -left-1.5` yang tidak tepat mengikut resolusi skrin, serta sempadan 2px tebal yang menenggelamkan bulatan putih.
+     - Pemegang sisi (*width pills*) kelihatan seperti gumpalan tebal yang tidak simetri.
+- **Penyelesaian Dilaksanakan**:
+  1. **Bingkai Pilihan Tunggal Yang Bersih (*Single Crisp Bounding Box*)**:
+     - Membuang `ring-2 ring-offset-2` luar daripada elemen terpilih.
+     - Menggunakan satu garisan bingkai bersih `-inset-0.5 border-[1.5px] border-primary z-30 rounded-[2px]` yang memberikan ruang lega 2px di sekeliling elemen tanpa menyentuh teks atau grafik.
+     - Mengendalikan pilihan pelbagai (*multi-select*) secara berasingan dengan garisan `border-dashed border-primary/80` yang kemas.
+  2. **Perapian Elemen Pemboleh Ubah (*Clean Placeholders*)**:
+     - **Apabila Dipilih**: Garisan sempadan *dashed* dalam dan warna latar belakang ungu dipadamkan sepenuhnya (`border-transparent bg-transparent`), membolehkan pengguna melihat reka bentuk tipografi sebenar di dalam bingkai pilihan.
+     - **Apabila Tidak Dipilih**: Garisan digantikan dengan sempadan halus elegan (`border-dashed border-primary/30 bg-primary/[0.03]`) yang lembut pada pandangan mata.
+     - **Sewaktu Eksport PNG/PDF**: Sebarang garisan *dashed* pemboleh ubah dimatikan secara automatik (`isSelected || exporting || exportingPdf`) untuk hasil muat turun sedia cetak yang sempurna.
+  3. **Pemegang Skala Canva-Grade (*Mathematically Centered Handles*)**:
+     - 4 pemegang bucu kini diletakkan berpusat tepat di atas bucu bingkai menggunakan transformasi `translate` (`top-0 left-0 -translate-x-1/2 -translate-y-1/2` dll.).
+     - Berukuran `w-2.5 h-2.5` (10px) dengan latar putih bersih, sempadan nipis 1.5px ungu jenama Klikform, dan bayang halus `shadow-sm`.
+     - Pemegang sisi pil menegak (`w-1.5 h-4`) dan mendatar (`h-1.5 w-4`) berpusat tepat pada garisan sempadan dengan kursor dan animasi skala responsif (`hover:scale-125`).
+  4. **Sorotan Hover Moden & Lembut**:
+     - Elemen yang tidak dipilih kini mempunyai sorotan lembut `hover:ring-1 hover:ring-primary/60 hover:ring-offset-1 rounded-sm` dengan transisi lancar 150ms.
+- **Pengesahan & Kualiti**:
+  - `npm test`: 252 / 252 ujian lulus merentas 30 suites.
+  - `npm run typecheck` & `npm run lint`: 0 ralat / 0 amaran.
+  - `npm run build`: Kompilasi Next.js 16 (Turbopack) bersih (49 routes).
