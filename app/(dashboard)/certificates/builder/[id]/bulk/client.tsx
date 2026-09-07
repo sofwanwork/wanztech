@@ -50,6 +50,9 @@ interface CsvRowOutput {
   program: string;
   date: string;
   ic?: string;
+  organization?: string;
+  role?: string;
+  grade?: string;
 }
 
 interface ColumnMap {
@@ -57,6 +60,9 @@ interface ColumnMap {
   program: string;
   date: string;
   ic?: string;
+  organization?: string;
+  role?: string;
+  grade?: string;
 }
 
 function nextFrame() {
@@ -112,6 +118,9 @@ export function BulkGenerateClient({ template }: BulkGenerateClientProps) {
         program: findHeader(['program', 'kursus', 'event', 'acara', 'course']),
         date: findHeader(['date', 'tarikh', 'tarikh acara']),
         ic: findHeader(['ic', 'no ic', 'kad pengenalan', 'mykad']),
+        organization: findHeader(['organization', 'organisasi', 'sekolah', 'school', 'jabatan', 'agensi']),
+        role: findHeader(['role', 'peranan', 'jawatan', 'kategori']),
+        grade: findHeader(['grade', 'gred', 'markah', 'score', 'jam cpd', 'jam latihan']),
       });
       toast.success(`${parsed.rows.length} baris dimuat naik`);
     } catch (err) {
@@ -140,6 +149,9 @@ export function BulkGenerateClient({ template }: BulkGenerateClientProps) {
           program: pickField(row, [colMap.program]) ?? '',
           date: pickField(row, [colMap.date]) ?? '',
           ic: colMap.ic ? pickField(row, [colMap.ic]) : undefined,
+          organization: colMap.organization ? pickField(row, [colMap.organization]) : undefined,
+          role: colMap.role ? pickField(row, [colMap.role]) : undefined,
+          grade: colMap.grade ? pickField(row, [colMap.grade]) : undefined,
         };
 
         if (!data.name) {
@@ -272,6 +284,9 @@ export function BulkGenerateClient({ template }: BulkGenerateClientProps) {
                 { key: 'program', label: 'Program / Acara', required: true },
                 { key: 'date', label: 'Tarikh', required: true },
                 { key: 'ic', label: 'IC (opsyenal — untuk QR verifikasi)', required: false },
+                { key: 'organization', label: 'Organisasi / Sekolah (opsyenal)', required: false },
+                { key: 'role', label: 'Peranan / Jawatan (opsyenal)', required: false },
+                { key: 'grade', label: 'Gred / Jam Latihan (opsyenal)', required: false },
               ] as const
             ).map(({ key, label, required }) => (
               <div key={key} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center">

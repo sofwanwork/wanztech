@@ -683,3 +683,70 @@ Isu: Pengguna mendapati bila menekan pautan borang KlikForm ("klikform form") pa
    - `npm run typecheck` & `npm run lint`: 0 ralat / 0 amaran.
    - `npm run build`: Kompilasi Turbopack Next.js 16 bersih (49 laluan).
    - Deployment Vercel Production: `dpl_6AwDtoTQjEM2k9GKSfPAWeeQwGoz` (`https://www.klikform.com`).
+
+---
+
+# Penambahbaikan Menyeluruh E-Cert Builder (2026-09-07)
+
+Penambahbaikan menyeluruh sistem penyunting sijil (E-Cert Builder) merangkumi pembaikan pautan navigasi, sokongan eksport PDF A4, pilihan templat permulaan, aset hiasan (cop emas, bingkai, dwi-tandatangan), font kaligrafi, placeholder tambahan, dan alat penjajaran pintar.
+
+- [x] 1. **Navigasi & Eksport PDF A4 (Toolbar & Output)**
+  - [x] 1.1 Baiki pautan toolbar: tukar `/ecert/builder` → `/certificates/builder` dan preview link.
+  - [x] 1.2 Tambah fungsi dan butang `Eksport PDF (A4)` di sebelah Eksport PNG menggunakan `canvasToPdfBlob` / `jsPDF`.
+  - [x] 1.3 Tambah toggle dan render garisan panduan sempadan cetakan selamat (*Print Safe Margin / Bleed Guide*).
+- [x] 2. **Koleksi Templat Permulaan (Preset Templates)**
+  - [x] 2.1 Bina modul definisi templat pra-bina `lib/certificates/presets.ts` (Blank, Royal Gold, Corporate Blue, Academic School, Modern Workshop, Luxury Dark).
+  - [x] 2.2 Kemas kini `NewCertificateDialog` dengan galeri pilihan templat visual (kad templat, ikon, dan deskripsi).
+  - [x] 2.3 Kemas kini `createCertificateTemplateAction` untuk menyuntik elemen reka bentuk lengkap daripada preset yang dipilih.
+- [x] 3. **Aset Hiasan Rasmi Sijil & Font Kaligrafi**
+  - [x] 3.1 Tambah pilihan Cop Rasmi / Lencana (Gold Seal Badges) dan Bingkai Sijil (Decorative Borders) dalam `sidebar.tsx`.
+  - [x] 3.2 Tambah koleksi Google Fonts kaligrafi dan sijil (*Alex Brush, Pinyon Script, Great Vibes, Cormorant Garamond, Cinzel Decorative*) dalam `properties.tsx`.
+  - [x] 3.3 Suntik Google Fonts stylesheet dalam kanvas editor, preview, dan renderer untuk paparan konsisten merentas peranti.
+- [x] 4. **Placeholder Tambahan & Preset Dwi-Tandatangan**
+  - [x] 4.1 Tambah jenis placeholder baharu: `{organisasi}`, `{peranan}`, `{gred}` dalam `lib/types/certificates.ts` dan `sidebar.tsx`.
+  - [x] 4.2 Tambah fungsi dan butang pantas "Dwi-Tandatangan" (Dual Signatories) di sidebar.
+  - [x] 4.3 Kemas kini `CertificateRenderer` dan `bulk/client.tsx` untuk menyokong pemetaan data placeholder baharu.
+- [x] 5. **Alat Penjajaran Pintar Canva-Style (Align & Distribute)**
+  - [x] 5.1 Tambah butang *Pusat ke Kanvas* (*Center Horizontally / Vertically*) dalam panel properties.
+  - [x] 5.2 Tambah fungsi dan butang *Align & Distribute* bagi pilihan berbilang elemen (*multi-selection*).
+- [x] 6. **Ujian Unit & Pengesahan Kualiti**
+  - [x] 6.1 Tulis ujian unit baharu di `tests/certificate-presets.test.ts`.
+  - [x] 6.2 Jalankan `npm test` (252 / 252 ujian lulus merentas 30 suites).
+  - [x] 6.3 Jalankan `npm run typecheck` & `npm run lint` (0 ralat, 0 amaran).
+  - [x] 6.4 Jalankan `npm run build` untuk mengesahkan kompilasi Next.js 16 (bersih, 49 laluan).
+
+---
+
+## Reviu Penambahbaikan Menyeluruh E-Cert Builder
+
+**Skop & Ciri Utama Dihantar**:
+1. **Navigasi & Sedia-Cetak PDF A4**:
+   - Membetulkan pepijat pautan navigasi `Toolbar`: menggantikan `/ecert/builder` lapuk dengan `/certificates/builder` dan laluan preview yang sah.
+   - Menambah butang `PDF (A4)` pada toolbar yang memproses snapshot HD kanvas (skala 3x) ke dalam dokumen A4 landskap (297mm x 210mm) dengan mampatan pantas JPEG 0.85 melalui `jsPDF`.
+   - Menambah toggle sempadan selamat cetakan fizikal (*Safe Margin / Bleed Guide* 36px) dengan garisan amaran emas lembut yang tidak disertakan dalam cetakan/muat turun sebenar.
+2. **Galeri Templat Pra-Bina (6 Preset Rasmi)**:
+   - Dicipta modul `lib/certificates/presets.ts` dengan 6 templat reka bentuk sedia guna:
+     - `Blank Canvas`: Kanvas kosong sedia untuk kustomisasi manual.
+     - `Royal Gold Excellence`: Tema emas mewah klasik sesuai untuk anugerah cemerlang dan majlis konvokesyen.
+     - `Corporate Blue Professional`: Tema biru korporat moden untuk sijil penghargaan organisasi dan syarikat.
+     - `Academic Classic`: Reka bentuk bersempadan hijau zamrud untuk pencapaian persekolahan dan universiti.
+     - `Modern Workshop`: Reka bentuk oren/amber cergas untuk latihan kemahiran, bengkel, dan seminar.
+     - `Luxury Dark Edition`: Tema hitam-emas elegan untuk pengiktirafan VIP, penaja, dan malam gala.
+   - Dialog "Cipta Templat Baharu" (`NewCertificateDialog`) dinaik taraf dengan tab visual yang memaparkan reviu mini, palet warna, dan penerangan kategori.
+   - `createCertificateTemplateAction` menyuntik kesemua elemen preset secara automatik ke dalam pangkalan data.
+3. **Aset Hiasan Rasmi & Tipografi Kaligrafi**:
+   - Ditambah lencana/cop rasmi emas (*Gold Seal Badges*): Cop Emas Anugerah, Lencana Pengesahan Lulus, Perisai Sahih, dan Piala Penghargaan.
+   - Ditambah butang pantas "Tambah Bingkai Sijil Emas" bersempadan berganda klasik.
+   - Pilihan Google Fonts kaligrafi rasmi: *Alex Brush, Pinyon Script, Great Vibes, Cormorant Garamond, Cinzel Decorative, Dancing Script*.
+   - Suntikan pautan Google Fonts secara global merentas editor, preview, dan renderer sijil.
+4. **Placeholder Tambahan & Dwi-Tandatangan**:
+   - Ditambah sokongan placeholder dinamik `{organisasi}`, `{peranan}`, dan `{gred}` merentas editor, preview, penyesuaian CSV pukal (*bulk generation*), dan renderer sijil.
+   - Ditambah butang pintar "Preset Dwi-Tandatangan" untuk menghasilkan dua blok tandatangan seimbang (cth: Pengarah & Pengerusi) dengan satu klik.
+5. **Alat Penjajaran Pintar Canva-Style (Align & Distribute)**:
+   - Modul tulen `lib/certificates/alignment.ts` menyediakan penjajaran ke kanvas (Pusat X / Pusat Y) dan penjajaran berbilang elemen (Kiri, Pusat, Kanan, Atas, Tengah, Bawah, serta pengagihan jarak mendatar/menegak sama rata).
+6. **Pengesahan & Kualiti**:
+   - Ujian unit baharu di `tests/certificate-presets.test.ts` (13 ujian).
+   - 252 / 252 ujian lulus (30 suites).
+   - Typecheck TypeScript bersih (0 ralat).
+   - ESLint bersih (0 amaran).
+   - Next.js 16 build bersih (49 routes).

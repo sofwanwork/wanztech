@@ -10,7 +10,17 @@ export type CertificateElementType = 'text' | 'image' | 'shape' | 'placeholder' 
 /**
  * Placeholder types for dynamic content
  */
-export type PlaceholderType = 'name' | 'program' | 'date' | 'signature' | 'expiry' | 'ic' | 'serial';
+export type PlaceholderType =
+  | 'name'
+  | 'program'
+  | 'date'
+  | 'signature'
+  | 'expiry'
+  | 'ic'
+  | 'serial'
+  | 'organization'
+  | 'role'
+  | 'grade';
 
 /**
  * Shape types available in certificate builder

@@ -38,6 +38,9 @@ interface CertificateRendererProps {
     ic?: string; // IC number for verification URL
     serial?: string; // Deterministic certificate serial code
     formId?: string; // Form ID for verification URL
+    organization?: string;
+    role?: string;
+    grade?: string;
   };
   id?: string;
 }
@@ -95,6 +98,12 @@ export function CertificateRenderer({ template, data, id }: CertificateRendererP
         backgroundPosition: 'center',
       }}
     >
+      {/* Google Fonts for Certificates */}
+      {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cinzel:wght@400;700&family=Cinzel+Decorative:wght@700&family=Cormorant+Garamond:ital,wght@0,400;0,700;1,400&family=Dancing+Script:wght@700&family=Great+Vibes&family=Montserrat:wght@400;700&family=Pinyon+Script&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Poppins:wght@400;600;700&display=swap"
+      />
       {elements.map((el) => (
         <div
           key={el.id}

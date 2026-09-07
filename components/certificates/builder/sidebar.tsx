@@ -14,6 +14,15 @@ import {
   Fingerprint,
   Hash,
   Trash2,
+  Building2,
+  Briefcase,
+  GraduationCap,
+  Award,
+  PenTool,
+  ShieldCheck,
+  CheckCircle2,
+  Sparkles,
+  Maximize2,
 } from 'lucide-react';
 import { CertificateElement, CertificateTemplate } from '@/lib/types';
 import { createClient } from '@/utils/supabase/client';
@@ -34,6 +43,74 @@ export function CertificateEditorSidebar({
   template,
   onUpdateTemplate,
 }: CertificateEditorSidebarProps) {
+  const handleAddDualSignatures = () => {
+    // Left signatory
+    addElement('shape', {
+      shapeType: 'line',
+      x: 270,
+      y: 630,
+      width: 220,
+      height: 2,
+      fill: '#475569',
+    });
+    addElement('text', {
+      content: 'PENGERUSI / PENASIHAT',
+      fontSize: 13,
+      fontWeight: 'bold',
+      x: 270,
+      y: 655,
+      width: 240,
+      color: '#0f172a',
+      textAlign: 'center',
+    });
+    // Right signatory
+    addElement('shape', {
+      shapeType: 'line',
+      x: 853,
+      y: 630,
+      width: 220,
+      height: 2,
+      fill: '#475569',
+    });
+    addElement('text', {
+      content: 'PENGARAH / PENGETUA',
+      fontSize: 13,
+      fontWeight: 'bold',
+      x: 853,
+      y: 655,
+      width: 240,
+      color: '#0f172a',
+      textAlign: 'center',
+    });
+    toast.success('Dwi-Tandatangan ditambah!');
+  };
+
+  const handleAddClassicBorder = () => {
+    const w = template.width || 1123;
+    const h = template.height || 794;
+    addElement('shape', {
+      shapeType: 'rectangle',
+      x: Math.round(w / 2),
+      y: Math.round(h / 2),
+      width: Math.round(w - 80),
+      height: Math.round(h - 80),
+      fill: 'transparent',
+      stroke: '#d97706',
+      strokeWidth: 3,
+    });
+    addElement('shape', {
+      shapeType: 'rectangle',
+      x: Math.round(w / 2),
+      y: Math.round(h / 2),
+      width: Math.round(w - 100),
+      height: Math.round(h - 100),
+      fill: 'transparent',
+      stroke: '#f59e0b',
+      strokeWidth: 1,
+    });
+    toast.success('Bingkai emas klasik ditambah!');
+  };
+
   const handleBackgroundUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -271,6 +348,58 @@ export function CertificateEditorSidebar({
             className="justify-start gap-2"
             onClick={() =>
               addElement('placeholder', {
+                placeholderType: 'organization',
+                fontSize: 16,
+                fontWeight: 'bold',
+                width: 380,
+                height: 35,
+                color: '#1e293b',
+              })
+            }
+          >
+            <Building2 className="h-4 w-4 text-blue-600" />
+            Organisasi / Sekolah
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="justify-start gap-2"
+            onClick={() =>
+              addElement('placeholder', {
+                placeholderType: 'role',
+                fontSize: 16,
+                width: 260,
+                height: 30,
+                color: '#334155',
+              })
+            }
+          >
+            <Briefcase className="h-4 w-4 text-purple-600" />
+            Peranan / Jawatan
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="justify-start gap-2"
+            onClick={() =>
+              addElement('placeholder', {
+                placeholderType: 'grade',
+                fontSize: 15,
+                width: 250,
+                height: 30,
+                color: '#059669',
+              })
+            }
+          >
+            <GraduationCap className="h-4 w-4 text-emerald-600" />
+            Gred / Jam Latihan
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="justify-start gap-2"
+            onClick={() =>
+              addElement('placeholder', {
                 placeholderType: 'date',
                 fontSize: 14,
                 width: 150,
@@ -297,6 +426,103 @@ export function CertificateEditorSidebar({
           >
             <Calendar className="h-4 w-4" />
             Tarikh Luput
+          </Button>
+        </div>
+      </div>
+
+      {/* Hiasan & Aset Sijil */}
+      <div>
+        <Label className="text-xs text-gray-500 uppercase tracking-wider">Hiasan & Cop Sijil</Label>
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-col h-16 gap-1"
+            onClick={() =>
+              addElement('icon', {
+                iconName: 'Award',
+                stroke: '#d97706',
+                strokeWidth: 2,
+                width: 70,
+                height: 70,
+              })
+            }
+          >
+            <Award className="h-5 w-5 text-amber-600" />
+            <span className="text-[11px]">Cop Emas</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-col h-16 gap-1"
+            onClick={() =>
+              addElement('icon', {
+                iconName: 'CheckCircle',
+                stroke: '#059669',
+                strokeWidth: 2,
+                width: 60,
+                height: 60,
+              })
+            }
+          >
+            <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+            <span className="text-[11px]">Lencana Lulus</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-col h-16 gap-1"
+            onClick={() =>
+              addElement('icon', {
+                iconName: 'Shield',
+                stroke: '#1e3a8a',
+                strokeWidth: 2,
+                width: 60,
+                height: 60,
+              })
+            }
+          >
+            <ShieldCheck className="h-5 w-5 text-blue-700" />
+            <span className="text-[11px]">Perisai Pengesahan</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-col h-16 gap-1"
+            onClick={() =>
+              addElement('icon', {
+                iconName: 'Trophy',
+                stroke: '#eab308',
+                strokeWidth: 2,
+                width: 60,
+                height: 60,
+              })
+            }
+          >
+            <Sparkles className="h-5 w-5 text-yellow-500" />
+            <span className="text-[11px]">Piala Anugerah</span>
+          </Button>
+        </div>
+
+        {/* Preset Cepat */}
+        <div className="space-y-2 mt-3">
+          <Button
+            variant="secondary"
+            size="sm"
+            className="w-full justify-start gap-2 text-xs font-medium"
+            onClick={handleAddClassicBorder}
+          >
+            <Maximize2 className="h-4 w-4 text-amber-600" />
+            Tambah Bingkai Sijil Emas
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="w-full justify-start gap-2 text-xs font-medium"
+            onClick={handleAddDualSignatures}
+          >
+            <PenTool className="h-4 w-4 text-indigo-600" />
+            Preset Dwi-Tandatangan
           </Button>
         </div>
       </div>

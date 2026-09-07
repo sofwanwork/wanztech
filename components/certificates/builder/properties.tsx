@@ -26,6 +26,10 @@ import {
   MapPin,
   CheckCircle,
   Flag,
+  AlignCenterHorizontal,
+  AlignCenterVertical,
+  AlignHorizontalDistributeCenter,
+  AlignVerticalDistributeCenter,
 } from 'lucide-react';
 import { CertificateElement } from '@/lib/types';
 
@@ -39,6 +43,11 @@ interface CertificateEditorPropertiesProps {
   moveLayerUp: (id: string) => void;
   moveLayerDown: (id: string) => void;
   onCrop?: (imageUrl: string) => void;
+  templateWidth?: number;
+  templateHeight?: number;
+  onAlignElements?: (type: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
+  onDistributeElements?: (direction: 'horizontal' | 'vertical') => void;
+  hasMultiSelection?: boolean;
 }
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -64,6 +73,11 @@ export function CertificateEditorProperties({
   moveLayerUp,
   moveLayerDown,
   onCrop,
+  templateWidth,
+  templateHeight,
+  onAlignElements,
+  onDistributeElements,
+  hasMultiSelection,
 }: CertificateEditorPropertiesProps) {
   if (!selectedElement) {
     return (
@@ -192,6 +206,128 @@ export function CertificateEditorProperties({
             </div>
           </div>
         </div>
+
+        {/* Center to Canvas */}
+        <div>
+          <Label className="text-xs mb-2 block text-gray-500 uppercase">Pusat ke Kanvas</Label>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-xs h-8"
+              onClick={() =>
+                updateElement(selectedElement.id, {
+                  x: Math.round((templateWidth || 1123) / 2),
+                })
+              }
+              title="Pusatkan elemen secara mendatar di tengah kanvas"
+            >
+              <AlignCenterHorizontal className="h-3.5 w-3.5 text-primary" />
+              Tengah X
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-xs h-8"
+              onClick={() =>
+                updateElement(selectedElement.id, {
+                  y: Math.round((templateHeight || 794) / 2),
+                })
+              }
+              title="Pusatkan elemen secara menegak di tengah kanvas"
+            >
+              <AlignCenterVertical className="h-3.5 w-3.5 text-primary" />
+              Tengah Y
+            </Button>
+          </div>
+        </div>
+
+        {/* Multi-selection Alignment & Distribution */}
+        {hasMultiSelection && (
+          <div className="p-3 bg-slate-50 border rounded-lg space-y-2">
+            <Label className="text-xs font-semibold text-slate-700 uppercase block">
+              Jajaran Berbilang Elemen
+            </Label>
+            <div className="grid grid-cols-3 gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs px-1"
+                onClick={() => onAlignElements?.('left')}
+                title="Ratakan ke Kiri"
+              >
+                Kiri
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs px-1"
+                onClick={() => onAlignElements?.('center')}
+                title="Ratakan ke Pusat Mendatar"
+              >
+                Pusat
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs px-1"
+                onClick={() => onAlignElements?.('right')}
+                title="Ratakan ke Kanan"
+              >
+                Kanan
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs px-1"
+                onClick={() => onAlignElements?.('top')}
+                title="Ratakan ke Atas"
+              >
+                Atas
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs px-1"
+                onClick={() => onAlignElements?.('middle')}
+                title="Ratakan ke Tengah Menegak"
+              >
+                Tengah
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs px-1"
+                onClick={() => onAlignElements?.('bottom')}
+                title="Ratakan ke Bawah"
+              >
+                Bawah
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-[11px] gap-1 px-1"
+                onClick={() => onDistributeElements?.('horizontal')}
+                title="Ratakan jarak mendatar antara elemen"
+              >
+                <AlignHorizontalDistributeCenter className="h-3 w-3" />
+                Sama Jarak X
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-[11px] gap-1 px-1"
+                onClick={() => onDistributeElements?.('vertical')}
+                title="Ratakan jarak menegak antara elemen"
+              >
+                <AlignVerticalDistributeCenter className="h-3 w-3" />
+                Sama Jarak Y
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Opacity */}
         <div>
@@ -573,19 +709,37 @@ export function CertificateEditorProperties({
                   >
                     Playfair Display
                   </option>
+                  <option value="Cinzel, serif" style={{ fontFamily: 'Cinzel' }}>
+                    Cinzel (Formal Roman)
+                  </option>
+                  <option
+                    value="Cinzel Decorative, serif"
+                    style={{ fontFamily: 'Cinzel Decorative' }}
+                  >
+                    Cinzel Decorative (Regal)
+                  </option>
+                  <option
+                    value="Cormorant Garamond, serif"
+                    style={{ fontFamily: 'Cormorant Garamond' }}
+                  >
+                    Cormorant Garamond (Academic)
+                  </option>
                   <option value="Merriweather, serif" style={{ fontFamily: 'Merriweather' }}>
                     Merriweather
                   </option>
-                  <option value="Cinzel, serif" style={{ fontFamily: 'Cinzel' }}>
-                    Cinzel
-                  </option>
                 </optgroup>
-                <optgroup label="Google Fonts - Decorative">
-                  <option value="Dancing Script, cursive" style={{ fontFamily: 'Dancing Script' }}>
-                    Dancing Script
-                  </option>
+                <optgroup label="Google Fonts - Kaligrafi & Sijil">
                   <option value="Great Vibes, cursive" style={{ fontFamily: 'Great Vibes' }}>
-                    Great Vibes
+                    Great Vibes (Emas Klasik)
+                  </option>
+                  <option value="Alex Brush, cursive" style={{ fontFamily: 'Alex Brush' }}>
+                    Alex Brush (Kaligrafi Halus)
+                  </option>
+                  <option value="Pinyon Script, cursive" style={{ fontFamily: 'Pinyon Script' }}>
+                    Pinyon Script (Diraja Formal)
+                  </option>
+                  <option value="Dancing Script, cursive" style={{ fontFamily: 'Dancing Script' }}>
+                    Dancing Script (Kasual Elegan)
                   </option>
                 </optgroup>
               </select>

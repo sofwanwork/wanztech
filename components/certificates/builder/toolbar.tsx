@@ -10,6 +10,8 @@ import {
   Grid,
   Magnet,
   Download,
+  FileDown,
+  Printer,
   Eye,
   Save,
   RectangleHorizontal,
@@ -36,6 +38,10 @@ interface CertificateEditorToolbarProps {
   saving: boolean;
   onExport: () => void;
   exporting: boolean;
+  onExportPdf: () => void;
+  exportingPdf: boolean;
+  showSafeMargin: boolean;
+  onToggleSafeMargin: () => void;
   orientation: 'landscape' | 'portrait';
   onOrientationChange: () => void;
 }
@@ -60,6 +66,10 @@ export function CertificateEditorToolbar({
   saving,
   onExport,
   exporting,
+  onExportPdf,
+  exportingPdf,
+  showSafeMargin,
+  onToggleSafeMargin,
   orientation,
   onOrientationChange,
 }: CertificateEditorToolbarProps) {
@@ -67,7 +77,7 @@ export function CertificateEditorToolbar({
     <div className="bg-white border-b px-4 py-3 flex items-center justify-between gap-4">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
-          <Link href="/ecert/builder">
+          <Link href="/certificates/builder">
             <ArrowLeft className="h-5 w-5" />
           </Link>
         </Button>
@@ -139,7 +149,7 @@ export function CertificateEditorToolbar({
             variant={showGrid ? 'default' : 'ghost'}
             size="icon"
             onClick={onToggleGrid}
-            title="Show Grid"
+            title="Tunjuk Grid"
           >
             <Grid className="h-4 w-4" />
           </Button>
@@ -147,9 +157,17 @@ export function CertificateEditorToolbar({
             variant={snapToGrid ? 'default' : 'ghost'}
             size="icon"
             onClick={onToggleSnap}
-            title="Snap to Grid"
+            title="Lekat ke Grid (Snap)"
           >
             <Magnet className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={showSafeMargin ? 'default' : 'ghost'}
+            size="icon"
+            onClick={onToggleSafeMargin}
+            title={showSafeMargin ? 'Sembunyi Garis Selamat Cetakan' : 'Tunjuk Garis Selamat Cetakan (A4 Margin)'}
+          >
+            <Printer className="h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -159,13 +177,23 @@ export function CertificateEditorToolbar({
           size="sm"
           className="gap-2"
           onClick={onExport}
-          disabled={exporting}
+          disabled={exporting || exportingPdf}
         >
           <Download className="h-4 w-4" />
-          {exporting ? 'Eksport...' : 'Eksport PNG'}
+          {exporting ? 'Eksport...' : 'PNG'}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-2"
+          onClick={onExportPdf}
+          disabled={exportingPdf || exporting}
+        >
+          <FileDown className="h-4 w-4" />
+          {exportingPdf ? 'Menjana PDF...' : 'PDF (A4)'}
         </Button>
         <Button variant="outline" size="sm" className="gap-2" asChild>
-          <Link href={`/ecert/builder/${templateId}/preview`}>
+          <Link href={`/certificates/builder/${templateId}/preview`}>
             <Eye className="h-4 w-4" />
             Preview
           </Link>

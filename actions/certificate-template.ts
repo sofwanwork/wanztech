@@ -8,6 +8,7 @@ import { createClient } from '@/utils/supabase/server';
 import { TIER_LIMITS } from '@/lib/constants/subscription-tiers';
 
 import { canCreateCertificate, canUpdateCertificate } from '@/lib/storage/subscription';
+import { getPresetById } from '@/lib/certificates/presets';
 
 const VALID_CATEGORIES: CertificateCategory[] = [
   'school',
@@ -142,17 +143,20 @@ export async function createCertificateTemplateAction(formData: FormData) {
     }
 
     // ── Insert new template ───────────────────────────────────────────────
+    const presetId = formData.get('preset') as string | null;
+    const preset = presetId ? getPresetById(presetId) : undefined;
+
     const now = new Date().toISOString();
     const { data, error } = await supabase
       .from('certificate_templates')
       .insert({
         user_id: user.id,
-        name: 'Sijil Baru',
-        category,
-        elements: DEFAULT_ELEMENTS,
-        background_color: '#ffffff',
-        width: 842,
-        height: 595,
+        name: preset ? preset.name : 'Sijil Baru',
+        category: preset ? preset.category : category,
+        elements: preset ? preset.elements : DEFAULT_ELEMENTS,
+        background_color: preset ? preset.backgroundColor : '#ffffff',
+        width: preset ? preset.width : 1123,
+        height: preset ? preset.height : 794,
         created_at: now,
         updated_at: now,
       })

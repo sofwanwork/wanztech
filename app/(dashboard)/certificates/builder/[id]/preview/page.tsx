@@ -31,6 +31,9 @@ const PLACEHOLDER_LABELS: Record<string, string> = {
   ic: '901234-56-7890',
   serial: 'CERT-001',
   expiry: new Date(Date.now() + 365 * 86400000).toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' }),
+  organization: 'Sekolah Menengah Kebangsaan Seri Melati',
+  role: 'Peserta Cemerlang',
+  grade: 'Gred A (Cemerlang) / 10 Jam CPD',
 };
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -59,6 +62,13 @@ export default async function CertificatePreviewPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col">
+      {/* Google Fonts for Certificates */}
+      {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cinzel:wght@400;700&family=Cinzel+Decorative:wght@700&family=Cormorant+Garamond:ital,wght@0,400;0,700;1,400&family=Dancing+Script:wght@700&family=Great+Vibes&family=Montserrat:wght@400;700&family=Pinyon+Script&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Poppins:wght@400;600;700&display=swap"
+      />
+
       {/* Header */}
       <div className="bg-gray-800 border-b border-gray-700 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">

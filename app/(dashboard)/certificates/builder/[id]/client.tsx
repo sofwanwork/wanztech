@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { CertificateElement, CertificateTemplate } from '@/lib/types';
 import { updateCertificateTemplateAction } from '@/actions/certificate-template';
 import {
@@ -29,6 +29,7 @@ import { useImageUpload } from '@/features/certificates/hooks/use-image-upload';
 import { CertificateEditorToolbar } from '@/components/certificates/builder/toolbar';
 import { CertificateEditorSidebar } from '@/components/certificates/builder/sidebar';
 import { CertificateEditorProperties } from '@/components/certificates/builder/properties';
+import { alignElements, distributeElements } from '@/lib/certificates/alignment';
 
 interface CertificateBuilderClientProps {
   template: CertificateTemplate;
@@ -42,6 +43,9 @@ const PLACEHOLDER_LABELS: Record<string, string> = {
   expiry: '{Tarikh Luput}',
   ic: '{No. KP}',
   serial: '{No. Siri}',
+  organization: '{Organisasi / Sekolah}',
+  role: '{Peranan / Jawatan}',
+  grade: '{Gred / Jam Latihan}',
 };
 // ... (existing code) ...
 
@@ -85,10 +89,12 @@ export function CertificateBuilderClient({
   const [resizeState, setResizeState] = useState<ResizeState | null>(null);
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
 
   // Smart Editing State
   const [showGrid, setShowGrid] = useState(false);
   const [snapToGrid, setSnapToGrid] = useState(false);
+  const [showSafeMargin, setShowSafeMargin] = useState(false);
   const [alignmentGuides, setAlignmentGuides] = useState<{ x: number[]; y: number[] }>({
     x: [],
     y: [],
@@ -203,6 +209,44 @@ export function CertificateBuilderClient({
     [selectedId, template, updateElement]
   );
 
+  // Multi-selection alignment & distribution
+  const allSelectedIds = useMemo(() => {
+    return selectedId
+      ? [selectedId, ...additionalSelectedIds.filter((id) => id !== selectedId)]
+      : additionalSelectedIds;
+  }, [selectedId, additionalSelectedIds]);
+
+  const handleAlignElements = useCallback(
+    (type: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
+      if (allSelectedIds.length < 2) return;
+      setTemplate((prev) => {
+        const newElements = alignElements(prev.elements, allSelectedIds, type);
+        const next = { ...prev, elements: newElements };
+        commitToHistoryHook(next);
+        return next;
+      });
+      toast.success('Elemen dijajarkan!');
+    },
+    [allSelectedIds, commitToHistoryHook]
+  );
+
+  const handleDistributeElements = useCallback(
+    (direction: 'horizontal' | 'vertical') => {
+      if (allSelectedIds.length < 3) {
+        toast.info('Pilih sekurang-kurangnya 3 elemen untuk meratakan jarak.');
+        return;
+      }
+      setTemplate((prev) => {
+        const newElements = distributeElements(prev.elements, allSelectedIds, direction);
+        const next = { ...prev, elements: newElements };
+        commitToHistoryHook(next);
+        return next;
+      });
+      toast.success('Jarak elemen diratakan!');
+    },
+    [allSelectedIds, commitToHistoryHook]
+  );
+
   // Save Template
   const handleSave = useCallback(async () => {
     setSaving(true);
@@ -281,6 +325,46 @@ export function CertificateBuilderClient({
       setExporting(false);
     }
   }, [template.name]);
+
+  // Export to PDF (A4 Print-Ready)
+  const exportToPDF = useCallback(async () => {
+    if (!canvasRef.current) return;
+    setExportingPdf(true);
+    const prevSelected = selectedId;
+    try {
+      // Hide selection ring during export
+      setSelectedId(null);
+      await new Promise((r) => setTimeout(r, 100));
+
+      const html2canvas = (await import('html2canvas-pro')).default;
+      const canvas = await html2canvas(canvasRef.current, {
+        scale: 3, // Crisp 3x HD rendering
+        useCORS: true,
+        backgroundColor: template.backgroundColor || '#ffffff',
+      });
+
+      const isPortrait = (template.height || 794) > (template.width || 1123);
+      const { jsPDF } = await import('jspdf');
+      const pdf = new jsPDF({
+        orientation: isPortrait ? 'portrait' : 'landscape',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.85);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+      pdf.save(`${template.name || 'sijil'}.pdf`);
+      toast.success('Sijil berjaya dimuat turun dalam format PDF (A4)!');
+    } catch (error) {
+      console.error('PDF export error:', error);
+      toast.error('Gagal mengeksport PDF');
+    } finally {
+      setSelectedId(prevSelected);
+      setExportingPdf(false);
+    }
+  }, [template.name, template.height, template.width, template.backgroundColor, selectedId]);
 
   // Shortcuts Hook
   useShortcuts({
@@ -499,6 +583,13 @@ export function CertificateBuilderClient({
 
   return (
     <div className="h-screen flex flex-col bg-gray-100">
+      {/* Google Fonts for Certificates */}
+      {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cinzel:wght@400;700&family=Cinzel+Decorative:wght@700&family=Cormorant+Garamond:ital,wght@0,400;0,700;1,400&family=Dancing+Script:wght@700&family=Great+Vibes&family=Montserrat:wght@400;700&family=Pinyon+Script&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Poppins:wght@400;600;700&display=swap"
+      />
+
       {/* Hidden file input for image upload */}
       <input
         ref={imageInputRef}
@@ -530,6 +621,10 @@ export function CertificateBuilderClient({
         saving={saving}
         onExport={exportToPNG}
         exporting={exporting}
+        onExportPdf={exportToPDF}
+        exportingPdf={exportingPdf}
+        showSafeMargin={showSafeMargin}
+        onToggleSafeMargin={() => setShowSafeMargin(!showSafeMargin)}
         orientation={template.width >= template.height ? 'landscape' : 'portrait'}
         onOrientationChange={() => {
           setTemplate((prev) => ({
@@ -572,6 +667,16 @@ export function CertificateBuilderClient({
           >
             {showGrid && (
               <div className="absolute inset-0 pointer-events-none z-0 bg-[image:linear-gradient(to_right,#e5e7eb_1px,transparent_1px),linear-gradient(to_bottom,#e5e7eb_1px,transparent_1px)] bg-[length:20px_20px]" />
+            )}
+            {showSafeMargin && (
+              <div
+                className="absolute inset-6 md:inset-8 border-2 border-dashed border-amber-500/70 pointer-events-none z-40 rounded-sm"
+                title="Sempadan Selamat Cetakan (A4 Margin)"
+              >
+                <span className="absolute top-1 left-2 text-[10px] font-mono font-medium text-amber-700 bg-amber-100/90 px-1.5 py-0.5 rounded shadow-sm uppercase tracking-wider">
+                  Zon Selamat Cetakan (A4)
+                </span>
+              </div>
             )}
             {(() => {
               // Computed once per render (not per element) from observed width.
@@ -797,6 +902,11 @@ export function CertificateBuilderClient({
             setImageToCrop(src);
             setCropperOpen(true);
           }}
+          templateWidth={template.width}
+          templateHeight={template.height}
+          hasMultiSelection={allSelectedIds.length > 1}
+          onAlignElements={handleAlignElements}
+          onDistributeElements={handleDistributeElements}
         />
       </div>
       <ImageCropperDialog

@@ -976,3 +976,38 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
      - Git Commit: `1a55b52` dipush ke `origin master`.
      - Vercel Production Deployment: `https://klikform-hzi80coui-sofwan-jailanis-projects.vercel.app` (Deployment ID: `dpl_6AwDtoTQjEM2k9GKSfPAWeeQwGoz`).
      - Aliased terus ke domain pengeluaran: `https://www.klikform.com`.
+
+---
+
+## 2026-09-07: Penambahbaikan Menyeluruh E-Cert Builder Suite (Presets, PDF A4, Fonts, Seals, Alignment)
+- **Permintaan Pengguna**:
+  - "dekat E-cert builder tu apa yg boleh ditambah baik?" & "tambah baik kesemuanya"
+- **Penyelesaian & Ciri Dilaksanakan**:
+  1. **Navigasi & Sedia-Cetak PDF A4**:
+     - Memperbetulkan pautan usang pada Toolbar: menggantikan `/ecert/builder` kepada `/certificates/builder` dan laluan preview yang sah.
+     - Melaksanakan eksport `PDF (A4)` landskap (297mm x 210mm) bersebelahan butang PNG sedia ada menggunakan `jsPDF` dan `html2canvas-pro` (skala 3x, mampatan FAST JPEG).
+     - Menambah toggle sempadan cetakan selamat (*Print Safe Margin / Bleed Guide* 36px) dengan garisan amaran emas lembut yang tidak disertakan dalam dokumen akhir.
+  2. **Galeri Templat Pra-Bina (6 Preset Sedia Guna)** (`lib/certificates/presets.ts`):
+     - `Blank Canvas`: Reka bentuk asas untuk reka bentuk tersuai dari awal.
+     - `Royal Gold Excellence`: Tema mewah anugerah kecemerlangan dengan bingkai ganda dan aksen emas.
+     - `Corporate Blue Professional`: Tema korporat moden untuk sijil penghargaan organisasi/syarikat.
+     - `Academic Classic`: Sijil bersempadan hijau zamrud klasik untuk institusi pendidikan dan sekolah.
+     - `Modern Workshop`: Reka bentuk oren/amber cergas untuk latihan kemahiran dan bengkel teknikal.
+     - `Luxury Dark Edition`: Tema hitam-emas eksklusif untuk pengiktirafan VIP, penaja, dan malam gala.
+     - Dialog "Cipta Templat Baharu" (`NewCertificateDialog`) dinaik taraf dengan reviu kad visual, palet warna, dan deskripsi kategori.
+     - `createCertificateTemplateAction` menyuntik elemen preset secara automatik ke dalam database.
+  3. **Aset Hiasan Rasmi & Tipografi Kaligrafi**:
+     - Ditambah 4 lencana/cop rasmi emas (*Gold Seal Badges*): Cop Emas Anugerah, Lencana Pengesahan Lulus, Perisai Sahih, dan Piala Penghargaan.
+     - Ditambah butang pantas "Tambah Bingkai Sijil Emas" bersempadan berganda klasik.
+     - Pilihan Google Fonts kaligrafi rasmi: *Alex Brush, Pinyon Script, Great Vibes, Cormorant Garamond, Cinzel Decorative, Dancing Script*.
+     - Suntikan stylesheet Google Fonts secara global merentas editor canvas, preview, dan renderer sijil.
+  4. **Placeholder Tambahan & Dwi-Tandatangan**:
+     - Menambah placeholder dinamik `{organisasi}`, `{peranan}`, dan `{gred}` merentas editor, preview, penjanaan CSV pukal (*bulk generation*), dan renderer sijil.
+     - Menambah butang pintar "Preset Dwi-Tandatangan" untuk menyusun dua blok tandatangan seimbang (cth: Pengarah & Pengerusi) secara automatik.
+  5. **Alat Penjajaran Pintar Canva-Style (Align & Distribute)** (`lib/certificates/alignment.ts`):
+     - Membolehkan penjajaran ke kanvas (Pusat X / Pusat Y) dan penjajaran berbilang elemen terpilih (Kiri, Pusat, Kanan, Atas, Tengah, Bawah, serta pengagihan jarak mendatar/menegak sama rata).
+  6. **Pengesahan & Kualiti**:
+     - Ujian unit baharu di `tests/certificate-presets.test.ts` (13 ujian).
+     - `npm test`: 252 / 252 ujian lulus merentas 30 suites.
+     - `npm run typecheck` & `npm run lint`: 0 ralat / 0 amaran.
+     - `npm run build`: Kompilasi Next.js 16 (Turbopack) bersih (49 routes).
