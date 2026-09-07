@@ -814,4 +814,4 @@ Memperbaiki susun atur studio rekaan e-Sijil pada skrin 14 inci (dan komputer ri
     - Sembunyikan sempadan pemboleh ubah sepenuhnya sewaktu eksport PNG/PDF.
   - [x] 4. Tingkatkan keadaan *hover*: Tambah sorotan bingkai halus (*smooth primary outline/ring highlight*) dengan transisi lancar pada elemen yang tidak dipilih.
   - [x] 5. Sahkan kualiti (`npm test`, `npm run typecheck`, `npm run lint`, `npm run build`).
-  - [ ] 6. Deploy ke Vercel production dan kemas kini dokumentasi.
+  - [x] 6. Deploy ke Vercel production dan kemas kini dokumentasi.
