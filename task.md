@@ -750,3 +750,56 @@ Penambahbaikan menyeluruh sistem penyunting sijil (E-Cert Builder) merangkumi pe
    - Typecheck TypeScript bersih (0 ralat).
    - ESLint bersih (0 amaran).
    - Next.js 16 build bersih (49 routes).
+
+---
+
+# Pengoptimuman E-Cert Builder Untuk Skrin Komputer Riba 14 Inci (2026-09-07)
+
+Memperbaiki susun atur studio rekaan e-Sijil pada skrin 14 inci (dan komputer riba) dengan menyingkirkan halangan bar sisi luar, melaksanakan penskalaan muat skrin automatik (*fit-to-screen*), kawalan zum Canva-style, dan menghapuskan ralat *flexbox clipping* serta dwi-scrollbar.
+
+- [x] 1. Cipta komponen pelindung `DashboardShell` di `components/dashboard/dashboard-shell.tsx` yang menyembunyikan `DashboardSidebar` & `SubscriptionBanner` serta membuang dwi-scrollbar apabila pengguna berada di studio builder `/certificates/builder/[id]` (100vw x 100vh).
+- [x] 2. Kemas kini `app/(dashboard)/layout.tsx` untuk menggunakan `DashboardShell`.
+- [x] 3. Kemas kini `app/(dashboard)/certificates/builder/[id]/client.tsx`:
+  - Laksanakan `ResizeObserver` untuk mengukur bekas kerja dan mengira `fitScale` automatik.
+  - Tetapkan dimensi kanvas berdasarkan saiz ruang supaya sijil (landskap & potret) sentiasa muat 100% tanpa perlu skrol.
+  - Gantikan `items-center justify-center` dengan `m-auto` bagi menghalang *negative coordinate clipping* pada bahagian atas dan kiri sijil.
+  - Tambah bar kawalan zum terapung Canva-style di bahagian bawah (`-`, `Muat Skrin`, `+`, `100%`).
+  - Tambah togol sembunyi/buka bar sisi elemen (*collapsible sidebar*).
+- [x] 4. Kemas kini `components/certificates/builder/toolbar.tsx` agar butang lebih responsif pada skrin sempit dan tambah butang togol bar sisi (`PanelLeft`).
+- [x] 5. Kemas kini `actions/certificate-template.ts` agar koordinat elemen lalai `DEFAULT_ELEMENTS` berpusat tepat pada $X = 561$.
+- [x] 6. Jalankan pengesahan kualiti (`npm test`, `npm run typecheck`, `npm run lint`, `npm run build`).
+- [x] 7. Deploy ke Vercel Production dan sahkan hasil.
+
+---
+
+## Reviu Pengoptimuman E-Cert Builder Untuk Skrin Komputer Riba 14 Inci
+
+**Punca Masalah**:
+1. **Ruang Kerja Terhimpit**: Pada skrin komputer riba 14 inci (lazimnya 1280px atau 1366px lebar viewport), bar sisi navigasi utama KlikForm (`w-64` / 256px) kekal terpapar di sebelah kiri, memakan ruang kanvas dan memampatkan reka bentuk.
+2. **Ketiadaan Penskalaan Muat Skrin (Fit-to-Screen)**: Kanvas sebelum ini menggunakan `w-full max-w-[800px]` (atau `max-w-[500px]`) dan `aspectRatio` tanpa sekatan ketinggian. Pada ketinggian skrin 14 inci (~450px - 530px ruang kerja bersih), kanvas potret dengan ketinggian 700px+ melimpah keluar secara menegak.
+3. **Flexbox Clipping Sisi Negatif**: Pemusatan `items-center justify-center` bersama `overflow-auto` menyebabkan separuh daripada limpahan elemen ditolak ke koordinat $Y < 0$, menyebabkan teks atas dan bingkai atas terpotong secara kekal kerana pelayar web tidak membenarkan skrol ke ruang negatif.
+4. **Dwi-Scrollbar Bertindih**: Ketinggian `h-screen` pada halaman berserta `SubscriptionBanner` dan `overflow-y-auto` pada `layout.tsx` menghasilkan dua bar skrol bertindih.
+
+**Penyelesaian Yang Dilaksanakan**:
+1. **Studio Shell 100vw x 100vh Pintar (`DashboardShell`)**:
+   - Dicipta `components/dashboard/dashboard-shell.tsx` yang mengesan laluan `/certificates/builder/[id]` (termasuk `/preview` dan `/bulk`).
+   - Menyembunyikan bar sisi papan pemuka luar (`DashboardSidebar`) dan amaran langganan secara automatik untuk memberikan kanvas keluasan studio 100% tanpa sebarang halangan atau dwi-scrollbar.
+   - Apabila pengguna menekan butang `[ ← ]`, mereka kembali ke senarai sijil di mana bar sisi dashboard dipaparkan semula secara normal.
+2. **Penskalaan Muat Skrin Pintar (*Auto Fit-to-Screen*)**:
+   - `ResizeObserver` mengukur dimensi sebenar ruang kerja `containerRef`.
+   - Mengira `fitScale = Math.min((availWidth / template.width), (availHeight / template.height))`.
+   - Menetapkan kedua-dua `width` dan `height` kanvas secara dinamik. Keseluruhan sijil kini muat 100% di tengah skrin secara automatik tanpa perlu diskrol, sama ada dalam mod Landskap mahupun Potret!
+3. **Penyelesaian Flexbox Safe Centering (`m-auto`)**:
+   - Menggantikan `items-center justify-center` dengan `m-auto` pada anak flexbox. Jika saiz kanvas lebih kecil dari bekas, ia berpusat secara automatik; jika dizum melebihi skrin, ia berlabuh pada (0,0) dan membolehkan skrol semula jadi ke bawah dan ke kanan tanpa sebarang *clipping* pada bahagian atas atau kiri.
+4. **Bar Kawalan Zum Terapung (Canva-Style)**:
+   - Disediakan bar zum terapung di bahagian bawah:
+     - `[ - ]`: Zum keluar (skala berkurang 10%).
+     - `[ Muat Skrin (Fit) ]`: Menetapkan semula paparan muat skrin penuh optimum mengikut saiz tingkap semasa.
+     - `[ + ]`: Zum masuk (skala bertambah 10%).
+     - `[ 100% ]`: Paparan saiz sebenar 1:1.
+5. **Togol Bar Sisi Elemen (*Collapsible Sidebar*)**:
+   - Butang `PanelLeft` ditambah pada toolbar untuk membolehkan pengguna menyembunyikan/membuka bar sisi elemen pada bila-bila masa bagi ruang kerja yang lebih luas.
+6. **Orientasi Pintar & Koordinat Berpusat**:
+   - Pertukaran orientasi Landskap ↔ Potret kini menskalakan koordinat elemen ($X$ dan $Y$) secara berkadar terus supaya elemen kekal berpusat dan tidak terkeluar dari sempadan kanvas.
+   - `DEFAULT_ELEMENTS` dikemas kini dengan koordinat berpusat tepat pada $X = 561$ (1123 / 2).
+

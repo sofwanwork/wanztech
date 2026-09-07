@@ -1011,3 +1011,40 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
      - `npm test`: 252 / 252 ujian lulus merentas 30 suites.
      - `npm run typecheck` & `npm run lint`: 0 ralat / 0 amaran.
      - `npm run build`: Kompilasi Next.js 16 (Turbopack) bersih (49 routes).
+
+---
+
+## 2026-09-07: Pengoptimuman E-Cert Builder Untuk Skrin Komputer Riba 14 Inci
+- **Laporan Isu Pengguna**:
+  - Pengguna melaporkan "untuk screen 14 inch jadi macam ni" bersama tangkapan skrin yang menunjukkan kanvas potret terhimpit di antara 3 bar sisi, terpotong di bahagian atas/bawah, serta dwi-scrollbar bertindih.
+- **Punca Masalah (Root Causes)**:
+  1. Bar sisi papan pemuka utama KlikForm (`w-64` / 256px) kekal terpapar di sebelah kiri pada laluan `/certificates/builder/[id]`, memakan 20% lebar skrin 14 inci dan memampatkan ruang kanvas.
+  2. Kanvas menggunakan `w-full max-w-[800px]` (atau `max-w-[500px]`) dan `aspectRatio` tanpa had ketinggian, menyebabkan kanvas (terutamanya mod potret) melimpah secara menegak melebihi ketinggian tetingkap (~450px - 530px).
+  3. Pemusatan `items-center justify-center` bersama `overflow-auto` dalam flexbox menolak limpahan anak elemen ke koordinat negatif ($Y < 0$), menyebabkan bahagian atas sijil terpotong dan mustahil diskrol oleh pelayar.
+  4. Susunan `h-screen` berserta `SubscriptionBanner` dan `overflow-y-auto` pada layout dashboard menghasilkan dwi-scrollbar menegak bertindih.
+- **Penyelesaian & Ciri Dilaksanakan**:
+  1. **Studio Shell 100vw x 100vh Pintar (`DashboardShell`)**:
+     - Dicipta `components/dashboard/dashboard-shell.tsx` yang membungkus layout dashboard.
+     - Menyembunyikan `DashboardSidebar` dan `SubscriptionBanner` secara automatik apabila berada di laluan studio `/certificates/builder/[id]` (termasuk `/preview` dan `/bulk`), memberikan kanvas keluasan 100vw x 100vh tanpa sebarang halangan atau dwi-scrollbar.
+     - Menekan butang kembali `[ ← ]` memaparkan semula bar sisi papan pemuka secara lancar.
+  2. **Penskalaan Muat Skrin Pintar (*Auto Fit-to-Screen*)**:
+     - `ResizeObserver` mengukur ruang kerja `containerRef` dan mengira `fitScale` automatik.
+     - Mengira dimensi render kanvas (`renderedWidth` & `renderedHeight`) secara langsung berdasarkan skala.
+     - 100% keseluruhan sijil (Landskap & Potret) sentiasa muat di tengah skrin secara automatik tanpa perlu diskrol.
+  3. **Penyelesaian Flexbox Safe Centering (`m-auto`)**:
+     - Menggantikan `items-center justify-center` dengan `m-auto` pada kanvas di dalam bekas skrol. Menghalang sebarang pemotongan (*clipping*) pada bahagian atas atau kiri sijil.
+  4. **Bar Kawalan Zum Terapung (Canva-Style)**:
+     - Bar zum moden di bahagian bawah tengah:
+       - `[ - ]`: Zum keluar (skala -10%).
+       - `[ Muat Skrin (Fit) ]`: Menetapkan semula ke muat skrin automatik mengikut saiz tingkap semasa.
+       - `[ + ]`: Zum masuk (skala +10%).
+       - `[ 100% ]`: Paparan saiz sebenar 1:1.
+  5. **Togol Bar Sisi Elemen (*Collapsible Sidebar*)**:
+     - Butang `PanelLeft` ditambah pada toolbar untuk membuka/menutup bar sisi elemen bagi memaksimumkan ruang rekaan.
+  6. **Orientasi Berpusat & Skala Elemen**:
+     - Pertukaran orientasi Landskap ↔ Potret kini menskalakan koordinat elemen ($X$ dan $Y$) secara berkadar terus supaya elemen kekal berpusat.
+     - Koordinat lalai `DEFAULT_ELEMENTS` dikemas kini ke pusat tepat $X = 561$ (1123 / 2).
+  7. **Pengesahan Kualiti**:
+     - `npm test`: 252 / 252 ujian lulus merentas 30 suites.
+     - `npm run typecheck` & `npm run lint`: 0 ralat / 0 amaran.
+     - `npm run build`: Kompilasi Next.js 16 (Turbopack) bersih (49 routes).

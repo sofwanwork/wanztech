@@ -16,6 +16,7 @@ import {
   Save,
   RectangleHorizontal,
   RectangleVertical,
+  PanelLeft,
 } from 'lucide-react';
 
 interface CertificateEditorToolbarProps {
@@ -44,6 +45,8 @@ interface CertificateEditorToolbarProps {
   onToggleSafeMargin: () => void;
   orientation: 'landscape' | 'portrait';
   onOrientationChange: () => void;
+  showSidebar?: boolean;
+  onToggleSidebar?: () => void;
 }
 
 export function CertificateEditorToolbar({
@@ -72,25 +75,43 @@ export function CertificateEditorToolbar({
   onToggleSafeMargin,
   orientation,
   onOrientationChange,
+  showSidebar,
+  onToggleSidebar,
 }: CertificateEditorToolbarProps) {
   return (
-    <div className="bg-white border-b px-4 py-3 flex items-center justify-between gap-4">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href="/certificates/builder">
-            <ArrowLeft className="h-5 w-5" />
+    <div className="bg-white border-b px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2 sm:gap-4 shrink-0">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" asChild>
+          <Link href="/certificates/builder" title="Kembali ke Senarai Sijil">
+            <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
+
+        {onToggleSidebar && (
+          <Button
+            variant={showSidebar ? 'secondary' : 'ghost'}
+            size="icon"
+            className="h-8 w-8 shrink-0 hidden md:flex"
+            onClick={onToggleSidebar}
+            title={showSidebar ? 'Sembunyi Bar Sisi Elemen' : 'Tunjuk Bar Sisi Elemen'}
+          >
+            <PanelLeft className="h-4 w-4" />
+          </Button>
+        )}
+
         <Input
           value={templateName}
           onChange={(e) => onNameChange(e.target.value)}
-          className="font-semibold text-lg border-none shadow-none focus-visible:ring-0 w-64"
+          className="font-semibold text-base sm:text-lg border-none shadow-none focus-visible:ring-0 w-36 sm:w-48 md:w-56 truncate px-1 h-8"
+          title={templateName}
         />
+
         {/* Undo/Redo */}
-        <div className="flex items-center gap-1 border-l pl-4">
+        <div className="flex items-center gap-0.5 border-l pl-2 sm:pl-3">
           <Button
             variant="ghost"
             size="icon"
+            className="h-8 w-8"
             onClick={onUndo}
             disabled={!canUndo}
             title="Batal (Undo)"
@@ -100,6 +121,7 @@ export function CertificateEditorToolbar({
           <Button
             variant="ghost"
             size="icon"
+            className="h-8 w-8"
             onClick={onRedo}
             disabled={!canRedo}
             title="Ulang (Redo)"
@@ -109,26 +131,28 @@ export function CertificateEditorToolbar({
         </div>
 
         {/* Orientation Toggle */}
-        <div className="flex items-center gap-1 border-l pl-4">
+        <div className="flex items-center gap-0.5 border-l pl-2 sm:pl-3">
           <Button
             variant="ghost"
             size="icon"
+            className="h-8 w-8"
             onClick={onOrientationChange}
             title={orientation === 'landscape' ? 'Tukar ke Potret' : 'Tukar ke Landskap'}
           >
             {orientation === 'landscape' ? (
-              <RectangleHorizontal className="h-4 w-4" />
+              <RectangleHorizontal className="h-4 w-4 text-slate-700" />
             ) : (
-              <RectangleVertical className="h-4 w-4" />
+              <RectangleVertical className="h-4 w-4 text-slate-700" />
             )}
           </Button>
         </div>
 
         {/* Smart Tools */}
-        <div className="flex items-center gap-1 border-l pl-4">
+        <div className="flex items-center gap-0.5 border-l pl-2 sm:pl-3">
           <Button
             variant="ghost"
             size="icon"
+            className="h-8 w-8"
             onClick={onGroup}
             disabled={!canGroup}
             title="Group (Ctrl+G)"
@@ -138,16 +162,18 @@ export function CertificateEditorToolbar({
           <Button
             variant="ghost"
             size="icon"
+            className="h-8 w-8"
             onClick={onUngroup}
             disabled={!canUngroup}
             title="Ungroup (Ctrl+Shift+G)"
           >
             <Ungroup className="h-4 w-4" />
           </Button>
-          <div className="w-px h-6 bg-gray-200 mx-2" />
+          <div className="w-px h-5 bg-gray-200 mx-1 hidden sm:block" />
           <Button
             variant={showGrid ? 'default' : 'ghost'}
             size="icon"
+            className="h-8 w-8 hidden sm:flex"
             onClick={onToggleGrid}
             title="Tunjuk Grid"
           >
@@ -156,6 +182,7 @@ export function CertificateEditorToolbar({
           <Button
             variant={snapToGrid ? 'default' : 'ghost'}
             size="icon"
+            className="h-8 w-8 hidden sm:flex"
             onClick={onToggleSnap}
             title="Lekat ke Grid (Snap)"
           >
@@ -164,6 +191,7 @@ export function CertificateEditorToolbar({
           <Button
             variant={showSafeMargin ? 'default' : 'ghost'}
             size="icon"
+            className="h-8 w-8"
             onClick={onToggleSafeMargin}
             title={showSafeMargin ? 'Sembunyi Garis Selamat Cetakan' : 'Tunjuk Garis Selamat Cetakan (A4 Margin)'}
           >
@@ -171,36 +199,37 @@ export function CertificateEditorToolbar({
           </Button>
         </div>
       </div>
-      <div className="flex items-center gap-2">
+
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         <Button
           variant="outline"
           size="sm"
-          className="gap-2"
+          className="gap-1 sm:gap-1.5 h-8 px-2 sm:px-3 text-xs"
           onClick={onExport}
           disabled={exporting || exportingPdf}
         >
-          <Download className="h-4 w-4" />
-          {exporting ? 'Eksport...' : 'PNG'}
+          <Download className="h-3.5 w-3.5" />
+          <span className="hidden md:inline">{exporting ? 'Eksport...' : 'PNG'}</span>
         </Button>
         <Button
           variant="outline"
           size="sm"
-          className="gap-2"
+          className="gap-1 sm:gap-1.5 h-8 px-2 sm:px-3 text-xs"
           onClick={onExportPdf}
           disabled={exportingPdf || exporting}
         >
-          <FileDown className="h-4 w-4" />
-          {exportingPdf ? 'Menjana PDF...' : 'PDF (A4)'}
+          <FileDown className="h-3.5 w-3.5" />
+          <span className="hidden md:inline">{exportingPdf ? 'Menjana...' : 'PDF (A4)'}</span>
         </Button>
-        <Button variant="outline" size="sm" className="gap-2" asChild>
+        <Button variant="outline" size="sm" className="gap-1 sm:gap-1.5 h-8 px-2 sm:px-3 text-xs" asChild>
           <Link href={`/certificates/builder/${templateId}/preview`}>
-            <Eye className="h-4 w-4" />
-            Preview
+            <Eye className="h-3.5 w-3.5" />
+            <span className="hidden lg:inline">Preview</span>
           </Link>
         </Button>
-        <Button onClick={onSave} disabled={saving} className="gap-2">
-          <Save className="h-4 w-4" />
-          {saving ? 'Menyimpan...' : 'Simpan'}
+        <Button onClick={onSave} disabled={saving} size="sm" className="gap-1.5 h-8 px-3 text-xs">
+          <Save className="h-3.5 w-3.5" />
+          <span>{saving ? 'Menyimpan...' : 'Simpan'}</span>
         </Button>
       </div>
     </div>

@@ -81,14 +81,14 @@ export function CertificateEditorProperties({
 }: CertificateEditorPropertiesProps) {
   if (!selectedElement) {
     return (
-      <div className="w-80 bg-white border-l p-4 flex items-center justify-center text-gray-500 text-sm hidden lg:flex">
-        Pilih elemen untuk edit
+      <div className="w-72 xl:w-80 bg-white border-l p-4 flex items-center justify-center text-gray-500 text-sm hidden lg:flex select-none text-center">
+        Pilih elemen pada sijil untuk mengubah tetapan
       </div>
     );
   }
 
   return (
-    <div className="w-80 bg-white border-l p-4 overflow-y-auto hidden lg:block h-[calc(100vh-64px)]">
+    <div className="w-72 xl:w-80 bg-white border-l p-4 overflow-y-auto hidden lg:block h-full select-none">
       {/* Header and Layer Controls */}
       <div className="flex items-center justify-between mb-6 border-b pb-4">
         <div>

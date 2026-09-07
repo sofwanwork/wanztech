@@ -14,6 +14,9 @@ import {
   MapPin,
   CheckCircle,
   Flag,
+  Minus,
+  Plus,
+  Maximize2,
 } from 'lucide-react';
 import { ImageCropperDialog } from '@/components/image-cropper-dialog';
 import { toast } from 'sonner';
@@ -108,24 +111,60 @@ export function CertificateBuilderClient({
   >({});
 
   const canvasRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const selectedElement = template.elements.find((el) => el.id === selectedId);
 
-  // Track the on-screen canvas width in state via ResizeObserver instead of
-  // reading `offsetWidth` during render. Reading layout in render (especially
-  // once per element) forces synchronous reflows ("layout thrashing") on every
-  // drag/resize re-render. The observer callback receives the size directly, so
-  // no forced reflow — and the font preview now also rescales on window resize.
-  const [canvasWidth, setCanvasWidth] = useState(0);
+  // Responsive Workspace & Zoom State
+  const [showSidebar, setShowSidebar] = useState(true);
+  const [zoomMode, setZoomMode] = useState<'fit' | 'custom'>('fit');
+  const [customZoom, setCustomZoom] = useState(1);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+
   useEffect(() => {
-    const node = canvasRef.current;
+    const node = containerRef.current;
     if (!node) return;
     const observer = new ResizeObserver((entries) => {
-      const w = entries[0]?.contentRect.width ?? 0;
-      setCanvasWidth(w);
+      const entry = entries[0];
+      if (!entry) return;
+      const { width, height } = entry.contentRect;
+      setContainerSize({ width, height });
     });
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
+
+  // Compute fit-to-screen scale based on available container dimensions
+  const fitScale = useMemo(() => {
+    if (!containerSize.width || !containerSize.height) return 0.65;
+    const padX = 40;
+    const padY = 40;
+    const availW = Math.max(200, containerSize.width - padX);
+    const availH = Math.max(200, containerSize.height - padY);
+    return Math.min(availW / template.width, availH / template.height);
+  }, [containerSize.width, containerSize.height, template.width, template.height]);
+
+  const currentScale = zoomMode === 'fit' ? Math.min(fitScale, 1.25) : customZoom;
+  const renderedWidth = Math.max(100, Math.round(template.width * currentScale));
+  const renderedHeight = Math.max(100, Math.round(template.height * currentScale));
+
+  const handleZoomIn = () => {
+    setZoomMode('custom');
+    setCustomZoom((prev) => Math.min(2.5, Math.round(((zoomMode === 'fit' ? currentScale : prev) + 0.1) * 100) / 100));
+  };
+
+  const handleZoomOut = () => {
+    setZoomMode('custom');
+    setCustomZoom((prev) => Math.max(0.2, Math.round(((zoomMode === 'fit' ? currentScale : prev) - 0.1) * 100) / 100));
+  };
+
+  const handleResetFit = () => {
+    setZoomMode('fit');
+  };
+
+  const handleActualSize = () => {
+    setZoomMode('custom');
+    setCustomZoom(1);
+  };
 
   // 3. Hooks Initialization
   const {
@@ -582,7 +621,7 @@ export function CertificateBuilderClient({
   };
 
   return (
-    <div className="h-screen flex flex-col bg-gray-100">
+    <div className="h-full flex-1 flex flex-col bg-gray-100 overflow-hidden">
       {/* Google Fonts for Certificates */}
       {/* eslint-disable-next-line @next/next/no-page-custom-font */}
       <link
@@ -627,34 +666,54 @@ export function CertificateBuilderClient({
         onToggleSafeMargin={() => setShowSafeMargin(!showSafeMargin)}
         orientation={template.width >= template.height ? 'landscape' : 'portrait'}
         onOrientationChange={() => {
-          setTemplate((prev) => ({
-            ...prev,
-            width: prev.height,
-            height: prev.width,
-          }));
+          setTemplate((prev) => {
+            const nextWidth = prev.height;
+            const nextHeight = prev.width;
+            const ratioX = nextWidth / prev.width;
+            const ratioY = nextHeight / prev.height;
+            const newElements = prev.elements.map((el) => ({
+              ...el,
+              x: Math.round(el.x * ratioX),
+              y: Math.round(el.y * ratioY),
+            }));
+            const updated = {
+              ...prev,
+              width: nextWidth,
+              height: nextHeight,
+              elements: newElements,
+            };
+            commitToHistoryHook(updated);
+            return updated;
+          });
+          setZoomMode('fit');
         }}
+        showSidebar={showSidebar}
+        onToggleSidebar={() => setShowSidebar((prev) => !prev)}
       />
 
       <div className="flex-1 flex overflow-hidden">
         {/* Left Sidebar - Elements */}
-        <CertificateEditorSidebar
-          addElement={addElement}
-          imageInputRef={imageInputRef}
-          template={template}
-          onUpdateTemplate={(updates) => setTemplate((prev) => ({ ...prev, ...updates }))}
-        />
+        {showSidebar && (
+          <CertificateEditorSidebar
+            addElement={addElement}
+            imageInputRef={imageInputRef}
+            template={template}
+            onUpdateTemplate={(updates) => setTemplate((prev) => ({ ...prev, ...updates }))}
+          />
+        )}
 
         {/* Canvas Area */}
         <div
-          className="flex-1 overflow-auto p-8 flex items-center justify-center"
+          ref={containerRef}
+          className="flex-1 overflow-auto p-4 md:p-6 flex relative bg-slate-100/90 select-none"
           onClick={() => setSelectedId(null)}
         >
           <div
             ref={canvasRef}
-            className={`relative shadow-2xl w-full bg-cover ${template.width >= template.height ? 'max-w-[800px]' : 'max-w-[500px]'
-              }`}
+            className="relative shadow-2xl bg-cover m-auto transition-all duration-100 shrink-0 select-none"
             style={{
-              aspectRatio: `${template.width}/${template.height}`,
+              width: `${renderedWidth}px`,
+              height: `${renderedHeight}px`,
               backgroundColor: template.backgroundColor,
               backgroundImage: template.backgroundImage
                 ? `url(${template.backgroundImage})`
@@ -679,8 +738,7 @@ export function CertificateBuilderClient({
               </div>
             )}
             {(() => {
-              // Computed once per render (not per element) from observed width.
-              const scale = canvasWidth ? canvasWidth / template.width : 1;
+              const scale = currentScale;
               return template.elements.map((el) => {
               const isSelected = el.id === selectedId || additionalSelectedIds.includes(el.id);
 
@@ -885,6 +943,55 @@ export function CertificateBuilderClient({
                 style={{ top: `${(y / template.height) * 100}%` }}
               />
             ))}
+          </div>
+
+          {/* Floating Zoom Bar (Canva-Style) */}
+          <div
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-md border border-gray-200/90 shadow-lg rounded-full px-2 py-1 flex items-center gap-1 z-30 text-xs text-gray-700"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="h-7 w-7 rounded-full flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+              onClick={handleZoomOut}
+              title="Zum Keluar (-)"
+            >
+              <Minus className="h-3.5 w-3.5" />
+            </button>
+
+            <button
+              type="button"
+              className={`h-7 px-2.5 text-xs font-medium rounded-full flex items-center gap-1 transition-colors ${
+                zoomMode === 'fit'
+                  ? 'bg-primary/10 text-primary font-semibold'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+              onClick={handleResetFit}
+              title="Muatkan Keseluruhan Sijil ke Skrin"
+            >
+              <Maximize2 className="h-3 w-3" />
+              <span>{zoomMode === 'fit' ? `Muat (${Math.round(currentScale * 100)}%)` : `${Math.round(currentScale * 100)}%`}</span>
+            </button>
+
+            <button
+              type="button"
+              className="h-7 w-7 rounded-full flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+              onClick={handleZoomIn}
+              title="Zum Masuk (+)"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+
+            <div className="h-4 w-px bg-gray-200 mx-0.5" />
+
+            <button
+              type="button"
+              className="h-7 px-2 text-xs font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+              onClick={handleActualSize}
+              title="Saiz Sebenar 100%"
+            >
+              100%
+            </button>
           </div>
         </div>
 

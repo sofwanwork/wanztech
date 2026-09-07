@@ -18,14 +18,14 @@ const VALID_CATEGORIES: CertificateCategory[] = [
   'other',
 ];
 
-// Default elements for new certificates
+// Default elements for new certificates (1123 x 794 landscape)
 const DEFAULT_ELEMENTS: CertificateElement[] = [
   {
     id: 'title',
     type: 'text',
-    x: 421,
-    y: 80,
-    width: 400,
+    x: 561,
+    y: 120,
+    width: 500,
     height: 60,
     content: 'SIJIL PENGHARGAAN',
     fontSize: 36,
@@ -37,9 +37,9 @@ const DEFAULT_ELEMENTS: CertificateElement[] = [
   {
     id: 'subtitle',
     type: 'text',
-    x: 421,
-    y: 150,
-    width: 300,
+    x: 561,
+    y: 190,
+    width: 400,
     height: 30,
     content: 'Diberikan kepada',
     fontSize: 16,
@@ -50,10 +50,10 @@ const DEFAULT_ELEMENTS: CertificateElement[] = [
   {
     id: 'name-placeholder',
     type: 'placeholder',
-    x: 421,
-    y: 200,
-    width: 500,
-    height: 60,
+    x: 561,
+    y: 270,
+    width: 600,
+    height: 70,
     placeholderType: 'name',
     fontSize: 48,
     fontFamily: 'serif',
@@ -65,9 +65,9 @@ const DEFAULT_ELEMENTS: CertificateElement[] = [
   {
     id: 'program-label',
     type: 'text',
-    x: 421,
-    y: 280,
-    width: 300,
+    x: 561,
+    y: 370,
+    width: 400,
     height: 30,
     content: 'kerana menyertai',
     fontSize: 16,
@@ -78,10 +78,10 @@ const DEFAULT_ELEMENTS: CertificateElement[] = [
   {
     id: 'program-placeholder',
     type: 'placeholder',
-    x: 421,
-    y: 320,
-    width: 400,
-    height: 40,
+    x: 561,
+    y: 420,
+    width: 500,
+    height: 50,
     placeholderType: 'program',
     fontSize: 24,
     fontFamily: 'serif',
@@ -92,9 +92,9 @@ const DEFAULT_ELEMENTS: CertificateElement[] = [
   {
     id: 'date-placeholder',
     type: 'placeholder',
-    x: 150,
-    y: 500,
-    width: 200,
+    x: 240,
+    y: 650,
+    width: 220,
     height: 30,
     placeholderType: 'date',
     fontSize: 14,

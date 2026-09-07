@@ -194,7 +194,7 @@ export function CertificateEditorSidebar({
   };
 
   return (
-    <div className="w-64 bg-white border-r p-4 space-y-6 overflow-y-auto hidden md:block">
+    <div className="w-64 shrink-0 bg-white border-r p-4 space-y-6 overflow-y-auto hidden md:block select-none h-full">
       {/* Tambah Elemen Section */}
       <div>
         <Label className="text-xs text-gray-500 uppercase tracking-wider">Tambah Elemen</Label>
