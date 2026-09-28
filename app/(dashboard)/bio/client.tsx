@@ -270,11 +270,11 @@ export function BioPageCard({ page, appUrl }: BioPageCardProps) {
   return (
     <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden group">
       {/* Top Banner with Theme Preview */}
-      <div className={`h-20 ${theme.bg} relative p-4 flex items-start justify-end gap-2`}>
-        <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-black/40 text-white/95 backdrop-blur-md border border-white/20 shadow-2xs">
+      <div className={`h-22 ${theme.bg} relative p-4 flex items-start justify-between`}>
+        <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-black/40 text-white/95 backdrop-blur-md border border-white/20 shadow-xs">
           {theme.name}
         </span>
-        <label className="text-[11px] font-medium text-white/90 cursor-pointer flex items-center gap-1.5 bg-black/30 hover:bg-black/40 px-2.5 py-0.5 rounded-full backdrop-blur-sm border border-white/10 transition-colors shadow-2xs">
+        <label className="text-[11px] font-medium text-white/90 cursor-pointer flex items-center gap-1.5 bg-black/30 hover:bg-black/40 px-2.5 py-1 rounded-full backdrop-blur-sm border border-white/10 transition-colors shadow-xs">
           <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-400' : 'bg-slate-400'}`} />
           <span>{isActive ? 'Active' : 'Draft'}</span>
           <Switch
@@ -286,9 +286,9 @@ export function BioPageCard({ page, appUrl }: BioPageCardProps) {
         </label>
       </div>
 
-      <div className="p-5 space-y-4 flex-1">
-        {/* Profile Info */}
-        <div className="flex items-end gap-3.5 -mt-12">
+      <div className="px-5 pb-5 pt-0 space-y-4 flex-1">
+        {/* Avatar positioned cleanly over the banner boundary */}
+        <div className="flex items-end justify-between -mt-9 mb-1">
           <div className="relative shrink-0">
             {page.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -300,32 +300,33 @@ export function BioPageCard({ page, appUrl }: BioPageCardProps) {
                   const fallback = (e.target as HTMLElement).nextElementSibling as HTMLElement;
                   if (fallback) fallback.style.display = 'flex';
                 }}
-                className="w-16 h-16 rounded-full object-cover ring-4 ring-white shadow-md bg-gray-100"
+                className="w-16 h-16 rounded-full object-cover ring-4 ring-white shadow-md bg-white"
               />
             ) : null}
             <div
-              className={`w-16 h-16 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold text-xl flex items-center justify-center ring-4 ring-white shadow-md ${
+              className={`w-16 h-16 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold text-2xl flex items-center justify-center ring-4 ring-white shadow-md ${
                 page.avatarUrl ? 'hidden' : ''
               }`}
             >
               {(page.title || page.username).charAt(0).toUpperCase()}
             </div>
           </div>
-          <div className="flex-1 pb-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 truncate text-base leading-tight">
-              {page.title || page.username}
-            </h3>
-            <p className="text-xs font-mono text-emerald-600 truncate mt-0.5">
-              @{page.username}
-            </p>
-          </div>
         </div>
 
-        {page.bio && (
-          <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">
-            {page.bio}
+        {/* Profile Info - Title, Handle & Bio with generous room */}
+        <div className="space-y-0.5">
+          <h3 className="font-bold text-gray-900 truncate text-base leading-tight">
+            {page.title || page.username}
+          </h3>
+          <p className="text-xs font-mono text-emerald-600 truncate">
+            @{page.username}
           </p>
-        )}
+          {page.bio && (
+            <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed pt-1">
+              {page.bio}
+            </p>
+          )}
+        </div>
 
         {/* Public URL Box */}
         <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-xl border border-gray-200/80 text-xs">

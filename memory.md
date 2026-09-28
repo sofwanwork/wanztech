@@ -1476,15 +1476,17 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
 - **Punca**: Banner hanya setinggi `h-16` (64px) dengan padding `p-4`, meninggalkan ruang 32px sahaja. Lencana tema di kiri atas terpaksa berkongsi zon Y yang sama dengan cincin avatar (`ring-4 ring-white`), menyebabkan cincin avatar memotong ke dalam sempadan lencana tema.
 - **Penyelesaian**:
   - Fail: `app/(dashboard)/bio/client.tsx`.
-  - Tingkatkan ketinggian banner daripada `h-16` kepada `h-20` (80px) untuk ruang menegak yang lebih lapang.
-  - Alihkan lencana nama tema (`{theme.name}`) ke sudut kanan atas bersebelahan dengan togol status `[Active / Draft]`.
-  - Biarkan sudut kiri atas banner kosong tanpa sebarang elemen supaya avatar terapung di atas kecerunan tema secara bersih tanpa sebarang halangan visual.
-  - Besarkan avatar kepada `w-16 h-16` dengan `-mt-12` dan gunakan `items-end gap-3.5` untuk susun atur kad profil yang seimbang.
-  - Gantikan `pt-6` pada lajur teks profil dengan `pb-1` untuk penjajaran menegak yang kemas dan tepat.
-  - Tukar teks bar statistik bawah kepada `{theme.name}` (cth: "Lavender Dusk") berbanding slug ringkas `{page.theme}`.
+  - Pelaksanaan format **Bento Profile**:
+    - Ketinggian banner diperluas kepada `h-22` (88px) dengan kecerunan tema penuh.
+    - Lencana nama tema diletakkan di sudut kiri atas banner, manakala togol status `[Active / Draft]` di sudut kanan atas.
+    - Bulatan avatar diletakkan pada baris berasingan dengan `-mt-9`, terapung anggun merentasi garisan banner tanpa menyeret elemen teks.
+    - Maklumat profil (Tajuk, `@username`, dan Bio) diletakkan di bawah avatar sepenuhnya di atas latar putih kad dengan ruang lebar penuh (`space-y-0.5`).
+    - Menghapuskan sama sekali isu teks berhimpit atau bertembung dengan sempadan banner gelap, memberikan rupa eksekutif dan moden.
 - **Ujian & Kualiti**:
   - `npm run typecheck`: 0 ralat TypeScript.
   - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm test`: 297/297 ujian lulus.
+  - `npm run build`: Kompilasi Turbopack Next.js 16 bersih (54 laluan).
 
 ### Production Deployment
 - **Date**: 2026-09-28
