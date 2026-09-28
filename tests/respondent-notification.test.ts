@@ -13,7 +13,7 @@ describe('getRespondentConfirmationEmail', () => {
 
   it('uses the default acknowledgement message when none provided', () => {
     const { html } = getRespondentConfirmationEmail('Borang A');
-    expect(html).toContain('telah kami terima');
+    expect(html).toContain('has been received');
     expect(html).toContain('Borang A');
   });
 
@@ -24,12 +24,12 @@ describe('getRespondentConfirmationEmail', () => {
     );
     expect(html).toContain('Jumpa anda di majlis nanti!');
     // default message should be replaced, not appended
-    expect(html).not.toContain('telah kami terima');
+    expect(html).not.toContain('has been received');
   });
 
   it('omits the summary table when no summary is given', () => {
     const { html } = getRespondentConfirmationEmail('Borang A', 'Hi');
-    expect(html).not.toContain('Ringkasan jawapan anda');
+    expect(html).not.toContain('Summary of your response');
   });
 
   it('renders a summary table when a summary is provided', () => {
@@ -37,7 +37,7 @@ describe('getRespondentConfirmationEmail', () => {
       Nama: 'Ali',
       Emel: 'ali@example.com',
     });
-    expect(html).toContain('Ringkasan jawapan anda');
+    expect(html).toContain('Summary of your response');
     expect(html).toContain('Nama');
     expect(html).toContain('Ali');
     expect(html).toContain('ali@example.com');

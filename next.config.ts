@@ -104,9 +104,6 @@ const config = withSentryConfig(nextConfig, {
   sourcemaps: {
     deleteSourcemapsAfterUpload: true,
   },
-
-  // Don't fail the build if Sentry creds are missing (e.g. in PR previews)
-  disableLogger: true,
 });
 
 // Only wrap with Sentry when DSN + auth token are present.

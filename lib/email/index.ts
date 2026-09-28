@@ -147,23 +147,23 @@ export function getNewSubmissionEmail(
     .join('');
 
   const sheetButton = googleSheetUrl
-    ? button(escapeHtml(googleSheetUrl), 'Buka Google Sheet')
+    ? button(escapeHtml(googleSheetUrl), 'Open Google Sheet')
     : '';
 
   const content = cardBody(`
-            ${eyebrow('Response Baru')}
-            ${heading('Anda menerima response baru')}
-            ${para(`Hai <strong style="color:${INK};">${escapeHtml(userName)}</strong>, borang <strong style="color:${INK};">&ldquo;${escapeHtml(formTitle)}&rdquo;</strong> baru sahaja menerima satu response.`)}
+            ${eyebrow('New Submission')}
+            ${heading('You received a new submission')}
+            ${para(`Hi <strong style="color:${INK};">${escapeHtml(userName)}</strong>, your form <strong style="color:${INK};">&ldquo;${escapeHtml(formTitle)}&rdquo;</strong> just received a new response.`)}
             ${kvTable(dataRows)}
             ${sheetButton}
-            ${caption('Email automatik daripada KlikForm.')}
+            ${caption('Automated notification from KlikForm.')}
   `);
 
-  const cleanTitle = (formTitle || 'Borang').replace(/\r?\n/g, ' ').trim();
+  const cleanTitle = (formTitle || 'Form').replace(/\r?\n/g, ' ').trim();
 
   return {
-    subject: `📬 Response baru: ${cleanTitle}`,
-    html: emailWrapper(content, `Anda menerima response baru untuk "${cleanTitle}".`),
+    subject: `📬 New submission: ${cleanTitle}`,
+    html: emailWrapper(content, `You received a new submission for "${cleanTitle}".`),
   };
 }
 
@@ -174,19 +174,19 @@ export function getEditLinkEmail(
   editUrl: string,
   expiryDays: number
 ) {
-  const cleanTitle = (formTitle || 'Borang').replace(/\r?\n/g, ' ').trim();
+  const cleanTitle = (formTitle || 'Form').replace(/\r?\n/g, ' ').trim();
   const content = cardBody(`
-            ${eyebrow('Sunting Jawapan')}
-            ${heading('Sunting jawapan anda')}
-            ${para(`Terima kasih kerana menghantar jawapan untuk borang <strong style="color:${INK};">&ldquo;${escapeHtml(formTitle)}&rdquo;</strong>. Jika anda perlu membuat perubahan, klik butang di bawah dalam tempoh <strong style="color:${INK};">${expiryDays} hari</strong>.`)}
-            ${button(editUrl, 'Sunting Jawapan')}
-            ${note(`Pautan ini hanya boleh digunakan <strong>sekali sahaja</strong> dan akan luput dalam ${expiryDays} hari. Jangan kongsi dengan orang lain.`)}
-            ${caption('Jika anda tidak menghantar borang ini, abaikan email ini.')}
+            ${eyebrow('Edit Response')}
+            ${heading('Edit your submission')}
+            ${para(`Thank you for submitting your response for <strong style="color:${INK};">&ldquo;${escapeHtml(formTitle)}&rdquo;</strong>. If you need to make changes, click the button below within <strong style="color:${INK};">${expiryDays} days</strong>.`)}
+            ${button(editUrl, 'Edit Response')}
+            ${note(`This link can only be used <strong>once</strong> and expires in ${expiryDays} days. Do not share this link with anyone else.`)}
+            ${caption('If you did not submit this form, please ignore this email.')}
   `);
 
   return {
-    subject: `✏️ Sunting jawapan anda: ${cleanTitle}`,
-    html: emailWrapper(content, `Klik untuk menyunting jawapan anda bagi "${cleanTitle}".`),
+    subject: `✏️ Edit your response: ${cleanTitle}`,
+    html: emailWrapper(content, `Click to edit your submission for "${cleanTitle}".`),
   };
 }
 
@@ -198,7 +198,7 @@ export function getRespondentConfirmationEmail(
   message?: string,
   summary?: Record<string, string>
 ) {
-  const cleanTitle = (formTitle || 'Borang').replace(/\r?\n/g, ' ').trim();
+  const cleanTitle = (formTitle || 'Form').replace(/\r?\n/g, ' ').trim();
   const customMessage = (message ?? '').trim();
 
   const summaryRows = summary
@@ -211,29 +211,29 @@ export function getRespondentConfirmationEmail(
     : '';
 
   const summaryBlock = summaryRows
-    ? `<p style="margin: 8px 0 0; font-size: 14px; font-weight: 600; color: ${INK};">Ringkasan jawapan anda:</p>${kvTable(summaryRows)}`
+    ? `<p style="margin: 8px 0 0; font-size: 14px; font-weight: 600; color: ${INK};">Summary of your response:</p>${kvTable(summaryRows)}`
     : '';
 
   const messageBlock = customMessage
     ? para(escapeHtml(customMessage))
     : para(
-        `Terima kasih! Jawapan anda untuk borang <strong style="color:${INK};">&ldquo;${escapeHtml(formTitle)}&rdquo;</strong> telah kami terima.`
+        `Thank you! Your response for <strong style="color:${INK};">&ldquo;${escapeHtml(formTitle)}&rdquo;</strong> has been received.`
       );
 
   const content = cardBody(`
-            ${eyebrow('Pengesahan')}
-            ${heading('Jawapan diterima')}
-            <p style="margin: 0 0 18px; font-size: 13px; color: ${MUTED};">Borang: <strong style="color:${INK}; font-weight:600;">&ldquo;${escapeHtml(formTitle)}&rdquo;</strong></p>
+            ${eyebrow('Confirmation')}
+            ${heading('Response received')}
+            <p style="margin: 0 0 18px; font-size: 13px; color: ${MUTED};">Form: <strong style="color:${INK}; font-weight:600;">&ldquo;${escapeHtml(formTitle)}&rdquo;</strong></p>
             ${messageBlock}
             ${summaryBlock}
-            ${caption('Email automatik daripada KlikForm sebagai pengesahan.')}
+            ${caption('Automated confirmation email from KlikForm.')}
   `);
 
   return {
-    subject: `✅ Pengesahan: ${cleanTitle}`,
+    subject: `✅ Confirmation: ${cleanTitle}`,
     html: emailWrapper(
       content,
-      customMessage || `Jawapan anda untuk "${cleanTitle}" telah kami terima.`
+      customMessage || `Your response for "${cleanTitle}" has been received.`
     ),
   };
 }
@@ -270,7 +270,7 @@ function emailWrapper(content: string, preheader?: string) {
     : '';
   return `
     <!DOCTYPE html>
-    <html lang="ms" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+    <html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -330,7 +330,7 @@ function emailWrapper(content: string, preheader?: string) {
                 <tr>
                   <td align="center" style="padding: 26px 20px 6px;">
                     <p style="margin: 0 0 6px 0; color: ${BODY}; font-size: 13px; font-weight: 600;">
-                      KlikForm — Borang &amp; e-Sijil tanpa kerumitan
+                      KlikForm — Hassle-free Online Forms &amp; E-Certificates
                     </p>
                     <p style="margin: 0; font-size: 12px;">
                       <a href="https://klikform.com" style="color: ${BRAND}; text-decoration: none; font-weight: 500;">klikform.com</a>
@@ -340,7 +340,7 @@ function emailWrapper(content: string, preheader?: string) {
                 <tr>
                   <td align="center" style="padding: 10px 20px 0;">
                     <p style="margin: 0; color: ${MUTED}; font-size: 11px;">
-                      © ${year} KlikForm. Hak cipta terpelihara.
+                      © ${year} KlikForm. All rights reserved.
                     </p>
                   </td>
                 </tr>
@@ -360,86 +360,86 @@ export function getSubscriptionReminderEmail(
   renewUrl: string
 ) {
   const content = cardBody(`
-            ${eyebrow('Langganan')}
-            ${heading('Langganan Pro hampir tamat')}
-            ${para(`Hai <strong style="color:${INK};">${escapeHtml(userName)}</strong>, langganan Pro anda akan tamat dalam <strong style="color:${INK};">${daysRemaining} hari</strong>.`)}
-            ${para('Selepas tamat, anda tidak lagi boleh:', 8)}
-            ${bulletList(['Mencipta borang baharu', 'Mengakses ciri-ciri Pro'], 'dot')}
-            ${para('Borang sedia ada anda kekal (secara terhad).', 18)}
-            ${button(renewUrl, 'Renew Sekarang')}
-            ${caption('Renew sebelum tamat untuk elak gangguan perkhidmatan.')}
+            ${eyebrow('Subscription')}
+            ${heading('Pro subscription expiring soon')}
+            ${para(`Hi <strong style="color:${INK};">${escapeHtml(userName)}</strong>, your KlikForm Pro subscription will expire in <strong style="color:${INK};">${daysRemaining} days</strong>.`)}
+            ${para('After expiration, you will no longer be able to:', 8)}
+            ${bulletList(['Create new forms or e-certificates', 'Access Pro features & integrations'], 'dot')}
+            ${para('Your existing forms will remain active with limited quota.', 18)}
+            ${button(renewUrl, 'Renew Now')}
+            ${caption('Renew before expiration to avoid any workflow interruption.')}
   `);
 
   return {
-    subject: `⏰ Langganan Pro KlikForm akan tamat dalam ${daysRemaining} hari`,
-    html: emailWrapper(content, `Langganan Pro anda akan tamat dalam ${daysRemaining} hari.`),
+    subject: `⏰ Your KlikForm Pro subscription expires in ${daysRemaining} days`,
+    html: emailWrapper(content, `Your Pro subscription will expire in ${daysRemaining} days.`),
   };
 }
 
 // Grace period started (subscription expired)
 export function getGracePeriodStartedEmail(userName: string, graceDays: number, renewUrl: string) {
   const content = cardBody(`
-            ${eyebrow('Langganan Tamat')}
-            ${heading('Langganan Pro anda telah tamat')}
-            ${para(`Hai <strong style="color:${INK};">${escapeHtml(userName)}</strong>, anda mempunyai <strong style="color:${INK};">${graceDays} hari</strong> untuk renew sebelum akaun disekat.`)}
-            ${para('Status akaun anda sekarang:', 8)}
+            ${eyebrow('Subscription Expired')}
+            ${heading('Your Pro subscription has expired')}
+            ${para(`Hi <strong style="color:${INK};">${escapeHtml(userName)}</strong>, you have a <strong style="color:${INK};">${graceDays}-day grace period</strong> to renew before your account is restricted.`)}
+            ${para('Your current account status:', 8)}
             ${bulletList([
-              'Tidak boleh mencipta borang/sijil baharu',
-              'Borang sedia ada masih aktif (sementara)',
-              `Selepas ${graceDays} hari, akaun akan disekat`,
+              'Cannot create new forms or certificates',
+              'Existing forms remain active temporarily',
+              `After ${graceDays} days, your account will be locked`,
             ], 'dot')}
-            ${button(renewUrl, 'Renew Sekarang')}
-            ${caption('Jangan biarkan perkhidmatan anda terganggu.')}
+            ${button(renewUrl, 'Renew Now')}
+            ${caption('Do not let your automated forms be interrupted.')}
   `);
 
   return {
-    subject: `🚨 Langganan KlikForm tamat — ${graceDays} hari untuk renew`,
-    html: emailWrapper(content, `Anda mempunyai ${graceDays} hari untuk renew sebelum akaun disekat.`),
+    subject: `🚨 KlikForm subscription expired — ${graceDays} days to renew`,
+    html: emailWrapper(content, `You have ${graceDays} days to renew before your account is restricted.`),
   };
 }
 
 // Account blocked (grace period over)
 export function getAccountBlockedEmail(userName: string, renewUrl: string) {
   const content = cardBody(`
-            ${eyebrow('Akaun Disekat')}
-            ${heading('Akaun anda telah disekat')}
-            ${para(`Hai <strong style="color:${INK};">${escapeHtml(userName)}</strong>, akaun anda disekat kerana langganan Pro telah tamat.`)}
-            ${para('Apa yang berlaku:', 8)}
+            ${eyebrow('Account Locked')}
+            ${heading('Your account has been locked')}
+            ${para(`Hi <strong style="color:${INK};">${escapeHtml(userName)}</strong>, your account is currently locked because your Pro subscription has expired.`)}
+            ${para('What happens now:', 8)}
             ${bulletList([
-              'Tidak boleh mencipta borang/sijil',
-              'Borang tidak boleh menerima response',
+              'Cannot create new forms or certificates',
+              'Forms can no longer accept new submissions',
             ], 'dot')}
-            ${note('<strong>Data anda selamat.</strong> Renew bila-bila masa untuk akses semula semua borang dan data anda.')}
-            ${button(renewUrl, 'Unlock Akaun')}
-            ${caption('Hanya RM29/bulan untuk akses penuh semula.')}
+            ${note('<strong>Your data is completely safe.</strong> Renew anytime to restore full access to all your forms and collected data.')}
+            ${button(renewUrl, 'Unlock Account')}
+            ${caption('Only RM 15/month for full unlimited access.')}
   `);
 
   return {
-    subject: `🔒 Akaun KlikForm disekat — Unlock sekarang`,
-    html: emailWrapper(content, 'Akaun anda disekat. Data anda selamat — renew untuk akses semula.'),
+    subject: `🔒 KlikForm account locked — Unlock now`,
+    html: emailWrapper(content, 'Your account is locked. Your data is safe — renew anytime to restore access.'),
   };
 }
 
 // Welcome email for new Pro subscribers
 export function getWelcomeProEmail(userName: string, dashboardUrl: string) {
   const content = cardBody(`
-            ${eyebrow('Selamat Datang')}
-            ${heading('Selamat datang ke KlikForm Pro')}
-            ${para(`Hai <strong style="color:${INK};">${escapeHtml(userName)}</strong>, tahniah! Akaun anda kini Pro. Inilah yang anda boleh nikmati:`)}
+            ${eyebrow('Welcome')}
+            ${heading('Welcome to KlikForm Pro')}
+            ${para(`Hi <strong style="color:${INK};">${escapeHtml(userName)}</strong>, congratulations! Your account is now Pro. Here is what you can enjoy:`)}
             ${bulletList([
-              '<strong>Borang tanpa had</strong> — cipta seberapa banyak yang perlu',
-              '<strong>Response tanpa had</strong> — terima tanpa limit',
-              '<strong>E-Certificate Builder</strong> — reka sijil profesional',
-              '<strong>Tanpa jenama</strong> — buang watermark KlikForm',
-              '<strong>Sokongan keutamaan</strong> — respons pantas',
+              '<strong>Unlimited forms</strong> — create as many forms as you need',
+              '<strong>Unlimited responses</strong> — collect without limits',
+              '<strong>Canva-Style E-Cert Studio</strong> — design professional certificates',
+              '<strong>No branding</strong> — remove KlikForm watermarks',
+              '<strong>Fast priority support</strong> — quick assistance whenever you need it',
             ], 'check')}
-            ${button(dashboardUrl, 'Mula Sekarang')}
-            ${caption('Ada soalan? Balas email ini untuk bantuan.')}
+            ${button(dashboardUrl, 'Go to Dashboard')}
+            ${caption('Have any questions? Reply directly to this email.')}
   `);
 
   return {
-    subject: `🎉 Selamat datang ke KlikForm Pro, ${userName}`,
-    html: emailWrapper(content, 'Akaun anda kini Pro — nikmati semua ciri premium.'),
+    subject: `🎉 Welcome to KlikForm Pro, ${userName}`,
+    html: emailWrapper(content, 'Your account is now Pro — enjoy all premium features.'),
   };
 }
 
@@ -451,43 +451,43 @@ export function getPaymentSuccessEmail(
   receiptUrl: string
 ) {
   const rows =
-    kvRow('Jumlah Dibayar', escapeHtml(amount)) +
-    kvRow('Pelan', 'Pro Monthly') +
-    kvRow('Tarikh Pembaharuan', escapeHtml(renewalDate));
+    kvRow('Amount Paid', escapeHtml(amount)) +
+    kvRow('Plan', 'Pro Monthly') +
+    kvRow('Renewal Date', escapeHtml(renewalDate));
 
   const content = cardBody(`
-            ${eyebrow('Pembayaran')}
-            ${heading('Pembayaran berjaya')}
-            ${para(`Hai <strong style="color:${INK};">${escapeHtml(userName)}</strong>, pembayaran anda untuk langganan KlikForm Pro telah berjaya diproses.`)}
+            ${eyebrow('Payment')}
+            ${heading('Payment successful')}
+            ${para(`Hi <strong style="color:${INK};">${escapeHtml(userName)}</strong>, your payment for KlikForm Pro subscription has been processed successfully.`)}
             ${kvTable(rows)}
-            ${button(receiptUrl, 'Lihat Resit')}
-            ${caption('Simpan email ini sebagai bukti pembayaran.')}
+            ${button(receiptUrl, 'View Receipt')}
+            ${caption('Keep this email as proof of payment.')}
   `);
 
   return {
-    subject: `✅ Pembayaran KlikForm Pro berjaya — ${amount}`,
-    html: emailWrapper(content, `Pembayaran anda sebanyak ${amount} telah berjaya.`),
+    subject: `✅ KlikForm Pro payment successful — ${amount}`,
+    html: emailWrapper(content, `Your payment of ${amount} was successful.`),
   };
 }
 
 // Re-engagement email for inactive users (2 weeks)
 export function getInactivityReminderEmail(userName: string, loginUrl: string) {
   const content = cardBody(`
-            ${eyebrow('Kami Rindu Anda')}
-            ${heading('Dah lama tak nampak anda')}
-            ${para(`Hai <strong style="color:${INK};">${escapeHtml(userName)}</strong>, anda belum log masuk ke KlikForm selama 2 minggu. Inilah yang menunggu anda:`)}
+            ${eyebrow('We Miss You')}
+            ${heading('It has been a while')}
+            ${para(`Hi <strong style="color:${INK};">${escapeHtml(userName)}</strong>, you haven\'t logged in to KlikForm for 2 weeks. Here is what is waiting for you:`)}
             ${bulletList([
-              'Semak response borang anda',
-              'Lihat statistik terkini',
-              'Hantar sijil digital kepada peserta',
+              'Check your form submissions',
+              'View your real-time analytics',
+              'Issue digital certificates to participants',
             ], 'check')}
-            ${button(loginUrl, 'Log Masuk Sekarang')}
-            ${caption('Jika anda tidak mahu menerima email ini, abaikan sahaja.')}
+            ${button(loginUrl, 'Log In to KlikForm')}
+            ${caption('If you prefer not to receive these reminders, simply ignore this email.')}
   `);
 
   return {
-    subject: `👋 Kami rindu anda, ${userName} — log masuk ke KlikForm`,
-    html: emailWrapper(content, 'Dah 2 minggu — log masuk semula ke KlikForm.'),
+    subject: `👋 We miss you, ${userName} — log in to KlikForm`,
+    html: emailWrapper(content, 'It has been 2 weeks — log back in to your KlikForm dashboard.'),
   };
 }
 
@@ -498,21 +498,21 @@ export function getAccountDeletionWarningEmail(
   loginUrl: string
 ) {
   const content = cardBody(`
-            ${eyebrow('Tindakan Diperlukan')}
-            ${heading('Akaun anda akan dipadam')}
-            ${para(`Hai <strong style="color:${INK};">${escapeHtml(userName)}</strong>, akaun anda dijadualkan untuk dipadam pada <strong style="color:${INK};">${escapeHtml(deletionDate)}</strong> kerana tidak aktif selama 1 bulan.`)}
-            ${para('Jika dipadam, anda akan kehilangan:', 8)}
+            ${eyebrow('Action Required')}
+            ${heading('Your account is scheduled for deletion')}
+            ${para(`Hi <strong style="color:${INK};">${escapeHtml(userName)}</strong>, your account is scheduled for deletion on <strong style="color:${INK};">${escapeHtml(deletionDate)}</strong> due to 1 month of inactivity.`)}
+            ${para('If deleted, you will lose:', 8)}
             ${bulletList([
-              'Semua data akaun anda',
-              'Semua borang (jika ada)',
-              'Semua response dan data',
+              'All your account data and settings',
+              'All forms and respondent links',
+              'All submission responses and records',
             ], 'dot')}
-            ${button(loginUrl, 'Log Masuk & Simpan Akaun')}
-            ${caption(`Log masuk sebelum ${escapeHtml(deletionDate)} untuk mengelakkan pemadaman.`)}
+            ${button(loginUrl, 'Log In & Keep Account')}
+            ${caption(`Log in before ${escapeHtml(deletionDate)} to prevent deletion.`)}
   `);
 
   return {
-    subject: `⚠️ Akaun KlikForm anda akan dipadam pada ${deletionDate}`,
-    html: emailWrapper(content, `Log masuk sebelum ${deletionDate} untuk mengelakkan pemadaman akaun.`),
+    subject: `⚠️ Your KlikForm account will be deleted on ${deletionDate}`,
+    html: emailWrapper(content, `Log in before ${deletionDate} to prevent your account from being deleted.`),
   };
 }

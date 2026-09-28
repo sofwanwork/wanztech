@@ -190,7 +190,7 @@ export async function POST(req: NextRequest) {
           // Send Receipt Email
           const receiptEmail = getPaymentSuccessEmail(
             userName,
-            `RM ${transaction.amount || '5.00'}`,
+            `RM ${transaction.amount || '15.00'}`,
             new Date(currentPeriodEnd).toLocaleDateString('ms-MY'),
             receiptUrl
           );

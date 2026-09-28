@@ -112,6 +112,7 @@ export function CertificateBuilderClient({
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const hasMovedRef = useRef(false);
   const selectedElement = template.elements.find((el) => el.id === selectedId);
 
   // Responsive Workspace & Zoom State
@@ -231,7 +232,13 @@ export function CertificateBuilderClient({
   }, [redoHistory]);
 
   // Handle Mouse Down (Selection Wrapper)
-  const handleMouseDown = handleSelectionMouseDown;
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent, el: CertificateElement) => {
+      hasMovedRef.current = false;
+      handleSelectionMouseDown(e, el);
+    },
+    [handleSelectionMouseDown]
+  );
 
   // Nudge logic wrapper
   const nudgeElement = useCallback(
@@ -418,6 +425,14 @@ export function CertificateBuilderClient({
     moveElement: nudgeElement,
   });
 
+  // Drag / Resize Performance Refs
+  const rafRef = useRef<number | null>(null);
+  const latestTemplateRef = useRef(template);
+
+  useEffect(() => {
+    latestTemplateRef.current = template;
+  }, [template]);
+
   // Canva-style Resize handle mouse down
   const handleResizeMouseDown = (
     e: React.MouseEvent,
@@ -426,6 +441,7 @@ export function CertificateBuilderClient({
   ) => {
     e.stopPropagation();
     e.preventDefault();
+    hasMovedRef.current = false;
     setSelectedId(el.id);
     setIsResizing(true);
     setIsDragging(false);
@@ -443,182 +459,280 @@ export function CertificateBuilderClient({
     });
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!selectedId || !canvasRef.current) return;
-    const rect = canvasRef.current.getBoundingClientRect();
-    const scale = rect.width / template.width;
+  const handlePointerMove = useCallback(
+    (e: MouseEvent) => {
+      if (!selectedId) return;
+      const scale = currentScale || 1;
 
-    if (isDragging && dragStartPos && selectedId && initialElementPositions[selectedId]) {
-      // 1. Calculate main delta
-      const deltaX = (e.clientX - dragStartPos.x) / scale;
-      const deltaY = (e.clientY - dragStartPos.y) / scale;
+      if (isDragging && dragStartPos && initialElementPositions[selectedId]) {
+        // 1. Calculate main delta
+        const deltaX = (e.clientX - dragStartPos.x) / scale;
+        const deltaY = (e.clientY - dragStartPos.y) / scale;
 
-      const initialPrimary = initialElementPositions[selectedId];
-      if (!initialPrimary) return;
+        const initialPrimary = initialElementPositions[selectedId];
+        if (!initialPrimary) return;
 
-      let newPrimaryX = initialPrimary.x + deltaX;
-      let newPrimaryY = initialPrimary.y + deltaY;
+        let newPrimaryX = initialPrimary.x + deltaX;
+        let newPrimaryY = initialPrimary.y + deltaY;
 
-      // 2. Apply Snapping (to Primary Element)
-      const newGuides = { x: [] as number[], y: [] as number[] };
-      const SNAP_THRESHOLD = 5;
+        // 2. Apply Snapping (to Primary Element)
+        const newGuides = { x: [] as number[], y: [] as number[] };
+        const SNAP_THRESHOLD = 5;
 
-      if (snapToGrid) {
-        const gridSize = 20;
-        newPrimaryX = Math.round(newPrimaryX / gridSize) * gridSize;
-        newPrimaryY = Math.round(newPrimaryY / gridSize) * gridSize;
-      } else {
-        // Alignment Guides (Center only for performance)
+        if (snapToGrid) {
+          const gridSize = 20;
+          newPrimaryX = Math.round(newPrimaryX / gridSize) * gridSize;
+          newPrimaryY = Math.round(newPrimaryY / gridSize) * gridSize;
+        } else {
+          // Alignment Guides (Center only for performance)
+          if (Math.abs(newPrimaryX - template.width / 2) < SNAP_THRESHOLD) {
+            newPrimaryX = template.width / 2;
+            newGuides.x.push(template.width / 2);
+          }
 
-        if (Math.abs(newPrimaryX - template.width / 2) < SNAP_THRESHOLD) {
-          newPrimaryX = template.width / 2;
-          newGuides.x.push(template.width / 2);
+          // Snap to other elements (excluding selected ones)
+          template.elements.forEach((other) => {
+            if (other.id === selectedId || additionalSelectedIds.includes(other.id)) return;
+
+            if (Math.abs(newPrimaryX - other.x) < SNAP_THRESHOLD) {
+              newPrimaryX = other.x;
+              newGuides.x.push(other.x);
+            }
+            if (Math.abs(newPrimaryY - other.y) < SNAP_THRESHOLD) {
+              newPrimaryY = other.y;
+              newGuides.y.push(other.y);
+            }
+          });
         }
 
-        // Snap to other elements (excluding selected ones)
-        template.elements.forEach((other) => {
-          if (other.id === selectedId || additionalSelectedIds.includes(other.id)) return;
+        // 3. Constrain Primary
+        newPrimaryX = Math.max(0, Math.min(template.width, newPrimaryX));
+        newPrimaryY = Math.max(0, Math.min(template.height, newPrimaryY));
 
-          if (Math.abs(newPrimaryX - other.x) < SNAP_THRESHOLD) {
-            newPrimaryX = other.x;
-            newGuides.x.push(other.x);
+        // 4. Apply Final Delta to ALL selected elements
+        const effectiveDeltaX = newPrimaryX - initialPrimary.x;
+        const effectiveDeltaY = newPrimaryY - initialPrimary.y;
+
+        if (effectiveDeltaX !== 0 || effectiveDeltaY !== 0) {
+          hasMovedRef.current = true;
+        }
+
+        const idsToUpdate = new Set([selectedId, ...additionalSelectedIds]);
+        const newElements = template.elements.map((el) => {
+          if (idsToUpdate.has(el.id) && initialElementPositions[el.id]) {
+            return {
+              ...el,
+              x: Math.round(initialElementPositions[el.id].x + effectiveDeltaX),
+              y: Math.round(initialElementPositions[el.id].y + effectiveDeltaY),
+            };
           }
-          if (Math.abs(newPrimaryY - other.y) < SNAP_THRESHOLD) {
-            newPrimaryY = other.y;
-            newGuides.y.push(other.y);
-          }
+          return el;
         });
-      }
 
-      // 3. Constrain Primary
-      newPrimaryX = Math.max(0, Math.min(template.width, newPrimaryX));
-      newPrimaryY = Math.max(0, Math.min(template.height, newPrimaryY));
+        if (rafRef.current) {
+          cancelAnimationFrame(rafRef.current);
+        }
+        rafRef.current = requestAnimationFrame(() => {
+          const updated = { ...latestTemplateRef.current, elements: newElements };
+          latestTemplateRef.current = updated;
+          setTemplate(updated);
+          setAlignmentGuides((prev) => {
+            if (
+              prev.x.length === newGuides.x.length &&
+              prev.y.length === newGuides.y.length &&
+              prev.x[0] === newGuides.x[0] &&
+              prev.y[0] === newGuides.y[0]
+            ) {
+              return prev;
+            }
+            return newGuides;
+          });
+          rafRef.current = null;
+        });
+      } else if (isResizing && resizeState && selectedId) {
+        const {
+          handle,
+          startX,
+          startY,
+          initialX,
+          initialY,
+          initialWidth,
+          initialHeight,
+          initialFontSize,
+          elementType,
+        } = resizeState;
 
-      setAlignmentGuides(newGuides);
+        const dx = (e.clientX - startX) / scale;
+        const dy = (e.clientY - startY) / scale;
 
-      // 4. Apply Final Delta to ALL selected elements
-      const effectiveDeltaX = newPrimaryX - initialPrimary.x;
-      const effectiveDeltaY = newPrimaryY - initialPrimary.y;
+        if (dx !== 0 || dy !== 0) {
+          hasMovedRef.current = true;
+        }
 
-      const idsToUpdate = new Set([selectedId, ...additionalSelectedIds]);
-      const newElements = template.elements.map((el) => {
-        if (idsToUpdate.has(el.id) && initialElementPositions[el.id]) {
-          return {
-            ...el,
-            x: initialElementPositions[el.id].x + effectiveDeltaX,
-            y: initialElementPositions[el.id].y + effectiveDeltaY,
+        const isText = elementType === 'text' || elementType === 'placeholder';
+        const isCorner = handle === 'nw' || handle === 'ne' || handle === 'sw' || handle === 'se';
+
+        let updates: Partial<CertificateElement> = {};
+
+        if (isText) {
+          if (isCorner) {
+            // Canva-style corner scaling for text: scales font size and width proportionally
+            let delta = 0;
+            if (handle === 'se') delta = (dx + dy) / 2;
+            else if (handle === 'nw') delta = (-dx - dy) / 2;
+            else if (handle === 'ne') delta = (dx - dy) / 2;
+            else if (handle === 'sw') delta = (-dx + dy) / 2;
+
+            const scaleFactor = Math.max(0.2, (initialWidth + delta * 2) / initialWidth);
+            const newWidth = Math.max(40, Math.round(initialWidth * scaleFactor));
+            const newFontSize = Math.max(8, Math.min(140, Math.round(initialFontSize * scaleFactor)));
+
+            updates = { width: newWidth, fontSize: newFontSize };
+          } else if (handle === 'e' || handle === 'w') {
+            // Side handle: adjusts text box wrap width without changing font size
+            const newWidth = Math.max(40, Math.round(handle === 'e' ? initialWidth + dx * 2 : initialWidth - dx * 2));
+            updates = { width: newWidth };
+          }
+        } else {
+          // Shapes, Images, Icons, QR
+          const aspectRatio = initialWidth / (initialHeight || 1);
+          const isProportional = isCorner || e.shiftKey || elementType === 'qr' || elementType === 'icon';
+
+          let newWidth = initialWidth;
+          let newHeight = initialHeight;
+          let newX = initialX;
+          let newY = initialY;
+
+          if (handle === 'se') {
+            newWidth = Math.max(20, initialWidth + dx);
+            newHeight = isProportional ? newWidth / aspectRatio : Math.max(20, initialHeight + dy);
+            newX = initialX + (newWidth - initialWidth) / 2;
+            newY = initialY + (newHeight - initialHeight) / 2;
+          } else if (handle === 'nw') {
+            newWidth = Math.max(20, initialWidth - dx);
+            newHeight = isProportional ? newWidth / aspectRatio : Math.max(20, initialHeight - dy);
+            newX = initialX - (newWidth - initialWidth) / 2;
+            newY = initialY - (newHeight - initialHeight) / 2;
+          } else if (handle === 'ne') {
+            newWidth = Math.max(20, initialWidth + dx);
+            newHeight = isProportional ? newWidth / aspectRatio : Math.max(20, initialHeight - dy);
+            newX = initialX + (newWidth - initialWidth) / 2;
+            newY = initialY - (newHeight - initialHeight) / 2;
+          } else if (handle === 'sw') {
+            newWidth = Math.max(20, initialWidth - dx);
+            newHeight = isProportional ? newWidth / aspectRatio : Math.max(20, initialHeight + dy);
+            newX = initialX - (newWidth - initialWidth) / 2;
+            newY = initialY + (newHeight - initialHeight) / 2;
+          } else if (handle === 'e') {
+            newWidth = Math.max(20, initialWidth + dx);
+            newX = initialX + (newWidth - initialWidth) / 2;
+          } else if (handle === 'w') {
+            newWidth = Math.max(20, initialWidth - dx);
+            newX = initialX - (newWidth - initialWidth) / 2;
+          } else if (handle === 's') {
+            newHeight = Math.max(20, initialHeight + dy);
+            newY = initialY + (newHeight - initialHeight) / 2;
+          } else if (handle === 'n') {
+            newHeight = Math.max(20, initialHeight - dy);
+            newY = initialY - (newHeight - initialHeight) / 2;
+          }
+
+          newX = Math.max(0, Math.min(template.width, newX));
+          newY = Math.max(0, Math.min(template.height, newY));
+
+          updates = {
+            width: Math.round(newWidth),
+            height: Math.round(newHeight),
+            x: Math.round(newX),
+            y: Math.round(newY),
           };
         }
-        return el;
-      });
 
-      setTemplate({ ...template, elements: newElements });
-    } else if (isResizing && resizeState && selectedId) {
-      const {
-        handle,
-        startX,
-        startY,
-        initialX,
-        initialY,
-        initialWidth,
-        initialHeight,
-        initialFontSize,
-        elementType,
-      } = resizeState;
-
-      const dx = (e.clientX - startX) / scale;
-      const dy = (e.clientY - startY) / scale;
-
-      const isText = elementType === 'text' || elementType === 'placeholder';
-      const isCorner = handle === 'nw' || handle === 'ne' || handle === 'sw' || handle === 'se';
-
-      if (isText) {
-        if (isCorner) {
-          // Canva-style corner scaling for text: scales font size and width proportionally
-          let delta = 0;
-          if (handle === 'se') delta = (dx + dy) / 2;
-          else if (handle === 'nw') delta = (-dx - dy) / 2;
-          else if (handle === 'ne') delta = (dx - dy) / 2;
-          else if (handle === 'sw') delta = (-dx + dy) / 2;
-
-          const scaleFactor = Math.max(0.2, (initialWidth + delta * 2) / initialWidth);
-          const newWidth = Math.max(40, Math.round(initialWidth * scaleFactor));
-          const newFontSize = Math.max(8, Math.min(140, Math.round(initialFontSize * scaleFactor)));
-
-          updateElement(selectedId, { width: newWidth, fontSize: newFontSize });
-        } else if (handle === 'e' || handle === 'w') {
-          // Side handle: adjusts text box wrap width without changing font size
-          const newWidth = Math.max(40, Math.round(handle === 'e' ? initialWidth + dx * 2 : initialWidth - dx * 2));
-          updateElement(selectedId, { width: newWidth });
+        if (rafRef.current) {
+          cancelAnimationFrame(rafRef.current);
         }
-      } else {
-        // Shapes, Images, Icons, QR
-        const aspectRatio = initialWidth / (initialHeight || 1);
-        const isProportional = isCorner || e.shiftKey || elementType === 'qr' || elementType === 'icon';
-
-        let newWidth = initialWidth;
-        let newHeight = initialHeight;
-        let newX = initialX;
-        let newY = initialY;
-
-        if (handle === 'se') {
-          newWidth = Math.max(20, initialWidth + dx);
-          newHeight = isProportional ? newWidth / aspectRatio : Math.max(20, initialHeight + dy);
-          newX = initialX + (newWidth - initialWidth) / 2;
-          newY = initialY + (newHeight - initialHeight) / 2;
-        } else if (handle === 'nw') {
-          newWidth = Math.max(20, initialWidth - dx);
-          newHeight = isProportional ? newWidth / aspectRatio : Math.max(20, initialHeight - dy);
-          newX = initialX - (newWidth - initialWidth) / 2;
-          newY = initialY - (newHeight - initialHeight) / 2;
-        } else if (handle === 'ne') {
-          newWidth = Math.max(20, initialWidth + dx);
-          newHeight = isProportional ? newWidth / aspectRatio : Math.max(20, initialHeight - dy);
-          newX = initialX + (newWidth - initialWidth) / 2;
-          newY = initialY - (newHeight - initialHeight) / 2;
-        } else if (handle === 'sw') {
-          newWidth = Math.max(20, initialWidth - dx);
-          newHeight = isProportional ? newWidth / aspectRatio : Math.max(20, initialHeight + dy);
-          newX = initialX - (newWidth - initialWidth) / 2;
-          newY = initialY + (newHeight - initialHeight) / 2;
-        } else if (handle === 'e') {
-          newWidth = Math.max(20, initialWidth + dx);
-          newX = initialX + (newWidth - initialWidth) / 2;
-        } else if (handle === 'w') {
-          newWidth = Math.max(20, initialWidth - dx);
-          newX = initialX - (newWidth - initialWidth) / 2;
-        } else if (handle === 's') {
-          newHeight = Math.max(20, initialHeight + dy);
-          newY = initialY + (newHeight - initialHeight) / 2;
-        } else if (handle === 'n') {
-          newHeight = Math.max(20, initialHeight - dy);
-          newY = initialY - (newHeight - initialHeight) / 2;
-        }
-
-        newX = Math.max(0, Math.min(template.width, newX));
-        newY = Math.max(0, Math.min(template.height, newY));
-
-        updateElement(selectedId, {
-          width: Math.round(newWidth),
-          height: Math.round(newHeight),
-          x: Math.round(newX),
-          y: Math.round(newY),
+        rafRef.current = requestAnimationFrame(() => {
+          const updatedElements = latestTemplateRef.current.elements.map((el) =>
+            el.id === selectedId ? { ...el, ...updates } : el
+          );
+          const updated = { ...latestTemplateRef.current, elements: updatedElements };
+          latestTemplateRef.current = updated;
+          setTemplate(updated);
+          rafRef.current = null;
         });
       }
-    }
-  };
+    },
+    [
+      selectedId,
+      currentScale,
+      isDragging,
+      dragStartPos,
+      initialElementPositions,
+      snapToGrid,
+      template.width,
+      template.height,
+      template.elements,
+      additionalSelectedIds,
+      isResizing,
+      resizeState,
+    ]
+  );
 
-  const handleMouseUp = () => {
-    if (isDragging || isResizing) {
-      commitToHistoryHook(template);
+  const handlePointerUp = useCallback(() => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
     }
+    if ((isDragging || isResizing) && hasMovedRef.current) {
+      commitToHistoryHook(latestTemplateRef.current);
+    }
+    hasMovedRef.current = false;
     setIsDragging(false);
     setIsResizing(false);
     setResizeState(null);
     setDragStartPos(null);
     setInitialElementPositions({});
     setAlignmentGuides({ x: [], y: [] });
-  };
+  }, [isDragging, isResizing, commitToHistoryHook]);
+
+  // Global window listeners for fluid, unbroken drag/resize
+  const handlePointerMoveRef = useRef(handlePointerMove);
+  handlePointerMoveRef.current = handlePointerMove;
+  const handlePointerUpRef = useRef(handlePointerUp);
+  handlePointerUpRef.current = handlePointerUp;
+
+  useEffect(() => {
+    if (!isDragging && !isResizing) return;
+
+    const onMove = (e: MouseEvent) => {
+      handlePointerMoveRef.current(e);
+    };
+    const onUp = () => {
+      handlePointerUpRef.current();
+    };
+
+    window.addEventListener('mousemove', onMove, { passive: false });
+    window.addEventListener('mouseup', onUp);
+
+    // Global cursor lock & text selection prevention during active drag/resize
+    const prevCursor = document.body.style.cursor;
+    const prevUserSelect = document.body.style.userSelect;
+    if (isDragging) {
+      document.body.style.cursor = 'move';
+    }
+    document.body.style.userSelect = 'none';
+
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      document.body.style.cursor = prevCursor;
+      document.body.style.userSelect = prevUserSelect;
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
+  }, [isDragging, isResizing]);
 
   return (
     <div className="h-full flex-1 flex flex-col bg-gray-100 overflow-hidden">
@@ -710,7 +824,9 @@ export function CertificateBuilderClient({
         >
           <div
             ref={canvasRef}
-            className="relative shadow-2xl bg-cover m-auto transition-all duration-100 shrink-0 select-none"
+            className={`relative shadow-2xl bg-cover m-auto shrink-0 select-none ${
+              isDragging || isResizing ? 'transition-none' : 'transition-[width,height] duration-100'
+            }`}
             style={{
               width: `${renderedWidth}px`,
               height: `${renderedHeight}px`,
@@ -719,9 +835,6 @@ export function CertificateBuilderClient({
                 ? `url(${template.backgroundImage})`
                 : undefined,
             }}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
             onClick={() => setSelectedId(null)}
           >
             {showGrid && (
@@ -746,7 +859,11 @@ export function CertificateBuilderClient({
               return (
                 <div
                   key={el.id}
-                  className={`absolute cursor-move select-none group transition-all duration-150 ${
+                  className={`absolute cursor-move select-none group ${
+                    isDragging || isResizing
+                      ? 'transition-none'
+                      : 'transition-[box-shadow,opacity] duration-150'
+                  } ${
                     isSelected
                       ? ''
                       : 'hover:ring-1 hover:ring-primary/60 hover:ring-offset-1 rounded-sm'
@@ -760,6 +877,7 @@ export function CertificateBuilderClient({
                         ? 'auto'
                         : `${(el.height / template.height) * 100}%`,
                     transform: `translate(-50%, -50%) rotate(${el.rotation ?? 0}deg)`,
+                    willChange: isDragging || isResizing ? 'left, top' : undefined,
                     opacity: el.opacity ?? 1,
                     boxShadow: el.shadow?.enabled
                       ? `${el.shadow.offsetX}px ${el.shadow.offsetY}px ${el.shadow.blur}px ${el.shadow.color}`
@@ -841,19 +959,19 @@ export function CertificateBuilderClient({
                         className="pointer-events-auto absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white border-[1.5px] border-primary rounded-full shadow-sm cursor-nesw-resize hover:scale-125 transition-transform"
                         onMouseDown={(e) => handleResizeMouseDown(e, el, 'ne')}
                         onClick={(e) => e.stopPropagation()}
-                        title="Tarik untuk skala"
+                        title="Drag to scale"
                       />
                       <div
                         className="pointer-events-auto absolute bottom-0 left-0 -translate-x-1/2 translate-y-1/2 w-2.5 h-2.5 bg-white border-[1.5px] border-primary rounded-full shadow-sm cursor-nesw-resize hover:scale-125 transition-transform"
                         onMouseDown={(e) => handleResizeMouseDown(e, el, 'sw')}
                         onClick={(e) => e.stopPropagation()}
-                        title="Tarik untuk skala"
+                        title="Drag to scale"
                       />
                       <div
                         className="pointer-events-auto absolute bottom-0 right-0 translate-x-1/2 translate-y-1/2 w-2.5 h-2.5 bg-white border-[1.5px] border-primary rounded-full shadow-sm cursor-nwse-resize hover:scale-125 transition-transform"
                         onMouseDown={(e) => handleResizeMouseDown(e, el, 'se')}
                         onClick={(e) => e.stopPropagation()}
-                        title="Tarik untuk skala"
+                        title="Drag to scale"
                       />
 
                       {/* Left and Right Pill Handles (Width) */}
@@ -861,13 +979,13 @@ export function CertificateBuilderClient({
                         className="pointer-events-auto absolute top-1/2 left-0 -translate-x-1/2 -translate-y-1/2 w-1.5 h-4 bg-white border-[1.5px] border-primary rounded-full shadow-sm cursor-ew-resize hover:scale-125 transition-transform"
                         onMouseDown={(e) => handleResizeMouseDown(e, el, 'w')}
                         onClick={(e) => e.stopPropagation()}
-                        title="Laras lebar"
+                        title="Adjust width"
                       />
                       <div
                         className="pointer-events-auto absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2 w-1.5 h-4 bg-white border-[1.5px] border-primary rounded-full shadow-sm cursor-ew-resize hover:scale-125 transition-transform"
                         onMouseDown={(e) => handleResizeMouseDown(e, el, 'e')}
                         onClick={(e) => e.stopPropagation()}
-                        title="Laras lebar"
+                        title="Adjust width"
                       />
 
                       {/* Top and Bottom Pill Handles (Only for shapes and images) */}
@@ -877,13 +995,13 @@ export function CertificateBuilderClient({
                             className="pointer-events-auto absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 h-1.5 w-4 bg-white border-[1.5px] border-primary rounded-full shadow-sm cursor-ns-resize hover:scale-125 transition-transform"
                             onMouseDown={(e) => handleResizeMouseDown(e, el, 'n')}
                             onClick={(e) => e.stopPropagation()}
-                            title="Laras tinggi"
+                            title="Adjust height"
                           />
                           <div
                             className="pointer-events-auto absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 h-1.5 w-4 bg-white border-[1.5px] border-primary rounded-full shadow-sm cursor-ns-resize hover:scale-125 transition-transform"
                             onMouseDown={(e) => handleResizeMouseDown(e, el, 's')}
                             onClick={(e) => e.stopPropagation()}
-                            title="Laras tinggi"
+                            title="Adjust height"
                           />
                         </>
                       )}
@@ -965,7 +1083,7 @@ export function CertificateBuilderClient({
               type="button"
               className="h-7 w-7 rounded-full flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
               onClick={handleZoomOut}
-              title="Zum Keluar (-)"
+              title="Zoom Out (-)"
             >
               <Minus className="h-3.5 w-3.5" />
             </button>
@@ -978,17 +1096,17 @@ export function CertificateBuilderClient({
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
               onClick={handleResetFit}
-              title="Muatkan Keseluruhan Sijil ke Skrin"
+              title="Fit Certificate to Screen"
             >
               <Maximize2 className="h-3 w-3" />
-              <span>{zoomMode === 'fit' ? `Muat (${Math.round(currentScale * 100)}%)` : `${Math.round(currentScale * 100)}%`}</span>
+              <span>{zoomMode === 'fit' ? `Fit (${Math.round(currentScale * 100)}%)` : `${Math.round(currentScale * 100)}%`}</span>
             </button>
 
             <button
               type="button"
               className="h-7 w-7 rounded-full flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
               onClick={handleZoomIn}
-              title="Zum Masuk (+)"
+              title="Zoom In (+)"
             >
               <Plus className="h-3.5 w-3.5" />
             </button>
@@ -999,7 +1117,7 @@ export function CertificateBuilderClient({
               type="button"
               className="h-7 px-2 text-xs font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
               onClick={handleActualSize}
-              title="Saiz Sebenar 100%"
+              title="Actual Size 100%"
             >
               100%
             </button>

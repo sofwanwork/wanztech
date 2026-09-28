@@ -156,6 +156,19 @@ export interface GeofenceConfig {
 }
 
 /**
+ * Smart Check-In / Check-Out configuration
+ */
+export interface CheckInOutConfig {
+  enabled: boolean;
+  /** Field ID used to uniquely identify the participant (e.g. IC number, email). */
+  identifierFieldId?: string;
+  /** Minimum duration in minutes required before allowing check-out (default: 5). */
+  minDurationMinutes?: number;
+  /** Break time in minutes (e.g. 60 for lunch break) to deduct from total duration. */
+  breakMinutes?: number;
+}
+
+/**
  * Attendance settings for form
  */
 export interface AttendanceSettings {
@@ -163,6 +176,7 @@ export interface AttendanceSettings {
   startTime?: string;
   endTime?: string;
   geofence?: GeofenceConfig;
+  checkInOut?: CheckInOutConfig;
 }
 
 /**

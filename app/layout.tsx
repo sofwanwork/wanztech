@@ -17,29 +17,28 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL('https://klikform.com'),
   title: {
-    default: 'KlikForm - Borang Online & Sijil Digital Automatik #1 Malaysia',
+    default: 'KlikForm - Next-Gen Online Forms & Automated E-Certificates',
     template: '%s | KlikForm',
   },
   description:
-    'Sistem borang online percuma & generator sijil digital automatik. Cipta borang kehadiran, pendaftaran kursus, dan kuiz. Integrasi Google Sheets & WhatsApp.',
+    'Free online form builder and automated digital certificate generator. Real-time Google Sheets sync, QR codes, Link-in-Bio, and WhatsApp integration.',
   keywords: [
-    'borang online',
-    'sijil digital',
-    'e-sijil',
+    'online forms',
+    'digital certificates',
+    'e-certificates',
     'e-certificate generator',
     'google sheets form',
-    'borang kehadiran',
-    'sistem pendaftaran event',
-    'online form malaysia',
+    'attendance form',
+    'event registration system',
+    'online form builder',
     'klikform',
-    'form builder percuma',
+    'free form builder',
     'whatsapp form',
-    'sistem e-cert',
-    'sistem pendaftaran percuma',
-    'buat e-cert',
-    'borang order whatsapp',
-    'bina borang mudah',
-    'sistem kehadiran QR',
+    'e-cert system',
+    'free registration system',
+    'bulk certificates',
+    'link in bio',
+    'QR attendance system',
   ],
   authors: [{ name: 'KlikForm Team', url: 'https://klikform.com' }],
   creator: 'KlikForm',
@@ -57,27 +56,27 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: 'website',
-    locale: 'ms_MY',
-    alternateLocale: 'en_US',
+    locale: 'en_US',
+    alternateLocale: 'ms_MY',
     url: 'https://klikform.com',
     siteName: 'KlikForm',
-    title: 'KlikForm - Borang Online & Sijil Digital Automatik',
+    title: 'KlikForm - Next-Gen Online Forms & Automated E-Certificates',
     description:
-      'Cipta borang pendaftaran dan jana sijil digital secara automatik. Integrasi mudah dengan Google Sheets dan WhatsApp. Mula percuma sekarang.',
+      'Build smart forms and automate digital certificates with real-time Google Sheets sync and WhatsApp integration. Start free today.',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'KlikForm - Sistem Borang Online & Sijil Digital',
+        alt: 'KlikForm - Online Form & Digital Certificate System',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'KlikForm - Borang Online & Sijil Digital Automatik',
+    title: 'KlikForm - Next-Gen Online Forms & Automated E-Certificates',
     description:
-      'Cipta borang pendaftaran dan jana sijil digital secara automatik. Percuma untuk pengguna Malaysia.',
+      'Build smart forms and automate digital certificates with real-time Google Sheets sync. Start free today.',
     images: ['/og-image.png'],
     creator: '@klikform',
   },
@@ -119,11 +118,13 @@ const jsonLd = {
         priceCurrency: 'MYR',
       },
       featureList: [
-        'Borang Online Percuma',
-        'Integrasi Google Sheets',
-        'Sijil Digital Automatik',
-        'QR Code Generator',
-        'E-Certificate Builder',
+        'Free Online Form Builder',
+        'Google Sheets Integration',
+        'Automated Digital Certificates',
+        'Dynamic QR Code Generator',
+        'Canva-Style E-Certificate Studio',
+        'Bulk CSV to ZIP Generator',
+        'KlikBio Link-in-Bio',
       ],
     },
     {
@@ -160,7 +161,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ms" data-scroll-behavior="smooth" suppressHydrationWarning>
+    <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         {/* JSON-LD Structured Data */}
         <script

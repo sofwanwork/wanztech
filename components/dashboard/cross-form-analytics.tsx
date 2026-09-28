@@ -29,9 +29,9 @@ export async function CrossFormAnalytics() {
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-primary" />
-            Analytics 30 hari
+            30-Day Analytics
           </CardTitle>
-          <span className="text-xs text-muted-foreground">Semua borang</span>
+          <span className="text-xs text-muted-foreground">All forms</span>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -40,24 +40,24 @@ export async function CrossFormAnalytics() {
           <Stat icon={<Eye className="h-4 w-4" />} label="Views" value={summary.totalViews} />
           <Stat
             icon={<Users className="h-4 w-4" />}
-            label="Pelawat unik"
+            label="Unique visitors"
             value={summary.uniqueVisitors}
           />
           <Stat
             icon={<CheckCircle2 className="h-4 w-4" />}
-            label="Submits"
+            label="Submissions"
             value={summary.totalSubmits}
           />
           <Stat
             icon={<TrendingUp className="h-4 w-4" />}
-            label="Conv rate"
+            label="Conversion rate"
             value={`${summary.conversionRate}%`}
           />
         </div>
 
         {/* Sparkline */}
         <div>
-          <p className="text-xs font-medium text-gray-500 mb-2">Views harian</p>
+          <p className="text-xs font-medium text-gray-500 mb-2">Daily views</p>
           <div className="flex items-end gap-[2px] h-16">
             {summary.daily.map((d) => {
               const h = (d.views / max) * 100;
@@ -76,7 +76,7 @@ export async function CrossFormAnalytics() {
         {/* Top forms */}
         {summary.topForms.length > 0 && (
           <div>
-            <p className="text-xs font-medium text-gray-500 mb-2">Top borang (submits)</p>
+            <p className="text-xs font-medium text-gray-500 mb-2">Top forms (by submissions)</p>
             <div className="space-y-2">
               {summary.topForms.slice(0, 3).map((f) => {
                 const title = formMap.get(f.formId) ?? f.formId;

@@ -20,28 +20,28 @@ export function BuilderTour({ run, onFinish }: BuilderTourProps) {
   const steps: Step[] = [
     {
       target: '#tour-form-title',
-      content: 'Mula-mula, berikan nama yang sesuai untuk borang anda di sini.',
+      content: 'First, enter a descriptive title for your form here.',
       placement: 'bottom',
       skipBeacon: true,
     },
     {
       target: '#tour-google-sheet',
-      content: 'Letakkan pautan Google Sheet anda di sini. Sebagai alternatif, anda juga boleh mencipta sheet baharu secara automatik melalui halaman Responses kelak.',
+      content: 'Paste your Google Sheet link here. Alternatively, you can also generate a new sheet automatically from the Responses page later.',
       placement: 'bottom',
     },
     {
       target: '#tour-add-question',
-      content: 'Klik butang ini untuk menambah soalan atau medan (field) baru ke dalam borang anda.',
+      content: 'Click this button to add a new question or field to your form.',
       placement: 'top',
     },
     {
       target: '#tour-drag-handle',
-      content: 'Anda boleh klik dan tarik (drag) ikon ini pada bila-bila masa untuk menyusun semula urutan soalan anda.',
+      content: 'Click and drag this handle anytime to reorder your form questions.',
       placement: 'right',
     },
     {
       target: '#tour-save-button',
-      content: 'Akhir sekali, jangan lupa klik butang "Save Changes" ini setiap kali anda selesai membuat perubahan!',
+      content: 'Finally, click "Save Changes" whenever you are done editing your form!',
       placement: 'bottom',
     },
   ];
@@ -73,10 +73,10 @@ export function BuilderTour({ run, onFinish }: BuilderTourProps) {
         arrowColor: theme === 'dark' ? '#1e293b' : '#ffffff',
       }}
       locale={{
-        skip: 'Batal',
-        next: 'Seterusnya',
-        back: 'Kembali',
-        last: 'Selesai',
+        skip: 'Skip',
+        next: 'Next',
+        back: 'Back',
+        last: 'Finish',
       }}
       onEvent={handleJoyrideCallback}
       styles={{

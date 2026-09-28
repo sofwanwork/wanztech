@@ -6,19 +6,30 @@
  * the promo ends, only this file needs to change.
  */
 
-export const PRO_PRICE = {
-  /** Amount charged to BCL (MYR). 50% launch promo. */
-  amount: 5.0,
-  /** Regular price after the promo period. Display-only. */
-  regularAmount: 10,
+export interface PricingConfig {
+  amount: number;
+  regularAmount: number;
+  display: string;
+  regularDisplay: string;
+  period: string;
+  periodDetail: string;
+  priceDetail: string;
+  description: string;
+}
+
+export const PRO_PRICE: PricingConfig = {
+  /** Amount charged to BCL (MYR). RM 15 monthly subscription. */
+  amount: 15.0,
+  /** Regular price. Display-only. */
+  regularAmount: 15,
   /** Human-readable strings for UI. */
-  display: 'RM 5',
-  regularDisplay: 'RM 10',
+  display: 'RM 15',
+  regularDisplay: 'RM 15',
   period: '/ month',
-  periodDetail: 'for first 3 months (50% discount)',
-  priceDetail: 'then RM 10 / month',
-  description: 'KlikForm Pro Plan - Monthly Subscription (50% Promo)',
-} as const;
+  periodDetail: '',
+  priceDetail: 'Cancel anytime',
+  description: 'KlikForm Pro Plan - Monthly Subscription (RM 15/month)',
+};
 
 export type PlanId = 'free' | 'pro' | 'enterprise';
 

@@ -93,14 +93,14 @@ export function BulkGenerateClient({ template }: BulkGenerateClientProps) {
   const handleFile = async (file: File) => {
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Saiz CSV terlalu besar (max 5MB).');
+      toast.error('CSV file is too large (max 5MB).');
       return;
     }
     try {
       const text = await file.text();
       const parsed = parseCSV(text);
       if (parsed.headers.length === 0 || parsed.rows.length === 0) {
-        toast.error('CSV kosong atau tidak sah.');
+        toast.error('CSV is empty or invalid.');
         return;
       }
       setHeaders(parsed.headers);
@@ -117,15 +117,15 @@ export function BulkGenerateClient({ template }: BulkGenerateClientProps) {
         name: findHeader(['name', 'nama', 'full name', 'nama penuh']),
         program: findHeader(['program', 'kursus', 'event', 'acara', 'course']),
         date: findHeader(['date', 'tarikh', 'tarikh acara']),
-        ic: findHeader(['ic', 'no ic', 'kad pengenalan', 'mykad']),
+        ic: findHeader(['ic', 'no ic', 'kad pengenalan', 'mykad', 'passport']),
         organization: findHeader(['organization', 'organisasi', 'sekolah', 'school', 'jabatan', 'agensi']),
         role: findHeader(['role', 'peranan', 'jawatan', 'kategori']),
         grade: findHeader(['grade', 'gred', 'markah', 'score', 'jam cpd', 'jam latihan']),
       });
-      toast.success(`${parsed.rows.length} baris dimuat naik`);
+      toast.success(`${parsed.rows.length} rows imported`);
     } catch (err) {
       console.error('CSV parse failed:', err);
-      toast.error('Gagal membaca fail CSV.');
+      toast.error('Failed to parse CSV file.');
     }
   };
 
@@ -136,7 +136,7 @@ export function BulkGenerateClient({ template }: BulkGenerateClientProps) {
     if (!canGenerate) return;
     setBusy(true);
     setProgress(0);
-    setProgressLabel('Memulakan…');
+    setProgressLabel('Starting…');
 
     try {
       const JSZipMod = (await import('jszip')).default;
@@ -160,7 +160,7 @@ export function BulkGenerateClient({ template }: BulkGenerateClientProps) {
         }
 
         setCurrentData(data);
-        setProgressLabel(`Menjana ${i + 1} / ${rows.length}: ${data.name}`);
+        setProgressLabel(`Generating ${i + 1} / ${rows.length}: ${data.name}`);
         // Wait two frames so React commits the new props AND the browser
         // paints them before we ask html2canvas to read computed styles.
         await nextFrame();
@@ -184,7 +184,7 @@ export function BulkGenerateClient({ template }: BulkGenerateClientProps) {
         setProgress(Math.round(((i + 1) / rows.length) * 100));
       }
 
-      setProgressLabel('Membundel ZIP…');
+      setProgressLabel('Bundling ZIP archive…');
       const zipBlob = await zip.generateAsync({ type: 'blob' });
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
@@ -195,10 +195,10 @@ export function BulkGenerateClient({ template }: BulkGenerateClientProps) {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      toast.success(`Siap! ${rows.length} sijil dimuat turun.`);
+      toast.success(`Complete! ${rows.length} certificates downloaded.`);
     } catch (err) {
       console.error('Bulk generate failed:', err);
-      toast.error('Gagal menjana sijil. Lihat console untuk butiran.');
+      toast.error('Failed to generate certificates. Check console for details.');
     } finally {
       setBusy(false);
       setProgress(0);
@@ -215,11 +215,11 @@ export function BulkGenerateClient({ template }: BulkGenerateClientProps) {
             href="/certificates/builder"
             className="text-sm text-gray-500 hover:text-gray-900"
           >
-            ← Kembali
+            ← Back
           </Link>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight mt-2 flex items-center gap-3">
             <Sparkles className="h-7 w-7 text-primary" />
-            Jana Sijil Pukal
+            Bulk Certificate Generator
           </h1>
           <p className="text-gray-500 mt-1 text-sm">
             Template: <span className="font-medium">{template.name}</span>
@@ -229,11 +229,10 @@ export function BulkGenerateClient({ template }: BulkGenerateClientProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">1. Muat naik CSV</CardTitle>
+          <CardTitle className="text-lg">1. Upload CSV</CardTitle>
           <CardDescription>
-            Setiap baris dalam CSV akan menjadi satu sijil. Format yang
-            disokong: nama, program, tarikh (dan IC opsyenal untuk URL
-            verifikasi).
+            Each row in your CSV will generate one personalized certificate. Supported
+            columns: name, program, date (and optional IC/ID for QR verification).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -243,10 +242,10 @@ export function BulkGenerateClient({ template }: BulkGenerateClientProps) {
           >
             <Upload className="h-8 w-8 text-gray-400" />
             <span className="text-sm font-medium text-gray-700">
-              Klik untuk muat naik CSV
+              Click to upload CSV
             </span>
             <span className="text-xs text-gray-500">
-              Header pada baris pertama, max 5MB
+              Header row required in first line, max 5MB
             </span>
             <Input
               id="bulk-csv-input"
@@ -262,7 +261,7 @@ export function BulkGenerateClient({ template }: BulkGenerateClientProps) {
 
           {rows.length > 0 && (
             <div className="text-sm text-gray-700 bg-green-50 border border-green-200 rounded-md p-3">
-              ✓ {rows.length} baris diimport · Headers:{' '}
+              ✓ {rows.length} rows imported · Headers:{' '}
               <span className="font-mono text-xs">{headers.join(', ')}</span>
             </div>
           )}
@@ -272,21 +271,21 @@ export function BulkGenerateClient({ template }: BulkGenerateClientProps) {
       {rows.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">2. Petakan kolum</CardTitle>
+            <CardTitle className="text-lg">2. Map Columns</CardTitle>
             <CardDescription>
-              Padankan kolum CSV anda kepada placeholder template.
+              Match your CSV column headers to the template placeholders.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {(
               [
-                { key: 'name', label: 'Nama', required: true },
-                { key: 'program', label: 'Program / Acara', required: true },
-                { key: 'date', label: 'Tarikh', required: true },
-                { key: 'ic', label: 'IC (opsyenal — untuk QR verifikasi)', required: false },
-                { key: 'organization', label: 'Organisasi / Sekolah (opsyenal)', required: false },
-                { key: 'role', label: 'Peranan / Jawatan (opsyenal)', required: false },
-                { key: 'grade', label: 'Gred / Jam Latihan (opsyenal)', required: false },
+                { key: 'name', label: 'Name', required: true },
+                { key: 'program', label: 'Program / Event', required: true },
+                { key: 'date', label: 'Date', required: true },
+                { key: 'ic', label: 'IC / ID (optional — for QR verification)', required: false },
+                { key: 'organization', label: 'Organization / School (optional)', required: false },
+                { key: 'role', label: 'Role / Position (optional)', required: false },
+                { key: 'grade', label: 'Grade / CPD Hours (optional)', required: false },
               ] as const
             ).map(({ key, label, required }) => (
               <div key={key} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center">
@@ -301,10 +300,10 @@ export function BulkGenerateClient({ template }: BulkGenerateClientProps) {
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Pilih kolum…" />
+                      <SelectValue placeholder="Select column…" />
                     </SelectTrigger>
                     <SelectContent>
-                      {!required && <SelectItem value="__none__">— Tiada —</SelectItem>}
+                      {!required && <SelectItem value="__none__">— None —</SelectItem>}
                       {headers.map((h) => (
                         <SelectItem key={h} value={h}>
                           {h}
@@ -322,7 +321,7 @@ export function BulkGenerateClient({ template }: BulkGenerateClientProps) {
       {rows.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">3. Pilih format & jana</CardTitle>
+            <CardTitle className="text-lg">3. Choose Format &amp; Generate</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3">
@@ -354,12 +353,12 @@ export function BulkGenerateClient({ template }: BulkGenerateClientProps) {
               {busy ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Menjana…
+                  Generating…
                 </>
               ) : (
                 <>
                   <Download className="h-4 w-4 mr-2" />
-                  Jana ZIP ({rows.length} sijil)
+                  Generate ZIP ({rows.length} certificates)
                 </>
               )}
             </Button>
@@ -367,7 +366,7 @@ export function BulkGenerateClient({ template }: BulkGenerateClientProps) {
             {!canGenerate && rows.length > 0 && !busy && (
               <p className="text-xs text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">
                 <FileText className="h-3 w-3 inline mr-1" />
-                Lengkapkan pemetaan Nama, Program, dan Tarikh terlebih dahulu.
+                Please complete the mapping for Name, Program, and Date first.
               </p>
             )}
           </CardContent>

@@ -17,6 +17,7 @@ export type {
   HeaderFont,
   FormTheme,
   GeofenceConfig,
+  CheckInOutConfig,
   AttendanceSettings,
   QRSettings,
   EditLinkSettings,
@@ -26,6 +27,13 @@ export type {
   RedirectButton,
   Form,
 } from './forms';
+
+// Attendance types
+export type {
+  AttendanceRecord,
+  AttendanceStatus,
+  AttendanceSummary,
+} from './attendance';
 
 // E-Certificate types
 export type {

@@ -1,3 +1,107 @@
+# Ciri Kehadiran Pintar 1 QR (Check-In & Check-Out & Kira Durasi Jam) ✅ SIAP
+
+**Matlamat**: Membolehkan peserta mengimbas 1 Kod QR yang sama untuk Daftar Masuk (Check-In) dan Daftar Keluar (Check-Out), mengira secara automatik jumlah masa/jam kehadiran dalam program, dan merekodkannya ke pangkalan data serta Google Sheets.
+
+- [x] 1. Jenis Data (`lib/types/forms.ts`, `lib/types/attendance.ts`, `lib/types/index.ts`)
+  - Tambah `CheckInOutConfig` ke dalam `AttendanceSettings` di `lib/types/forms.ts`.
+  - Takrifkan jenis `AttendanceRecord`, `AttendanceStatus`, dan `AttendanceSummary`.
+- [x] 2. Logik & Pengiraan Tulen (`lib/forms/attendance.ts`)
+  - Cipta fungsi `cleanIdentifier` (pembersihan IC / Emel).
+  - Cipta `calculateAttendanceDuration` (kira beza masa, jam & minit, tolak rehat).
+  - Cipta `formatAttendanceTime` dan `formatAttendanceDateTime` (zon masa Malaysia UTC+8).
+  - Cipta ujian unit komprehensif di `tests/attendance.test.ts`.
+- [x] 3. Migrasi Pangkalan Data (`supabase/migrations/20260928000000_add_attendance_records.sql`)
+  - Cipta jadual `attendance_records` dengan index pada `(form_id, identifier_value)` dan RLS.
+- [x] 4. Lapisan Storan (`lib/storage/attendance.ts`)
+  - Fungsi `getAttendanceRecord`, `createAttendanceRecord`, `updateAttendanceCheckOut`, `listAttendanceRecordsForForm`.
+  - Ujian unit di `tests/attendance-storage.test.ts`.
+- [x] 5. Tindakan Pelayan (`actions/attendance.ts` & `actions/forms.ts`)
+  - `checkAttendanceStatusAction` (semak sama ada belum masuk, sedang masuk, atau dah keluar).
+  - `submitFormAction` integrasi check-in automatik (merekod status dan masa masuk).
+  - `submitAttendanceCheckOutAction` (daftar keluar, kira durasi, kemas kini Google Sheets & rekod tempatan).
+  - Ujian unit di `tests/attendance-actions.test.ts`.
+- [x] 6. Antara Muka Pembina Borang (`app/builder/[id]/client.tsx`)
+  - Tambah togol "1-QR Smart Check-In & Check-Out" dalam kad Attendance & Location.
+  - Konfigurasi pemilihan medan pengenalan (Identifier Field), tempoh minimum sebelum check-out (minDurationMinutes), dan tolak waktu rehat (breakMinutes).
+- [x] 7. Antara Muka Borang Awam (`app/(public)/form/[id]/client.tsx`)
+  - Aliran responsif: pengesanan status masa nyata apabila peserta mengisi No. IC / Emel.
+  - Kad maklumat "🟢 Sedang Hadir" dengan butang pantas "Daftar Keluar Sekarang (Check-Out)".
+  - Butang dinamik "Daftar Masuk (Check-In)" bagi pendaftaran kali pertama.
+  - Skrin kejayaan khusus memaparkan ringkasan masa masuk, masa keluar, dan jumlah durasi jam kehadiran.
+- [x] 8. Ujian & Pengesahan Penuh
+  - `npm test`: 274 / 274 lulus merentas 33 suite ujian.
+  - `npm run typecheck`: 0 ralat TypeScript (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+- [x] 9. Dokumentasi & Kemas Kini Memori
+  - Kemas kini `task.md` dan `memory.md`.
+
+---
+
+## Reviu Pelaksanaan: Ciri Kehadiran Pintar 1 QR
+
+1. **Seni Bina Sistem**:
+   - **Tunggal & Lancar**: Peserta hanya perlu mengimbas 1 kod QR di pintu masuk program sepanjang hari.
+   - **Pengesanan Pintar**: Nombor Kad Pengenalan atau Emel dibersihkan secara automatik (`cleanIdentifier`) untuk menghapuskan tanda sengkang, ruang kosong, atau perbezaan huruf besar/kecil.
+   - **Keselamatan & Ketepatan**:
+     - Dilengkapi `minDurationMinutes` (lalai: 5 minit) untuk menghalang peserta daripada tertekan Check-Out serta-merta selepas Check-In.
+     - Sokongan penolakan waktu rehat (`breakMinutes`, contohnya 60 minit rehat tengah hari).
+     - Kadar panggilan (`rate limiting`) menggunakan `checkRateLimit` bagi mengelakkan percubaan spam atau penipuan.
+2. **Penyelarasan Data**:
+   - Disimpan terus ke pangkalan data Supabase (`attendance_records` dan `form_responses`).
+   - Diselaraskan ke Google Sheets penganjur dengan penambahan lajur dinamik: `Masa Masuk (Check-In)`, `Masa Keluar (Check-Out)`, `Jumlah Masa Hadir`, `Jumlah Jam (Hours)`, dan `Status Kehadiran`.
+3. **Pengalaman Pengguna (UX)**:
+   - **Pagi**: Borang memaparkan butang "Daftar Masuk (Check-In)". Selepas dihantar, skrin kejayaan memaparkan masa masuk bersama peringatan mesra untuk scan semula QR semasa tamat program.
+   - **Petang**: Apabila peserta membuka borang dan memasukkan No. IC yang sama, sistem serta-merta mengesan rekod daftar masuk pagi dan memaparkan kad status "🟢 Sedang Hadir" dengan butang jelas "Daftar Keluar Sekarang (Check-Out)".
+   - **Selesai**: Skrin memaparkan piala kejayaan, masa masuk, masa keluar, dan jumlah durasi jam sebenar yang dihadiri (contoh: **8 Jam 15 Minit**).
+
+---
+
+# Revamp Laman Utama (Landing Page) — Minimalist & Framer Motion ✅ SIAP
+
+**Matlamat**: Mereka bentuk semula laman utama KlikForm (`app/page.tsx`) dengan estetik *minimalist* moden (gaya Linear / Vercel), animasi lancar menggunakan `framer-motion`, dan mengemas kini semua kandungan (*content*) agar mencerminkan ciri-ciri sebenar dan terkini (*features semasa*): Borang Pintar Google Sheets, Studio e-Sijil Canva-Style, Penjanaan Pukal CSV ke ZIP, KlikBio Link-in-Bio, Verifikasi Sijil Segera, Analitik Privasi, Logik Bersyarat & Pelbagai Halaman, serta Pematuhan PDPA.
+
+- [x] 1. Cipta komponen Hero Minimalist (`components/landing/landing-hero.tsx`) dengan animasi Framer Motion, lencana kemas, tipografi berkontras tinggi, dan mockup interaktif produk sebenar.
+- [x] 2. Cipta Bento Grid Ciri-Ciri Semasa (`components/landing/landing-features-bento.tsx`) dengan kad interaktif (Google Sheets Sync, Studio Sijil Canva-Style, Bulk CSV ZIP, KlikBio, Analitik Drop-off, Multi-page & Conditional Logic, Attendance & PDPA).
+- [x] 3. Cipta Showcase Interaktif Mendalam (`components/landing/landing-showcase.tsx`) yang membolehkan pengunjung beralih antara produk utama (Forms, Sijil, KlikBio, QR) dengan animasi tab `framer-motion`.
+- [x] 4. Cipta Seksyen Sasaran Pengguna & Kes Penggunaan Tempatan (`components/landing/landing-use-cases.tsx`) untuk Cikgu/Sekolah, Penganjur Majlis, Peniaga Online/WhatsApp, dan HR/Syarikat.
+- [x] 5. Cipta Seksyen Perbandingan Pintar ("Mengapa KlikForm?") (`components/landing/landing-comparison.tsx`) membandingkan KlikForm vs Google Forms / Canva / Linktree.
+- [x] 6. Cipta Seksyen Tindakan (CTA) & Footer Minimalist (`components/landing/landing-cta.tsx` & `components/landing/landing-footer.tsx`).
+- [x] 7. Gabungkan semua seksyen ke dalam `app/page.tsx` sebagai Server Component (mengekalkan SSG & metadata SEO penuh).
+- [x] 8. Verifikasi kualiti: `npm run lint` (0 amaran), `npm run typecheck` (0 ralat), `npm test` (252/252 lulus), dan `npm run build` (bersih, 50 laluan termasuk /health).
+- [x] 9. Kemas kini `memory.md` dan `task.md`.
+
+---
+
+## Reviu Revamp Laman Utama (Landing Page)
+
+**Reka Bentuk Visual & Interaktiviti**:
+- **Estetik Minimalist**: Berteraskan reka bentuk moden berimpak tinggi ala Linear / Vercel dengan ruang bernafas yang luas, garisan sempadan mikro (`border-slate-200/80`), tipografi berkontras tinggi (`[text-wrap:balance]`, `tracking-tight`), dan lencana berstatus elegan.
+- **Animasi Framer Motion**:
+  - Hero staggered reveal (tajuk, subteks, butang CTA, lencana pengesahan).
+  - Mockup produk interaktif dengan tab langsung yang mempamerkan Form Builder, Studio E-Sijil, Google Sheets Sync, dan KlikBio menggunakan `layoutId` untuk peralihan tanpa kelipan.
+  - Skrol viewport reveal (`whileInView`, `viewport={{ once: true }}`) untuk Bento Grid dan seksyen utama.
+  - Deep-dive showcase dengan tab animasi interaktif.
+- **Kandungan Mengikut Ciri Semasa (*Features Semasa*)**:
+  1. Penyelarasan Google Sheets masa nyata tanpa webhook pihak ketiga berserta *Formula Injection Shield*.
+  2. Studio E-Sijil Canva-Style dengan pemegang penskalaan 4 bucu (*drag-to-scale*), fon Google/kaligrafi, dan *Auto-Scaling Typography* untuk tajuk program panjang.
+  3. Penjanaan Sijil Pukal (Bulk CSV to ZIP) untuk menghasilkan ratusan sijil PDF/PNG dalam beberapa saat.
+  4. Portal Semakan Awam & Kod QR Verifikasi dengan carian No. IC atau emel.
+  5. Halaman mikro KlikBio (Link-in-Bio) dengan 8 tema dan corak latar belakang estetik.
+  6. Borang dinamik: Multi-page (Page Breaks) & Conditional Logic (Skip Logic).
+  7. Analitik mesra privasi (penjejakan drop-off soalan tanpa menyimpan IP mentah) & pematuhan PDPA.
+- **Seni Bina & Prestasi**:
+  - `app/page.tsx` kekal sebagai **Server Component** (Static Site Generation `○ Static`), mengekalkan kelajuan pantas tanpa serverless cold start dan kecekapan metadata SEO penuh.
+  - Komponen animasi diasingkan ke dalam `components/landing/` dengan sempadan `"use client"`.
+  - Endpoint `/health` ditambah (`app/health/route.ts`) untuk membalas `200 OK` kepada probe kesihatan pelayan.
+  - Amaran usang `disableLogger` Sentry dibuang daripada `next.config.ts`.
+- **Kualiti & Ujian**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 amaran/ralat ESLint.
+  - `npm test`: 252 / 252 ujian lulus merentas 30 suite ujian.
+  - `npm run build`: Bersih (50 laluan).
+
+---
+
 # Fasa A — Quick Wins ✅ SIAP
 
 Lima feature bebas konflik. Tiap satu mesti ada: jenis, storage, server action, UI builder/dashboard, integrasi, ujian.
@@ -815,3 +919,194 @@ Memperbaiki susun atur studio rekaan e-Sijil pada skrin 14 inci (dan komputer ri
   - [x] 4. Tingkatkan keadaan *hover*: Tambah sorotan bingkai halus (*smooth primary outline/ring highlight*) dengan transisi lancar pada elemen yang tidak dipilih.
   - [x] 5. Sahkan kualiti (`npm test`, `npm run typecheck`, `npm run lint`, `npm run build`).
   - [x] 6. Deploy ke Vercel production dan kemas kini dokumentasi.
+
+---
+
+# Revamp Halaman Pricing (Pricing Page) — Minimalist & Visual Polish ✅ SIAP
+
+**Matlamat**: Memperkemas dan mencantikkan halaman penentuan harga (`/pricing`), kad pelan (`components/pricing/plan-card.tsx`), dan susun atur kandungan (`app/pricing/page.tsx`) agar selari dengan estetika minimalist moden landing page KlikForm (gaya Linear/Vercel) dengan hierarki visual yang jelas, kad berkontur rounded-3xl yang seimbang, sorotan pelan Pro yang elegan, serta seksyen FAQ interaktif.
+
+- [x] 1. Perkemas kad pelan harga (`components/pricing/plan-card.tsx`):
+  - Kad 3D-feeling rounded-3xl dengan border halus berkontras (`border-slate-200/80` untuk Free/Enterprise dan `border-purple-600/40 shadow-xl ring-1 ring-purple-500/20` untuk Pro).
+  - Lencana "Paling Popular" moden dengan gradien ungu-indigo terapung elegan.
+  - Paparan harga berkontras tinggi dengan diskaun 50% "Jimat 50% Promosi" yang kemas.
+  - Ikon tanda semak (checkmarks) bulat emerald yang anggun untuk senarai ciri.
+  - Susun atur flexbox seimbang dengan `flex-1` pada bekas ciri & butang supaya ketinggian kad seragam tanpa jurang lompang.
+- [x] 2. Mereka bentuk semula halaman `app/pricing/page.tsx`:
+  - Latar belakang putih bersih (`bg-white`) dengan sentuhan grid dot pattern halus.
+  - Header tajuk dan subteks berkontras tinggi dengan jaminan ketenangan minda ("Batal bila-bila masa", "Bayaran selamat BCL / FPX", "Sedia digunakan serta-merta").
+  - Jadual/senarai FAQ moden menggunakan komponen akordion interaktif (Soalan Lazim).
+  - Footer kemas menggunakan `LandingFooter`.
+  - Pengekalan Static Site Generation (`○ Static`) tanpa server-side cookie block.
+- [x] 3. Pengesahan kualiti:
+  - `npm run lint`: 0 ralat, 0 amaran.
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm test`: 252 / 252 ujian unit lulus (termasuk `tests/pricing.test.ts`).
+  - `npm run build`: Kompilasi Turbopack Next.js 16 bersih.
+
+---
+
+# Revamp Menu Dropdown Produk Navbar (Landing Navbar & Mobile Drawer) ✅ SIAP
+
+**Matlamat**: Mengemas kini senarai produk terkini KlikForm pada dropdown menu "Products" di desktop navbar (`components/landing-navbar.tsx`) dan mobile drawer (`components/landing-mobile-menu.tsx`) dengan reka bentuk mega-menu moden, ikon squircle berwarna unik, lencana visual `BARU` dan `HOT`, penerangan ringkas setiap produk, serta bar tindakan bawah (*trust & action bar*).
+
+- [x] 1. Perkemas Desktop Mega-Menu di `components/landing-navbar.tsx`:
+  - Menggantikan senarai 4 produk lama dengan 6 produk terkini 2026:
+    1. Online Forms (Google Sheets Sync masa nyata, Formula Injection Shield & skip logic)
+    2. Studio E-Sijil Canva (Drag-to-scale, 10+ templat & auto-scaling typography)
+    3. KlikBio Link-in-Bio (Lencana `BARU`, 8 tema warna, corak latar & pautan WhatsApp)
+    4. Jana Sijil Pukal CSV → ZIP (Lencana `HOT`, eksport ratusan sijil PDF/PNG)
+    5. Kod QR Dinamik (Resolusi cetakan tinggi & imbasan pantas)
+    6. URL Shortener (Pautan ringkas dengan analitik lawatan)
+  - Bekas mega-menu diperluas (`w-[520px] md:w-[680px] lg:w-[720px]`), bucu `rounded-3xl`, bayang terapung lembut `shadow-[0_20px_50px_rgba(15,23,42,0.12)]`.
+  - Ikon squircle berwarna khas bagi setiap produk dengan efek interaktif hover.
+  - Bar bawah (*bottom bar*): Lencana jaminan pengesahan sijil segera dan pautan pintas ke `/pricing`.
+- [x] 2. Segerakkan Navigasi Mudah Alih di `components/landing-mobile-menu.tsx`:
+  - Memasukkan kesemua 6 produk terkini dengan ikon kemas dan lencana `BARU` & `HOT`.
+- [x] 3. Pengesahan kualiti:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat, 0 amaran ESLint.
+  - `npm test`: 251 / 251 ujian unit lulus (30 test suites).
+
+---
+
+# Pengindahan Gaya Hover & Pembetulan Susun Atur Mendatar Navbar Dropdown ✅ SIAP
+
+**Matlamat**: Menyelesaikan masalah susun atur menegak yang janggal dan kesan hover yang kasar pada kad menu "Products" (menghapuskan kotak sempadan kelabu tegar, pembalikan warna ikon gelap yang garang, dan pertembungan warna teks ungu dengan ikon hijau).
+
+- [x] 1. Pembetulan Susun Atur Mendatar (*Horizontal Layout*):
+  - Buang `flex-col` lalai dari `NavigationMenuLink` dalam `components/ui/navigation-menu.tsx`.
+  - Tetapkan susun atur mendatar `flex flex-row items-start gap-3.5` di `components/landing-navbar.tsx` (ikon kemas di sebelah kiri, tajuk & penerangan di sebelah kanan).
+- [x] 2. Pengindahan Kesan Hover (*Polished & Subtle Hover Effect*):
+  - Buang sempadan kelabu tegar `border-slate-200/60` yang kelihatan seperti kotak kaku.
+  - Gantikan dengan latar belakang lembut mengikut rona produk (`hover:bg-[color]-50/40`) tanpa sebarang garisan sempadan tajam.
+  - Ikon squircle tidak lagi bertukar menjadi blok gelap legap; sebaliknya menggunakan penskalaan lembut `scale-105` dengan rona pastel yang lebih kaya (`bg-100` / `text-700`).
+  - Warna teks tajuk semasa hover diselaraskan mengikut warna produk masing-masing (KlikBio bertukar menjadi emerald yang harmoni, bukan ungu yang bertembung).
+- [x] 3. Segerakkan menu mobile di `components/landing-mobile-menu.tsx`.
+- [x] 4. Pembuangan Bar Bawah (*Bottom Action/Trust Bar*):
+  - Membuang bar bawah `Portal Semakan Awam & Kod QR Sah disertakan automatik` dan butang `Lihat Pelan & Harga` daripada menu dropdown desktop di `components/landing-navbar.tsx` agar dropdown kekal minimalis dan fokus kepada 6 produk sahaja.
+  - Membersihkan import tidak digunakan (`ShieldCheck`, `ArrowRight`).
+- [x] 5. Pengesahan kualiti: `npm run typecheck` (0), `npm run lint` (0), `npm test` (251/251 lulus).
+
+---
+
+# Halaman Khusus 6 Produk KlikForm (Dedicated Product Pages) ✅ SIAP
+
+**Matlamat**: Memastikan kesemua 6 produk di dalam menu dropdown mempunyai halaman penerangan dan pameran ciri (*product landing page*) masing-masing secara lengkap dan berasingan.
+
+- [x] 1. Cipta halaman pameran KlikBio di `app/products/bio/page.tsx` (`/products/bio`):
+  - Hero, 8 preset tema warna, 8 corak latar belakang estetik, pautan WhatsApp terus, live mobile mockup preview, kod QR perkongsian, dan analitik klik.
+- [x] 2. Cipta halaman pameran Jana Sijil Pukal di `app/products/bulk-certificates/page.tsx` (`/products/bulk-certificates`):
+  - Hero, import CSV & auto-detect lajur, penjanaan pantas terus ke arkib ZIP, format PDF/PNG HD, nombor siri & kod QR keselamatan, dan auto-scaling typography.
+- [x] 3. Kemas kini pautan dropdown di `components/landing-navbar.tsx`:
+  - `KlikBio (Link-in-Bio)` dipautkan ke `/products/bio` (bukan `/bio` dashboard).
+  - `Jana Sijil Pukal (CSV → ZIP)` dipautkan ke `/products/bulk-certificates` (bukan `/products/certificates`).
+- [x] 4. Kemas kini pautan mobile drawer di `components/landing-mobile-menu.tsx`.
+- [x] 5. Kemas kini pautan footer di `components/landing/landing-footer.tsx`.
+- [x] 6. Pengesahan kualiti: `npm run typecheck` (0), `npm run lint` (0), `npm test` (251/251 lulus).
+
+---
+
+# Translasi Penuh Laman Web & Sistem ke Bahasa Inggeris (Full English Localization) ✅ SIAP
+
+**Matlamat**: Mengalihkan keseluruhan teks, penerangan ciri, antaramuka sistem, borang awam, dan emel automatik KlikForm kepada Bahasa Inggeris sepenuhnya mengikut standard antarabangsa profesional.
+
+- [x] 1. Laman Pemasaran & Landing Page:
+  - [x] `app/layout.tsx`: Tukar `lang="en"` & kemas kini metadata SEO/OpenGraph ke Bahasa Inggeris.
+  - [x] `components/landing-navbar.tsx` & `components/landing-mobile-menu.tsx`: Terjemahkan penerangan produk mega-menu & lencana (`NEW`, `HOT`).
+  - [x] `components/landing/landing-hero.tsx`: Hero badge, H1, subteks, butang CTA, bukti sosial & tab mockup.
+  - [x] `components/landing/landing-features-bento.tsx`: Semua 6 kad Bento Grid (Google Sheets, Canva Studio, Bulk CSV, KlikBio, Analytics, PDPA).
+  - [x] `components/landing/landing-showcase.tsx`: Tab interaktif showcase mendalam.
+  - [x] `components/landing/landing-use-cases.tsx`: 4 segmen sasaran pengguna.
+  - [x] `components/landing/landing-comparison.tsx`: Matriks perbandingan platform.
+  - [x] `components/landing/landing-cta.tsx` & `landing-footer.tsx`: Banner CTA & footer.
+- [x] 2. Halaman Pameran Produk (`app/products/*`):
+  - [x] `app/products/bio/page.tsx`: Terjemahkan pameran ciri KlikBio ke Bahasa Inggeris.
+  - [x] `app/products/bulk-certificates/page.tsx`: Terjemahkan pameran Jana Sijil Pukal ke Bahasa Inggeris.
+  - [x] Semak & perhalusi `forms/page.tsx`, `certificates/page.tsx`, `qr-codes/page.tsx`, `shortener/page.tsx`.
+- [x] 3. Halaman Pricing & Tetapan Harga:
+  - [x] `app/pricing/page.tsx`: Tajuk, jaminan keselamatan (FPX/BCL), dan FAQ akordion.
+  - [x] `components/pricing/plan-card.tsx`: Lencana "Most Popular", butang tindakan, dan senarai ciri pelan.
+  - [x] `lib/constants/pricing.ts`: Kemas kini deskripsi harga ke Bahasa Inggeris.
+- [x] 4. Papan Pemuka & Pembina (Dashboard & Builders):
+  - [x] `components/dashboard/cross-form-analytics.tsx`: Tajuk kad analitik.
+  - [x] `components/builder-tour.tsx`: Lawatan interaktif 5 langkah (Joyride onboarding).
+  - [x] `app/builder/[id]/client.tsx`: Status autosave ("Saving...", "Saved to cloud"), tab, dan dialog tukar templat.
+  - [x] `app/(dashboard)/certificates/builder/[id]/client.tsx` & bulk client: Kawalan zum ("Fit to Screen", "Actual Size"), pemetaan lajur CSV, butang muat turun ZIP.
+- [x] 5. Borang Awam & Notifikasi Emel:
+  - [x] `app/(public)/form/[id]/client.tsx`: Bar progres ("X / Y Answered"), butang Back/Next/Submit, skrin borang ditutup & terima kasih.
+  - [x] `app/(public)/check/[formId]/client.tsx` & `verify/[id]/page.tsx`: Input carian sijil & butang muat turun.
+  - [x] `lib/email/index.ts`: Terjemahkan kesemua 10 templat emel (notifikasi pemilik, pengesahan responden, edit magic link, peringatan langganan, resit FPX/BCL).
+  - [x] `tests/respondent-notification.test.ts`: Kemas kini jangkaan teks ujian emel.
+- [x] 6. Pengesahan Kualiti Penuh:
+  - [x] `npm run typecheck`: 0 ralat TypeScript.
+  - [x] `npm run lint`: 0 ralat, 0 amaran ESLint.
+  - [x] `npm test`: 251 / 251 ujian unit lulus (30 test suites).
+
+---
+
+## Reviu Translasi Penuh Laman Web & Sistem ke Bahasa Inggeris
+
+**Skop & Pelaksanaan Translasi**:
+1. **Laman Pemasaran & Navigasi**:
+   - `app/layout.tsx`: Diselaraskan kepada `<html lang="en">` dengan metadata OpenGraph & deskripsi Bahasa Inggeris antarabangsa.
+   - `components/landing-navbar.tsx` & `components/landing-mobile-menu.tsx`: Kesemua 6 produk diterjemahkan ke Bahasa Inggeris dengan lencana moden `NEW` dan `HOT`.
+   - `components/landing/`: Komponen `landing-hero.tsx`, `landing-features-bento.tsx`, `landing-showcase.tsx`, `landing-use-cases.tsx`, `landing-comparison.tsx`, `landing-cta.tsx`, dan `landing-footer.tsx` semuanya dialihkan kepada Bahasa Inggeris standard, jelas, dan meyakinkan.
+2. **Halaman Pameran Produk (`/products/*`)**:
+   - `/products/bio`, `/products/bulk-certificates`, `/products/forms`, `/products/certificates`, `/products/qr-codes`, `/products/shortener` lengkap dengan salinan Bahasa Inggeris dan footer standard `LandingFooter`.
+3. **Harga & Langganan**:
+   - `/pricing` dan kad `plan-card.tsx` menggunakan Bahasa Inggeris ("Most Popular", "Get Started Free", "Upgrade to Pro", "Cancel anytime • No hidden fees", "Instant activation", "Secure FPX / BCL online banking").
+   - Mata wang kekal `RM 15` dan gerbang pembayaran kekal berorientasikan pasaran tempatan Malaysia (FPX / BCL.my).
+4. **Studio & Pembina**:
+   - Status auto-save: `Saving...` dan `Saved to cloud`.
+   - Onboarding Joyride: Langkah 1 hingga 5 lengkap dalam Bahasa Inggeris dengan kawalan `Skip`, `Next`, `Back`, dan `Finish`.
+   - Studio Sijil & Bulk Generator: Kawalan zum `Fit (X%)`, `Actual Size 100%`, label muat naik CSV, pengesanan lajur (`Name`, `Program / Event`, `Date`, `IC / ID`, dll.), dan butang `Generate & Download ZIP`.
+5. **Borang Awam & Lapisan Emel**:
+   - Paparan responden: `X / Y Answered`, `Closes in: X`, `Form Closed`, `Access Restricted`, `Submit Another Response`.
+   - Lapisan emel (`lib/email/index.ts`): Kesemua 10 templat diselaraskan kepada Bahasa Inggeris dengan escaping keselamatan HTML penuh.
+   - Ujian unit Vitest `tests/respondent-notification.test.ts` diselaraskan dan mengekalkan 100% kadar kelulusan.
+6. **Kualiti & Keandalan**:
+   - `npm run typecheck`: 0 ralat.
+   - `npm run lint`: 0 ralat/amaran.
+   - `npm test`: 251 / 251 ujian lulus merentas 30 suites.
+
+---
+
+# Pengoptimuman Prestasi & Penghapusan Lag Drag E-Cert Builder ✅ SIAP
+
+**Matlamat**: Menyelesaikan masalah pergerakan terasa lambat/tersekat (*drag lag*) semasa pengguna menggerakkan atau mengubah saiz elemen pada canvas E-Cert Builder.
+
+- [x] 1. Kenal pasti punca asal lag:
+  - Kelas CSS `transition-all duration-150` pada pembungkus elemen melambatkan kemas kini kedudukan `left` dan `top` sebanyak 150ms di belakang kursor.
+  - Panggilan `canvasRef.current.getBoundingClientRect()` pada setiap event `mousemove` menyebabkan *forced synchronous reflow* berulang kali.
+  - Ketiadaan *frame throttling* (`requestAnimationFrame`) menyebabkan event tetikus berfrekuensi tinggi membebankan kitaran re-render React.
+  - Event listener `onMouseMove`/`onMouseLeave` terikat pada elemen canvas semata-mata, menyebabkan seretan pantas terputus apabila kursor terkeluar sedikit dari kanvas.
+- [x] 2. Laksanakan pengoptimuman prestasi di `app/(dashboard)/certificates/builder/[id]/client.tsx`:
+  - Nyahaktifkan transition kedudukan (`transition-none` atau khusus kepada `box-shadow,opacity`) semasa seretan/ubah saiz aktif (`isDragging || isResizing`).
+  - Tambah akselerasi GPU `willChange: 'left, top'` semasa seretan.
+  - Hapuskan panggilan `getBoundingClientRect()` pada `mousemove`; guna `currentScale` yang telah siap dikira.
+  - Laksanakan *batching* dengan `requestAnimationFrame` untuk menyelaraskan pergerakan dengan kadar segar semula skrin (60fps/120fps).
+  - Pindahkan event listener ke peringkat `window` semasa seretan/ubah saiz aktif dengan penguncian kursor `move` dan pencegahan `userSelect`.
+  - Kemas kini undo/redo history hanya jika elemen benar-benar digerakkan (`hasMovedRef`).
+- [x] 3. Pengesahan kualiti:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat/amaran ESLint.
+  - `npm test`: 251 / 251 ujian lulus (30 test suites).
+
+---
+
+## Reviu Pengoptimuman Prestasi E-Cert Builder
+
+**Punca Masalah & Analisis Teknikal**:
+1. **Interpolasi CSS 150ms**: Pembungkus elemen menggunakan `transition-all duration-150`. Apabila `left` dan `top` dikemas kini, enjin CSS pelayar web tidak meletakkan elemen serta-merta, sebaliknya menginterpolasi koordinat selama 150ms. Ini menghasilkan sensasi terapung/tertunda di belakang tetikus.
+2. **Forced Synchronous Layout Reflow**: Setiap kali event `mousemove` berlaku, kod memanggil `canvasRef.current.getBoundingClientRect()` untuk mendapatkan skala kanvas. Ini memaksa pelayar mengira semula susun atur geometri berpuluh hingga beratus kali sesaat.
+3. **Kekerapan Event Tanpa Had (Unthrottled High-Polling Mouse Events)**: Tetikus moden menghantar 125Hz–1000Hz event. Kemas kini state React secara terus pada setiap event mencetuskan kitaran re-render yang melebihi kadar muat semula skrin (60Hz/120Hz).
+4. **Kehilangan Fokus Seretan (Canvas-Bound Listeners)**: Penggunaan `onMouseLeave={handleMouseUp}` pada kanvas menyebabkan seretan yang laju terputus sebaik sahaja kursor tergelincir melepasi garisan kanvas.
+
+**Penyelesaian Yang Dilaksanakan**:
+1. Menggantikan `transition-all duration-150` dengan `transition-[box-shadow,opacity] duration-150` dan menguatkuasakan `transition-none` apabila `isDragging || isResizing` aktif.
+2. Menggunakan `currentScale` secara langsung tanpa membuat pertanyaan geometri DOM (`getBoundingClientRect`) pada setiap event `mousemove`.
+3. Mengintegrasikan `requestAnimationFrame` (rAF) ref throttling supaya pengemaskinian state komponen berlaku selari dengan kadar bingkai paparan (60/120 FPS).
+4. Melampirkan event listener `mousemove` dan `mouseup` pada objek `window` apabila seretan bermula, membolehkan pergerakan lancar dan tidak terputus walaupun tetikus bergerak laju ke luar kawasan kanvas.
+5. Memastikan rekod sejarah Undo/Redo hanya ditambah apabila berlaku perubahan kedudukan sebenar (`hasMovedRef`), mengelakkan catatan kosong sewaktu klik pemilihan elemen.
+

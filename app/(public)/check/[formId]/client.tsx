@@ -101,7 +101,7 @@ export function CertificateCheckClient({
 
   const handleCheck = async () => {
     if (!identifier.trim()) {
-      toast.error('Sila masukkan nombor IC atau Email');
+      toast.error('Please enter your IC number or Email');
       return;
     }
 
@@ -112,7 +112,7 @@ export function CertificateCheckClient({
       const checkResult = await checkCertificateByICOrEmail(formId, identifier.trim());
       setResult(checkResult);
     } catch {
-      toast.error('Ralat semasa menyemak sijil');
+      toast.error('Error verifying certificate');
     } finally {
       setLoading(false);
     }

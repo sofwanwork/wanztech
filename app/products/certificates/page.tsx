@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { LandingNavbar } from '@/components/landing-navbar';
 import { LandingMobileMenu } from '@/components/landing-mobile-menu';
 import { LandingHeaderAuth } from '@/components/landing-header-auth';
+import { LandingFooter } from '@/components/landing/landing-footer';
 import {
     Award,
     ArrowRight,
@@ -165,11 +166,7 @@ export default function CertificatesProductPage() {
                 </section>
             </main>
 
-            <footer className="border-t bg-white py-6 md:py-0">
-                <div className="container mx-auto px-4 md:px-6 flex flex-col items-center justify-center gap-4 md:h-24">
-                    <p className="text-sm text-gray-500">© {new Date().getFullYear()} KlikForm. All rights reserved.</p>
-                </div>
-            </footer>
+            <LandingFooter />
         </div>
     );
 }

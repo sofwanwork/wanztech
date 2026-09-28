@@ -25,9 +25,15 @@ import {
 } from '@/components/ui/select';
 import { cn, getProxiedImageUrl, sanitizeHtml } from '@/lib/utils';
 import { format } from 'date-fns';
-import { Loader2, CheckCircle2, List, Clock, ExternalLink } from 'lucide-react';
+import { Loader2, CheckCircle2, List, Clock, ExternalLink, LogOut, Award } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { submitFormAction } from '@/actions/forms';
+import {
+  checkAttendanceStatusAction,
+  submitAttendanceCheckOutAction,
+} from '@/actions/attendance';
+import { findIdentifierField } from '@/lib/forms/attendance';
+import { AttendanceSummary } from '@/lib/types';
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -121,6 +127,75 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
   const [pdpaConsent, setPdpaConsent] = useState(false);
   // Multi-page navigation: index of the currently displayed page.
   const [currentPage, setCurrentPage] = useState(0);
+
+  // Smart Attendance (1 QR Check-In & Check-Out)
+  const checkInOutEnabled =
+    !editMode &&
+    !!(form.attendanceSettings?.enabled && form.attendanceSettings?.checkInOut?.enabled);
+  const identifierField = checkInOutEnabled
+    ? findIdentifierField(form.fields, form.attendanceSettings?.checkInOut?.identifierFieldId)
+    : undefined;
+
+  const [attendanceSummary, setAttendanceSummary] = useState<AttendanceSummary | null>(null);
+  const [checkingOut, setCheckingOut] = useState(false);
+  const [checkInResult, setCheckInResult] = useState<{
+    isCheckIn?: boolean;
+    checkInTime?: string;
+    participantName?: string;
+  } | null>(null);
+  const [checkOutResult, setCheckOutResult] = useState<AttendanceSummary | null>(null);
+
+  useEffect(() => {
+    if (!checkInOutEnabled || !identifierField) return;
+    const rawVal = formData[identifierField.id];
+    if (!rawVal || typeof rawVal !== 'string') {
+      setAttendanceSummary(null);
+      return;
+    }
+
+    const trimmed = rawVal.trim();
+    if (trimmed.length < 5) {
+      setAttendanceSummary(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await checkAttendanceStatusAction(form.id, trimmed);
+        if (res.ok && res.summary) {
+          setAttendanceSummary(res.summary);
+        } else {
+          setAttendanceSummary(null);
+        }
+      } catch (err) {
+        console.warn('Check attendance error:', err);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [checkInOutEnabled, identifierField, formData, form.id]);
+
+  const handleCheckOut = async () => {
+    if (!identifierField) return;
+    const rawVal = formData[identifierField.id];
+    if (!rawVal) return;
+
+    setCheckingOut(true);
+    try {
+      const res = await submitAttendanceCheckOutAction(form.id, String(rawVal));
+      if (res.success && res.summary) {
+        setCheckOutResult(res.summary);
+        setSubmitted(true);
+        toast.success('Daftar keluar berjaya direkodkan!');
+      } else {
+        toast.error(res.error || 'Gagal mendaftar keluar.');
+      }
+    } catch {
+      toast.error('Ralat semasa mendaftar keluar.');
+    } finally {
+      setCheckingOut(false);
+    }
+  };
 
   // Analytics: fires `view` on mount, `start` on first interaction,
   // `field_focus` per field, `submit` on success, `abandon` on pagehide.
@@ -275,6 +350,17 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
 
       if (result.success) {
         setSubmitted(true);
+        if ('isCheckIn' in result && result.isCheckIn) {
+          const checkInPayload = result as {
+            checkInTime?: string;
+            participantName?: string;
+          };
+          setCheckInResult({
+            isCheckIn: true,
+            checkInTime: checkInPayload.checkInTime,
+            participantName: checkInPayload.participantName,
+          });
+        }
         if (!editMode) {
           trackSubmit();
           // Clear the idempotency key so "Submit another response" gets a
@@ -285,7 +371,13 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
             /* ignore */
           }
         }
-        toast.success(editMode ? 'Jawapan dikemas kini!' : 'Submitted successfully!');
+        toast.success(
+          editMode
+            ? 'Response updated successfully!'
+            : 'isCheckIn' in result && result.isCheckIn
+            ? 'Daftar masuk (Check-In) berjaya direkodkan!'
+            : 'Submitted successfully!'
+        );
       } else {
         toast.error(result.error || 'Something went wrong');
       }
@@ -373,7 +465,7 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
         const start = parseMalaysiaTime(settings.startTime);
         if (now < start) {
           setAccessDenied(
-            `Form ini belum dibuka.\nSila tunggu sehingga: ${formatInMalaysiaTime(start)}`
+            `This form is not open yet.\nPlease wait until: ${formatInMalaysiaTime(start)}`
           );
           setCheckingAccess(false);
           setMounted(true);
@@ -383,7 +475,7 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
       if (settings.endTime) {
         const end = parseMalaysiaTime(settings.endTime);
         if (now > end) {
-          setAccessDenied(`Form ini telah ditutup pada: ${formatInMalaysiaTime(end)}`);
+          setAccessDenied(`This form was closed on: ${formatInMalaysiaTime(end)}`);
           setCheckingAccess(false);
           setMounted(true);
           return;
@@ -393,7 +485,7 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
       // 2. Geofence Check
       if (settings.geofence?.enabled) {
         if (!navigator.geolocation) {
-          setAccessDenied('Browser anda tidak menyokong Geolocation. Sila guna browser lain.');
+          setAccessDenied('Your browser does not support Geolocation. Please use a supported browser.');
           setCheckingAccess(false);
           setMounted(true);
           return;
@@ -411,7 +503,7 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
 
             if (distance > radius) {
               setAccessDenied(
-                `Anda berada di luar kawasan yang dibenarkan.\nJarak anda: ${Math.round(distance)}m\nJarak dibenarkan: ${radius}m`
+                `You are outside the permitted location radius.\nYour distance: ${Math.round(distance)}m\nPermitted radius: ${radius}m`
               );
             }
             setCheckingAccess(false);
@@ -419,7 +511,7 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
           },
           (error) => {
             console.error(error);
-            setAccessDenied('Sila benarkan akses lokasi (GPS) untuk mengisi form ini.');
+            setAccessDenied('Please allow location (GPS) permissions to submit this form.');
             setCheckingAccess(false);
             setMounted(true);
           },
@@ -449,7 +541,7 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
 
       if (distance <= 0) {
         clearInterval(interval);
-        setTimeLeft('Telah tamat');
+        setTimeLeft('Ended');
         // Let checkAccess handle the access denied state by reloading or just wait
         window.location.reload();
         return;
@@ -461,8 +553,8 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
       const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
       const parts = [];
-      if (days > 0) parts.push(`${days}h`);
-      if (hours > 0) parts.push(`${hours}j`);
+      if (days > 0) parts.push(`${days}d`);
+      if (hours > 0) parts.push(`${hours}h`);
       parts.push(`${minutes}m`);
       parts.push(`${seconds}s`);
 
@@ -493,14 +585,14 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
             <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
               <span className="text-2xl">🚫</span>
             </div>
-            <CardTitle className="text-xl font-semibold text-gray-900">Akses Dihadkan</CardTitle>
+            <CardTitle className="text-xl font-semibold text-gray-900">Access Restricted</CardTitle>
             <CardDescription className="whitespace-pre-wrap text-gray-600 mt-2 font-medium">
               {accessDenied}
             </CardDescription>
           </CardHeader>
           <CardFooter className="justify-center pb-8">
             <Button variant="outline" onClick={() => window.location.reload()}>
-              Cuba Semula
+              Try Again
             </Button>
           </CardFooter>
         </Card>
@@ -516,9 +608,9 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
             <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
               <span className="text-2xl">🔒</span>
             </div>
-            <CardTitle className="text-xl font-semibold text-gray-900">Borang Ditutup</CardTitle>
+            <CardTitle className="text-xl font-semibold text-gray-900">Form Closed</CardTitle>
             <CardDescription className="whitespace-pre-wrap text-gray-600 mt-2 font-medium">
-              Borang ini telah ditutup oleh penganjur dan tidak lagi menerima sebarang respons.
+              This form has been closed by the organizer and is no longer accepting responses.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -543,17 +635,65 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
               />
             </div>
           )}
-          <CardHeader className="py-8">
-            <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
-              <CheckCircle2 className="h-6 w-6 text-green-600" />
-            </div>
-            {!form.thankYouMessage && (
-              <CardTitle className="text-xl font-semibold text-gray-900">Thank You!</CardTitle>
-            )}
-            <CardDescription className="whitespace-pre-wrap text-gray-600 mt-2">
-              {form.thankYouMessage || 'Your response has been recorded.'}
-            </CardDescription>
-          </CardHeader>
+          {checkOutResult ? (
+            <CardHeader className="py-8">
+              <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm">
+                <Award className="h-7 w-7" />
+              </div>
+              <CardTitle className="text-2xl font-bold text-gray-900">
+                Daftar Keluar Berjaya!
+              </CardTitle>
+              <CardDescription className="text-gray-600 mt-2">
+                Terima kasih{checkOutResult.participantName ? `, ${checkOutResult.participantName}` : ''} kerana menghadiri program ini!
+              </CardDescription>
+              <div className="mt-6 p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 text-left space-y-2.5">
+                <div className="flex justify-between items-center text-xs text-emerald-900">
+                  <span className="text-muted-foreground">Waktu Masuk:</span>
+                  <strong className="font-semibold">{checkOutResult.checkInTime}</strong>
+                </div>
+                <div className="flex justify-between items-center text-xs text-emerald-900">
+                  <span className="text-muted-foreground">Waktu Keluar:</span>
+                  <strong className="font-semibold">{checkOutResult.checkOutTime}</strong>
+                </div>
+                <div className="pt-2 border-t border-emerald-200 flex justify-between items-center text-emerald-950">
+                  <span className="text-xs font-semibold">Jumlah Masa Kehadiran:</span>
+                  <strong className="text-base font-bold text-emerald-700">
+                    {checkOutResult.durationFormatted} ({checkOutResult.durationHours} Jam)
+                  </strong>
+                </div>
+              </div>
+            </CardHeader>
+          ) : checkInResult?.isCheckIn ? (
+            <CardHeader className="py-8">
+              <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm">
+                <Clock className="h-7 w-7" />
+              </div>
+              <CardTitle className="text-2xl font-bold text-gray-900">
+                Daftar Masuk Berjaya!
+              </CardTitle>
+              <CardDescription className="text-gray-600 mt-2">
+                Selamat datang{checkInResult.participantName ? `, ${checkInResult.participantName}` : ''}! Masa masuk anda: <strong>{checkInResult.checkInTime}</strong>.
+              </CardDescription>
+              <div className="mt-4 p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 text-left flex items-start gap-2.5">
+                <span className="text-base leading-none">📌</span>
+                <p className="leading-relaxed">
+                  <strong>Peringatan:</strong> Sila imbas semula kod QR yang sama semasa tamat program untuk mendaftar keluar (Check-Out) dan mengira jumlah jam kehadiran anda.
+                </p>
+              </div>
+            </CardHeader>
+          ) : (
+            <CardHeader className="py-8">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
+                <CheckCircle2 className="h-6 w-6 text-green-600" />
+              </div>
+              {!form.thankYouMessage && (
+                <CardTitle className="text-xl font-semibold text-gray-900">Thank You!</CardTitle>
+              )}
+              <CardDescription className="whitespace-pre-wrap text-gray-600 mt-2">
+                {form.thankYouMessage || 'Your response has been recorded.'}
+              </CardDescription>
+            </CardHeader>
+          )}
           <CardFooter className="justify-center pb-8 flex-col gap-3">
             {(form.redirectButtons || []).map((btn, index) => btn.url && (
               <Button
@@ -562,7 +702,7 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
                 className="w-full sm:w-auto bg-[var(--primary)] hover:opacity-90 text-white flex items-center gap-2 shadow-sm"
               >
                 <a href={formatRedirectUrl(btn.url)} target="_blank" rel="noopener noreferrer">
-                  {btn.text || 'Layari Pautan'}
+                  {btn.text || 'Visit Link'}
                   <ExternalLink className="h-4 w-4" />
                 </a>
               </Button>
@@ -572,14 +712,14 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
                 variant="default"
                 className="w-full sm:w-auto bg-[#25D366] hover:bg-[#1da851] text-white flex items-center gap-2 shadow-sm"
                 onClick={() => {
-                  const message = encodeURIComponent((form.theme?.whatsappShareMessage || 'Sila isi borang ini: ') + '\n\n' + window.location.href);
+                  const message = encodeURIComponent((form.theme?.whatsappShareMessage || 'Please fill out this form: ') + '\n\n' + window.location.href);
                   window.open(`https://wa.me/?text=${message}`, '_blank');
                 }}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
                 </svg>
-                Kongsi ke WhatsApp
+                Share on WhatsApp
               </Button>
             )}
             {(form.allowMultipleSubmissions ?? true) && (
@@ -734,14 +874,14 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
       {timeLeft && !submitted && (
         <div className="fixed top-4 right-4 z-40 bg-white/90 backdrop-blur-sm shadow-md border border-red-100 rounded-full px-4 py-2 flex items-center gap-2 text-sm font-semibold text-red-600 animate-in fade-in slide-in-from-top-4">
           <Clock className="h-4 w-4" />
-          <span>Tutup dalam: {timeLeft}</span>
+          <span>Closes in: {timeLeft}</span>
         </div>
       )}
 
       {/* Progress Badge (Floating Bottom Right) */}
       {!submitted && totalRequired > 0 && (
         <div className="fixed bottom-4 right-4 z-40 bg-white/90 backdrop-blur-sm shadow-md border border-gray-200 rounded-full px-4 py-2 text-xs font-semibold text-gray-700 animate-in fade-in slide-in-from-bottom-4">
-          {filledRequired} / {totalRequired} Terjawab
+          {filledRequired} / {totalRequired} Answered
         </div>
       )}
 
@@ -811,6 +951,92 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
         {/* Form Fields */}
         <form onSubmit={handleSubmit} className="space-y-6">
           <input type="text" name="_gotcha" tabIndex={-1} autoComplete="off" className="absolute opacity-0 -z-50 w-0 h-0 overflow-hidden" />
+
+          {/* Smart Attendance Check-Out Banner */}
+          {attendanceSummary?.status === 'checked_in' && (
+            <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/90 shadow-sm space-y-4 animate-in fade-in slide-in-from-top-2">
+              <div className="flex items-start gap-3">
+                <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 text-emerald-700">
+                  <Clock className="h-5 w-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                      🟢 Sedang Hadir
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      Masa Masuk: <strong>{attendanceSummary.checkInTime}</strong>
+                    </span>
+                  </div>
+                  <h3 className="text-base font-bold text-emerald-950 mt-1">
+                    Selamat kembali{attendanceSummary.participantName ? `, ${attendanceSummary.participantName}` : ''}!
+                  </h3>
+                  <p className="text-xs text-emerald-800/90 mt-0.5">
+                    Anda telah mendaftar masuk. Sedia untuk mendaftar keluar program?
+                  </p>
+                </div>
+              </div>
+
+              {attendanceSummary.canCheckOut ? (
+                <Button
+                  type="button"
+                  onClick={handleCheckOut}
+                  disabled={checkingOut}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 h-auto rounded-xl shadow transition-all flex items-center justify-center gap-2"
+                >
+                  {checkingOut ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Merekod Daftar Keluar...
+                    </>
+                  ) : (
+                    <>
+                      <LogOut className="h-4 w-4" />
+                      Daftar Keluar Sekarang (Check-Out)
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <div className="text-xs text-amber-800 bg-amber-50/90 p-3 rounded-xl border border-amber-200 flex items-center gap-2">
+                  <span>⏳</span>
+                  <span>
+                    Sila tunggu <strong>{attendanceSummary.minDurationRemainingMinutes} minit</strong> lagi sebelum dibenarkan mendaftar keluar.
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Smart Attendance Already Completed Banner */}
+          {attendanceSummary?.status === 'completed' && (
+            <div className="p-5 rounded-2xl bg-blue-50/80 border border-blue-200/80 shadow-sm space-y-3 animate-in fade-in slide-in-from-top-2">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                  🏁 Kehadiran Selesai
+                </span>
+              </div>
+              <h3 className="text-base font-bold text-blue-950">
+                Kehadiran Anda Telah Lengkap Direkodkan
+              </h3>
+              <div className="grid grid-cols-2 gap-3 text-xs text-blue-900 bg-white/80 p-3 rounded-xl border border-blue-100">
+                <div>
+                  <span className="text-muted-foreground block text-[11px]">Waktu Masuk</span>
+                  <strong className="text-sm">{attendanceSummary.checkInTime}</strong>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block text-[11px]">Waktu Keluar</span>
+                  <strong className="text-sm">{attendanceSummary.checkOutTime}</strong>
+                </div>
+                <div className="col-span-2 pt-2 border-t border-blue-100 flex items-center justify-between">
+                  <span className="text-xs font-medium text-slate-700">Jumlah Masa Hadir:</span>
+                  <strong className="text-sm text-emerald-700 font-bold">
+                    {attendanceSummary.durationFormatted} ({attendanceSummary.durationHours} Jam)
+                  </strong>
+                </div>
+              </div>
+            </div>
+          )}
+
           <Card className="border border-gray-200 bg-white">
             <CardContent className="p-0">
               {currentPageFields.map((field) => {
@@ -872,7 +1098,7 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
                     >
                       {field.label}
                       {field.required && <span className="text-red-500" aria-hidden="true">*</span>}
-                      {field.required && <span className="sr-only">(wajib)</span>}
+                      {field.required && <span className="sr-only">(required)</span>}
                     </Label>
 
                     {field.description && (
@@ -1344,7 +1570,13 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
                     className="flex-1 h-11 bg-primary hover:bg-primary/90 text-white font-medium disabled:bg-gray-200 disabled:text-gray-400"
                   >
                     {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {submitting ? 'Submitting...' : 'Submit'}
+                    {submitting
+                      ? checkInOutEnabled
+                        ? 'Mendaftar Masuk...'
+                        : 'Submitting...'
+                      : checkInOutEnabled
+                      ? 'Daftar Masuk (Check-In)'
+                      : 'Submit'}
                   </Button>
                 )}
               </div>

@@ -28,6 +28,14 @@ import {
   markResponseSynced,
   markResponseSyncFailed,
 } from '@/lib/storage/form-responses';
+import {
+  findIdentifierField,
+  findNameField,
+  cleanIdentifier,
+  formatAttendanceTime,
+  formatAttendanceDateTime,
+} from '@/lib/forms/attendance';
+import { createAttendanceRecord } from '@/lib/storage/attendance';
 
 // --- Settings Storage for Credentials ---
 // Replaced by lib/storage which uses Supabase
@@ -334,15 +342,62 @@ export async function submitFormAction(
     dbData = formDataOrObj;
   }
 
-  // Bookkeeping columns (`_submission_id`, `timestamp`) are only useful for the
-  // magic-link edit feature, which needs to locate this exact row later. When
-  // Edit Link is OFF, keep the Sheet clean — just the respondent's answers.
+  // Bookkeeping columns (`_submission_id`, `timestamp`) are needed for the
+  // magic-link edit feature and smart attendance check-in/check-out.
   const editLinkEnabled = !!form.editLinkSettings?.enabled;
-  if (editLinkEnabled) {
+  const checkInOutEnabled = !!(
+    form.attendanceSettings?.enabled &&
+    form.attendanceSettings?.checkInOut?.enabled
+  );
+  if (editLinkEnabled || checkInOutEnabled) {
     dbData._submission_id = submissionId;
   } else {
     delete dbData._submission_id;
     delete dbData.timestamp;
+  }
+
+  // Smart Attendance Check-In handling
+  let checkInResultInfo: { checkInTime?: string; participantName?: string } = {};
+
+  if (checkInOutEnabled && form.userId) {
+    const identifierField = findIdentifierField(
+      form.fields,
+      form.attendanceSettings?.checkInOut?.identifierFieldId
+    );
+    const nameField = findNameField(form.fields);
+
+    const rawId = identifierField ? dbData[identifierField.label] : undefined;
+    const participantName = nameField ? String(dbData[nameField.label] ?? '') : undefined;
+    const cleanId = cleanIdentifier(rawId);
+    const nowCheckIn = new Date();
+
+    if (cleanId) {
+      dbData['Masa Masuk (Check-In)'] = formatAttendanceDateTime(nowCheckIn);
+      dbData['Masa Keluar (Check-Out)'] = '-';
+      dbData['Jumlah Masa Hadir'] = '-';
+      dbData['Jumlah Jam (Hours)'] = 0;
+      dbData['Status Kehadiran'] = 'Daftar Masuk (Checked-In)';
+
+      try {
+        await createAttendanceRecord({
+          formId: form.id,
+          userId: form.userId,
+          submissionId,
+          identifierValue: cleanId,
+          identifierLabel: identifierField?.label || 'IC',
+          participantName,
+          checkInAt: nowCheckIn.toISOString(),
+          metadata: { ...dbData },
+        });
+
+        checkInResultInfo = {
+          checkInTime: formatAttendanceTime(nowCheckIn),
+          participantName,
+        };
+      } catch (attErr) {
+        console.warn('Attendance record creation error:', attErr);
+      }
+    }
   }
 
   // Record PDPA consent as a human-friendly column and drop the raw internal
@@ -604,5 +659,10 @@ export async function submitFormAction(
     }
   });
 
-  return { success: true };
+  return {
+    success: true,
+    isCheckIn: checkInOutEnabled,
+    checkInTime: checkInResultInfo.checkInTime,
+    participantName: checkInResultInfo.participantName,
+  };
 }

@@ -46,6 +46,7 @@ import {
   CheckCircle2,
   Pencil,
   Lock,
+  Clock,
 } from 'lucide-react';
 
 import Link from 'next/link';
@@ -229,7 +230,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
         downloadLink.download = `${safeTitle}-qr-highres.png`;
         downloadLink.href = pngFile;
         downloadLink.click();
-        toast.success('QR Code dimuat turun! (1000x1000px)');
+        toast.success('QR Code downloaded! (1000x1000px)');
       };
       img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
     }
@@ -308,19 +309,19 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
               {saveStatus === 'saving' && (
                 <>
                   <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin text-gray-400" />
-                  Menyimpan...
+                  Saving...
                 </>
               )}
               {saveStatus === 'saved' && (
                 <>
                   <CheckCircle2 className="h-3.5 w-3.5 mr-1.5 text-emerald-500" />
-                  Tersimpan di awan
+                  Saved to cloud
                 </>
               )}
               {saveStatus === 'error' && (
                 <>
                   <AlertTriangle className="h-3.5 w-3.5 mr-1.5 text-red-500" />
-                  Gagal menyimpan
+                  Failed to save
                 </>
               )}
             </div>
@@ -612,8 +613,8 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Field dikunci untuk elak terpadam. Tekan{' '}
-                    <Pencil className="inline h-3 w-3" /> untuk edit.
+                    Field is locked to prevent accidental edits. Click{' '}
+                    <Pencil className="inline h-3 w-3" /> to edit.
                   </p>
                   {!useManualKeys && (
                     <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-sm">
@@ -804,10 +805,10 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                   />
                   <div className="grid gap-1.5 leading-none">
                     <Label htmlFor="form-status" className="cursor-pointer">
-                      Status Borang (Aktif / Ditutup)
+                      Form Status (Active / Closed)
                     </Label>
                     <p className="text-xs text-muted-foreground">
-                      Tutup borang jika anda tidak mahu menerima respons lagi.
+                      Close the form when you no longer want to accept new responses.
                     </p>
                   </div>
                 </div>
@@ -826,32 +827,32 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                     />
                     <div className="grid gap-1.5 leading-none">
                       <Label htmlFor="whatsapp-share" className="cursor-pointer text-emerald-800">
-                        Butang Kongsi WhatsApp
+                        WhatsApp Share Button
                       </Label>
                       <p className="text-xs text-emerald-600">
-                        Papar butang Kongsi ke WhatsApp selepas responden menghantar borang.
+                        Show a WhatsApp share button on the thank-you screen after respondents submit.
                       </p>
                     </div>
                   </div>
 
                   {form.theme?.whatsappShareEnabled && (
                     <div className="space-y-2 pt-2 border-t border-emerald-100">
-                      <Label htmlFor="whatsapp-message" className="text-emerald-800">Mesej Perkongsian</Label>
+                      <Label htmlFor="whatsapp-message" className="text-emerald-800">Share Message</Label>
                       <Textarea
                         id="whatsapp-message"
-                        value={form.theme?.whatsappShareMessage ?? 'Sila isi borang ini: '}
+                        value={form.theme?.whatsappShareMessage ?? 'Please fill out this form: '}
                         onChange={(e) =>
                           setForm((f) => ({
                             ...f,
                             theme: { ...f.theme, whatsappShareMessage: e.target.value },
                           }))
                         }
-                        placeholder="Contoh: Sila isi borang ini: "
+                        placeholder="e.g. Please fill out this form: "
                         className="bg-white border-emerald-200 focus-visible:ring-emerald-500"
                         rows={2}
                       />
                       <p className="text-xs text-emerald-600">
-                        Pautan (link) borang anda akan diletakkan secara automatik pada penghujung mesej ini.
+                        Your form link will be automatically appended to the end of this message.
                       </p>
                     </div>
                   )}
@@ -1185,7 +1186,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                             {/* Default badge */}
                             {form.eCertificateTemplate === cert.id && (
                               <div
-                                title="Template ini digunakan untuk semua peserta yang tiada kategori khusus."
+                                title="This template is used for all participants without a specific category."
                                 className="absolute top-2 right-2 z-10 flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground shadow-sm"
                               >
                                 <CheckCircle2 className="h-3 w-3" />
@@ -1250,7 +1251,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                           onClick={async () => {
                             const url = `${window.location.origin}/check/${form.id}`;
                             const copied = await copyToClipboard(url);
-                            if (copied) toast.success('Link disalin!');
+                            if (copied) toast.success('Link copied to clipboard!');
                           }}
                         >
                           <Copy className="h-3 w-3" />
@@ -1487,6 +1488,160 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                       </div>
                     )}
                   </div>
+
+                  {/* Smart Check-In / Check-Out Section */}
+                  <div className="space-y-4 pt-4 border-t">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="h-4 w-4 text-emerald-600" />
+                          <Label htmlFor="checkinout-enabled" className="text-base font-medium">
+                            1-QR Smart Check-In & Check-Out
+                          </Label>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Auto-calculate total hours/duration in the program when participants scan the same QR code.
+                        </p>
+                      </div>
+                      <Switch
+                        id="checkinout-enabled"
+                        checked={form.attendanceSettings?.checkInOut?.enabled || false}
+                        onCheckedChange={(checked) =>
+                          setForm((f) => ({
+                            ...f,
+                            attendanceSettings: {
+                              ...(f.attendanceSettings || { enabled: true }),
+                              checkInOut: {
+                                ...(f.attendanceSettings?.checkInOut || {
+                                  minDurationMinutes: 5,
+                                  breakMinutes: 0,
+                                }),
+                                enabled: checked,
+                              },
+                            },
+                          }))
+                        }
+                      />
+                    </div>
+
+                    {form.attendanceSettings?.checkInOut?.enabled && (
+                      <div className="p-4 bg-emerald-50/50 rounded-xl space-y-4 border border-emerald-100">
+                        <div className="space-y-2">
+                          <Label htmlFor="identifier-field" className="text-xs font-semibold text-emerald-950">
+                            Participant Identifier Field (Unique Key)
+                          </Label>
+                          <Select
+                            value={
+                              form.attendanceSettings?.checkInOut?.identifierFieldId ||
+                              form.fields.find((f) =>
+                                /\b(ic|kp|kad\s*pengenalan|no\s*ic|no\s*kp|email)\b/i.test(f.label)
+                              )?.id ||
+                              ''
+                            }
+                            onValueChange={(val) =>
+                              setForm((f) => ({
+                                ...f,
+                                attendanceSettings: {
+                                  ...f.attendanceSettings!,
+                                  checkInOut: {
+                                    ...f.attendanceSettings!.checkInOut!,
+                                    identifierFieldId: val,
+                                  },
+                                },
+                              }))
+                            }
+                          >
+                            <SelectTrigger id="identifier-field" className="w-full bg-white">
+                              <SelectValue placeholder="Select field (e.g. IC Number, Email)" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {form.fields
+                                .filter(
+                                  (f) =>
+                                    f.type !== 'separator' &&
+                                    f.type !== 'image' &&
+                                    f.type !== 'pagebreak'
+                                )
+                                .map((f) => (
+                                  <SelectItem key={f.id} value={f.id}>
+                                    {f.label} ({f.type})
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                          <p className="text-[11px] text-muted-foreground">
+                            Used to match participant records between Check-In (arrival) and Check-Out (departure).
+                          </p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <Label htmlFor="min-duration" className="text-xs font-semibold text-emerald-950">
+                              Min. Wait to Check-Out
+                            </Label>
+                            <div className="flex items-center gap-2">
+                              <Input
+                                id="min-duration"
+                                type="number"
+                                min={0}
+                                max={1440}
+                                className="bg-white"
+                                value={form.attendanceSettings?.checkInOut?.minDurationMinutes ?? 5}
+                                onChange={(e) =>
+                                  setForm((f) => ({
+                                    ...f,
+                                    attendanceSettings: {
+                                      ...f.attendanceSettings!,
+                                      checkInOut: {
+                                        ...f.attendanceSettings!.checkInOut!,
+                                        minDurationMinutes: Math.max(0, parseInt(e.target.value) || 0),
+                                      },
+                                    },
+                                  }))
+                                }
+                              />
+                              <span className="text-xs text-muted-foreground shrink-0">mins</span>
+                            </div>
+                            <p className="text-[11px] text-muted-foreground">
+                              Prevents accidental immediate check-out.
+                            </p>
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <Label htmlFor="break-duration" className="text-xs font-semibold text-emerald-950">
+                              Deduct Break Time
+                            </Label>
+                            <div className="flex items-center gap-2">
+                              <Input
+                                id="break-duration"
+                                type="number"
+                                min={0}
+                                max={1440}
+                                className="bg-white"
+                                value={form.attendanceSettings?.checkInOut?.breakMinutes ?? 0}
+                                onChange={(e) =>
+                                  setForm((f) => ({
+                                    ...f,
+                                    attendanceSettings: {
+                                      ...f.attendanceSettings!,
+                                      checkInOut: {
+                                        ...f.attendanceSettings!.checkInOut!,
+                                        breakMinutes: Math.max(0, parseInt(e.target.value) || 0),
+                                      },
+                                    },
+                                  }))
+                                }
+                              />
+                              <span className="text-xs text-muted-foreground shrink-0">mins</span>
+                            </div>
+                            <p className="text-[11px] text-muted-foreground">
+                              e.g. 60 mins lunch break.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               )}
             </Card>
@@ -1588,22 +1743,21 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Tukar template default?</AlertDialogTitle>
+            <AlertDialogTitle>Change default template?</AlertDialogTitle>
             <AlertDialogDescription>
-              Borang ini ada pemetaan kategori. Pemetaan kategori sedia ada akan
-              kekal — hanya peserta tanpa kategori khusus yang akan menggunakan
-              template default baharu ini.
+              This form has category mappings configured. Existing category mappings will
+              remain — only participants without a specific category will use this new default template.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (pendingTemplateId) applyTemplate(pendingTemplateId);
                 setPendingTemplateId(null);
               }}
             >
-              Tukar
+              Change
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
