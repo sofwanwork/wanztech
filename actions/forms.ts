@@ -36,6 +36,7 @@ import {
   formatAttendanceDateTime,
 } from '@/lib/forms/attendance';
 import { createAttendanceRecord } from '@/lib/storage/attendance';
+import { verifyRotatingQrToken } from '@/lib/forms/rotating-qr';
 
 // --- Settings Storage for Credentials ---
 // Replaced by lib/storage which uses Supabase
@@ -207,6 +208,35 @@ export async function submitFormAction(
       return {
         success: false,
         error: 'Persetujuan PDPA diperlukan untuk menghantar borang ini.',
+      };
+    }
+  }
+
+  // --- Rotating QR Token Enforcement ---
+  if (form.attendanceSettings?.enabled && form.attendanceSettings?.rotatingQr?.enabled) {
+    const rotatingConfig = form.attendanceSettings.rotatingQr;
+    const rqW =
+      formDataOrObj instanceof FormData
+        ? formDataOrObj.get('_rq_w')
+        : (formDataOrObj as Record<string, unknown>)['_rq_w'];
+    const rqSig =
+      formDataOrObj instanceof FormData
+        ? formDataOrObj.get('_rq_sig')
+        : (formDataOrObj as Record<string, unknown>)['_rq_sig'];
+
+    const verify = verifyRotatingQrToken({
+      formId: form.id,
+      windowIndex: rqW as string | number,
+      signature: rqSig as string,
+      customSecret: rotatingConfig.secret,
+      intervalSeconds: rotatingConfig.intervalSeconds,
+    });
+
+    if (!verify.valid) {
+      return {
+        success: false,
+        error:
+          'Kod QR ini telah luput atau tidak sah. Sila imbas kod QR langsung yang sedang dipaparkan di skrin dewan.',
       };
     }
   }
@@ -409,6 +439,10 @@ export async function submitFormAction(
       dbData['PDPA Consent'] = consented ? 'Yes' : 'No';
     }
   }
+
+  // Drop internal rotating QR parameters so they don't pollute Google Sheets
+  delete dbData._rq_w;
+  delete dbData._rq_sig;
 
   // ============================================================
   // WRITE-FIRST: persist locally BEFORE touching Google Sheets.

@@ -166,6 +166,19 @@ export interface CheckInOutConfig {
   minDurationMinutes?: number;
   /** Break time in minutes (e.g. 60 for lunch break) to deduct from total duration. */
   breakMinutes?: number;
+  /** Optional secret passcode/PIN required from participant to complete Check-Out. */
+  checkOutPasscode?: string;
+}
+
+/**
+ * Anti-fraud Live Rotating QR Code configuration (Projector Mode)
+ */
+export interface RotatingQrConfig {
+  enabled: boolean;
+  /** Auto-refresh interval in seconds (default: 30). */
+  intervalSeconds?: number;
+  /** Secret salt for HMAC signing (auto-derived or persisted). */
+  secret?: string;
 }
 
 /**
@@ -177,6 +190,7 @@ export interface AttendanceSettings {
   endTime?: string;
   geofence?: GeofenceConfig;
   checkInOut?: CheckInOutConfig;
+  rotatingQr?: RotatingQrConfig;
 }
 
 /**

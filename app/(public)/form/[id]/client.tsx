@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/select';
 import { cn, getProxiedImageUrl, sanitizeHtml } from '@/lib/utils';
 import { format } from 'date-fns';
-import { Loader2, CheckCircle2, List, Clock, ExternalLink, LogOut, Award } from 'lucide-react';
+import { Loader2, CheckCircle2, List, Clock, ExternalLink, LogOut, Award, KeyRound, AlertTriangle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { submitFormAction } from '@/actions/forms';
 import {
@@ -53,6 +53,10 @@ interface PublicFormClientProps {
   editMode?: { token: string };
   /** Initial values keyed by field.id. Used by edit mode. */
   initialValues?: Record<string, unknown>;
+  searchParams?: {
+    rq_w?: string;
+    rq_sig?: string;
+  };
 }
 
 function formatRedirectUrl(url?: string) {
@@ -88,9 +92,15 @@ const formatInMalaysiaTime = (date: Date): string => {
   }
 };
 
-export function PublicFormClient({ form, editMode, initialValues }: PublicFormClientProps) {
+export function PublicFormClient({ form, editMode, initialValues, searchParams }: PublicFormClientProps) {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [checkOutPin, setCheckOutPin] = useState<string>('');
+
+  // Extract rotating QR parameters from searchParams or window.location.search
+  const urlSearchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const rqW = searchParams?.rq_w || urlSearchParams?.get('rq_w') || undefined;
+  const rqSig = searchParams?.rq_sig || urlSearchParams?.get('rq_sig') || undefined;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [formData, setFormData] = useState<Record<string, any>>(() => {
     const initial = { ...(initialValues ?? {}) };
@@ -180,9 +190,26 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
     const rawVal = formData[identifierField.id];
     if (!rawVal) return;
 
+    if (form.attendanceSettings?.checkInOut?.checkOutPasscode) {
+      if (!checkOutPin.trim()) {
+        toast.error('Sila masukkan Kod PIN Check-Out yang diumumkan di pentas.');
+        return;
+      }
+    }
+
+    if (form.attendanceSettings?.rotatingQr?.enabled && (!rqW || !rqSig)) {
+      toast.error('Kod QR tidak sah atau telah luput. Sila imbas kod QR langsung di skrin projektor dewan.');
+      return;
+    }
+
     setCheckingOut(true);
     try {
-      const res = await submitAttendanceCheckOutAction(form.id, String(rawVal));
+      const res = await submitAttendanceCheckOutAction(
+        form.id,
+        String(rawVal),
+        checkOutPin.trim() || undefined,
+        rqW && rqSig ? { windowIndex: rqW, signature: rqSig } : undefined
+      );
       if (res.success && res.summary) {
         setCheckOutResult(res.summary);
         setSubmitted(true);
@@ -283,6 +310,12 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
       return;
     }
 
+    // Rotating QR Anti-fraud gate
+    if (form.attendanceSettings?.enabled && form.attendanceSettings?.rotatingQr?.enabled && (!rqW || !rqSig)) {
+      toast.error('Kod QR tidak sah atau telah luput. Sila imbas kod QR langsung yang sedang dipaparkan di dewan.');
+      return;
+    }
+
     setSubmitting(true);
     try {
       const formDataToSend = new FormData();
@@ -337,6 +370,10 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
       if (pdpaEnabled) {
         formDataToSend.append('_pdpa_consent', 'true');
       }
+
+      // Rotating QR parameters
+      if (rqW) formDataToSend.append('_rq_w', rqW);
+      if (rqSig) formDataToSend.append('_rq_sig', rqSig);
 
       const result = editMode
         ? await (
@@ -952,6 +989,21 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
         <form onSubmit={handleSubmit} className="space-y-6">
           <input type="text" name="_gotcha" tabIndex={-1} autoComplete="off" className="absolute opacity-0 -z-50 w-0 h-0 overflow-hidden" />
 
+          {/* Anti-Fraud Rotating QR Notice if participant opened without live token */}
+          {form.attendanceSettings?.enabled && form.attendanceSettings?.rotatingQr?.enabled && (!rqW || !rqSig) && (
+            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3 shadow-sm animate-in fade-in">
+              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="text-xs space-y-1">
+                <p className="font-bold text-sm text-amber-950">
+                  Perlindungan Anti-Fraud Aktif (Live Rotating QR)
+                </p>
+                <p className="text-amber-800 leading-relaxed">
+                  Borang ini memerlukan imbasan Kod QR langsung daripada skrin projektor dewan. Gambar foto atau pautan langsung tanpa token langsung tidak dibenarkan.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Smart Attendance Check-Out Banner */}
           {attendanceSummary?.status === 'checked_in' && (
             <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/90 shadow-sm space-y-4 animate-in fade-in slide-in-from-top-2">
@@ -976,6 +1028,27 @@ export function PublicFormClient({ form, editMode, initialValues }: PublicFormCl
                   </p>
                 </div>
               </div>
+
+              {/* Solution 2: Passcode input if configured */}
+              {form.attendanceSettings?.checkInOut?.checkOutPasscode && attendanceSummary.canCheckOut && (
+                <div className="space-y-1.5 bg-white/90 p-3.5 rounded-xl border border-emerald-200 shadow-xs">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-950">
+                    <KeyRound className="w-4 h-4 text-amber-600" />
+                    <span>Kod PIN Check-Out Diperlukan</span>
+                  </div>
+                  <Input
+                    type="text"
+                    placeholder="Masukkan PIN dari penceramah..."
+                    value={checkOutPin}
+                    onChange={(e) => setCheckOutPin(e.target.value)}
+                    maxLength={10}
+                    className="bg-white font-mono tracking-widest text-center text-base font-bold border-emerald-300 focus-visible:ring-emerald-500"
+                  />
+                  <p className="text-[11px] text-muted-foreground text-center">
+                    Sila dapatkan kod PIN ini daripada pengacara majlis atau skrin projektor di akhir majlis.
+                  </p>
+                </div>
+              )}
 
               {attendanceSummary.canCheckOut ? (
                 <Button

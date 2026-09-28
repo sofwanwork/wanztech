@@ -1396,3 +1396,34 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
 - **Deployment URL**: `https://klikform-7zwmro0qc-sofwan-jailanis-projects.vercel.app`
 - **Deployment ID**: `dpl_AKrgQtjDRVxmMmfgKZRuJ1H1iQJr`
 - **Status**: Ready, 53 routes built successfully, 0 errors.
+
+---
+
+## 2026-09-28: Perlindungan Anti-Tipu Kehadiran (PIN Check-Out & Live Rotating QR Code)
+- **Permintaan Pengguna**: Mengatasi penipuan kehadiran di mana peserta mengambil gambar kod QR pada waktu pagi, balik ke rumah, dan mengimbas foto pada waktu petang untuk check-out palsu ("proceed dengan solution 2 dan 3").
+- **Seni Bina & Pelaksanaan**:
+  1. **Solusi 2: Kod PIN / Passcode Rahsia Pentas**:
+     - Ditambah `checkOutPasscode?: string` pada `CheckInOutConfig` (`lib/types/forms.ts`).
+     - Medan input "Check-Out Passcode / PIN" dalam Form Builder di bawah Smart Check-In/Out.
+     - Diperiksa hanya semasa Check-Out (Check-In kekal terbuka tanpa geseran pendaftaran pagi).
+     - Borang awam memaparkan medan PIN apabila penganjur menetapkan kod rahsia. Pelayan menolak cubaan check-out dengan mesej mesra jika PIN tidak padan.
+  2. **Solusi 3: Kod QR Berputar Langsung Masa Nyata (*Live Rotating QR*)**:
+     - Enjin kriptografi HMAC-SHA256 (`lib/forms/rotating-qr.ts`):
+       - Berasaskan konsep TOTP (*Time-based One-Time Password*) berputar setiap 30 saat (`?rq_w=...&rq_sig=...`).
+       - Stateless (sifar beban penulisan pangkalan data) dan kalis manipulasi.
+       - Menyokong *grace period* 1 tetingkap (30–60 saat) bagi mengelakkan peserta tersekat akibat latensi rangkaian atau fokus kamera, tetapi menolak foto daripada minit/jam terdahulu.
+  3. **Laman Projektor Dewan (`app/(public)/present/[id]/page.tsx` & `client.tsx`)**:
+     - Paparan skrin penuh mesra projektor/TV dengan reka bentuk gelap berimpak tinggi (*ambient glow*, tajuk besar, jam digital UTC+8, kod QR saiz besar ~380px, bar kemajuan kira detik 30 saat).
+     - Pintasan papan kekunci: **F** untuk skrin penuh, **P** untuk tayang/sembunyi PIN pentas.
+     - Pendaftaran laluan di `proxy.ts` sebagai laluan awam (`/present`).
+  4. **Penguatkuasaan Pelayan**:
+     - `actions/attendance.ts`: Tindakan pelayan `getRotatingQrLiveTokenAction` membekalkan token autoritatif pelayan ke skrin projektor. Semakan `passcode` dan `rotatingQrParams` dalam `submitAttendanceCheckOutAction`.
+     - `actions/forms.ts`: Pengesanan togol `rotatingQr.enabled` dalam `submitFormAction`. Menolak cubaan pendaftaran jika token luput atau tiada. Menapis parameter dalaman `_rq_w` dan `_rq_sig` daripada `dbData` sebelum disimpan ke Google Sheets.
+  5. **Borang Awam (`app/(public)/form/[id]/client.tsx` & `page.tsx`)**:
+     - Membaca `searchParams` dari SSR dan URL. Jika mod rotating QR aktif tetapi token tiada, memaparkan amaran amaran anti-fraud dan menyekat penghantaran.
+- **Ujian & Kualiti**:
+  - `npm test`: 281 / 281 lulus merentas 34 suite ujian.
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm run build`: Kompilasi Next.js 16 Turbopack bersih (54 laluan).
+

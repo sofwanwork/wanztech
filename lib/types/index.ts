@@ -18,6 +18,7 @@ export type {
   FormTheme,
   GeofenceConfig,
   CheckInOutConfig,
+  RotatingQrConfig,
   AttendanceSettings,
   QRSettings,
   EditLinkSettings,

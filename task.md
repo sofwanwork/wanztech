@@ -1,3 +1,60 @@
+# Perlindungan Anti-Tipu Kehadiran: PIN Check-Out & Live Rotating QR ✅ SIAP
+
+**Matlamat**: Menghapuskan kelemahan peserta mengambil gambar kod QR untuk scan dari rumah pada waktu petang melalui:
+1. **Solusi 2**: Kod PIN / Passcode Rahsia Check-Out yang diumumkan di pentas pada akhir program.
+2. **Solusi 3**: Skrin Projektor Kod QR Berputar Masa Nyata (*Live Rotating QR*) yang auto-refresh setiap 30 saat dengan token kriptografi bertempoh sah.
+
+- [x] 1. Jenis Data & Konfigurasi (`lib/types/forms.ts`, `lib/types/index.ts`)
+  - Tambah `checkOutPasscode?: string` pada `CheckInOutConfig`.
+  - Tambah `RotatingQrConfig` (`enabled`, `intervalSeconds`, `secret`) ke dalam `AttendanceSettings`.
+- [x] 2. Enjin Penjanaan & Pengesahan Rotating QR (`lib/forms/rotating-qr.ts`)
+  - Logik kriptografi HMAC-SHA256 berasaskan tetingkap masa (TOTP concept: 30 saat).
+  - Fungsi `generateRotatingQrPayload` dan `verifyRotatingQrToken` dengan toleransi grace period 1 tetingkap (30-60s).
+  - Ujian unit di `tests/rotating-qr.test.ts`.
+- [x] 3. Tindakan Pelayan (`actions/attendance.ts` & `actions/forms.ts`)
+  - Sokongan semakan `passcode` dalam `submitAttendanceCheckOutAction`.
+  - Tindakan `getRotatingQrLiveTokenAction` untuk menyelaraskan token langsung autoritatif pelayan ke skrin projektor.
+  - Penguatkuasaan pengesahan token rotating QR dalam `submitFormAction` (Check-In) dan `submitAttendanceCheckOutAction` (Check-Out).
+- [x] 4. Laman Skrin Projektor Dewan (`app/(public)/present/[id]/page.tsx` & `client.tsx`)
+  - Paparan skrin penuh mesra projektor/TV (tajuk program, kod QR gergasi, animasi lingkaran/bar kira detik 30 saat, jam digital UTC+8, status langsung).
+  - Butang skrin penuh (F) dan butang buka/tutup PIN pentas (P).
+- [x] 5. Antara Muka Pembina Borang (`app/builder/[id]/client.tsx`)
+  - Medan tetapan "Check-Out Passcode / PIN" di bawah Smart Check-In/Out.
+  - Togol "Live Rotating QR Code (Anti-Fraud Projector Mode)" + butang "Buka Skrin Projektor" (Present Mode).
+- [x] 6. Penguatkuasaan Borang Awam Responden (`app/(public)/form/[id]/client.tsx`)
+  - Input kod PIN semasa Check-Out (jika penganjur aktifkan passcode).
+  - Semakan token rotating QR; jika tamat tempoh / diambil daripada foto lama, sekat akses dengan mesej amaran jelas.
+- [x] 7. Ujian, Pengesahan & Deployment
+  - `npm test`: 281 / 281 lulus merentas 34 suite ujian.
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm run build`: Bersih (54 laluan Next.js 16 Turbopack).
+
+---
+
+## Reviu Pelaksanaan: Perlindungan Anti-Tipu Kehadiran (PIN & Rotating QR)
+
+1. **Solusi 2 (Check-Out Passcode / PIN Pentas)**:
+   - **Konsep**: Penganjur menetapkan 4-6 digit PIN rahsia pada Form Builder (contoh: `8899`).
+   - **Pelaksanaan**:
+     - Semasa Check-In pagi, peserta mendaftar masuk secara bebas tanpa halangan.
+     - Semasa Check-Out petang, kad status peserta meminta "Kod PIN Check-Out Diperlukan".
+     - Jika peserta cuba scan dari rumah tanpa mengetahui PIN yang diumumkan di pentas oleh penceramah, cubaan daftar keluar disekat serta-merta oleh pelayan.
+2. **Solusi 3 (Live Rotating QR Code — Skrin Projektor Dewan)**:
+   - **Konsep**: Menggunakan algoritma kriptografi HMAC-SHA256 tanpa spamming database (stateless & pantas). Kod QR bertukar token setiap 30 saat (`?rq_w=...&rq_sig=...`).
+   - **Skrin Projektor (`/present/[id]`)**:
+     - Reka bentuk gelap berimpak tinggi (*ambient glow*, tipografi jelas, jam digital masa nyata, kod QR bersaiz besar ~380px untuk paparan dewan 10-30 meter).
+     - Kira detik auto-refresh 30 saat bersama bar kemajuan licin.
+     - Pintasan papan kekunci: Tekan **F** untuk skrin penuh (fullscreen), **P** untuk tayang/sembunyi PIN pentas.
+   - **Toleransi Masa (Grace Period)**:
+     - Dibenarkan 1 tetingkap masa sebelumnya (30–60 saat) bagi menampung kelewatan fokus kamera telefon peserta atau rangkaian telco perlahan.
+     - Gambar foto yang diambil beberapa minit atau jam sebelumnya (contohnya foto pagi) disahkan luput dan ditolak serta-merta dengan mesej: *"Kod QR ini telah luput atau tidak sah. Sila imbas kod QR langsung yang sedang dipaparkan di skrin dewan."*
+3. **Penyelarasan & Keselamatan**:
+   - Parameter dalaman `_rq_w` dan `_rq_sig` ditapis daripada `dbData` sebelum dihantar ke Google Sheets supaya helaian penganjur kekal bersih tanpa lajur teknikal.
+   - Laluan `/present/[id]` didaftarkan ke dalam senarai `publicRoutes` di `proxy.ts`.
+
+---
+
 # Ciri Kehadiran Pintar 1 QR (Check-In & Check-Out & Kira Durasi Jam) ✅ SIAP
 
 **Matlamat**: Membolehkan peserta mengimbas 1 Kod QR yang sama untuk Daftar Masuk (Check-In) dan Daftar Keluar (Check-Out), mengira secara automatik jumlah masa/jam kehadiran dalam program, dan merekodkannya ke pangkalan data serta Google Sheets.

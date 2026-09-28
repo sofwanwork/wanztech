@@ -47,6 +47,9 @@ import {
   Pencil,
   Lock,
   Clock,
+  KeyRound,
+  Tv,
+  Radio,
 } from 'lucide-react';
 
 import Link from 'next/link';
@@ -1639,8 +1642,106 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                             </p>
                           </div>
                         </div>
+
+                        <div className="pt-2 border-t border-emerald-200/60 space-y-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <KeyRound className="w-3.5 h-3.5 text-amber-600" />
+                            <Label htmlFor="checkout-passcode" className="text-xs font-semibold text-emerald-950">
+                              Check-Out Passcode / PIN (Optional)
+                            </Label>
+                          </div>
+                          <Input
+                            id="checkout-passcode"
+                            type="text"
+                            maxLength={10}
+                            placeholder="e.g. 8899"
+                            className="bg-white font-mono tracking-widest text-sm"
+                            value={form.attendanceSettings?.checkInOut?.checkOutPasscode || ''}
+                            onChange={(e) =>
+                              setForm((f) => ({
+                                ...f,
+                                attendanceSettings: {
+                                  ...f.attendanceSettings!,
+                                  checkInOut: {
+                                    ...f.attendanceSettings!.checkInOut!,
+                                    checkOutPasscode: e.target.value.trim(),
+                                  },
+                                },
+                              }))
+                            }
+                          />
+                          <p className="text-[11px] text-muted-foreground">
+                            If set, participants must enter this PIN to check out. Announce it on stage at the end of the program to prevent early or fake check-outs.
+                          </p>
+                        </div>
                       </div>
                     )}
+
+                    {/* Rotating QR (Anti-Fraud Projector Mode) */}
+                    <div className="pt-4 border-t border-slate-200/80 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <Radio className="w-4 h-4 text-emerald-600" />
+                            <Label htmlFor="rotating-qr-enabled" className="text-sm font-medium">
+                              Live Rotating QR Code (Anti-Fraud Projector Mode)
+                            </Label>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Display a full-screen live QR on the hall projector/TV that auto-refreshes every 30 seconds with signed tokens, stopping participants from scanning old photos from home.
+                          </p>
+                        </div>
+                        <Switch
+                          id="rotating-qr-enabled"
+                          checked={form.attendanceSettings?.rotatingQr?.enabled || false}
+                          onCheckedChange={(checked) =>
+                            setForm((f) => ({
+                              ...f,
+                              attendanceSettings: {
+                                ...(f.attendanceSettings || { enabled: true }),
+                                rotatingQr: {
+                                  ...(f.attendanceSettings?.rotatingQr || {
+                                    intervalSeconds: 30,
+                                  }),
+                                  enabled: checked,
+                                },
+                              },
+                            }))
+                          }
+                        />
+                      </div>
+
+                      {form.attendanceSettings?.rotatingQr?.enabled && (
+                        <div className="p-4 bg-slate-900 text-white rounded-xl space-y-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                  ACTIVE
+                                </span>
+                                <span className="text-xs font-semibold text-slate-200">
+                                  Skrin Projektor Dewan
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-400 leading-relaxed">
+                                Buka paparan projektor ini pada laptop pentas atau projektor dewan. Kod QR akan berputar secara automatik.
+                              </p>
+                            </div>
+                            <Button
+                              type="button"
+                              size="sm"
+                              className="bg-emerald-600 hover:bg-emerald-500 text-white shrink-0 text-xs shadow"
+                              asChild
+                            >
+                              <Link href={`/present/${form.id}`} target="_blank">
+                                <Tv className="w-3.5 h-3.5 mr-1.5" />
+                                Buka Skrin Projektor
+                              </Link>
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               )}

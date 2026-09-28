@@ -15,7 +15,7 @@ function getSafeRedirectPath(path: string, fallback = '/forms'): string {
 const protectedRoutes = ['/dashboard', '/builder', '/settings', '/certificates', '/qr-builder', '/forms', '/shortener', '/responses', '/audit', '/bio', '/bio-builder'];
 
 // Routes that are always public
-const publicRoutes = ['/login', '/form', '/s', '/check', '/verify', '/api', '/bio/', '/b/'];
+const publicRoutes = ['/login', '/form', '/s', '/check', '/verify', '/api', '/bio/', '/b/', '/present'];
 
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;

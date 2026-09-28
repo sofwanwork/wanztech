@@ -18,6 +18,12 @@ import { updateSheetRow } from '@/lib/api/google-sheets';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { AttendanceSummary } from '@/lib/types';
 import { createAdminClient } from '@/utils/supabase/admin';
+import {
+  generateRotatingQrPayload,
+  verifyRotatingQrToken,
+  RotatingQrPayload,
+  DEFAULT_ROTATING_INTERVAL_SECONDS,
+} from '@/lib/forms/rotating-qr';
 
 function formatPrivateKey(key: string) {
   let clean = key.trim();
@@ -120,7 +126,9 @@ export async function checkAttendanceStatusAction(
  */
 export async function submitAttendanceCheckOutAction(
   formId: string,
-  rawIdentifier: string
+  rawIdentifier: string,
+  passcode?: string,
+  rotatingQrParams?: { windowIndex?: number | string | null; signature?: string | null }
 ): Promise<{
   success: boolean;
   summary?: AttendanceSummary;
@@ -147,6 +155,38 @@ export async function submitAttendanceCheckOutAction(
   const checkInOutConfig = form.attendanceSettings?.checkInOut;
   if (!form.attendanceSettings?.enabled || !checkInOutConfig?.enabled) {
     return { success: false, error: 'Mod kehadiran pintar tidak aktif.' };
+  }
+
+  // Passcode verification (Solution 2)
+  if (checkInOutConfig.checkOutPasscode && checkInOutConfig.checkOutPasscode.trim()) {
+    const expected = checkInOutConfig.checkOutPasscode.trim();
+    const actual = (passcode || '').trim();
+    if (!actual || actual !== expected) {
+      return {
+        success: false,
+        error: 'Kod PIN Check-Out tidak sah. Sila masukkan PIN yang betul daripada penceramah/urusetia.',
+      };
+    }
+  }
+
+  // Rotating QR verification (Solution 3)
+  const rotatingQrConfig = form.attendanceSettings?.rotatingQr;
+  if (rotatingQrConfig?.enabled) {
+    const verify = verifyRotatingQrToken({
+      formId: form.id,
+      windowIndex: rotatingQrParams?.windowIndex,
+      signature: rotatingQrParams?.signature,
+      customSecret: rotatingQrConfig.secret,
+      intervalSeconds: rotatingQrConfig.intervalSeconds,
+    });
+
+    if (!verify.valid) {
+      return {
+        success: false,
+        error:
+          'Kod QR ini telah luput atau tidak sah. Sila imbas kod QR langsung yang sedang dipaparkan di skrin dewan.',
+      };
+    }
   }
 
   const record = await getAttendanceRecord(formId, cleanId);
@@ -272,3 +312,48 @@ export async function submitAttendanceCheckOutAction(
     },
   };
 }
+
+/**
+ * Server action to fetch a live rotating QR payload for projector/presenter screen.
+ */
+export async function getRotatingQrLiveTokenAction(formId: string): Promise<{
+  ok: boolean;
+  payload?: RotatingQrPayload;
+  formTitle?: string;
+  intervalSeconds?: number;
+  error?: string;
+}> {
+  if (!formId) {
+    return { ok: false, error: 'Borang diperlukan.' };
+  }
+
+  const form = await getFormById(formId);
+  if (!form) {
+    return { ok: false, error: 'Borang tidak dijumpai.' };
+  }
+
+  const rotatingConfig = form.attendanceSettings?.rotatingQr;
+  if (!form.attendanceSettings?.enabled || !rotatingConfig?.enabled) {
+    return { ok: false, error: 'Mod Rotating QR tidak diaktifkan pada borang ini.' };
+  }
+
+  const headersList = await getNextHeaders();
+  const host = headersList.get('host') || 'www.klikform.com';
+  const proto = headersList.get('x-forwarded-proto') || 'https';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || `${proto}://${host}`;
+
+  const intervalSeconds = rotatingConfig.intervalSeconds || DEFAULT_ROTATING_INTERVAL_SECONDS;
+  const payload = generateRotatingQrPayload(appUrl, form.id, {
+    intervalSeconds,
+    secret: rotatingConfig.secret,
+    timestampMs: Date.now(),
+  });
+
+  return {
+    ok: true,
+    payload,
+    formTitle: form.title,
+    intervalSeconds,
+  };
+}
+

@@ -5,6 +5,7 @@ import type { Metadata } from 'next';
 
 interface PageProps {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -54,8 +55,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function PublicFormPage({ params }: PageProps) {
+export default async function PublicFormPage({ params, searchParams }: PageProps) {
   const { id } = await params;
+  const sParams = searchParams ? await searchParams : {};
   const form = await getFormByIdOrShortCode(id);
 
   if (!form) return notFound();
@@ -67,5 +69,13 @@ export default async function PublicFormPage({ params }: PageProps) {
     userTier: undefined, // Internal use
   };
 
-  return <PublicFormClient form={sanitizedForm} />;
+  return (
+    <PublicFormClient
+      form={sanitizedForm}
+      searchParams={{
+        rq_w: typeof sParams.rq_w === 'string' ? sParams.rq_w : undefined,
+        rq_sig: typeof sParams.rq_sig === 'string' ? sParams.rq_sig : undefined,
+      }}
+    />
+  );
 }
