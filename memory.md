@@ -1387,3 +1387,12 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - `npm test`: 274 / 274 ujian lulus merentas 33 suite ujian (termasuk suite baharu `tests/attendance.test.ts`, `tests/attendance-storage.test.ts`, dan `tests/attendance-actions.test.ts`).
   - `npm run typecheck`: 0 ralat TypeScript (`tsc --noEmit`).
   - `npm run lint`: 0 ralat / 0 amaran ESLint.
+
+### Production Deployment
+- **Date**: 2026-09-28
+- **Git Commit**: `600bfe7` ("feat(attendance): add 1-QR smart check-in and check-out duration tracking")
+- **Method**: Vercel CLI (`npx vercel --prod --yes`) & GitHub Push (`origin/master`)
+- **Production URL**: `https://www.klikform.com`
+- **Deployment URL**: `https://klikform-7zwmro0qc-sofwan-jailanis-projects.vercel.app`
+- **Deployment ID**: `dpl_AKrgQtjDRVxmMmfgKZRuJ1H1iQJr`
+- **Status**: Ready, 53 routes built successfully, 0 errors.
