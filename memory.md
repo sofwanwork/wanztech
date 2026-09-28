@@ -1427,3 +1427,13 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - `npm run lint`: 0 ralat / 0 amaran ESLint.
   - `npm run build`: Kompilasi Next.js 16 Turbopack bersih (54 laluan).
 
+### Production Deployment
+- **Date**: 2026-09-28
+- **Git Commit**: `e20b46d` ("feat(attendance): add checkout passcode and live rotating qr projector mode")
+- **Method**: Vercel CLI (`npx vercel --prod --yes`) & GitHub Push (`origin/master`)
+- **Production URL**: `https://www.klikform.com`
+- **Deployment URL**: `https://klikform-dpjh4or1k-sofwan-jailanis-projects.vercel.app`
+- **Deployment ID**: `dpl_C5qeEbTonUL32bKrubnL8gQTpRth`
+- **Status**: Ready, 54 routes built successfully, 0 errors.
+
+
