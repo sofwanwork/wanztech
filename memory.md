@@ -1490,9 +1490,9 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
 
 ### Production Deployment
 - **Date**: 2026-09-28
-- **Git Commit**: `7887626` ("feat: add min attendance hours for certs and fix bio card avatar overlap")
+- **Git Commit**: `3add4a4` ("feat(bio): refine BioPageCard layout to Bento Profile structure")
 - **Method**: Vercel CLI (`npx vercel --prod --yes`) & GitHub Push (`origin/master`)
 - **Production URL**: `https://www.klikform.com`
-- **Deployment URL**: `https://klikform-lsgih6esw-sofwan-jailanis-projects.vercel.app`
-- **Deployment ID**: `dpl_GHszoL231dZFHtdUf3EheVFtsDqq`
+- **Deployment URL**: `https://klikform-hzl41jkmi-sofwan-jailanis-projects.vercel.app`
+- **Deployment ID**: `dpl_Hsmxnk5Sbe2mokEtE5J3RaLnGKRt`
 - **Status**: Ready, 54 routes built successfully, 0 errors.
