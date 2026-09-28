@@ -13,6 +13,7 @@ import {
   canPerformCheckOut,
   formatAttendanceTime,
   formatAttendanceDateTime,
+  isEarlyCheckOut,
 } from '@/lib/forms/attendance';
 import { updateSheetRow } from '@/lib/api/google-sheets';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
@@ -86,6 +87,11 @@ export async function checkAttendanceStatusAction(
 
   if (record.status === 'checked_in') {
     const check = canPerformCheckOut(record.checkInAt, new Date(), minDuration);
+    const minHoursForCert = checkInOutConfig.minHoursForCertificate;
+    const earlyCheck = minHoursForCert
+      ? isEarlyCheckOut(record.checkInAt, new Date(), minHoursForCert, breakMinutes)
+      : undefined;
+
     return {
       ok: true,
       summary: {
@@ -95,6 +101,10 @@ export async function checkAttendanceStatusAction(
         checkInTime: formatAttendanceTime(record.checkInAt),
         canCheckOut: check.canCheckOut,
         minDurationRemainingMinutes: check.remainingMinutes,
+        checkInAtIso: record.checkInAt,
+        minHoursForCertificate: minHoursForCert,
+        isEarlyCheckOut: earlyCheck?.isEarly,
+        earlyCheckOutShortfallText: earlyCheck?.shortfallText,
       },
     };
   }

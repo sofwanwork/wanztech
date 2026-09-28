@@ -7,6 +7,8 @@ import {
   findNameField,
   formatAttendanceTime,
   formatAttendanceDateTime,
+  checkCertificateAttendanceEligibility,
+  isEarlyCheckOut,
 } from '@/lib/forms/attendance';
 import { FormField } from '@/lib/types';
 
@@ -132,3 +134,103 @@ describe('Attendance Helpers — formatting', () => {
     expect(formatted).toMatch(/08:30\s*(AM|am)/i);
   });
 });
+
+describe('Attendance Helpers — checkCertificateAttendanceEligibility', () => {
+  it('allows claiming certificate if no minHoursRequired is set (<= 0)', () => {
+    const res = checkCertificateAttendanceEligibility(null, 0);
+    expect(res.eligible).toBe(true);
+    expect(res.requiredHours).toBe(0);
+  });
+
+  it('rejects claiming certificate if participant has no attendance record', () => {
+    const res = checkCertificateAttendanceEligibility(null, 6);
+    expect(res.eligible).toBe(false);
+    expect(res.reason).toBe('no_record');
+    expect(res.requiredHours).toBe(6);
+    expect(res.message).toContain('Tiada rekod');
+  });
+
+  it('rejects claiming certificate if participant is still checked_in (not checked-out)', () => {
+    const record = {
+      status: 'checked_in',
+      checkInAt: '2026-09-28T08:00:00.000Z',
+      checkOutAt: null,
+    };
+    const res = checkCertificateAttendanceEligibility(record, 6);
+    expect(res.eligible).toBe(false);
+    expect(res.reason).toBe('not_checked_out');
+    expect(res.message).toContain('belum mendaftar keluar');
+  });
+
+  it('rejects claiming certificate if total hours attended is insufficient', () => {
+    const record = {
+      status: 'completed',
+      checkInAt: '2026-09-28T08:00:00.000Z',
+      checkOutAt: '2026-09-28T11:30:00.000Z', // 3.5 hours
+    };
+    const res = checkCertificateAttendanceEligibility(record, 6);
+    expect(res.eligible).toBe(false);
+    expect(res.reason).toBe('insufficient_hours');
+    expect(res.attendedHours).toBe(3.5);
+    expect(res.requiredHours).toBe(6);
+    expect(res.shortfallMinutes).toBe(150); // 2 hours 30 mins
+    expect(res.shortfallText).toBe('2 Jam 30 Minit');
+    expect(res.message).toContain('3 Jam 30 Minit');
+    expect(res.message).toContain('kurang 2 Jam 30 Minit');
+  });
+
+  it('permits claiming certificate when total hours attended meets requirement', () => {
+    const record = {
+      status: 'completed',
+      checkInAt: '2026-09-28T08:00:00.000Z',
+      checkOutAt: '2026-09-28T15:00:00.000Z', // 7 hours
+    };
+    const res = checkCertificateAttendanceEligibility(record, 6);
+    expect(res.eligible).toBe(true);
+    expect(res.attendedHours).toBe(7);
+    expect(res.shortfallMinutes).toBe(0);
+    expect(res.message).toContain('Tahniah');
+  });
+
+  it('correctly accounts for breakMinutes deduction', () => {
+    const record = {
+      status: 'completed',
+      checkInAt: '2026-09-28T08:00:00.000Z',
+      checkOutAt: '2026-09-28T14:30:00.000Z', // 6.5 hours gross
+    };
+    // 60 mins lunch break -> 5.5 hours net
+    const res = checkCertificateAttendanceEligibility(record, 6, 60);
+    expect(res.eligible).toBe(false);
+    expect(res.attendedHours).toBe(5.5);
+    expect(res.shortfallMinutes).toBe(30);
+    expect(res.shortfallText).toBe('30 Minit');
+  });
+});
+
+describe('Attendance Helpers — isEarlyCheckOut', () => {
+  it('returns isEarly: false when no minimum hours are configured', () => {
+    const res = isEarlyCheckOut('2026-09-28T08:00:00.000Z', '2026-09-28T09:00:00.000Z', 0);
+    expect(res.isEarly).toBe(false);
+  });
+
+  it('detects early check out with shortfall details', () => {
+    const checkIn = '2026-09-28T08:00:00.000Z';
+    const now = '2026-09-28T12:00:00.000Z'; // 4 hours
+    const res = isEarlyCheckOut(checkIn, now, 6); // requires 6 hours
+
+    expect(res.isEarly).toBe(true);
+    expect(res.attendedDurationText).toBe('4 Jam');
+    expect(res.requiredHours).toBe(6);
+    expect(res.shortfallText).toBe('2 Jam');
+  });
+
+  it('returns isEarly: false when required hours are met', () => {
+    const checkIn = '2026-09-28T08:00:00.000Z';
+    const now = '2026-09-28T15:00:00.000Z'; // 7 hours
+    const res = isEarlyCheckOut(checkIn, now, 6);
+
+    expect(res.isEarly).toBe(false);
+    expect(res.attendedDurationText).toBe('7 Jam');
+  });
+});
+

@@ -20,6 +20,15 @@ export interface CertificateCheckResult {
   /** The participant's real IC from the sheet (independent of search method). */
   ic?: string;
   error?: string;
+  attendanceIneligible?: boolean;
+  attendanceDetails?: {
+    status: 'no_record' | 'not_checked_out' | 'insufficient_hours';
+    attendedHours: number;
+    attendedFormatted: string;
+    requiredHours: number;
+    shortfallMinutes: number;
+    shortfallText: string;
+  };
 }
 
 function formatPrivateKey(key: string) {
@@ -275,15 +284,60 @@ export async function checkCertificateByICOrEmail(
           }
         }
 
+        const realIc =
+          icColumnIndex !== -1
+            ? (row.get(headers[icColumnIndex]) || '').toString().trim() || undefined
+            : undefined;
+
+        // Attendance Hours Gating Check
+        const checkInOutConfig = form.attendanceSettings?.checkInOut;
+        const minHoursRequired =
+          form.attendanceSettings?.enabled && checkInOutConfig?.enabled
+            ? (checkInOutConfig?.minHoursForCertificate ?? 0)
+            : 0;
+
+        if (minHoursRequired > 0) {
+          const { getAttendanceRecord } = await import('@/lib/storage/attendance');
+          const { cleanIdentifier, checkCertificateAttendanceEligibility } = await import(
+            '@/lib/forms/attendance'
+          );
+
+          // Check using search identifier first
+          let attRecord = await getAttendanceRecord(formId, cleanIdentifier(identifier));
+          // If not found and realIc exists, check using real IC
+          if (!attRecord && realIc) {
+            attRecord = await getAttendanceRecord(formId, cleanIdentifier(realIc));
+          }
+
+          const eligibility = checkCertificateAttendanceEligibility(
+            attRecord,
+            minHoursRequired,
+            checkInOutConfig?.breakMinutes || 0
+          );
+
+          if (!eligibility.eligible) {
+            return {
+              found: false,
+              attendanceIneligible: true,
+              attendanceDetails: {
+                status: eligibility.reason || 'insufficient_hours',
+                attendedHours: eligibility.attendedHours,
+                attendedFormatted: eligibility.attendedDurationFormatted,
+                requiredHours: eligibility.requiredHours,
+                shortfallMinutes: eligibility.shortfallMinutes,
+                shortfallText: eligibility.shortfallText,
+              },
+              error: eligibility.message,
+            };
+          }
+        }
+
         return {
           found: true,
           name: name.toString(),
           date: date?.toString(),
           programName: form.title,
-          ic:
-            icColumnIndex !== -1
-              ? (row.get(headers[icColumnIndex]) || '').toString().trim() || undefined
-              : undefined,
+          ic: realIc,
           category: (() => {
             // Read the respondent's category answer (the Sheet column is keyed
             // by the field's LABEL) so the client can pick the right template.
@@ -320,5 +374,9 @@ export async function getFormForCertificateCheck(formId: string) {
     eCertificateEnabled: form.eCertificateEnabled,
     eCertificateTemplate: form.eCertificateTemplate,
     eCertificateCategory: form.eCertificateCategory ?? null,
+    minHoursRequired:
+      form.attendanceSettings?.enabled && form.attendanceSettings?.checkInOut?.enabled
+        ? (form.attendanceSettings?.checkInOut?.minHoursForCertificate ?? 0)
+        : 0,
   };
 }

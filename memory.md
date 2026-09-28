@@ -1436,4 +1436,52 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
 - **Deployment ID**: `dpl_C5qeEbTonUL32bKrubnL8gQTpRth`
 - **Status**: Ready, 54 routes built successfully, 0 errors.
 
+---
 
+## 2026-09-28: Syarat Minimum Jam Kehadiran untuk Tebus E-Sijil & Amaran Awal Check-Out
+- **Permintaan Pengguna**: Menguatkuasakan syarat kehadiran minima sebelum e-Sijil boleh ditebus ("selagi tak cukup jam selagi tu tak boleh tebus sijil") serta cara menangani peserta yang tidak cukup jam ("kalau orang yg tak cukup jam macam mana?").
+- **Seni Bina & Pelaksanaan**:
+  1. **Model Data & Konfigurasi (`lib/types/forms.ts`, `lib/types/attendance.ts`)**:
+     - Ditambah `minHoursForCertificate?: number` ke dalam `CheckInOutConfig`.
+     - Ditambah `checkInAtIso`, `minHoursForCertificate`, `isEarlyCheckOut`, `earlyCheckOutShortfallText` ke dalam `AttendanceSummary`.
+  2. **Modul Pengiraan Tulen (`lib/forms/attendance.ts`)**:
+     - Fungsi `checkCertificateAttendanceEligibility(record, minHoursRequired, breakMinutes)`: menyemak sama ada peserta mempunyai rekod kehadiran, telah selesai check-out, dan memenuhi jumlah jam minima (dengan penolakan waktu rehat). Menghasilkan perincian masa hadir, baki kekurangan jam/minit, dan mesej telus.
+     - Fungsi `isEarlyCheckOut(checkInAt, nowTime, minHoursRequired, breakMinutes)`: mengesan jika percubaan check-out dibuat sebelum memenuhi jam pensijilan minimum.
+  3. **Penguatkuasaan Pelayan (`actions/certificates.ts`)**:
+     - Semasa peserta menyemak sijil di portal awam `/check/[formId]`, sistem mencari rekod kehadiran (`attendance_records`) menggunakan No. IC atau Emel.
+     - Jika borang mempunyai `minHoursForCertificate` (> 0):
+       - Jika tiada rekod: menyekat muat turun dengan mesej tiada rekod Check-In.
+       - Jika masih `checked_in`: menyekat muat turun dan meminta peserta mendaftar keluar petang terlebih dahulu.
+       - Jika `completed` tetapi jam kurang (cth: 3 jam < 6 jam): menyekat muat turun dan memulangkan `{ found: false, attendanceIneligible: true, attendanceDetails, error }`.
+     - `getFormForCertificateCheck` memulangkan `minHoursRequired` untuk rujukan UI portal semakan.
+  4. **Amaran Awal Semasa Check-Out (`app/(public)/form/[id]/client.tsx`)**:
+     - Apabila peserta klik "Daftar Keluar Sekarang (Check-Out)", jika unjuran jam mereka belum mencukupi, sistem memaparkan modal pengesahan `AlertDialog`:
+       - Menunjukkan baki masa yang kurang dan memberi amaran bahawa mereka tidak akan dapat menebus e-Sijil jika keluar sekarang.
+       - Butang: `[Batal & Terus Hadir]` atau `[Tetap Daftar Keluar]`.
+  5. **Antara Muka Pembina Borang (`app/builder/[id]/client.tsx`)**:
+     - Medan input "Minimum Hours for E-Certificate (Syarat Jam Minimum E-Sijil)" dalam kad Smart Check-In/Out.
+  6. **Paparan Portal Tebus Sijil Awam (`app/(public)/check/[formId]/page.tsx` & `client.tsx`)**:
+     - Lencana syarat jam minima dipaparkan di bahagian atas halaman semakan (cth: *"Syarat Kehadiran: Minimum 6 Jam"*).
+     - Kad amaran berona jingga kemas dengan perincian masa hadir vs baki masa yang kurang, bersama nota menghubungi urusetia jika mempunyai pelepasan khas.
+- **Ujian & Kualiti**:
+  - Ujian unit di `tests/attendance.test.ts` (23/23 lulus) dan suite baharu `tests/certificate-attendance-gating.test.ts` (7/7 lulus).
+  - Jumlah keseluruhan: 297 / 297 ujian lulus merentas 35 suite ujian.
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+
+---
+
+## 2026-09-28: Pembaikan Pertindihan Visual Kad Profil Bio (`BioPageCard`)
+- **Isu**: Dalam papan pemuka Bio Pages (`/bio`), lencana tema (`[Lavender Dusk]`) di sudut kiri atas banner bertindih dengan bulatan avatar pengguna (`w-14`) yang mempunyai margin negatif `-mt-10`. Teks tajuk dan pemegang (`@username`) di sebelah avatar juga mengalami penjajaran menegak yang janggal kerana `pt-6`.
+- **Punca**: Banner hanya setinggi `h-16` (64px) dengan padding `p-4`, meninggalkan ruang 32px sahaja. Lencana tema di kiri atas terpaksa berkongsi zon Y yang sama dengan cincin avatar (`ring-4 ring-white`), menyebabkan cincin avatar memotong ke dalam sempadan lencana tema.
+- **Penyelesaian**:
+  - Fail: `app/(dashboard)/bio/client.tsx`.
+  - Tingkatkan ketinggian banner daripada `h-16` kepada `h-20` (80px) untuk ruang menegak yang lebih lapang.
+  - Alihkan lencana nama tema (`{theme.name}`) ke sudut kanan atas bersebelahan dengan togol status `[Active / Draft]`.
+  - Biarkan sudut kiri atas banner kosong tanpa sebarang elemen supaya avatar terapung di atas kecerunan tema secara bersih tanpa sebarang halangan visual.
+  - Besarkan avatar kepada `w-16 h-16` dengan `-mt-12` dan gunakan `items-end gap-3.5` untuk susun atur kad profil yang seimbang.
+  - Gantikan `pt-6` pada lajur teks profil dengan `pb-1` untuk penjajaran menegak yang kemas dan tepat.
+  - Tukar teks bar statistik bawah kepada `{theme.name}` (cth: "Lavender Dusk") berbanding slug ringkas `{page.theme}`.
+- **Ujian & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.

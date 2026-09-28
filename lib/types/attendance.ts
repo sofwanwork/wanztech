@@ -27,4 +27,8 @@ export interface AttendanceSummary {
   durationHours?: number;
   canCheckOut?: boolean;
   minDurationRemainingMinutes?: number;
+  checkInAtIso?: string;
+  minHoursForCertificate?: number;
+  isEarlyCheckOut?: boolean;
+  earlyCheckOutShortfallText?: string;
 }

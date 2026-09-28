@@ -1674,6 +1674,40 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                             If set, participants must enter this PIN to check out. Announce it on stage at the end of the program to prevent early or fake check-outs.
                           </p>
                         </div>
+
+                        <div className="pt-2 border-t border-emerald-200/60 space-y-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <Award className="w-3.5 h-3.5 text-emerald-700" />
+                            <Label htmlFor="min-hours-cert" className="text-xs font-semibold text-emerald-950">
+                              Minimum Hours for E-Certificate (Syarat Jam Minimum E-Sijil)
+                            </Label>
+                          </div>
+                          <Input
+                            id="min-hours-cert"
+                            type="number"
+                            min="0"
+                            step="0.5"
+                            placeholder="e.g. 6 (leave empty for no requirement)"
+                            className="bg-white text-sm"
+                            value={form.attendanceSettings?.checkInOut?.minHoursForCertificate ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value === '' ? undefined : Number(e.target.value);
+                              setForm((f) => ({
+                                ...f,
+                                attendanceSettings: {
+                                  ...f.attendanceSettings!,
+                                  checkInOut: {
+                                    ...f.attendanceSettings!.checkInOut!,
+                                    minHoursForCertificate: val,
+                                  },
+                                },
+                              }));
+                            }}
+                          />
+                          <p className="text-[11px] text-muted-foreground">
+                            Peserta wajib mencapai jumlah jam ini melalui Check-In &amp; Check-Out sebelum dibenarkan menebus e-Sijil. Amaran automatik akan dipaparkan jika mereka cuba daftar keluar lebih awal.
+                          </p>
+                        </div>
                       </div>
                     )}
 

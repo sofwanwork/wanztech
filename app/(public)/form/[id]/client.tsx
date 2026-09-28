@@ -44,6 +44,15 @@ import { useFormTracking } from '@/hooks/use-form-tracking';
 import {
   splitIntoPages,
 } from '@/lib/forms/pagination';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
 
 interface PublicFormClientProps {
   form: Form;
@@ -96,6 +105,7 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [checkOutPin, setCheckOutPin] = useState<string>('');
+  const [showEarlyWarning, setShowEarlyWarning] = useState<boolean>(false);
 
   // Extract rotating QR parameters from searchParams or window.location.search
   const urlSearchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
@@ -202,6 +212,21 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
       return;
     }
 
+    // Early Check-Out Warning Check: If minimum hours are not yet met
+    if (attendanceSummary?.isEarlyCheckOut) {
+      setShowEarlyWarning(true);
+      return;
+    }
+
+    await executeCheckOut();
+  };
+
+  const executeCheckOut = async () => {
+    if (!identifierField) return;
+    const rawVal = formData[identifierField.id];
+    if (!rawVal) return;
+
+    setShowEarlyWarning(false);
     setCheckingOut(true);
     try {
       const res = await submitAttendanceCheckOutAction(
@@ -1077,6 +1102,55 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
                   </span>
                 </div>
               )}
+
+              {/* Early Check-Out Warning Confirmation Modal */}
+              <AlertDialog open={showEarlyWarning} onOpenChange={setShowEarlyWarning}>
+                <AlertDialogContent className="max-w-md bg-white rounded-2xl p-6 border shadow-xl">
+                  <AlertDialogHeader className="text-left space-y-2">
+                    <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 mb-1">
+                      <AlertTriangle className="w-6 h-6" />
+                    </div>
+                    <AlertDialogTitle className="text-base sm:text-lg font-bold text-slate-900">
+                      Amaran: Jam Kehadiran Belum Cukup!
+                    </AlertDialogTitle>
+                    <AlertDialogDescription asChild>
+                      <div className="text-slate-600 text-xs sm:text-sm leading-relaxed space-y-2.5">
+                        <p>
+                          Syarat minimum kehadiran untuk melayakkan e-Sijil adalah{' '}
+                          <strong className="text-slate-900">{attendanceSummary.minHoursForCertificate} Jam</strong>.
+                        </p>
+                        <div className="p-3 rounded-xl bg-amber-50/90 border border-amber-200 text-amber-950 font-medium text-xs">
+                          Kehadiran anda setakat ini masih kurang{' '}
+                          <strong className="text-rose-600">{attendanceSummary.earlyCheckOutShortfallText}</strong>.
+                        </div>
+                        <p className="text-rose-600 font-semibold text-xs">
+                          Jika anda mendaftar keluar sekarang, anda TIDAK AKAN DAPAT menebus e-Sijil program ini.
+                        </p>
+                      </div>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="mt-4 flex flex-col-reverse sm:flex-row gap-2">
+                    <AlertDialogCancel className="w-full sm:w-auto rounded-xl">
+                      Batal &amp; Terus Hadir
+                    </AlertDialogCancel>
+                    <Button
+                      type="button"
+                      onClick={executeCheckOut}
+                      disabled={checkingOut}
+                      className="w-full sm:w-auto bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-semibold shadow-xs"
+                    >
+                      {checkingOut ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
+                          Merekod...
+                        </>
+                      ) : (
+                        'Tetap Daftar Keluar'
+                      )}
+                    </Button>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           )}
 

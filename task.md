@@ -1,3 +1,69 @@
+# Pembaikan Pertindihan Visual Kad Profil Bio (`BioPageCard`) ✅ SIAP
+
+**Matlamat**: Menghapuskan pertindihan cincin avatar profil bio dengan lencana tema di banner atas serta mengemaskan susun atur teks profil.
+
+- [x] 1. Kenal Pasti Punca Masalah (`app/(dashboard)/bio/client.tsx`)
+  - Banner `h-16` (64px) terlalu sempit menyebabkan cincin putih avatar (`-mt-10`) bertindih dengan lencana tema di sudut kiri atas banner.
+  - Teks profil mempunyai `pt-6` yang menyebabkan ketidakseimbangan penjajaran menegak.
+- [x] 2. Kemas Kini Susun Atur UI (`app/(dashboard)/bio/client.tsx`)
+  - Tingkatkan ketinggian banner daripada `h-16` kepada `h-20` (80px).
+  - Alihkan lencana tema (`{theme.name}`) ke sudut kanan atas sebaris dengan togol status `Active / Draft`.
+  - Biarkan zon kiri atas banner kosong agar avatar terapung secara bersih.
+  - Besarkan avatar kepada `w-16 h-16` dengan `-mt-12` dan `items-end gap-3.5`.
+  - Gantikan `pt-6` pada tajuk/handle dengan `pb-1`.
+  - Paparkan nama tema mesra pengguna `{theme.name}` pada bar statistik.
+- [x] 3. Pengesahan Kualiti
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat ESLint.
+  - Kemas kini `memory.md` & `task.md`.
+
+---
+
+# Syarat Minimum Jam Kehadiran untuk Tebus E-Sijil & Amaran Awal Check-Out ✅ SIAP
+
+**Matlamat**: Menguatkuasakan syarat kehadiran minima sebelum e-Sijil boleh ditebus, serta memberi amaran masa nyata kepada peserta jika mereka cuba mendaftar keluar (Check-Out) sebelum memenuhi jam yang ditetapkan.
+
+- [x] 1. Jenis Data & Konfigurasi (`lib/types/forms.ts`, `lib/types/index.ts`, `lib/types/attendance.ts`)
+  - Tambah `minHoursForCertificate?: number` ke dalam `CheckInOutConfig`.
+  - Tambah `checkInAtIso`, `minHoursForCertificate`, `isEarlyCheckOut`, `earlyCheckOutShortfallText` ke dalam `AttendanceSummary`.
+- [x] 2. Logik & Helper Tulen (`lib/forms/attendance.ts`)
+  - Cipta helper `checkCertificateAttendanceEligibility(record, minHoursForCertificate, breakMinutes)`.
+  - Cipta fungsi kiraan amaran check-out awal `isEarlyCheckOut(checkInAt, now, minHoursRequired, breakMinutes)`.
+  - Ujian unit di `tests/attendance.test.ts` (23/23 lulus).
+- [x] 3. Penguatkuasaan di Pelayan (Server Action) (`actions/certificates.ts`)
+  - Semak kelayakan kehadiran dalam `checkCertificateByICOrEmail` sebelum membenarkan muat turun e-Sijil.
+  - Kemas kini `CertificateCheckResult` untuk menyertakan maklumat ketidaklayakan kehadiran (`attendanceIneligible`, `attendanceDetails`).
+  - Ujian unit di `tests/certificate-attendance-gating.test.ts` (7/7 lulus).
+- [x] 4. Dialog Amaran Awal Semasa Check-Out (`app/(public)/form/[id]/client.tsx`)
+  - Pop-up amaran jika jam kehadiran belum mencukupi sebelum check-out.
+  - Pilihan jelas: "Batal & Terus Hadir" atau "Tetap Daftar Keluar".
+- [x] 5. Antara Muka Pembina Borang (`app/builder/[id]/client.tsx`)
+  - Tambah medan input "Minimum Hours for E-Certificate" di bawah seksyen Smart Check-In/Out.
+- [x] 6. Paparan Portal Tebus Sijil Awam (`app/(public)/check/[formId]/page.tsx` & `client.tsx`)
+  - Lencana syarat jam minima di bahagian atas halaman semakan.
+  - Kad amaran telus dengan perincian masa hadir vs baki jam diperlukan jika belum layak.
+- [x] 7. Ujian, Pengesahan & Kemas Kini Memori
+  - `npm test`: 297 / 297 ujian lulus merentas 35 suite ujian.
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - Kemas kini `memory.md` dan `task.md`.
+
+---
+
+## Reviu Pelaksanaan: Syarat Minimum Jam Kehadiran E-Sijil & Amaran Awal
+
+1. **Seni Bina & Penguatkuasaan**:
+   - **Form Builder**: Penganjur menetapkan syarat jam minimum (contoh: 6 Jam). Disimpan secara stateless/JSONB ke dalam `attendanceSettings.checkInOut.minHoursForCertificate`.
+   - **Pelayan (`actions/certificates.ts`)**: Semasa peserta menyemak sijil di `/check/[formId]`, sistem secara automatik mencari rekod kehadiran (`attendance_records`) menggunakan No. IC atau Emel.
+     * Jika peserta tiada rekod langsung: disekat dengan mesej tiada rekod Check-In.
+     * Jika status masih `checked_in`: disekat dan diminta lakukan Check-Out dahulu.
+     * Jika status `completed` tetapi jumlah jam kurang: disekat dengan kad amaran terperinci menunjukkan masa hadir dan baki kekurangan jam.
+2. **Pengalaman Responden (UX)**:
+   - **Amaran Awal Check-Out**: Apabila peserta cuba scan Check-Out sebelum cukup masa, modal dialog amaran terpapar memberitahu baki masa yang kurang dan memberi pilihan sama ada mahu terus hadir atau tetap daftar keluar.
+   - **Portal e-Sijil**: Menunjukkan lencana syarat jam program dan kad penjelasan mesra jika syarat jam belum mencukupi, bersama panduan menghubungi urusetia jika mempunyai pelepasan khas.
+
+---
+
 # Perlindungan Anti-Tipu Kehadiran: PIN Check-Out & Live Rotating QR ✅ SIAP
 
 **Matlamat**: Menghapuskan kelemahan peserta mengambil gambar kod QR untuk scan dari rumah pada waktu petang melalui:

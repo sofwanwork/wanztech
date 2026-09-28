@@ -165,3 +165,159 @@ export function formatAttendanceDateTime(dateInput: string | Date): string {
   const timeStr = formatAttendanceTime(date);
   return `${dateStr}, ${timeStr}`;
 }
+
+export interface CertificateAttendanceEligibility {
+  eligible: boolean;
+  reason?: 'no_record' | 'not_checked_out' | 'insufficient_hours';
+  attendedHours: number;
+  attendedDurationFormatted: string;
+  requiredHours: number;
+  shortfallMinutes: number;
+  shortfallText: string;
+  message: string;
+}
+
+/**
+ * Check if a participant's attendance record qualifies them for certificate claiming.
+ */
+export function checkCertificateAttendanceEligibility(
+  record:
+    | { status: string; checkInAt: string | Date; checkOutAt?: string | Date | null }
+    | null
+    | undefined,
+  minHoursRequired: number,
+  breakMinutes = 0
+): CertificateAttendanceEligibility {
+  const reqHours = Math.max(0, Number(minHoursRequired) || 0);
+
+  // If no requirement or <= 0, automatically eligible
+  if (reqHours <= 0) {
+    return {
+      eligible: true,
+      attendedHours: 0,
+      attendedDurationFormatted: '0 Jam',
+      requiredHours: 0,
+      shortfallMinutes: 0,
+      shortfallText: '',
+      message: 'Layak menerima sijil.',
+    };
+  }
+
+  if (!record) {
+    return {
+      eligible: false,
+      reason: 'no_record',
+      attendedHours: 0,
+      attendedDurationFormatted: '0 Jam',
+      requiredHours: reqHours,
+      shortfallMinutes: Math.round(reqHours * 60),
+      shortfallText: `${reqHours} Jam`,
+      message: 'Tiada rekod pendaftaran masuk (Check-In) dijumpai untuk program ini.',
+    };
+  }
+
+  if (record.status !== 'completed' || !record.checkOutAt) {
+    const elapsed = calculateAttendanceDuration(record.checkInAt, new Date(), breakMinutes);
+    return {
+      eligible: false,
+      reason: 'not_checked_out',
+      attendedHours: elapsed.decimalHours,
+      attendedDurationFormatted: elapsed.formattedText,
+      requiredHours: reqHours,
+      shortfallMinutes: Math.max(0, Math.round(reqHours * 60 - elapsed.totalMinutes)),
+      shortfallText: '',
+      message:
+        'Anda belum mendaftar keluar (Check-Out). Sila imbas kod QR program untuk mendaftar keluar bagi merekodkan jumlah jam kehadiran anda.',
+    };
+  }
+
+  const duration = calculateAttendanceDuration(record.checkInAt, record.checkOutAt, breakMinutes);
+  const requiredMinutes = Math.round(reqHours * 60);
+
+  if (duration.totalMinutes < requiredMinutes) {
+    const shortfallMin = requiredMinutes - duration.totalMinutes;
+    const shortH = Math.floor(shortfallMin / 60);
+    const shortM = shortfallMin % 60;
+    let shortfallText = '';
+    if (shortH > 0 && shortM > 0) shortfallText = `${shortH} Jam ${shortM} Minit`;
+    else if (shortH > 0) shortfallText = `${shortH} Jam`;
+    else shortfallText = `${shortM} Minit`;
+
+    return {
+      eligible: false,
+      reason: 'insufficient_hours',
+      attendedHours: duration.decimalHours,
+      attendedDurationFormatted: duration.formattedText,
+      requiredHours: reqHours,
+      shortfallMinutes: shortfallMin,
+      shortfallText,
+      message: `Jumlah kehadiran anda adalah ${duration.formattedText} (syarat minimum: ${reqHours} Jam). Anda kurang ${shortfallText} untuk melayakkan diri menebus sijil.`,
+    };
+  }
+
+  return {
+    eligible: true,
+    attendedHours: duration.decimalHours,
+    attendedDurationFormatted: duration.formattedText,
+    requiredHours: reqHours,
+    shortfallMinutes: 0,
+    shortfallText: '',
+    message: 'Tahniah! Anda telah memenuhi syarat jam kehadiran dan layak menerima sijil.',
+  };
+}
+
+/**
+ * Check if the current check-out attempt is before fulfilling minimum certificate hours.
+ */
+export function isEarlyCheckOut(
+  checkInAt: string | Date,
+  nowTime: string | Date,
+  minHoursRequired: number,
+  breakMinutes = 0
+): {
+  isEarly: boolean;
+  attendedDurationText: string;
+  attendedMinutes: number;
+  requiredHours: number;
+  shortfallText: string;
+} {
+  const reqHours = Math.max(0, Number(minHoursRequired) || 0);
+  if (reqHours <= 0) {
+    return {
+      isEarly: false,
+      attendedDurationText: '',
+      attendedMinutes: 0,
+      requiredHours: 0,
+      shortfallText: '',
+    };
+  }
+
+  const dur = calculateAttendanceDuration(checkInAt, nowTime, breakMinutes);
+  const requiredMinutes = Math.round(reqHours * 60);
+
+  if (dur.totalMinutes < requiredMinutes) {
+    const diff = requiredMinutes - dur.totalMinutes;
+    const shortH = Math.floor(diff / 60);
+    const shortM = diff % 60;
+    let shortfallText = '';
+    if (shortH > 0 && shortM > 0) shortfallText = `${shortH} Jam ${shortM} Minit`;
+    else if (shortH > 0) shortfallText = `${shortH} Jam`;
+    else shortfallText = `${shortM} Minit`;
+
+    return {
+      isEarly: true,
+      attendedDurationText: dur.formattedText,
+      attendedMinutes: dur.totalMinutes,
+      requiredHours: reqHours,
+      shortfallText,
+    };
+  }
+
+  return {
+    isEarly: false,
+    attendedDurationText: dur.formattedText,
+    attendedMinutes: dur.totalMinutes,
+    requiredHours: reqHours,
+    shortfallText: '',
+  };
+}

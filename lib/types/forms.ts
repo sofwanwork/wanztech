@@ -168,6 +168,8 @@ export interface CheckInOutConfig {
   breakMinutes?: number;
   /** Optional secret passcode/PIN required from participant to complete Check-Out. */
   checkOutPasscode?: string;
+  /** Minimum hours required to be eligible to claim e-certificate (e.g. 6 or 8). */
+  minHoursForCertificate?: number;
 }
 
 /**

@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Award, Search, Download, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { Award, Search, Download, Loader2, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { checkCertificateByICOrEmail, CertificateCheckResult } from '@/actions/certificates';
 import { useRef } from 'react';
 // import html2canvas from 'html2canvas-pro';
@@ -35,6 +35,8 @@ interface CertificateCheckClientProps {
   categoryConfig?: CertificateCategoryConfig | null;
   /** All prefetched templates keyed by id (default + mapped categories). */
   templatesById?: Record<string, CertificateTemplateType>;
+  /** Minimum hours required to be eligible for certificate. */
+  minHoursRequired?: number;
 }
 
 export function CertificateCheckClient({
@@ -44,6 +46,7 @@ export function CertificateCheckClient({
   customTemplateData,
   categoryConfig,
   templatesById,
+  minHoursRequired,
 }: CertificateCheckClientProps) {
   const [identifier, setIdentifier] = useState('');
   const [loading, setLoading] = useState(false);
@@ -240,6 +243,14 @@ export function CertificateCheckClient({
           </div>
           <h1 className="text-2xl font-bold text-gray-900 whitespace-pre-line break-words">{formTitle}</h1>
           <p className="text-gray-600 mt-2">Verify & Download Your E-Certificate</p>
+          {minHoursRequired && minHoursRequired > 0 ? (
+            <div className="mt-3">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-semibold border border-emerald-200/80 shadow-2xs">
+                <Clock className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Syarat Kehadiran: Minimum {minHoursRequired} Jam</span>
+              </span>
+            </div>
+          ) : null}
         </div>
 
         {/* Check Form - Center this if no result yes */}
@@ -417,15 +428,60 @@ export function CertificateCheckClient({
 
         {result && !result.found && (
           <div className="max-w-lg mx-auto">
-            <Card className="border-0 shadow-lg bg-red-50">
-              <CardContent className="pt-6 text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mb-4">
-                  <XCircle className="h-6 w-6 text-red-600" />
-                </div>
-                <h3 className="text-lg font-semibold text-red-800 mb-2">Certificate Not Found</h3>
-                <p className="text-red-600">{result.error || 'IC / Email not found in records'}</p>
-              </CardContent>
-            </Card>
+            {result.attendanceIneligible && result.attendanceDetails ? (
+              <Card className="border border-amber-200/90 shadow-lg bg-amber-50/90">
+                <CardContent className="pt-6 text-center space-y-4">
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-amber-100 mb-1">
+                    <Clock className="h-7 w-7 text-amber-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-amber-950 mb-1.5">
+                      {result.attendanceDetails.status === 'not_checked_out'
+                        ? 'Belum Selesai Check-Out'
+                        : result.attendanceDetails.status === 'no_record'
+                        ? 'Tiada Rekod Kehadiran'
+                        : 'Syarat Jam Kehadiran Belum Mencukupi'}
+                    </h3>
+                    <p className="text-xs text-amber-900/90 max-w-md mx-auto leading-relaxed">
+                      {result.error}
+                    </p>
+                  </div>
+
+                  <div className="bg-white/90 p-4 rounded-xl border border-amber-200 text-left text-xs space-y-2 max-w-sm mx-auto shadow-2xs">
+                    <div className="flex justify-between items-center py-1 border-b border-amber-100">
+                      <span className="text-muted-foreground">Syarat Minimum Program:</span>
+                      <span className="font-bold text-slate-900">{result.attendanceDetails.requiredHours} Jam</span>
+                    </div>
+                    {result.attendanceDetails.status === 'insufficient_hours' && (
+                      <>
+                        <div className="flex justify-between items-center py-1 border-b border-amber-100">
+                          <span className="text-muted-foreground">Jumlah Masa Hadir Anda:</span>
+                          <span className="font-bold text-amber-800">{result.attendanceDetails.attendedFormatted}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-1">
+                          <span className="text-muted-foreground">Baki Kekurangan Masa:</span>
+                          <span className="font-bold text-rose-600">Kurang {result.attendanceDetails.shortfallText}</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <p className="text-[11px] text-amber-800/80 italic">
+                    Sila hubungi urusetia program jika anda mempunyai kebenaran atau pelepasan khas penganjur.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="border-0 shadow-lg bg-red-50">
+                <CardContent className="pt-6 text-center">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mb-4">
+                    <XCircle className="h-6 w-6 text-red-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-red-800 mb-2">Certificate Not Found</h3>
+                  <p className="text-red-600">{result.error || 'IC / Email not found in records'}</p>
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
       </div>
