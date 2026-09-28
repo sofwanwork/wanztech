@@ -1485,3 +1485,12 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
 - **Ujian & Kualiti**:
   - `npm run typecheck`: 0 ralat TypeScript.
   - `npm run lint`: 0 ralat / 0 amaran ESLint.
+
+### Production Deployment
+- **Date**: 2026-09-28
+- **Git Commit**: `7887626` ("feat: add min attendance hours for certs and fix bio card avatar overlap")
+- **Method**: Vercel CLI (`npx vercel --prod --yes`) & GitHub Push (`origin/master`)
+- **Production URL**: `https://www.klikform.com`
+- **Deployment URL**: `https://klikform-lsgih6esw-sofwan-jailanis-projects.vercel.app`
+- **Deployment ID**: `dpl_GHszoL231dZFHtdUf3EheVFtsDqq`
+- **Status**: Ready, 54 routes built successfully, 0 errors.
