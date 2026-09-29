@@ -1526,3 +1526,13 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - `npm run typecheck`: 0 ralat TypeScript.
   - `npm run lint`: 0 ralat / 0 amaran ESLint.
 
+### Production Deployment
+- **Date**: 2026-09-29
+- **Git Commit**: `f706c51` ("fix(attendance): prevent duplicate check-in entries and enforce check-out UI gating")
+- **Method**: Vercel CLI (`npx vercel --prod --yes`) & GitHub Push (`origin/master`)
+- **Production URL**: `https://www.klikform.com`
+- **Deployment URL**: `https://klikform-k2jplq85w-sofwan-jailanis-projects.vercel.app`
+- **Deployment ID**: `dpl_EUpXv2p2jtKqooMXkXWQs2FFWE4y`
+- **Status**: Ready, 54 routes built successfully, 0 errors.
+
+
