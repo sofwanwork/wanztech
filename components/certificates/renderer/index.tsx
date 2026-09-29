@@ -1,5 +1,5 @@
 import { CertificateTemplate, CertificateElement } from '@/lib/types';
-import { getProgramFontSize } from '@/components/certificates/types';
+import { getProgramFontSize, getNameFontSize, isShortName } from '@/components/certificates/types';
 import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import {
@@ -111,12 +111,25 @@ export function CertificateRenderer({ template, data, id }: CertificateRendererP
           style={{
             left: `${(Number(el.x) / safeWidth) * 100}%`,
             top: `${(Number(el.y) / safeHeight) * 100}%`,
-            width:
-              el.type === 'image' || el.type === 'shape' || el.type === 'qr' || el.type === 'icon'
+            width: (() => {
+              if (el.type === 'image' || el.type === 'shape' || el.type === 'qr' || el.type === 'icon') {
+                return `${(Number(el.width) / safeWidth) * 100}%`;
+              }
+              if (el.type === 'placeholder' && el.placeholderType === 'name') {
+                const nameVal = data.name || el.content || '';
+                if (isShortName(nameVal)) {
+                  return el.width && el.width > 0
+                    ? `max(${(Number(el.width) / safeWidth) * 100}%, max-content)`
+                    : 'max-content';
+                }
+                return el.width && el.width > 0
+                  ? `${Math.max((Number(el.width) / safeWidth) * 100, 82)}%`
+                  : '88%';
+              }
+              return el.width && el.width > 0
                 ? `${(Number(el.width) / safeWidth) * 100}%`
-                : el.width && el.width > 0
-                  ? `${(Number(el.width) / safeWidth) * 100}%`
-                  : 'auto',
+                : 'auto';
+            })(),
             maxWidth: el.type === 'text' || el.type === 'placeholder' ? '92%' : undefined,
             height:
               el.type === 'image' || el.type === 'shape' || el.type === 'qr' || el.type === 'icon'
@@ -129,14 +142,22 @@ export function CertificateRenderer({ template, data, id }: CertificateRendererP
               ? `${el.shadow.offsetX}px ${el.shadow.offsetY}px ${el.shadow.blur}px ${el.shadow.color}`
               : undefined,
             borderRadius: `${el.borderRadius ?? 0}px`,
-            whiteSpace: el.type === 'text' || el.type === 'placeholder' ? 'pre-line' : 'nowrap',
+            whiteSpace: (() => {
+              if (el.type === 'placeholder' && el.placeholderType === 'name') {
+                return isShortName(data.name || el.content) ? 'nowrap' : 'pre-line';
+              }
+              return el.type === 'text' || el.type === 'placeholder' ? 'pre-line' : 'nowrap';
+            })(),
             wordBreak: el.type === 'text' || el.type === 'placeholder' ? 'break-word' : undefined,
-            // Apply specific text styles (with smart scaling for program placeholder)
+            // Apply specific text styles (with smart scaling for program and name placeholders)
             fontSize: (() => {
               if (!el.fontSize) return undefined;
               const base = Number(el.fontSize);
               if (el.type === 'placeholder' && el.placeholderType === 'program') {
                 return `${getProgramFontSize(data.program || el.content, base)}px`;
+              }
+              if (el.type === 'placeholder' && el.placeholderType === 'name') {
+                return `${getNameFontSize(data.name || el.content, base)}px`;
               }
               return `${base}px`;
             })(),
@@ -216,11 +237,37 @@ export function CertificateRenderer({ template, data, id }: CertificateRendererP
           )}
 
           {/* Text & Placeholder */}
-          {(el.type === 'text' || el.type === 'placeholder') && (
-            <div className="whitespace-pre-line break-words [text-wrap:balance]" style={{ pointerEvents: 'none' }}>
-              {resolveContent(el)}
-            </div>
-          )}
+          {(el.type === 'text' || el.type === 'placeholder') && (() => {
+            const isName = el.type === 'placeholder' && el.placeholderType === 'name';
+            const content = resolveContent(el);
+
+            if (isName) {
+              const isShort = isShortName(content);
+              return (
+                <div
+                  className={`[text-wrap:balance] ${
+                    isShort ? 'whitespace-nowrap' : 'whitespace-pre-line break-words line-clamp-2'
+                  }`}
+                  style={{
+                    pointerEvents: 'none',
+                    whiteSpace: isShort ? 'nowrap' : undefined,
+                    display: isShort ? 'block' : '-webkit-box',
+                    WebkitLineClamp: isShort ? 1 : 2,
+                    WebkitBoxOrient: isShort ? undefined : 'vertical',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {content}
+                </div>
+              );
+            }
+
+            return (
+              <div className="whitespace-pre-line break-words [text-wrap:balance]" style={{ pointerEvents: 'none' }}>
+                {content}
+              </div>
+            );
+          })()}
         </div>
       ))}
     </div>

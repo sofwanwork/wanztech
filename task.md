@@ -1,3 +1,24 @@
+# Format Nama Peserta Pada Sijil: 1 Line Untuk Nama Pendek & Max 2 Line Untuk Nama Panjang ✅ SIAP
+
+**Matlamat**: Menguatkuasakan paparan nama peserta pada sijil agar nama pendek (seperti 'SOFWAN BIN MOHD JAILANI') kekal 1 baris, manakala nama panjang dihadkan kepada maksimum 2 baris sahaja dengan penskalaan saiz fon pintar (auto-scaling).
+
+- [x] 1. Cipta Helper Tipografi Nama Pintar (`components/certificates/types.ts`)
+  - `isShortName(name)`: Mengesan nama pendek/sederhana (<= 28 aksara tanpa `\n`) untuk dikunci pada 1 baris.
+  - `getNameFontSize(name, baseSize)`: Mengira saiz fon dinamik bagi nama panjang (29-43 aksara -> ~78%, 44+ aksara -> ~62%, min 18px) supaya muat dalam 2 baris tanpa melimpah.
+  - Ujian unit di `tests/certificate-typography.test.ts` (14/14 lulus).
+- [x] 2. Kemas Kini Renderer Sijil Utama (`components/certificates/renderer/index.tsx`)
+  - Untuk nama pendek: `whitespace-nowrap`, `width: max-content`, `maxWidth: 92%` supaya tidak dipecahkan oleh lebar kotak asal.
+  - Untuk nama panjang: `whitespace-pre-line break-words line-clamp-2 [text-wrap:balance]`, `WebkitLineClamp: 2`, `overflow: hidden`.
+- [x] 3. Kemas Kini Templat Sijil Lain (`components/certificate-template.tsx`, `ClassicTemplate.tsx`, `CorporateTemplate.tsx`)
+  - Mengintegrasikan `isShortName`, `getNameFontSize`, dan `line-clamp-2` untuk keseragaman.
+- [x] 4. Pengesahan Kualiti & Ujian
+  - `npm test`: 307 / 307 ujian lulus merentas 35 suite ujian.
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - Kemas kini `task.md` dan `memory.md`.
+
+---
+
 # Pembaikan Bug 1-QR Smart Check-In & Check-Out: Dua Kali Entry Data Masa Masuk Google Sheet ✅ SIAP
 
 **Matlamat**: Menyelesaikan isu di mana Google Sheets menerima dua entri berasingan kedua-duanya dengan 'Masa Masuk (Check-In)' dan tiada data 'Masa Keluar (Check-Out)'.

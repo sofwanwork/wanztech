@@ -1,5 +1,5 @@
 import { templateRegistry, templateList } from './certificates';
-import { getProgramFontSize } from './certificates/types';
+import { getProgramFontSize, getNameFontSize, isShortName } from './certificates/types';
 import { CertificateTemplate as CertificateTemplateType } from '@/lib/types';
 import { CertificateRenderer } from './certificates/renderer';
 import { generateCertSerial } from '@/lib/certificates/serial';
@@ -70,12 +70,29 @@ export function CertificateTemplate({
           crossOrigin="anonymous"
         />
         <div className="relative z-10 flex flex-col items-center justify-center h-full pt-16 px-12">
-          <h1
-            className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 uppercase tracking-wider whitespace-pre-line break-words"
-            style={{ textShadow: '2px 2px 4px rgba(255,255,255,0.8)' }}
-          >
-            {uppercaseName}
-          </h1>
+          {(() => {
+            const isShort = isShortName(uppercaseName);
+            const fontSize = getNameFontSize(uppercaseName, 48);
+            return (
+              <h1
+                className={`font-bold text-gray-900 mb-6 uppercase tracking-wider ${
+                  isShort
+                    ? 'whitespace-nowrap'
+                    : 'whitespace-pre-line break-words line-clamp-2 [text-wrap:balance]'
+                }`}
+                style={{
+                  fontSize: `${fontSize}px`,
+                  textShadow: '2px 2px 4px rgba(255,255,255,0.8)',
+                  display: isShort ? 'block' : '-webkit-box',
+                  WebkitLineClamp: isShort ? 1 : 2,
+                  WebkitBoxOrient: isShort ? undefined : 'vertical',
+                  overflow: 'hidden',
+                }}
+              >
+                {uppercaseName}
+              </h1>
+            );
+          })()}
           <p
             className="text-xl text-gray-800 font-medium mb-2"
             style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.8)' }}

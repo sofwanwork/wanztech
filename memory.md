@@ -1535,4 +1535,31 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
 - **Deployment ID**: `dpl_EUpXv2p2jtKqooMXkXWQs2FFWE4y`
 - **Status**: Ready, 54 routes built successfully, 0 errors.
 
+---
+
+## 2026-09-29: Format Nama Peserta Pada Sijil (1 Baris Untuk Nama Pendek & Max 2 Baris Untuk Nama Panjang)
+- **Permintaan Pengguna**: "sy nak dua line sahaja max, tapi kalau nama pendek satu line sahaja" bersama gambar sijil di mana nama "SOFWAN BIN MOHD JAILANI" terbelah kepada 2 baris ("SOFWAN BIN" di baris 1 dan "MOHD JAILANI" di baris 2).
+- **Punca Asal Ralat (Root Causes)**:
+  1. Dalam `components/certificates/renderer/index.tsx`, `placeholderType === 'name'` tiada fungsi auto-scaling (berbeza dengan `program` yang mempunyai `getProgramFontSize`).
+  2. Bounding box `el.width` pada elemen nama dihadkan kepada dimensi tetap tertentu (contohnya ~450px) yang lebih sempit daripada kelebaran sebenar nama pada saiz fon asas (46px - 60px).
+  3. Div dalaman mengandungi kelas `whitespace-pre-line break-words [text-wrap:balance]` yang memaksa teks membalut dan menyeimbangkan aksara kepada dua baris walaupun nama tersebut sederhana pendek.
+  4. Untuk nama yang sangat panjang (45+ aksara), ketiadaan penskalaan fon menyebabkan nama melimpah ke 3 atau 4 baris dan bertindih dengan teks di bawahnya.
+- **Penyelesaian Dilaksanakan**:
+  1. **Helper Tipografi Nama Pintar (`components/certificates/types.ts`)**:
+     - `isShortName(name)`: Mengesan nama pendek/sederhana (<= 28 aksara tanpa `\n`). Contoh: `"SOFWAN BIN MOHD JAILANI"` (23 aksara) dikelaskan sebagai nama pendek.
+     - `getNameFontSize(name, baseSize)`:
+       - Nama pendek (<= 28 aksara): Mengekalkan saiz fon asas (dicap pada maks 52px jika saiz asas terlalu besar).
+       - Nama sederhana panjang (29-43 aksara): Skala ke ~78% saiz asas untuk muat 2 baris kemas.
+       - Nama sangat panjang (44+ aksara): Skala ke ~62% saiz asas (min 18px) supaya muat dalam 2 baris tanpa terpotong.
+  2. **Kemas Kini Renderer Sijil (`components/certificates/renderer/index.tsx`)**:
+     - Nama Pendek: Menguatkuasakan `whiteSpace: 'nowrap'`, `width: max(el.width, max-content)`, `maxWidth: '92%'`. Ini membolehkan nama pendek mengambil kelebaran semula jadi dan kekal dalam **1 baris tunggal**.
+     - Nama Panjang: Menguatkuasakan `display: '-webkit-box'`, `WebkitLineClamp: 2`, `overflow: 'hidden'`, dan `width: 88%` supaya dihadkan kepada **maksimum 2 baris sahaja**.
+  3. **Penyelarasan Templat Warisan & Pra-Bina (`components/certificate-template.tsx`, `ClassicTemplate.tsx`, `CorporateTemplate.tsx`)**:
+     - Mengintegrasikan fungsi penskalaan yang sama untuk konsistensi merentas semua jenis templat.
+  4. **Ujian Unit & Pengesahan**:
+     - Ujian unit di `tests/certificate-typography.test.ts` (14/14 lulus).
+     - Keseluruhan ujian suite: 307 / 307 ujian lulus merentas 35 suite ujian.
+     - `npm run typecheck` & `npm run lint`: 0 ralat.
+
+
 

@@ -1,7 +1,9 @@
-import { TemplateProps, getProgramFontSize } from '../types';
+import { TemplateProps, getProgramFontSize, getNameFontSize, isShortName } from '../types';
 
 export function CorporateTemplate({ id, name, program, formattedDate }: TemplateProps) {
   const programFontSize = getProgramFontSize(program, 40);
+  const isShort = isShortName(name);
+  const nameFontSize = getNameFontSize(name, 56);
   return (
     <div
       id={id}
@@ -105,8 +107,18 @@ export function CorporateTemplate({ id, name, program, formattedDate }: Template
 
       <div className="absolute top-[220px] left-0 z-10 text-center w-full px-16">
         <h1
-          className="font-serif font-bold italic"
-          style={{ color: '#d4af37', fontSize: '64px', textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}
+          className={`font-serif font-bold italic ${
+            isShort ? 'whitespace-nowrap' : 'whitespace-pre-line break-words line-clamp-2 [text-wrap:balance]'
+          }`}
+          style={{
+            color: '#d4af37',
+            fontSize: `${nameFontSize}px`,
+            textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+            display: isShort ? 'block' : '-webkit-box',
+            WebkitLineClamp: isShort ? 1 : 2,
+            WebkitBoxOrient: isShort ? undefined : 'vertical',
+            overflow: 'hidden',
+          }}
         >
           {name}
         </h1>
