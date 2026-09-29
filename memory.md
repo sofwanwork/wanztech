@@ -1561,5 +1561,15 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
      - Keseluruhan ujian suite: 307 / 307 ujian lulus merentas 35 suite ujian.
      - `npm run typecheck` & `npm run lint`: 0 ralat.
 
+### Production Deployment
+- **Date**: 2026-09-29
+- **Git Commit**: `bc777e1` ("feat(certificates): enforce 1-line for short names and max 2-lines for long names with smart auto-scaling")
+- **Method**: Vercel CLI (`npx vercel --prod --yes`) & GitHub Push (`origin/master`)
+- **Production URL**: `https://www.klikform.com`
+- **Deployment URL**: `https://klikform-ikjnxl1pk-sofwan-jailanis-projects.vercel.app`
+- **Deployment ID**: `dpl_Bm4TpjSfpkpmQpyNmZk8kC5QtVSt`
+- **Status**: Ready, 54 routes built successfully, 0 errors.
+
+
 
 
