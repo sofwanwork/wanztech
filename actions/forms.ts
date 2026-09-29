@@ -3,7 +3,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { saveForm, getFormById, deleteForm } from '@/lib/storage/forms';
 import { Form, Settings } from '@/lib/types';
-import { appendToSheet } from '@/lib/api/google-sheets';
+import { appendToSheet, updateSheetRow } from '@/lib/api/google-sheets';
 import { uploadToDrive } from '@/lib/api/google-drive';
 import { redirect } from 'next/navigation';
 import { after } from 'next/server';
@@ -34,8 +34,13 @@ import {
   cleanIdentifier,
   formatAttendanceTime,
   formatAttendanceDateTime,
+  calculateAttendanceDuration,
 } from '@/lib/forms/attendance';
-import { createAttendanceRecord } from '@/lib/storage/attendance';
+import {
+  createAttendanceRecord,
+  getAttendanceRecord,
+  updateAttendanceCheckOut,
+} from '@/lib/storage/attendance';
 import { verifyRotatingQrToken } from '@/lib/forms/rotating-qr';
 
 // --- Settings Storage for Credentials ---
@@ -402,6 +407,163 @@ export async function submitFormAction(
     const nowCheckIn = new Date();
 
     if (cleanId) {
+      const existingRecord = await getAttendanceRecord(form.id, cleanId);
+
+      // SCENARIO 1: Participant is ALREADY checked in!
+      // This happens when respondent re-scans the form to check-out, but submits the form
+      // instead of using the top banner button (or pressed Enter).
+      // We must CONVERT this into a Check-Out, NEVER create a duplicate check-in row!
+      if (existingRecord && existingRecord.status === 'checked_in') {
+        const checkInOutConfig = form.attendanceSettings?.checkInOut;
+        const breakMinutes = checkInOutConfig?.breakMinutes || 0;
+        const nowCheckOut = new Date();
+        const dur = calculateAttendanceDuration(existingRecord.checkInAt, nowCheckOut, breakMinutes);
+
+        // Update attendance record in Supabase to completed
+        await updateAttendanceCheckOut(existingRecord.id, {
+          checkOutAt: nowCheckOut.toISOString(),
+          durationMinutes: dur.totalMinutes,
+        });
+
+        // Update local form_responses if exists
+        try {
+          const admin = createAdminClient();
+          const { data: resp } = await admin
+            .from('form_responses')
+            .select('data')
+            .eq('submission_id', existingRecord.submissionId)
+            .maybeSingle();
+
+          if (resp && resp.data) {
+            const existingData = resp.data as Record<string, unknown>;
+            existingData['Masa Keluar (Check-Out)'] = formatAttendanceDateTime(nowCheckOut);
+            existingData['Jumlah Masa Hadir'] = dur.formattedText;
+            existingData['Jumlah Jam (Hours)'] = dur.decimalHours;
+            existingData['Status Kehadiran'] = 'Selesai (Completed)';
+
+            await admin
+              .from('form_responses')
+              .update({ data: existingData })
+              .eq('submission_id', existingRecord.submissionId);
+          }
+        } catch (dbErr) {
+          console.warn('[submitFormAction] update existing form_responses error:', dbErr);
+        }
+
+        // Background Google Sheet update (using after())
+        const checkOutUpdateData: Record<string, string | number> = {
+          'Masa Keluar (Check-Out)': formatAttendanceDateTime(nowCheckOut),
+          'Jumlah Masa Hadir': dur.formattedText,
+          'Jumlah Jam (Hours)': dur.decimalHours,
+          'Status Kehadiran': 'Selesai (Completed)',
+        };
+
+        const formSnap = form;
+        const settingsSnap = settings;
+        const existingSubmissionId = existingRecord.submissionId;
+        const existingIdentifierLabel = existingRecord.identifierLabel;
+        const rawIdentifierStr = String(rawId);
+
+        after(async () => {
+          if (!formSnap.userId || !formSnap.googleSheetUrl || !settingsSnap) return;
+          const match = formSnap.googleSheetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
+          if (!match || !match[1]) return;
+          const sheetId = match[1];
+
+          let accessToken = settingsSnap.googleAccessToken;
+          try {
+            const { getValidAccessToken } = await import('@/lib/api/google-auth');
+            accessToken = await getValidAccessToken({
+              accessToken: settingsSnap.googleAccessToken,
+              refreshToken: settingsSnap.googleRefreshToken,
+              tokenExpiry: settingsSnap.googleTokenExpiry,
+              userId: formSnap.userId,
+            });
+          } catch (e) {
+            console.warn('[submitFormAction] token refresh error during checkout convert:', e);
+          }
+
+          const sheetConfig = {
+            sheetId,
+            clientEmail: settingsSnap.googleClientEmail,
+            privateKey: settingsSnap.googlePrivateKey
+              ? formatPrivateKey(settingsSnap.googlePrivateKey)
+              : undefined,
+            accessToken,
+          };
+
+          let sheetRes = await updateSheetRow(
+            sheetConfig,
+            '_submission_id',
+            existingSubmissionId,
+            checkOutUpdateData
+          );
+
+          if (sheetRes.success && sheetRes.updated === false) {
+            const candHeaders = [
+              existingIdentifierLabel,
+              'No. Kad Pengenalan',
+              'No Kad Pengenalan',
+              'No. IC',
+              'No IC',
+              'IC',
+              'No. KP',
+              'Kad Pengenalan',
+              'Email',
+              'Emel',
+            ].filter(Boolean) as string[];
+            for (const cand of candHeaders) {
+              sheetRes = await updateSheetRow(
+                sheetConfig,
+                cand,
+                rawIdentifierStr,
+                checkOutUpdateData
+              );
+              if (sheetRes.updated) break;
+            }
+          }
+        });
+
+        return {
+          success: true,
+          isCheckOut: true,
+          summary: {
+            status: 'completed',
+            participantName: existingRecord.participantName || participantName,
+            identifierValue: String(rawId),
+            checkInTime: formatAttendanceTime(existingRecord.checkInAt),
+            checkOutTime: formatAttendanceTime(nowCheckOut),
+            durationFormatted: dur.formattedText,
+            durationHours: dur.decimalHours,
+          },
+        };
+      }
+
+      // SCENARIO 2: Participant already COMPLETED attendance (checked-out previously)
+      if (existingRecord && existingRecord.status === 'completed') {
+        const checkInOutConfig = form.attendanceSettings?.checkInOut;
+        const breakMinutes = checkInOutConfig?.breakMinutes || 0;
+        const dur = calculateAttendanceDuration(
+          existingRecord.checkInAt,
+          existingRecord.checkOutAt || existingRecord.checkInAt,
+          breakMinutes
+        );
+        return {
+          success: true,
+          isCheckOut: true,
+          summary: {
+            status: 'completed',
+            participantName: existingRecord.participantName || participantName,
+            identifierValue: String(rawId),
+            checkInTime: formatAttendanceTime(existingRecord.checkInAt),
+            checkOutTime: existingRecord.checkOutAt ? formatAttendanceTime(existingRecord.checkOutAt) : '',
+            durationFormatted: dur.formattedText,
+            durationHours: dur.decimalHours,
+          },
+        };
+      }
+
+      // SCENARIO 3: Fresh Check-In (no existing record)
       dbData['Masa Masuk (Check-In)'] = formatAttendanceDateTime(nowCheckIn);
       dbData['Masa Keluar (Check-Out)'] = '-';
       dbData['Jumlah Masa Hadir'] = '-';

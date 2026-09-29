@@ -256,6 +256,30 @@ export async function submitAttendanceCheckOutAction(
       const sheetId = sheetMatch ? sheetMatch[0] : '';
 
       if (sheetId && settings) {
+        let accessToken = settings.googleAccessToken;
+        if (form.userId && (settings.googleRefreshToken || accessToken)) {
+          try {
+            const { getValidAccessToken } = await import('@/lib/api/google-auth');
+            accessToken = await getValidAccessToken({
+              accessToken: settings.googleAccessToken,
+              refreshToken: settings.googleRefreshToken,
+              tokenExpiry: settings.googleTokenExpiry,
+              userId: form.userId,
+            });
+          } catch (tokenErr) {
+            console.warn('[attendance-checkout] Google token refresh error:', tokenErr);
+          }
+        }
+
+        const sheetConfig = {
+          sheetId,
+          clientEmail: settings.googleClientEmail,
+          privateKey: settings.googlePrivateKey
+            ? formatPrivateKey(settings.googlePrivateKey)
+            : undefined,
+          accessToken,
+        };
+
         const updateData: Record<string, string | number> = {
           'Masa Keluar (Check-Out)': formatAttendanceDateTime(now),
           'Jumlah Masa Hadir': dur.formattedText,
@@ -264,19 +288,47 @@ export async function submitAttendanceCheckOutAction(
         };
 
         // Try updating by submission_id first
-        await updateSheetRow(
-          {
-            sheetId,
-            clientEmail: settings.googleClientEmail,
-            privateKey: settings.googlePrivateKey
-              ? formatPrivateKey(settings.googlePrivateKey)
-              : undefined,
-            accessToken: settings.googleAccessToken,
-          },
+        let sheetRes = await updateSheetRow(
+          sheetConfig,
           '_submission_id',
           record.submissionId,
           updateData
         );
+
+        // Fallback 1: try matching by the identifier label from form/attendance record
+        if (sheetRes.success && sheetRes.updated === false && record.identifierLabel) {
+          sheetRes = await updateSheetRow(
+            sheetConfig,
+            record.identifierLabel,
+            rawIdentifier.trim(),
+            updateData
+          );
+        }
+
+        // Fallback 2: try common IC / identifier header names
+        if (sheetRes.success && sheetRes.updated === false) {
+          const candidateHeaders = [
+            'No. Kad Pengenalan',
+            'No Kad Pengenalan',
+            'No. IC',
+            'No IC',
+            'IC',
+            'No. KP',
+            'No KP',
+            'Kad Pengenalan',
+            'Email',
+            'Emel',
+          ];
+          for (const cand of candidateHeaders) {
+            sheetRes = await updateSheetRow(
+              sheetConfig,
+              cand,
+              rawIdentifier.trim(),
+              updateData
+            );
+            if (sheetRes.updated) break;
+          }
+        }
       }
     } catch (sheetErr) {
       console.warn('[attendance-checkout] Google Sheet sync error (non-fatal):', sheetErr);

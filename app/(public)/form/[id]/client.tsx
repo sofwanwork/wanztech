@@ -164,6 +164,36 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
     participantName?: string;
   } | null>(null);
   const [checkOutResult, setCheckOutResult] = useState<AttendanceSummary | null>(null);
+  const hasCertificate =
+    !editMode &&
+    !!(
+      form.eCertificateEnabled &&
+      (form.eCertificateTemplate || form.eCertificateCategory)
+    );
+
+  // Pre-fill participant identifier from localStorage if returning to check out
+  useEffect(() => {
+    if (checkInOutEnabled && identifierField) {
+      try {
+        const saved = localStorage.getItem(`klikform_att_id_${form.id}`);
+        if (saved && !formData[identifierField.id]) {
+          setFormData((prev) => ({ ...prev, [identifierField.id]: saved }));
+        }
+      } catch {
+        /* storage restricted */
+      }
+    }
+  }, [checkInOutEnabled, identifierField, form.id, formData]);
+
+  const handleResetForOtherParticipant = () => {
+    try {
+      localStorage.removeItem(`klikform_att_id_${form.id}`);
+    } catch {}
+    if (identifierField) {
+      setFormData((prev) => ({ ...prev, [identifierField.id]: '' }));
+    }
+    setAttendanceSummary(null);
+  };
 
   useEffect(() => {
     if (!checkInOutEnabled || !identifierField) return;
@@ -238,6 +268,9 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
       if (res.success && res.summary) {
         setCheckOutResult(res.summary);
         setSubmitted(true);
+        try {
+          localStorage.removeItem(`klikform_att_id_${form.id}`);
+        } catch {}
         toast.success('Daftar keluar berjaya direkodkan!');
       } else {
         toast.error(res.error || 'Gagal mendaftar keluar.');
@@ -311,6 +344,12 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // If the participant is already checked in, submitting the form must perform Check-Out!
+    if (checkInOutEnabled && attendanceSummary?.status === 'checked_in') {
+      await handleCheckOut();
+      return;
+    }
 
     // On a multi-page form, a stray Enter key (or submit) on a non-final page
     // should advance the page rather than submit the whole form.
@@ -412,11 +451,27 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
 
       if (result.success) {
         setSubmitted(true);
-        if ('isCheckIn' in result && result.isCheckIn) {
+        if ('isCheckOut' in result && result.isCheckOut) {
+          const checkOutPayload = result as {
+            summary?: AttendanceSummary;
+          };
+          if (checkOutPayload.summary) {
+            setCheckOutResult(checkOutPayload.summary);
+          }
+          try {
+            localStorage.removeItem(`klikform_att_id_${form.id}`);
+          } catch {}
+          toast.success('Daftar keluar berjaya direkodkan!');
+        } else if ('isCheckIn' in result && result.isCheckIn) {
           const checkInPayload = result as {
             checkInTime?: string;
             participantName?: string;
           };
+          if (identifierField && formData[identifierField.id]) {
+            try {
+              localStorage.setItem(`klikform_att_id_${form.id}`, String(formData[identifierField.id]));
+            } catch {}
+          }
           setCheckInResult({
             isCheckIn: true,
             checkInTime: checkInPayload.checkInTime,
@@ -1029,79 +1084,118 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
             </div>
           )}
 
-          {/* Smart Attendance Check-Out Banner */}
+          {/* Smart Attendance Check-Out Card */}
           {attendanceSummary?.status === 'checked_in' && (
-            <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/90 shadow-sm space-y-4 animate-in fade-in slide-in-from-top-2">
-              <div className="flex items-start gap-3">
-                <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 text-emerald-700">
-                  <Clock className="h-5 w-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
-                      🟢 Sedang Hadir
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      Masa Masuk: <strong>{attendanceSummary.checkInTime}</strong>
+            <Card className="border border-emerald-300 shadow-md bg-white overflow-hidden animate-in fade-in slide-in-from-top-2">
+              <div className="h-2 bg-gradient-to-r from-emerald-500 to-teal-500" />
+              <CardHeader className="bg-gradient-to-br from-emerald-50/70 to-teal-50/70 pb-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      Sedang Hadir
                     </span>
                   </div>
-                  <h3 className="text-base font-bold text-emerald-950 mt-1">
-                    Selamat kembali{attendanceSummary.participantName ? `, ${attendanceSummary.participantName}` : ''}!
-                  </h3>
-                  <p className="text-xs text-emerald-800/90 mt-0.5">
-                    Anda telah mendaftar masuk. Sedia untuk mendaftar keluar program?
-                  </p>
+                  <button
+                    type="button"
+                    onClick={handleResetForOtherParticipant}
+                    className="text-xs text-muted-foreground hover:text-slate-900 underline transition-colors"
+                  >
+                    Bukan anda?
+                  </button>
                 </div>
-              </div>
 
-              {/* Solution 2: Passcode input if configured */}
-              {form.attendanceSettings?.checkInOut?.checkOutPasscode && attendanceSummary.canCheckOut && (
-                <div className="space-y-1.5 bg-white/90 p-3.5 rounded-xl border border-emerald-200 shadow-xs">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-950">
-                    <KeyRound className="w-4 h-4 text-amber-600" />
-                    <span>Kod PIN Check-Out Diperlukan</span>
+                <CardTitle className="text-xl font-bold text-emerald-950 mt-2">
+                  Pengesahan Daftar Keluar (Check-Out)
+                </CardTitle>
+                <CardDescription className="text-emerald-800/90 text-xs sm:text-sm">
+                  Selamat kembali{attendanceSummary.participantName ? `, ${attendanceSummary.participantName}` : ''}! Rekod kehadiran anda telah dikesan.
+                </CardDescription>
+
+                <div className="grid grid-cols-2 gap-3 text-xs bg-white/90 p-3.5 rounded-xl border border-emerald-200/80 shadow-xs mt-3">
+                  <div>
+                    <span className="text-muted-foreground block text-[11px]">Waktu Masuk</span>
+                    <strong className="text-sm text-slate-900 font-semibold">{attendanceSummary.checkInTime}</strong>
                   </div>
-                  <Input
-                    type="text"
-                    placeholder="Masukkan PIN dari penceramah..."
-                    value={checkOutPin}
-                    onChange={(e) => setCheckOutPin(e.target.value)}
-                    maxLength={10}
-                    className="bg-white font-mono tracking-widest text-center text-base font-bold border-emerald-300 focus-visible:ring-emerald-500"
-                  />
-                  <p className="text-[11px] text-muted-foreground text-center">
-                    Sila dapatkan kod PIN ini daripada pengacara majlis atau skrin projektor di akhir majlis.
-                  </p>
+                  <div>
+                    <span className="text-muted-foreground block text-[11px]">No. Pengenalan</span>
+                    <strong className="text-sm text-slate-900 font-mono font-semibold">
+                      {attendanceSummary.identifierValue || (identifierField ? formData[identifierField.id] : '')}
+                    </strong>
+                  </div>
                 </div>
-              )}
+              </CardHeader>
 
-              {attendanceSummary.canCheckOut ? (
-                <Button
-                  type="button"
-                  onClick={handleCheckOut}
-                  disabled={checkingOut}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 h-auto rounded-xl shadow transition-all flex items-center justify-center gap-2"
-                >
-                  {checkingOut ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Merekod Daftar Keluar...
-                    </>
-                  ) : (
-                    <>
-                      <LogOut className="h-4 w-4" />
-                      Daftar Keluar Sekarang (Check-Out)
-                    </>
-                  )}
-                </Button>
-              ) : (
-                <div className="text-xs text-amber-800 bg-amber-50/90 p-3 rounded-xl border border-amber-200 flex items-center gap-2">
-                  <span>⏳</span>
-                  <span>
-                    Sila tunggu <strong>{attendanceSummary.minDurationRemainingMinutes} minit</strong> lagi sebelum dibenarkan mendaftar keluar.
-                  </span>
+              <CardContent className="p-6 space-y-4">
+                {/* Solution 2: Passcode input if configured */}
+                {form.attendanceSettings?.checkInOut?.checkOutPasscode && (
+                  <div className="space-y-1.5 bg-amber-50/70 p-3.5 rounded-xl border border-amber-200 shadow-xs">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-950">
+                      <KeyRound className="w-4 h-4 text-amber-600" />
+                      <span>Kod PIN Check-Out Diperlukan</span>
+                    </div>
+                    <Input
+                      type="text"
+                      placeholder="Masukkan PIN dari pentas..."
+                      value={checkOutPin}
+                      onChange={(e) => setCheckOutPin(e.target.value)}
+                      maxLength={10}
+                      className="bg-white font-mono tracking-widest text-center text-base font-bold border-amber-300 focus-visible:ring-amber-500"
+                    />
+                    <p className="text-[11px] text-muted-foreground text-center">
+                      Sila masukkan kod PIN yang diumumkan di akhir majlis.
+                    </p>
+                  </div>
+                )}
+
+                {attendanceSummary.canCheckOut ? (
+                  <Button
+                    type="button"
+                    onClick={handleCheckOut}
+                    disabled={checkingOut}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 h-auto text-base rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+                  >
+                    {checkingOut ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        Merekod Daftar Keluar...
+                      </>
+                    ) : (
+                      <>
+                        <LogOut className="h-5 w-5" />
+                        Daftar Keluar Sekarang (Check-Out)
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="text-xs text-amber-800 bg-amber-50/90 p-3.5 rounded-xl border border-amber-200 flex items-start gap-2.5">
+                      <span className="text-base">⏳</span>
+                      <span className="leading-relaxed">
+                        Anda baru mendaftar masuk. Sila tunggu <strong>{attendanceSummary.minDurationRemainingMinutes} minit</strong> lagi sebelum dibenarkan mendaftar keluar.
+                      </span>
+                    </div>
+                    <Button
+                      type="button"
+                      disabled
+                      className="w-full bg-slate-200 text-slate-500 cursor-not-allowed font-medium py-3 h-auto rounded-xl flex items-center justify-center gap-2"
+                    >
+                      <Clock className="h-4 w-4" />
+                      Menunggu Masa Minimum ({attendanceSummary.minDurationRemainingMinutes} minit baki)
+                    </Button>
+                  </div>
+                )}
+
+                <div className="text-center pt-2">
+                  <button
+                    type="button"
+                    onClick={handleResetForOtherParticipant}
+                    className="text-xs text-slate-500 hover:text-slate-800 underline transition-colors"
+                  >
+                    Bukan anda atau ingin daftar peserta baharu? Klik di sini
+                  </button>
                 </div>
-              )}
+              </CardContent>
 
               {/* Early Check-Out Warning Confirmation Modal */}
               <AlertDialog open={showEarlyWarning} onOpenChange={setShowEarlyWarning}>
@@ -1151,39 +1245,67 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-            </div>
+            </Card>
           )}
 
-          {/* Smart Attendance Already Completed Banner */}
+          {/* Smart Attendance Already Completed Card */}
           {attendanceSummary?.status === 'completed' && (
-            <div className="p-5 rounded-2xl bg-blue-50/80 border border-blue-200/80 shadow-sm space-y-3 animate-in fade-in slide-in-from-top-2">
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
-                  🏁 Kehadiran Selesai
-                </span>
-              </div>
-              <h3 className="text-base font-bold text-blue-950">
-                Kehadiran Anda Telah Lengkap Direkodkan
-              </h3>
-              <div className="grid grid-cols-2 gap-3 text-xs text-blue-900 bg-white/80 p-3 rounded-xl border border-blue-100">
-                <div>
-                  <span className="text-muted-foreground block text-[11px]">Waktu Masuk</span>
-                  <strong className="text-sm">{attendanceSummary.checkInTime}</strong>
+            <Card className="border border-blue-200 shadow-md bg-white overflow-hidden animate-in fade-in slide-in-from-top-2">
+              <div className="h-2 bg-gradient-to-r from-blue-500 to-indigo-500" />
+              <CardHeader className="bg-gradient-to-br from-blue-50/70 to-indigo-50/70 pb-4 text-center">
+                <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-blue-100 flex items-center justify-center text-blue-700">
+                  <CheckCircle2 className="h-6 w-6" />
                 </div>
-                <div>
-                  <span className="text-muted-foreground block text-[11px]">Waktu Keluar</span>
-                  <strong className="text-sm">{attendanceSummary.checkOutTime}</strong>
+                <CardTitle className="text-xl font-bold text-blue-950">
+                  Kehadiran Anda Telah Lengkap Direkodkan
+                </CardTitle>
+                <CardDescription className="text-blue-800/80 text-xs sm:text-sm">
+                  {attendanceSummary.participantName ? `Terima kasih, ${attendanceSummary.participantName}. ` : 'Terima kasih. '}
+                  Rekod daftar masuk dan daftar keluar anda telah disahkan.
+                </CardDescription>
+
+                <div className="grid grid-cols-2 gap-3 text-xs text-blue-900 bg-white/90 p-3.5 rounded-xl border border-blue-100 text-left mt-3">
+                  <div>
+                    <span className="text-muted-foreground block text-[11px]">Waktu Masuk</span>
+                    <strong className="text-sm">{attendanceSummary.checkInTime}</strong>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-[11px]">Waktu Keluar</span>
+                    <strong className="text-sm">{attendanceSummary.checkOutTime}</strong>
+                  </div>
+                  <div className="col-span-2 pt-2 border-t border-blue-100 flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-700">Jumlah Masa Hadir:</span>
+                    <strong className="text-sm text-emerald-700 font-bold">
+                      {attendanceSummary.durationFormatted} ({attendanceSummary.durationHours} Jam)
+                    </strong>
+                  </div>
                 </div>
-                <div className="col-span-2 pt-2 border-t border-blue-100 flex items-center justify-between">
-                  <span className="text-xs font-medium text-slate-700">Jumlah Masa Hadir:</span>
-                  <strong className="text-sm text-emerald-700 font-bold">
-                    {attendanceSummary.durationFormatted} ({attendanceSummary.durationHours} Jam)
-                  </strong>
-                </div>
-              </div>
-            </div>
+              </CardHeader>
+              <CardFooter className="p-6 flex-col gap-3">
+                {hasCertificate && (
+                  <Button
+                    asChild
+                    className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3 h-auto rounded-xl flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    <Link href={`/check/${form.id}`}>
+                      <Award className="w-4 h-4" />
+                      Semak / Tebus E-Sijil Anda
+                    </Link>
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={handleResetForOtherParticipant}
+                  className="w-full rounded-xl text-xs text-slate-600"
+                >
+                  Daftar Peserta Lain
+                </Button>
+              </CardFooter>
+            </Card>
           )}
 
+          {(!checkInOutEnabled || (attendanceSummary?.status !== 'checked_in' && attendanceSummary?.status !== 'completed')) && (
           <Card className="border border-gray-200 bg-white">
             <CardContent className="p-0">
               {currentPageFields.map((field) => {
@@ -1729,6 +1851,7 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
               </div>
             </CardFooter>
           </Card>
+          )}
         </form>
 
         {(!form.userTier || form.userTier === 'free') && (

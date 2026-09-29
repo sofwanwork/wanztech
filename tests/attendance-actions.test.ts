@@ -15,7 +15,7 @@ const mockForm = {
   id: 'form-123',
   userId: 'user-123',
   title: 'Bengkel AI 2026',
-  googleSheetUrl: 'https://docs.google.com/spreadsheets/d/1234567890/edit',
+  googleSheetUrl: 'https://docs.google.com/spreadsheets/d/123456789012345678901234567890/edit',
   fields: [
     { id: 'f-name', type: 'text', label: 'Nama Penuh', required: true },
     { id: 'f-ic', type: 'text', label: 'No. Kad Pengenalan', required: true },
@@ -80,6 +80,10 @@ vi.mock('@/lib/api/google-sheets', () => ({
   updateSheetRow: vi.fn().mockResolvedValue({ success: true, updated: true }),
 }));
 
+vi.mock('@/lib/api/google-auth', () => ({
+  getValidAccessToken: vi.fn().mockImplementation((params: { accessToken?: string }) => Promise.resolve(params.accessToken)),
+}));
+
 vi.mock('@/utils/supabase/admin', () => ({
   createAdminClient: vi.fn(() => ({
     from: vi.fn(() => ({
@@ -129,5 +133,20 @@ describe('Attendance Server Actions — submitAttendanceCheckOutAction', () => {
     const res = await submitAttendanceCheckOutAction('form-123', '999999-99-9999');
     expect(res.success).toBe(false);
     expect(res.error).toContain('Rekod daftar masuk');
+  });
+
+  it('falls back to identifier column if _submission_id update returns updated=false', async () => {
+    const { updateSheetRow } = await import('@/lib/api/google-sheets');
+    vi.mocked(updateSheetRow).mockResolvedValueOnce({ success: true, updated: false })
+      .mockResolvedValueOnce({ success: true, updated: true });
+
+    const res = await submitAttendanceCheckOutAction('form-123', '950101-14-5555');
+    expect(res.success).toBe(true);
+    expect(updateSheetRow).toHaveBeenCalledWith(
+      expect.anything(),
+      'No. Kad Pengenalan',
+      '950101-14-5555',
+      expect.objectContaining({ 'Status Kehadiran': 'Selesai (Completed)' })
+    );
   });
 });

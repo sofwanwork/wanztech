@@ -1,3 +1,45 @@
+# Pembaikan Bug 1-QR Smart Check-In & Check-Out: Dua Kali Entry Data Masa Masuk Google Sheet ✅ SIAP
+
+**Matlamat**: Menyelesaikan isu di mana Google Sheets menerima dua entri berasingan kedua-duanya dengan 'Masa Masuk (Check-In)' dan tiada data 'Masa Keluar (Check-Out)'.
+
+- [x] 1. Kenal Pasti Punca Asal (Root Causes)
+  - Di `app/(public)/form/[id]/client.tsx`, apabila peserta telah `checked_in`, medan borang pendaftaran dan butang submit `[ Daftar Masuk (Check-In) ]` masih aktif di bawah banner, mengelirukan peserta untuk menekan butang daftar masuk semula.
+  - Di `actions/forms.ts`, `submitFormAction` tiada semakan pendua (`duplicate check-in guard`) jika peserta telah berstatus `checked_in`.
+  - Di `actions/attendance.ts`, `submitAttendanceCheckOutAction` tidak memperbaharui token Google OAuth (`getValidAccessToken`) dan hanya bergantung kepada `_submission_id` tanpa fallback kepada No. IC.
+  - Di `lib/api/google-sheets.ts`, pemadanan lajur pengenalan bersifat tegar (strict equality) dan gagal memadankan format IC berbeza (dengan dash vs tanpa dash).
+- [x] 2. Penguatkuasaan Pelayan (`actions/forms.ts` & `actions/attendance.ts`)
+  - Dalam `submitFormAction`, jika peserta dengan identifier yang sama telah berstatus `checked_in`, sistem secara automatik menukar tindakan kepada Check-Out, menghalang penciptaan baris check-in kedua dan mengemas kini rekod `attendance_records` serta Google Sheet kepada selesai.
+  - Dalam `submitAttendanceCheckOutAction`, perbaharui token OAuth secara automatik menerusi `getValidAccessToken` sebelum kemas kini helaian.
+  - Tambah fallback berperingkat dalam kemas kini Sheet: `_submission_id` → `record.identifierLabel` → lajur lazim IC/Emel (`No. Kad Pengenalan`, `No IC`, dsb.).
+- [x] 3. Penambahbaikan Pengalaman Pengguna / UI Klien (`app/(public)/form/[id]/client.tsx`)
+  - Gating Paparan: Apabila status peserta dikesan `checked_in`, medan pendaftaran dan butang `[ Daftar Masuk ]` **disembunyikan sepenuhnya**. Digantikan dengan **Kad Check-Out Khusus** bersama butang utama `[ Daftar Keluar Sekarang (Check-Out) ]`.
+  - Apabila status peserta `completed`, kad status "Kehadiran Lengkap" dipaparkan berserta maklumat masa masuk, masa keluar, dan durasi penuh, tanpa sebarang butang atau medan borang.
+  - Auto-Detection & Local Storage: No. IC disimpan ke dalam `localStorage` selepas Check-In pertama. Apabila peserta mengimbas QR kod yang sama pada waktu petang di telefon yang sama, sistem serta-merta mengesan identiti peserta dan terus memaparkan Kad Check-Out.
+  - Menyediakan butang "Bukan anda? [Daftar Peserta Lain]" untuk peranti yang dikongsi.
+  - Guard `handleSubmit`: Jika borang dihantar atau kekunci Enter ditekan ketika status `checked_in`, sistem secara automatik memanggil `handleCheckOut()`.
+- [x] 4. Peningkatan Ketahanan Pemadanan Google Sheets (`lib/api/google-sheets.ts`)
+  - Menyokong pemadanan fleksibel alfanumerik (menyingkirkan sengkang, ruang kosong, huruf kecil/besar) supaya `010203-04-0506` sepadan dengan `010203040506`.
+- [x] 5. Ujian, Pengesahan & Kemas Kini Dokumentasi
+  - `npm test`: 298 / 298 ujian lulus merentas 35 suite ujian (termasuk ujian unit fallback di `tests/attendance-actions.test.ts`).
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - Kemas kini `memory.md`, `lessons.md`, dan `task.md`.
+
+---
+
+## Reviu Pelaksanaan: Pembaikan Bug 1-QR Smart Check-In & Check-Out
+
+1. **Seni Bina Dwirantai (Client-Side Gating & Server-Side Fallback)**:
+   - **Klien**: Apabila identiti peserta dikenal pasti dan berstatus `checked_in`, UI borang pendaftaran ditiadakan sama sekali. Peserta hanya melihat kad status hadir dan butang jelas untuk "Daftar Keluar Sekarang".
+   - **Pelayan**: Walaupun peserta berjaya memintas klien (atau menekan Enter pada peranti berbeza), `submitFormAction` menyemak status terkini dalam `attendance_records`. Jika peserta telah check-in, tindakan dihala secara automatik ke aliran check-out tanpa menambah baris baharu ke Google Sheet.
+2. **Penyelarasan Google Sheets yang Kalis Ralat**:
+   - Token Google OAuth diperbaharui menggunakan `getValidAccessToken` sebelum sebarang kemas kini ke Google Sheets dijalankan semasa check-out.
+   - Fungsi `updateSheetRow` mempunyai pemadanan alfanumerik bebas tanda sengkang serta mekanisme carian berganda (`_submission_id` diikuti label pengenalan borang dan alias IC standard).
+3. **Pengalaman Pengguna (UX) Imbasan Petang**:
+   - Dengan simpanan `localStorage`, peserta tidak perlu lagi menaip semula nombor IC mereka sewaktu petang di pintu keluar. Membuka pautan QR serta-merta menyambut nama peserta dan memaparkan butang Check-Out.
+
+---
+
 # Pembaikan Pertindihan Visual Kad Profil Bio (`BioPageCard`) ✅ SIAP
 
 **Matlamat**: Menghapuskan pertindihan cincin avatar profil bio dengan lencana tema di banner atas serta mengemaskan susun atur teks profil.

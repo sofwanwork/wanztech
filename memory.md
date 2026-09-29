@@ -1496,3 +1496,33 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
 - **Deployment URL**: `https://klikform-hzl41jkmi-sofwan-jailanis-projects.vercel.app`
 - **Deployment ID**: `dpl_Hsmxnk5Sbe2mokEtE5J3RaLnGKRt`
 - **Status**: Ready, 54 routes built successfully, 0 errors.
+
+---
+
+## 2026-09-29: Pembaikan Bug 1-QR Smart Check-In & Check-Out (Dua Entri Masa Masuk di Google Sheets)
+- **Isu / Aduan Pengguna**: Pengguna mendapati apabila menggunakan ciri 1-QR Smart Check-In & Out, selepas check-in dan kemudian check-out, Google Sheets menerima dua baris data berasingan di mana kedua-duanya masuk ke 'Masa Masuk (Check-In)' dan tiada data pada 'Masa Keluar (Check-Out)'.
+- **Punca Asal Ralat (Root Causes)**:
+  1. **UI Responden Tidak Terkunci (Gating Absence)**: Di `app/(public)/form/[id]/client.tsx`, apabila peserta telah `checked_in`, sistem hanya memaparkan banner kecil di bahagian atas borang. Semua medan input borang dan butang `[ Daftar Masuk (Check-In) ]` masih terpapar di bawah. Peserta mudah alih menatal ke bawah dan menekan semula butang `[ Daftar Masuk ]` sewaktu keluar, memanggil `submitFormAction` dan bukannya `submitAttendanceCheckOutAction`.
+  2. **Tiada Pengawal Pendua di Pelayan (Missing Server Guard)**: Dalam `submitFormAction` (`actions/forms.ts`), sistem tidak menyemak sama ada peserta telah berstatus `checked_in`. Sebarang panggilan baru ke `submitFormAction` akan mengecop masa masuk baharu dan memanggil `appendToSheet`, menghasilkan baris pendua.
+  3. **Token Google OAuth Luput Semasa Check-Out**: Tindakan pelayan `submitAttendanceCheckOutAction` (`actions/attendance.ts`) menggunakan token akses Google sedia ada tanpa memanggil `getValidAccessToken()`. Memandangkan check-out berlaku beberapa jam selepas pendaftaran (melebihi tempoh hayat token ~1 jam), panggilan kemas kini helaian gagal senyap dengan ralat 401.
+  4. **Pemadanan Lajur Google Sheet yang Terlalu Tegar**: `updateSheetRow` dalam `lib/api/google-sheets.ts` menggunakan semakan kesamaan string tegar tanpa menghapuskan tanda sengkang (contohnya `010203-04-0506` vs `010203040506`), dan hanya memeriksa `_submission_id` tanpa fallback kepada lajur No. IC atau Emel.
+- **Penyelesaian Dilaksanakan**:
+  1. **Gating Antara Muka Borang Awam (`app/(public)/form/[id]/client.tsx`)**:
+     - Apabila status dikesan `checked_in`, keseluruhan kad medan pendaftaran dan butang submit disembunyikan sepenuhnya. Digantikan dengan **Kad Check-Out Khusus** dengan butang utama `[ Daftar Keluar Sekarang (Check-Out) ]`.
+     - Apabila status peserta `completed`, dipaparkan **Kad Kehadiran Lengkap** bersama statistik masa masuk, masa keluar, dan durasi penuh tanpa sebarang borang.
+     - Menyimpan No. IC peserta ke dalam `localStorage` (`klikform_attendance_${formId}`) selepas pendaftaran pertama. Apabila peserta mengimbas QR kod yang sama pada waktu petang menggunakan telefon yang sama, borang serta-merta mengecam peserta dan terus bersedia untuk daftar keluar.
+     - Menambah butang pautan "Bukan anda? [Daftar Peserta Lain]" untuk kemudahan peranti yang dikongsi.
+     - Menambah pengawal pada `handleSubmit`: jika peserta menekan Enter semasa berstatus `checked_in`, ia secara automatik memanggil fungsi `handleCheckOut()`.
+  2. **Pengawal Auto-Tukar di Pelayan (`actions/forms.ts`)**:
+     - Dalam `submitFormAction`, ditambah semakan `existingRecord = await getAttendanceRecord(form.id, cleanId)`.
+     - Jika peserta didapati telah berstatus `checked_in`, pelayan secara automatik membatalkan penciptaan baris check-in kedua dan mengalihkan tindakan kepada proses Check-Out, mengemas kini rekod pangkalan data dan mengemas kini Google Sheet sedia ada menerusi `updateSheetRow` dalam blok `after()`.
+  3. **Penyelarasan Google Sheets & Pembaharuan Token OAuth (`actions/attendance.ts`)**:
+     - `submitAttendanceCheckOutAction` kini memanggil `getValidAccessToken()` sebelum memulakan kemas kini ke Google Sheets.
+     - Melaksanakan sandaran berperingkat (*tiered fallback*) untuk mencari baris: mula-mula menerusi `_submission_id`, kemudian menerusi `record.identifierLabel`, dan seterusnya menerusi senarai alias lajur IC lazim (`No. Kad Pengenalan`, `No IC`, `IC`, `No KP`, `Email`, dll.).
+  4. **Penskalaan Pemadanan Fleksibel Alfanumerik (`lib/api/google-sheets.ts`)**:
+     - `updateSheetRow` kini memadankan nilai secara fleksibel dengan menyingkirkan tanda sengkang, ruang kosong, dan perbezaan huruf (`normalizeVal`), membolehkan format IC `010203-04-0506` sepadan dengan rekod `010203040506`.
+- **Pengesahan & Kualiti**:
+  - `npm test`: 298 / 298 ujian unit lulus merentas 35 suite ujian (termasuk ujian unit fallback di `tests/attendance-actions.test.ts`).
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+

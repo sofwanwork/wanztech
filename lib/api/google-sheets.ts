@@ -146,7 +146,15 @@ export async function updateSheetRow(
     }
 
     const rows = await sheet.getRows();
-    const target = rows.find((r) => String(r.get(matchColumn) ?? '') === matchValue);
+    const cleanMatch = matchValue.replace(/[\s\-_/]/g, '').toLowerCase();
+    const target = rows.find((r) => {
+      const cellVal = String(r.get(matchColumn) ?? '');
+      if (cellVal === matchValue) return true;
+      if (cleanMatch && cellVal.replace(/[\s\-_/]/g, '').toLowerCase() === cleanMatch) {
+        return true;
+      }
+      return false;
+    });
     if (!target) {
       return { success: true, updated: false };
     }
