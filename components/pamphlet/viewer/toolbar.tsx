@@ -50,6 +50,8 @@ interface ToolbarProps {
   isFullscreen: boolean;
   showThumbnails: boolean;
   onPageChange: (page: number) => void;
+  onNextPage?: () => void;
+  onPrevPage?: () => void;
   onDisplayModeChange: (mode: PamphletDisplayMode) => void;
   onThemeChange: (theme: PamphletTheme) => void;
   onZoomIn: () => void;
@@ -71,6 +73,8 @@ export function PamphletToolbar({
   isFullscreen,
   showThumbnails,
   onPageChange,
+  onNextPage,
+  onPrevPage,
   onDisplayModeChange,
   onThemeChange,
   onZoomIn,
@@ -130,38 +134,101 @@ export function PamphletToolbar({
         <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           {/* Custom Action Buttons (Check-in / E-Cert / WhatsApp) */}
           {pamphlet.actionButtons && pamphlet.actionButtons.length > 0 && (
-            <div className="hidden lg:flex items-center gap-1.5 mr-1 border-r pr-2 border-current/15">
-              {pamphlet.actionButtons.slice(0, 3).map((btn) => {
-                const getIcon = () => {
-                  if (btn.type === 'checkin') return <QrCode className="h-3.5 w-3.5 mr-1.5" />;
-                  if (btn.type === 'cert') return <Award className="h-3.5 w-3.5 mr-1.5" />;
-                  if (btn.type === 'whatsapp') return <MessageCircle className="h-3.5 w-3.5 mr-1.5 text-emerald-500" />;
-                  return <ExternalLink className="h-3.5 w-3.5 mr-1.5" />;
-                };
+            <>
+              {/* Desktop Action Pills */}
+              <div className="hidden lg:flex items-center gap-2 mr-1 border-r pr-2 border-current/15">
+                {pamphlet.actionButtons.slice(0, 3).map((btn) => {
+                  const isWhatsapp = btn.type === 'whatsapp';
+                  const isCheckin = btn.type === 'checkin';
+                  const isCert = btn.type === 'cert';
 
-                return (
-                  <Button
-                    key={btn.id}
-                    size="sm"
-                    variant={btn.type === 'primary' ? 'default' : 'outline'}
-                    className={cn(
-                      'h-8 text-xs font-medium rounded-lg',
-                      btn.type === 'whatsapp' && 'border-emerald-500/30 hover:bg-emerald-500/10'
-                    )}
-                    onClick={() => {
-                      if (btn.url && btn.url !== '#') {
-                        window.open(btn.url, '_blank');
-                      } else {
-                        toast.info(`Tindakan: ${btn.label}`);
-                      }
-                    }}
+                  return (
+                    <Button
+                      key={btn.id}
+                      size="sm"
+                      className={cn(
+                        'h-8 text-xs font-semibold rounded-lg shadow-sm transition-all',
+                        isWhatsapp
+                          ? 'bg-[#25D366] hover:bg-[#20ba59] text-white border-transparent'
+                          : 'bg-white hover:bg-slate-100 text-slate-900 border border-slate-300'
+                      )}
+                      onClick={() => {
+                        if (btn.url && btn.url !== '#') {
+                          window.open(btn.url, '_blank');
+                        } else {
+                          toast.info(`Tindakan: ${btn.label}`);
+                        }
+                      }}
+                    >
+                      {isCheckin && <QrCode className="h-3.5 w-3.5 mr-1.5 text-emerald-600 shrink-0" />}
+                      {isCert && <Award className="h-3.5 w-3.5 mr-1.5 text-amber-600 shrink-0" />}
+                      {isWhatsapp && (
+                        <MessageCircle className="h-3.5 w-3.5 mr-1.5 text-white fill-white/20 shrink-0" />
+                      )}
+                      {!isCheckin && !isCert && !isWhatsapp && (
+                        <ExternalLink className="h-3.5 w-3.5 mr-1.5 text-sky-600 shrink-0" />
+                      )}
+                      <span className={cn(isWhatsapp ? 'text-white' : 'text-slate-900')}>
+                        {btn.label}
+                      </span>
+                    </Button>
+                  );
+                })}
+              </div>
+
+              {/* Mobile / Tablet Compact Action Dropdown */}
+              <div className="flex lg:hidden mr-1">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 px-2.5 text-xs font-semibold bg-white text-slate-900 border-slate-300 hover:bg-slate-100 shadow-sm gap-1.5 rounded-lg"
+                      title="Tindakan Majlis"
+                    >
+                      <QrCode className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                      <span className="text-slate-900 font-semibold">Tindakan</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    align="end"
+                    className="w-56 p-2 space-y-1 bg-white text-slate-900 shadow-xl border border-slate-200 rounded-xl z-50"
                   >
-                    {getIcon()}
-                    <span>{btn.label}</span>
-                  </Button>
-                );
-              })}
-            </div>
+                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-2 py-1">
+                      Tindakan Acara
+                    </p>
+                    {pamphlet.actionButtons.map((btn) => (
+                      <button
+                        key={btn.id}
+                        type="button"
+                        onClick={() => {
+                          if (btn.url && btn.url !== '#') {
+                            window.open(btn.url, '_blank');
+                          } else {
+                            toast.info(`Tindakan: ${btn.label}`);
+                          }
+                        }}
+                        className="w-full flex items-center px-2.5 py-2 text-xs font-semibold rounded-lg hover:bg-slate-100 text-left transition-colors text-slate-900"
+                      >
+                        {btn.type === 'checkin' && (
+                          <QrCode className="h-4 w-4 mr-2 text-emerald-600 shrink-0" />
+                        )}
+                        {btn.type === 'cert' && (
+                          <Award className="h-4 w-4 mr-2 text-amber-600 shrink-0" />
+                        )}
+                        {btn.type === 'whatsapp' && (
+                          <MessageCircle className="h-4 w-4 mr-2 text-[#25D366] shrink-0" />
+                        )}
+                        {btn.type !== 'checkin' && btn.type !== 'cert' && btn.type !== 'whatsapp' && (
+                          <ExternalLink className="h-4 w-4 mr-2 text-sky-600 shrink-0" />
+                        )}
+                        <span className="truncate text-slate-900">{btn.label}</span>
+                      </button>
+                    ))}
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </>
           )}
 
           {/* Display Mode Popover */}
@@ -344,7 +411,7 @@ export function PamphletToolbar({
           variant="ghost"
           size="icon"
           disabled={currentPage <= 1}
-          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+          onClick={onPrevPage || (() => onPageChange(Math.max(1, currentPage - 1)))}
           className="h-8 w-8 rounded-xl"
           title="Halaman Sebelumnya"
         >
@@ -361,8 +428,10 @@ export function PamphletToolbar({
           title="Buka Pratonton Muka Surat"
         >
           <LayoutGrid className="h-3.5 w-3.5 opacity-70" />
-          <span>
-            {currentPage} / {totalPages || 1}
+          <span className="font-mono">
+            {displayMode === 'flipbook' && currentPage > 1 && currentPage < totalPages
+              ? `${currentPage % 2 === 0 ? currentPage : currentPage - 1}-${Math.min(totalPages, (currentPage % 2 === 0 ? currentPage : currentPage - 1) + 1)} / ${totalPages}`
+              : `${currentPage} / ${totalPages || 1}`}
           </span>
         </button>
 
@@ -371,7 +440,7 @@ export function PamphletToolbar({
           variant="ghost"
           size="icon"
           disabled={currentPage >= totalPages}
-          onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+          onClick={onNextPage || (() => onPageChange(Math.min(totalPages, currentPage + 1)))}
           className="h-8 w-8 rounded-xl"
           title="Halaman Seterusnya"
         >

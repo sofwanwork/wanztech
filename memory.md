@@ -1605,7 +1605,15 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
     - `createPamphlet`, `updatePamphlet`, dan `deletePamphlet` memberikan mesej penjelasan yang jelas (`PAMPHLET_TABLE_MISSING_MESSAGE`) yang membimbing pengguna untuk menjalankan migrasi SQL.
     - Menambah fungsi semakan `isPamphletsTableReady()` dan komponen pintar `PamphletDatabaseNotice` pada papan pemuka `/pamphlets` dengan butang 1-klik "Salin Skrip SQL" serta pendedahan kod SQL lengkap.
     - Ditambah 4 ujian unit baharu dalam `tests/pamphlet-storage.test.ts` untuk memastikan ketahanan ralat ini berterusan.
-    - 321 / 321 ujian unit lulus 100%, 0 ralat TypeScript, 0 ralat ESLint.
+- **2026-10-02 (Pembaikan Visual & Enjin: 3D Page Flipbook & Kontras Butang Toolbar)**:
+  - **Punca Isu Butang**: Butang tindakan atas menggunakan `variant="outline"` tanpa kelas warna teks khusus, lalu mewarisi `text-emerald-100` daripada bekas bar navigasi bertema zamrud. Menghasilkan teks hijau cair pada butang putih yang tidak kelihatan.
+  - **Punca Isu 3D Flip**: Paparan dwi-halaman (desktop spread) sebelum ini hanya menggunakan `<div>` statik tanpa animasi `rotateY`, dan indeks spread membeku di antara halaman 2 dan 3 kerana kedua-duanya memetakan ke spread yang sama.
+  - **Penyelesaian Dilaksanakan**:
+    - `components/pamphlet/viewer/toolbar.tsx`: Butang tindakan kini mempunyai kontras tinggi yang jelas (`text-slate-900 font-semibold`, sempadan kemas, ikon terang) dan butang WhatsApp hijau rasmi `#25D366`. Turut ditambah popover tindakan untuk skrin telefon/tablet.
+    - `components/pamphlet/viewer/flipbook-view.tsx`: Dibina semula dengan enjin *3D physical turning leaf* (`perspective: 2500px`, `transformStyle: 'preserve-3d'`, putaran 180 darjah melintasi tulang buku), bayang helaian dinamik, dan sokongan klik muka surat untuk selak.
+    - `components/pamphlet/viewer/index.tsx`: Diselaraskan navigasi spread supaya setiap klik atau pintasan anak panah membalikkan helaian demi helaian tanpa tersekat.
+    - Penunjuk bar navigasi bawah kini memaparkan penunjuk spread pintar (`2-3 / 6`).
+    - 321 / 321 ujian unit lulus, 0 ralat TypeScript, 0 ralat ESLint.
 
 
 

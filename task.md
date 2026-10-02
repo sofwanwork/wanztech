@@ -1393,3 +1393,34 @@ Memperbaiki susun atur studio rekaan e-Sijil pada skrin 14 inci (dan komputer ri
    - Papan pemuka `/pamphlets` kini memaparkan banner notis pintar `PamphletDatabaseNotice` dengan butang 1-klik "Salin Skrip SQL" sekiranya jadual belum dimigrasi di Supabase.
    - 321 ujian unit lulus 100% tanpa sebarang ralat atau amaran.
 
+---
+
+# Pembaikan: Animasi 3D Flipbook & Kontras Butang Toolbar <!-- id: fix-flipbook-toolbar -->
+
+**Matlamat**: Menyelesaikan dua isu yang dilaporkan oleh pengguna:
+1. Membina enjin animasi 3D Page Flip sebenar (*flipping leaf with perspective 2500px, 3d rotateY, dynamic paper lighting & shadow, click-to-flip* pada halaman kiri/kanan, serta membaiki pepijat navigasi 2-muka surat desktop spread).
+2. Membaiki kebolehlihatan butang tindakan atas (*Check-In, E-Sijil, WhatsApp*) dengan kontras tinggi yang jelas dan tajam pada mana-mana tema.
+
+- [x] 1. Baiki gaya butang tindakan toolbar di `components/pamphlet/viewer/toolbar.tsx` (warna teks tajam `text-slate-900`, ikon berwarna kontras, dan butang WhatsApp hijau rasmi). <!-- id: 1 -->
+- [x] 2. Reka bentuk semula enjin `FlipbookView` di `components/pamphlet/viewer/flipbook-view.tsx` dengan animasi selakan 3D helaian buku (*3D turning leaf* dwi-permukaan, bayang putaran realistik, dan klik halaman). <!-- id: 2 -->
+- [x] 3. Selaraskan navigasi spread di `components/pamphlet/viewer/index.tsx` & penunjuk muka surat toolbar (`2-3 / 6`). <!-- id: 3 -->
+- [x] 4. Pengesahan kualiti: Ujian unit vitest, `npm run typecheck`, dan `npm run lint`. <!-- id: 4 -->
+- [x] 5. Kemas kini `lessons.md` dan `memory.md`. <!-- id: 5 -->
+
+---
+
+## Reviu Pembaikan: Animasi 3D Flipbook Sebenar & Kontras Butang Toolbar
+
+1. **Punca Isu Butang Toolbar**:
+   - Butang tindakan menggunakan `variant="outline"` tanpa penetapan warna teks tersurat (`text-...`). Pada tema berlatar gelap atau zamrud (`themeObj.toolbarBg` menggunakan `text-emerald-100`), teks butang mewarisi warna hijau pudina cair `#d1fae5` pada latar butang putih, menjadikannya hampir halimunan/pudar.
+   - **Penyelesaian**: Menguatkuasakan warna teks kontras tinggi `text-slate-900 font-semibold` pada butang putih dengan ikon berwarna terang (`text-emerald-600` untuk Check-In, `text-amber-600` untuk Sijil), serta warna hijau rasmi `#25D366` dengan teks putih untuk butang WhatsApp. Turut menyediakan menu tindakan kompak popover untuk paparan mudah alih.
+
+2. **Punca Isu Animasi 3D Flipbook Tidak Kelihatan**:
+   - Di paparan desktop, komponen spread 2-muka surat sebelum ini hanyalah elemen `<div>` statik tanpa sebarang pembalut `motion.div` atau transformasi `rotateY`.
+   - Logik penentuan muka surat spread sebelum ini menyebabkan navigasi dari muka surat 2 ke 3 menghasilkan paparan spread yang sama berulang kali (`[Page 2, Page 3]`), menyebabkan paparan langsung tidak berganjak apabila pengguna menekan butang seterusnya.
+   - **Penyelesaian**: Membina enjin 3D Page Flip fizikal sebenar (`perspective: 2500px`, `transformStyle: 'preserve-3d'`):
+     - Menghasilkan *3D turning leaf* dwi-permukaan yang berputar 180 darjah melintasi tulang buku (*spine*).
+     - Menambah lapisan bayang putaran (*dynamic lighting gradient shadow*) yang gelap sewaktu daun helaian menegak dan cerah apabila mendarat.
+     - Membolehkan hadirin klik terus pada muka surat kanan untuk selak ke hadapan, atau klik muka surat kiri untuk selak ke belakang.
+     - Menyegerakkan penunjuk halaman di bar navigasi bawah (`2-3 / 6`) dan membolehkan pintasan papan kekunci (Anak Panah Kiri/Kanan) menyemak helaian demi helaian tanpa tersekat.
+

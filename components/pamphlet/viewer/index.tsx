@@ -64,6 +64,43 @@ export function PamphletViewer({
     [currentPage, totalPages, soundEnabled]
   );
 
+  // Spread-aware page change handlers for Desktop 3D Flipbook mode
+  const handleNextPage = React.useCallback(() => {
+    if (currentPage >= totalPages) return;
+    if (
+      displayMode === 'flipbook' &&
+      typeof window !== 'undefined' &&
+      window.innerWidth >= 1024
+    ) {
+      if (currentPage === 1) {
+        handlePageChange(Math.min(totalPages, 2));
+      } else {
+        const currentLeft = currentPage % 2 === 0 ? currentPage : currentPage - 1;
+        handlePageChange(Math.min(totalPages, currentLeft + 2));
+      }
+    } else {
+      handlePageChange(Math.min(totalPages, currentPage + 1));
+    }
+  }, [currentPage, totalPages, displayMode, handlePageChange]);
+
+  const handlePrevPage = React.useCallback(() => {
+    if (currentPage <= 1) return;
+    if (
+      displayMode === 'flipbook' &&
+      typeof window !== 'undefined' &&
+      window.innerWidth >= 1024
+    ) {
+      if (currentPage <= 3) {
+        handlePageChange(1);
+      } else {
+        const currentLeft = currentPage % 2 === 0 ? currentPage : currentPage - 1;
+        handlePageChange(Math.max(1, currentLeft - 2));
+      }
+    } else {
+      handlePageChange(Math.max(1, currentPage - 1));
+    }
+  }, [currentPage, displayMode, handlePageChange]);
+
   // Zoom handlers
   const handleZoomIn = React.useCallback(() => {
     setZoom((prev) => Math.min(2.5, +(prev + 0.15).toFixed(2)));
@@ -119,10 +156,10 @@ export function PamphletViewer({
 
       if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
         e.preventDefault();
-        handlePageChange(Math.min(totalPages, currentPage + 1));
+        handleNextPage();
       } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
         e.preventDefault();
-        handlePageChange(Math.max(1, currentPage - 1));
+        handlePrevPage();
       } else if (e.key === 'f' || e.key === 'F') {
         e.preventDefault();
         handleToggleFullscreen();
@@ -134,9 +171,8 @@ export function PamphletViewer({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [
-    currentPage,
-    totalPages,
-    handlePageChange,
+    handleNextPage,
+    handlePrevPage,
     handleToggleFullscreen,
     showThumbnails,
   ]);
@@ -163,6 +199,8 @@ export function PamphletViewer({
         isFullscreen={isFullscreen}
         showThumbnails={showThumbnails}
         onPageChange={handlePageChange}
+        onNextPage={handleNextPage}
+        onPrevPage={handlePrevPage}
         onDisplayModeChange={setDisplayMode}
         onThemeChange={setTheme}
         onZoomIn={handleZoomIn}
@@ -192,10 +230,9 @@ export function PamphletViewer({
                 pages={pages}
                 currentPage={currentPage}
                 zoom={zoom}
-                onPrevPage={() => handlePageChange(Math.max(1, currentPage - 1))}
-                onNextPage={() =>
-                  handlePageChange(Math.min(totalPages, currentPage + 1))
-                }
+                onPrevPage={handlePrevPage}
+                onNextPage={handleNextPage}
+                onPageChange={handlePageChange}
               />
             )}
 
