@@ -8,7 +8,8 @@ import {
 } from '@/lib/pamphlets/utils';
 import { PAMPHLET_THEMES } from '@/lib/pamphlets/themes';
 import { mapPamphletFromRow } from '@/lib/storage/pamphlets';
-import { PamphletTheme } from '@/lib/types/pamphlets';
+import { PamphletTheme, PamphletPageItem } from '@/lib/types/pamphlets';
+import { computeSpread } from '@/components/pamphlet/viewer/flipbook-view';
 
 describe('E-Pamphlet — Slug Validation & Cleaning', () => {
   it('accepts valid pamphlet slugs', () => {
@@ -106,3 +107,57 @@ describe('E-Pamphlet — Sample Template & DB Mapping', () => {
     expect(mapped.orientation).toBe('portrait');
   });
 });
+
+describe('E-Pamphlet — 3D Flipbook computeSpread Logic', () => {
+  const dummyPage = (num: number): PamphletPageItem => ({
+    id: `page-${num}`,
+    pageNumber: num,
+    imageUrl: `https://example.com/p${num}.jpg`,
+    title: `Halaman ${num}`,
+  });
+
+  it('returns all nulls for an empty page list', () => {
+    const spread = computeSpread(1, []);
+    expect(spread.leftPage).toBeNull();
+    expect(spread.rightPage).toBeNull();
+    expect(spread.isCover).toBe(false);
+    expect(spread.isBackCover).toBe(false);
+  });
+
+  it('correctly maps 2-page brochures side-by-side (Page 1 Left, Page 2 Right)', () => {
+    const pages = [dummyPage(1), dummyPage(2)];
+    const spread = computeSpread(1, pages);
+    // Crucial fix: 2-page documents never isolate page 1 to half the screen with an empty left side!
+    expect(spread.isCover).toBe(false);
+    expect(spread.isBackCover).toBe(false);
+    expect(spread.leftPage?.pageNumber).toBe(1);
+    expect(spread.rightPage?.pageNumber).toBe(2);
+    expect(spread.leftPageNum).toBe(1);
+    expect(spread.rightPageNum).toBe(2);
+  });
+
+  it('correctly handles multi-page books (Cover, Spreads, Back Cover)', () => {
+    const pages = [dummyPage(1), dummyPage(2), dummyPage(3), dummyPage(4)];
+
+    // Page 1: Cover on right
+    const coverSpread = computeSpread(1, pages);
+    expect(coverSpread.isCover).toBe(true);
+    expect(coverSpread.leftPage).toBeNull();
+    expect(coverSpread.rightPage?.pageNumber).toBe(1);
+
+    // Page 2 & 3: Inside 2-page spread
+    const insideSpread = computeSpread(2, pages);
+    expect(insideSpread.isCover).toBe(false);
+    expect(insideSpread.isBackCover).toBe(false);
+    expect(insideSpread.leftPage?.pageNumber).toBe(2);
+    expect(insideSpread.rightPage?.pageNumber).toBe(3);
+
+    // Page 4: Back cover solo on left
+    const backCoverSpread = computeSpread(4, pages);
+    expect(backCoverSpread.isCover).toBe(false);
+    expect(backCoverSpread.isBackCover).toBe(true);
+    expect(backCoverSpread.leftPage?.pageNumber).toBe(4);
+    expect(backCoverSpread.rightPage).toBeNull();
+  });
+});
+

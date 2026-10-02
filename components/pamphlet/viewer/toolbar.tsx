@@ -416,7 +416,7 @@ export function PamphletToolbar({
       {/* Floating Bottom Navigator Bar */}
       <footer
         className={cn(
-          'fixed bottom-4 left-1/2 -translate-x-1/2 z-30 transition-all duration-300 rounded-2xl shadow-xl border px-3 py-1.5 flex items-center gap-2 select-none backdrop-blur-xl',
+          'absolute bottom-4 left-1/2 -translate-x-1/2 z-30 transition-all duration-300 rounded-2xl shadow-xl border px-3 py-1.5 flex items-center gap-2 select-none backdrop-blur-xl',
           themeObj.toolbarBg
         )}
       >

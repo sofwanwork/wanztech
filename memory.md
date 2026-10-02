@@ -1698,3 +1698,25 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
 
 
 
+- **2026-10-02 (Pembaikan Isu Risalah "Nampak Separuh", Kunci Saiz Dokumen 2-Muka Surat & Centering Kulit Buku 3D Flipbook)**:
+  - **Latar Belakang & Punca Isu ("kenapa nampak separuh ya")**:
+    - Pengguna memuat naik risalah promosi 2-muka surat berorientasi Landskap ("SAMBUNGAN RAHNU", `media_1790936304474.png`).
+    - Pada skrin komputer riba/desktop yang mencukupi lebar (>= 880px), sistem secara automatik mengaktifkan mod dwi-halaman (2-page spread).
+    - Dalam pengiraan `computeSpread(1)`, sistem menganggap Halaman 1 sebagai Muka Hadapan (Cover) novel/buku berbilang bab dan meletakkannya di slot kanan (`left: 50%`), manakala slot kiri (`left: 0%` hingga `50%`) dibiarkan kosong sebagai siluet dalaman buku ("Buku Program Digital").
+    - Akibatnya, pada risalah 2-muka surat (depan & belakang), helaian Halaman 1 terhimpit pada 50% kawasan skrin di sebelah kanan, menjadikan pengguna berasa hairan mengapa risalah mereka hanya "nampak separuh". Apabila diselak ke Halaman 2, giliran slot kanan pula menjadi kosong.
+    - Selain itu, pill penunjuk zum (`Zum 105% • Seret untuk tatal`) menggunakan kedudukan `fixed top-14 left-1/2` terhadap keseluruhan tetingkap pelayar, menyebabkan ia terkeluar daripada kanvas pratonton dan bertindih tepat di atas tab pembina (`Maklumat`, `Gaya & Butang`). Ketinggian `PamphletViewer` yang tegar pada `h-screen` (100vh) turut melimpah melebihi kontena pembina.
+  - **Penyelesaian Kejuruteraan Dilaksanakan**:
+    - **Logik Khas Dokumen 1 & 2 Muka Surat**:
+      - Bagi dokumen dengan $\le 2$ muka surat, mod automatik kini sentiasa mengunci paparan kepada **Mod 1 Muka Surat (Single Page)**. Risalah dipaparkan penuh di tengah skrin (nisbah landskap 1.414 : 1) pada saiz maksimum tanpa sebarang slot kosong di kiri atau kanan.
+      - Apabila diselak, Halaman 1 melipat secara 3D dengan lancar ke Halaman 2 yang juga dipaparkan penuh di tengah skrin.
+      - Sekiranya pengguna menukar mod secara manual kepada `[ 📖 2 Halaman ]`, fungsi `computeSpread` memaparkan Halaman 1 di sebelah kiri dan Halaman 2 di sebelah kanan serentak, membolehkan kedua-dua helaian dilihat bersebelahan tanpa sebarang ruang kosong.
+    - **Pemusatan Kulit Muka Hadapan & Belakang (`stageShiftX`)**:
+      - Bagi buku berbilang muka surat ($> 2$ muka surat), kulit hadapan (Halaman 1) dipusatkan tepat di tengah skrin dengan menganjakkan pentas buku ke kiri sebanyak 25% kelebaran (`stageShiftX = -bookWidth * 0.25`) dan menyembunyikan slot kiri yang kosong.
+      - Apabila dibuka (selak ke Halaman 2&3), pentas buku meluncur secara lancar (`transition: transform 520ms cubic-bezier(0.25, 1, 0.5, 1)`) kembali ke kedudukan tengah (`stageShiftX = 0`) serentak dengan putaran helaian 3D.
+    - **Pembetulan Kedudukan Terapung UI**:
+      - Pill Zum: Ditukar kepada `absolute top-3 left-1/2 -translate-x-1/2` di dalam kontena pemapar pentas buku, menghapuskan pertindihan dengan tab pembina.
+      - Bar Navigasi Bawah: Ditukar kepada `absolute bottom-4 left-1/2 -translate-x-1/2`, memastikan ia sentiasa berada di tengah kontena pemapar (termasuk pada simulator telefon pintar).
+      - Ketinggian Pemapar: `previewMode ? 'h-full' : 'h-screen min-h-[100dvh]'` menghalang limpahan ketinggian dalam antaramuka pembina.
+  - **Ujian & Kualiti**:
+    - 326 / 326 ujian vitest lulus (termasuk 3 ujian baharu untuk `computeSpread` di `tests/pamphlet.test.ts`).
+    - 0 ralat TypeScript (`tsc --noEmit`), 0 ralat / 0 amaran ESLint.

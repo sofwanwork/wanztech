@@ -34,7 +34,7 @@ interface SpreadState {
   rightPageNum: number | null;
 }
 
-function computeSpread(page: number, pages: PamphletPageItem[]): SpreadState {
+export function computeSpread(page: number, pages: PamphletPageItem[]): SpreadState {
   const total = pages.length;
   if (total === 0) {
     return {
@@ -44,6 +44,19 @@ function computeSpread(page: number, pages: PamphletPageItem[]): SpreadState {
       rightPage: null,
       leftPageNum: null,
       rightPageNum: null,
+    };
+  }
+
+  // Exactly 2 pages in two-page spread: Page 1 on left, Page 2 on right!
+  // Neither page is left empty or lonely.
+  if (total === 2) {
+    return {
+      isCover: false,
+      isBackCover: false,
+      leftPage: pages[0] || null,
+      rightPage: pages[1] || null,
+      leftPageNum: 1,
+      rightPageNum: 2,
     };
   }
 
@@ -178,17 +191,23 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
 
     // Automatically determine whether to use 2-page spread or single page:
     // 1. If forceMobile or explicit pageSpreadMode === 'single', use 1 page.
-    // 2. If pageSpreadMode === 'double', force 2-page spread.
-    // 3. Auto: use 2-page spread only when container width >= 880px so each page has comfortable width.
+    // 2. If pages.length <= 1, single page mode is the only logical view.
+    // 3. If pages.length === 2, default to single page (full, centered) unless user explicitly chose 'double'.
+    // 4. If pageSpreadMode === 'double', force 2-page spread (if pages.length >= 2).
+    // 5. Auto: use 2-page spread only when pages.length > 2 AND container width >= 880px.
     const isTwoPageSpread =
       !forceMobile &&
+      pages.length >= 2 &&
       pageSpreadMode !== 'single' &&
-      (pageSpreadMode === 'double' || containerDimensions.width >= 880);
+      (pageSpreadMode === 'double' || (pages.length > 2 && containerDimensions.width >= 880));
 
-    const canGoPrev = isTwoPageSpread ? !activeSpread.isCover : currentPage > 1;
+    const canGoPrev = isTwoPageSpread
+      ? (!activeSpread.isCover && (activeSpread.leftPageNum ? activeSpread.leftPageNum > 1 : false))
+      : currentPage > 1;
     const canGoNext = isTwoPageSpread
-      ? !activeSpread.isBackCover &&
-        (activeSpread.rightPageNum === null || activeSpread.rightPageNum < pages.length)
+      ? (!activeSpread.isBackCover &&
+         activeSpread.rightPageNum !== null &&
+         activeSpread.rightPageNum < pages.length)
       : currentPage < pages.length;
 
     /**
@@ -394,13 +413,9 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
       }
     };
 
-    if (!pages || pages.length === 0) {
-      return null;
-    }
-
     const isLandscape =
       orientation === 'landscape' ||
-      pages[0]?.orientation === 'landscape';
+      (pages && pages[0]?.orientation === 'landscape');
 
     // Container-aware responsive calculations
     // Available width and height inside the stage container (subtract padding and header/footer)
@@ -455,6 +470,32 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
         ? targetSpreadRef.current?.rightPage
         : activeSpread.rightPage;
 
+    // Calculate stageShiftX to center closed book covers in 2-page spread:
+    // - On Front Cover (Page 1 solo on right): shift left by 25% of bookWidth so right page is centered in viewport.
+    // - On Back Cover (Last page solo on left): shift right by 25% of bookWidth so left page is centered in viewport.
+    // - On Open 2-page spreads or 2-page documents: shift is 0 (centered around spine).
+    const getSpreadShiftX = React.useCallback(
+      (spread: SpreadState, width: number) => {
+        if (!isTwoPageSpread || pages.length <= 2) return 0;
+        if (spread.isCover) return -Math.round(width * 0.25);
+        if (spread.isBackCover) return Math.round(width * 0.25);
+        return 0;
+      },
+      [isTwoPageSpread, pages.length]
+    );
+
+    const targetShiftX = React.useMemo(() => {
+      if (!isTwoPageSpread) return 0;
+      if (isFlipping && targetSpreadRef.current) {
+        return getSpreadShiftX(targetSpreadRef.current, bookWidth);
+      }
+      return getSpreadShiftX(activeSpread, bookWidth);
+    }, [isTwoPageSpread, isFlipping, activeSpread, bookWidth, getSpreadShiftX]);
+
+    if (!pages || pages.length === 0) {
+      return null;
+    }
+
     return (
       <div
         ref={containerRef}
@@ -466,7 +507,7 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
       >
         {/* Subtle Zoom Indicator & Reset Pill when zoomed in */}
         {zoom > 1.0 && (
-          <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 bg-black/85 backdrop-blur-md text-white px-3.5 py-1.5 rounded-full text-xs font-medium flex items-center gap-2 shadow-2xl border border-white/20 select-none pointer-events-auto">
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-50 bg-black/85 backdrop-blur-md text-white px-3.5 py-1.5 rounded-full text-xs font-medium flex items-center gap-2 shadow-2xl border border-white/20 select-none pointer-events-auto">
             <span>Zum {Math.round(zoom * 100)}%</span>
             <span className="opacity-40">•</span>
             <span className="opacity-80">Seret untuk tatal</span>
@@ -508,12 +549,13 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
           </button>
         )}
 
-        {/* 3D Book Stage Container — Fixed Zoom, Pan & Perspective */}
+        {/* 3D Book Stage Container — Fixed Zoom, Pan, Centered Covers & Perspective */}
         <div
-          className="relative flex items-center justify-center transition-transform duration-150 ease-out"
+          className="relative flex items-center justify-center select-none"
           style={{
-            transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom})`,
+            transform: `translate(${panOffset.x + targetShiftX}px, ${panOffset.y}px) scale(${zoom})`,
             transformOrigin: 'center center',
+            transition: isDraggingRef.current ? 'none' : 'transform 520ms cubic-bezier(0.25, 1, 0.5, 1)',
             cursor: zoom > 1 ? (isDraggingRef.current ? 'grabbing' : 'grab') : undefined,
           }}
         >
@@ -539,7 +581,8 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                   if (canGoPrev) handleFlipPrev();
                 }}
                 className={cn(
-                  'absolute left-0 top-0 bottom-0 w-1/2 rounded-l-2xl overflow-hidden bg-white border border-black/15 shadow-inner',
+                  'absolute left-0 top-0 bottom-0 w-1/2 rounded-l-2xl overflow-hidden bg-white border border-black/15 shadow-inner transition-opacity duration-300',
+                  activeSpread.isCover && !isFlipping ? 'opacity-0 pointer-events-none' : 'opacity-100',
                   canGoPrev ? 'cursor-pointer' : 'cursor-default'
                 )}
                 title={canGoPrev ? 'Klik untuk selak (Dwi-klik untuk zum)' : 'Dwi-klik untuk zum'}
@@ -588,7 +631,10 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
 
               {/* 2. CENTER BOOK SPINE (Permanently anchored at 50% center line, elevated z-40) */}
               <div
-                className="absolute left-1/2 top-0 bottom-0 w-2 -translate-x-1/2 z-40 bg-gradient-to-r from-black/50 via-black/25 to-black/50 shadow-inner pointer-events-none"
+                className={cn(
+                  'absolute left-1/2 top-0 bottom-0 w-2 -translate-x-1/2 z-40 bg-gradient-to-r from-black/50 via-black/25 to-black/50 shadow-inner pointer-events-none transition-opacity duration-300',
+                  (activeSpread.isCover || activeSpread.isBackCover) && !isFlipping ? 'opacity-0' : 'opacity-100'
+                )}
               />
 
               {/* 3. RIGHT PAGE BASE (Strictly left: 50%, width: 50%) */}
@@ -598,7 +644,8 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                   if (canGoNext) handleFlipNext();
                 }}
                 className={cn(
-                  'absolute right-0 top-0 bottom-0 w-1/2 rounded-r-2xl overflow-hidden bg-white border border-black/15 shadow-inner',
+                  'absolute right-0 top-0 bottom-0 w-1/2 rounded-r-2xl overflow-hidden bg-white border border-black/15 shadow-inner transition-opacity duration-300',
+                  activeSpread.isBackCover && !isFlipping ? 'opacity-0 pointer-events-none' : 'opacity-100',
                   canGoNext ? 'cursor-pointer' : 'cursor-default'
                 )}
                 title={canGoNext ? 'Klik untuk selak (Dwi-klik untuk zum)' : 'Dwi-klik untuk zum'}

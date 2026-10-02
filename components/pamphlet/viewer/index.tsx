@@ -177,7 +177,8 @@ export function PamphletViewer({
     <div
       ref={containerRef}
       className={cn(
-        'relative w-full h-screen overflow-hidden flex flex-col transition-colors duration-500 font-sans',
+        'relative w-full overflow-hidden flex flex-col transition-colors duration-500 font-sans',
+        previewMode ? 'h-full' : 'h-screen min-h-[100dvh]',
         themeObj.bgClass
       )}
     >
@@ -195,9 +196,10 @@ export function PamphletViewer({
         pageSpreadMode={pageSpreadMode}
         isTwoPageSpread={
           !forceMobile &&
+          totalPages >= 2 &&
           pageSpreadMode !== 'single' &&
           (pageSpreadMode === 'double' ||
-            (typeof window !== 'undefined' && window.innerWidth >= 880))
+            (totalPages > 2 && typeof window !== 'undefined' && window.innerWidth >= 880))
         }
         onPageChange={handlePageChange}
         onNextPage={handleNextPage}

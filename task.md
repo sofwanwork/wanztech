@@ -1613,3 +1613,50 @@ Memperbaiki susun atur studio rekaan e-Sijil pada skrin 14 inci (dan komputer ri
 
 
 
+
+---
+
+# Pembaikan Isu Risalah "Nampak Separuh", Kunci Saiz Dokumen 2-Muka Surat, Penjajaran Kulit Buku & Kedudukan Terapung UI <!-- id: fix-half-view-and-2page-spread -->
+
+**Matlamat**: Menyelesaikan aduan pengguna ("kenapa nampak separuh ya" seperti dalam `media_1790936304474.png`) apabila memuat naik risalah 2-muka surat landskap, menghapuskan paparan separuh kosong, memusatkan kulit buku di tengah skrin, dan membetulkan kedudukan indikator zum serta bar alat navigasi agar tidak tersasar keluar dari kontena pratonton.
+
+- [x] 1. Penyesuaian Saiz & Logik Dokumen 1 & 2 Halaman (`components/pamphlet/viewer/flipbook-view.tsx`) <!-- id: 1 -->
+  - Bagi dokumen 1 atau 2 muka surat (`pages.length <= 2`), mod automatik lalai kepada **Mod 1 Halaman (Single Page)** agar risalah dipaparkan penuh di tengah skrin pada saiz maksimum tanpa sebelah kosong.
+  - Jika pengguna memilih mod `2 Halaman` untuk dokumen 2-muka surat, `computeSpread` memaparkan Halaman 1 di sebelah kiri dan Halaman 2 di sebelah kanan serentak.
+  - Untuk buku berbilang muka surat (`pages.length > 2`), paparan kulit hadapan (Halaman 1) dipusatkan secara anggun (`stageShiftX = -bookWidth * 0.25`) dengan menyembunyikan slot kosong kiri, dan meluncur lancar ke tengah apabila dibuka.
+- [x] 2. Pembetulan Kedudukan Terapung Pill Zum, Bar Navigasi Bawah & Ketinggian Viewer <!-- id: 2 -->
+  - Tukar pill indikator zum (`flipbook-view.tsx`) daripada `fixed top-14 left-1/2` kepada `absolute top-3 left-1/2` dalam kontena pementasan.
+  - Tukar bar navigasi terapung bawah (`toolbar.tsx`) daripada `fixed bottom-4 left-1/2` kepada `absolute bottom-4 left-1/2`.
+  - Selaraskan ketinggian `PamphletViewer` (`index.tsx`) untuk menggunakan `previewMode ? 'h-full' : 'h-screen min-h-[100dvh]'` bagi mengelakkan limpahan kontena builder.
+- [x] 3. Ujian Unit & Pengesahan Kualiti <!-- id: 3 -->
+  - Ujian unit di `tests/pamphlet.test.ts` (11/11 tests pass).
+  - `npm test` (326/326 tests pass across 37 test suites).
+  - `npm run typecheck` (0 ralat TypeScript).
+  - `npm run lint` (0 ralat / 0 amaran ESLint).
+- [x] 4. Kemas kini `lessons.md`, `memory.md`, dan `task.md`. <!-- id: 4 -->
+
+---
+
+## Reviu Pelaksanaan: Pembaikan Isu Risalah "Nampak Separuh", Kunci Saiz Dokumen 2-Muka Surat & Centering Kulit Buku
+
+1. **Punca Asal Isu ("kenapa nampak separuh ya")**:
+   - Pengguna memuat naik risalah 2-muka surat berorientasi Landskap ("SAMBUNGAN RAHNU").
+   - Pada skrin komputer meja/riba yang berkelebaran >= 880px, sistem sebelum ini mengaktifkan paparan dwi-halaman (2-page spread).
+   - Dalam fungsi `computeSpread(1)`, sistem menganggap Halaman 1 sebagai Muka Hadapan (Cover) bagi buku berbilang bab dan meletakkannya pada slot kanan (`left: 50%`), manakala slot kiri (`0%` hingga `50%`) dibiarkan kosong dengan siluet buku ("Buku Program Digital").
+   - Akibatnya, pada risalah 2-muka surat atau risalah promosi/infografik, dokumen hanya memenuhi 50% ruang di sebelah kanan dan kelihatan seperti terpotong atau "separuh".
+   - Selain itu, pill penunjuk zum (`Zum 105% • Seret untuk tatal`) menggunakan kedudukan `fixed top-14 left-1/2` terhadap tetingkap pelayar secara global, menyebabkan ia terapung di atas tab penyunting pembina (`Maklumat`, `Gaya & Butang`), manakala ketinggian pemapar `h-screen` melimpah melebihi kontena pratonton.
+2. **Penyelesaian Kejuruteraan Dilaksanakan**:
+   - **Logik Khas Risalah 1 & 2 Muka Surat**:
+     - Bagi dokumen dengan $\le 2$ muka surat, sistem mod automatik kini sentiasa menggunakan **Mod 1 Muka Surat (Single Page)**. Risalah berorientasi landskap dipaparkan penuh di tengah skrin (nisbah 1.414 : 1) pada saiz maksimum tanpa sebarang ruang kosong di sebelah kiri atau kanan.
+     - Apabila pengguna menekan butang selak atau anak panah, helaian Halaman 1 melipat secara 3D dengan lancar ke Halaman 2 (juga dipaparkan penuh di tengah).
+     - Sekiranya pengguna menukar mod secara manual kepada `[ 📖 2 Halaman ]`, fungsi `computeSpread` memaparkan Halaman 1 di sebelah kiri dan Halaman 2 di sebelah kanan serentak, membolehkan kedua-dua muka surat dilihat bersebelahan tanpa sebarang ruang kosong.
+   - **Pemusatan Kulit Muka Hadapan & Belakang (`stageShiftX`)**:
+     - Bagi buku berbilang muka surat ($> 2$ muka surat), kulit hadapan (Halaman 1) dipusatkan tepat di tengah skrin dengan menganjakkan pentas buku ke kiri sebanyak 25% kelebaran (`stageShiftX = -bookWidth * 0.25`) dan menyembunyikan slot kiri yang kosong.
+     - Apabila dibuka (selak ke Halaman 2&3), pentas buku meluncur secara lancar (`transition: transform 520ms cubic-bezier(0.25, 1, 0.5, 1)`) kembali ke kedudukan tengah (`stageShiftX = 0`) serentak dengan putaran helaian 3D.
+   - **Pembetulan Kedudukan Terapung UI**:
+     - Pill Zum: Ditukar kepada `absolute top-3 left-1/2 -translate-x-1/2` di dalam kontena pemapar pentas buku, menghapuskan pertindihan dengan tab pembina.
+     - Bar Navigasi Bawah: Ditukar kepada `absolute bottom-4 left-1/2 -translate-x-1/2`, memastikan ia sentiasa berada di tengah kontena pemapar (termasuk pada simulator telefon pintar).
+     - Ketinggian Pemapar: `previewMode ? 'h-full' : 'h-screen min-h-[100dvh]'` menghalang limpahan ketinggian dalam antaramuka pembina.
+3. **Ujian & Kualiti**:
+   - 326 / 326 ujian Vitest lulus (termasuk 3 ujian baharu untuk `computeSpread` di `tests/pamphlet.test.ts`).
+   - 0 ralat TypeScript (`tsc --noEmit`), 0 ralat / 0 amaran ESLint.
