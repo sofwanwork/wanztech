@@ -6,6 +6,8 @@ export type PamphletDisplayMode = 'flipbook' | 'slide' | 'vertical';
 
 export type PamphletTheme = 'dark' | 'light' | 'paper' | 'emerald';
 
+export type PamphletOrientation = 'portrait' | 'landscape';
+
 export type PamphletActionButtonType =
   | 'primary'
   | 'whatsapp'
@@ -27,7 +29,8 @@ export interface PamphletPageItem {
   pageNumber: number;
   title?: string;
   imageUrl: string;
-  aspectRatio?: number; // e.g. 1.414 for A4 portrait
+  aspectRatio?: number; // width / height or height / width
+  orientation?: PamphletOrientation;
 }
 
 export interface PamphletThemeConfig {
@@ -50,6 +53,7 @@ export interface Pamphlet {
   pdfUrl?: string;
   theme: PamphletTheme;
   displayMode: PamphletDisplayMode;
+  orientation?: PamphletOrientation;
   pages: PamphletPageItem[];
   actionButtons: PamphletActionButton[];
   isActive: boolean;

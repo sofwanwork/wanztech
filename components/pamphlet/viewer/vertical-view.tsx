@@ -1,17 +1,20 @@
 'use client';
 
 import React from 'react';
-import { PamphletPageItem } from '@/lib/types/pamphlets';
+import { PamphletPageItem, PamphletOrientation } from '@/lib/types/pamphlets';
+import { cn } from '@/lib/utils';
 
 interface VerticalViewProps {
   pages: PamphletPageItem[];
   zoom: number;
+  orientation?: PamphletOrientation;
   onPageVisible: (pageNumber: number) => void;
 }
 
 export function VerticalView({
   pages,
   zoom,
+  orientation,
   onPageVisible,
 }: VerticalViewProps) {
   const pageRefs = React.useRef<(HTMLDivElement | null)[]>([]);
@@ -44,10 +47,15 @@ export function VerticalView({
 
   if (!pages || pages.length === 0) return null;
 
+  const isLandscape = orientation === 'landscape' || pages[0]?.orientation === 'landscape';
+
   return (
     <div className="w-full h-full overflow-y-auto px-4 py-8 flex flex-col items-center gap-6 scrollbar-thin">
       <div
-        className="flex flex-col items-center gap-8 max-w-2xl w-full transition-transform duration-200"
+        className={cn(
+          'flex flex-col items-center gap-8 w-full transition-transform duration-200',
+          isLandscape ? 'max-w-4xl' : 'max-w-2xl'
+        )}
         style={{
           transform: `scale(${zoom})`,
           transformOrigin: 'top center',
@@ -60,7 +68,10 @@ export function VerticalView({
             ref={(el) => {
               pageRefs.current[idx] = el;
             }}
-            className="relative w-full aspect-[1/1.414] rounded-2xl overflow-hidden shadow-2xl border border-black/15 bg-white shrink-0"
+            className={cn(
+              'relative w-full rounded-2xl overflow-hidden shadow-2xl border border-black/15 bg-white shrink-0',
+              isLandscape ? 'aspect-[1.414/1]' : 'aspect-[1/1.414]'
+            )}
           >
             {/* Page Number Watermark */}
             <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-xs text-white text-[11px] font-medium px-2 py-0.5 rounded-full z-10">

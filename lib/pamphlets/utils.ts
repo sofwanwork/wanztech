@@ -2,7 +2,7 @@
  * Utility functions for E-Pamphlet & Buku Program Digital
  */
 
-import { Pamphlet } from '@/lib/types/pamphlets';
+import { Pamphlet, PamphletPageItem, PamphletOrientation } from '@/lib/types/pamphlets';
 
 /**
  * Validates a pamphlet slug
@@ -95,6 +95,7 @@ export function getSamplePamphlet(id: string = 'demo-pamphlet'): Pamphlet {
     pdfUrl: '',
     theme: 'emerald',
     displayMode: 'flipbook',
+    orientation: 'portrait',
     pages: [
       {
         id: 'p1',
@@ -103,6 +104,7 @@ export function getSamplePamphlet(id: string = 'demo-pamphlet'): Pamphlet {
         imageUrl:
           'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=1000&auto=format&fit=crop',
         aspectRatio: 1.414,
+        orientation: 'portrait',
       },
       {
         id: 'p2',
@@ -111,6 +113,7 @@ export function getSamplePamphlet(id: string = 'demo-pamphlet'): Pamphlet {
         imageUrl:
           'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?q=80&w=1000&auto=format&fit=crop',
         aspectRatio: 1.414,
+        orientation: 'portrait',
       },
       {
         id: 'p3',
@@ -119,6 +122,7 @@ export function getSamplePamphlet(id: string = 'demo-pamphlet'): Pamphlet {
         imageUrl:
           'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=1000&auto=format&fit=crop',
         aspectRatio: 1.414,
+        orientation: 'portrait',
       },
       {
         id: 'p4',
@@ -127,6 +131,7 @@ export function getSamplePamphlet(id: string = 'demo-pamphlet'): Pamphlet {
         imageUrl:
           'https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1000&auto=format&fit=crop',
         aspectRatio: 1.414,
+        orientation: 'portrait',
       },
       {
         id: 'p5',
@@ -135,6 +140,7 @@ export function getSamplePamphlet(id: string = 'demo-pamphlet'): Pamphlet {
         imageUrl:
           'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=1000&auto=format&fit=crop',
         aspectRatio: 1.414,
+        orientation: 'portrait',
       },
       {
         id: 'p6',
@@ -143,6 +149,7 @@ export function getSamplePamphlet(id: string = 'demo-pamphlet'): Pamphlet {
         imageUrl:
           'https://images.unsplash.com/photo-1513151233558-d860c5398176?q=80&w=1000&auto=format&fit=crop',
         aspectRatio: 1.414,
+        orientation: 'portrait',
       },
     ],
     actionButtons: [
@@ -173,4 +180,123 @@ export function getSamplePamphlet(id: string = 'demo-pamphlet'): Pamphlet {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
+}
+
+/**
+ * Curated sample landscape pamphlet (e.g. A4 Landscape / 16:9 Presentation Slides)
+ */
+export function getSampleLandscapePamphlet(id: string = 'demo-landscape-pamphlet'): Pamphlet {
+  return {
+    id,
+    userId: 'demo-user',
+    slug: 'buku-program-persidangan-inovasi',
+    title: 'Buku Program Persidangan Inovasi & Digital 2026 (Landskap)',
+    description:
+      'Buku Program Rasmi Format Landskap / Slaid Sempena Persidangan Inovasi & Transformasi Digital Kebangsaan.',
+    eventDate: '15 November 2026',
+    location: 'Pusat Konvensyen Antarabangsa Putrajaya (PICC)',
+    coverImage:
+      'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=1200&auto=format&fit=crop',
+    pdfUrl: '',
+    theme: 'dark',
+    displayMode: 'flipbook',
+    orientation: 'landscape',
+    pages: [
+      {
+        id: 'lp1',
+        pageNumber: 1,
+        title: 'Muka Hadapan (Cover)',
+        imageUrl:
+          'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=1200&auto=format&fit=crop',
+        aspectRatio: 1.414,
+        orientation: 'landscape',
+      },
+      {
+        id: 'lp2',
+        pageNumber: 2,
+        title: 'Ucaptama Perasmian',
+        imageUrl:
+          'https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1200&auto=format&fit=crop',
+        aspectRatio: 1.414,
+        orientation: 'landscape',
+      },
+      {
+        id: 'lp3',
+        pageNumber: 3,
+        title: 'Jadual Sesi Plenari & Forum',
+        imageUrl:
+          'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?q=80&w=1200&auto=format&fit=crop',
+        aspectRatio: 1.414,
+        orientation: 'landscape',
+      },
+      {
+        id: 'lp4',
+        pageNumber: 4,
+        title: 'Penceramah & Panel Jemputan',
+        imageUrl:
+          'https://images.unsplash.com/photo-1523580494863-6f3031224c94?q=80&w=1200&auto=format&fit=crop',
+        aspectRatio: 1.414,
+        orientation: 'landscape',
+      },
+      {
+        id: 'lp5',
+        pageNumber: 5,
+        title: 'Jawatankuasa Pengelola',
+        imageUrl:
+          'https://images.unsplash.com/photo-1528605248644-14dd04022da1?q=80&w=1200&auto=format&fit=crop',
+        aspectRatio: 1.414,
+        orientation: 'landscape',
+      },
+      {
+        id: 'lp6',
+        pageNumber: 6,
+        title: 'Sekalung Budi & Penaja (Back Cover)',
+        imageUrl:
+          'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1200&auto=format&fit=crop',
+        aspectRatio: 1.414,
+        orientation: 'landscape',
+      },
+    ],
+    actionButtons: [
+      {
+        id: 'lb1',
+        label: 'Daftar Kehadiran (Check-In)',
+        url: '#',
+        icon: 'QrCode',
+        type: 'checkin',
+      },
+      {
+        id: 'lb2',
+        label: 'Tebus E-Sijil',
+        url: '#',
+        icon: 'Award',
+        type: 'cert',
+      },
+      {
+        id: 'lb3',
+        label: 'WhatsApp Urusetia',
+        url: 'https://wa.me/60123456789?text=Salam%20Urusetia%20Persidangan',
+        icon: 'MessageCircle',
+        type: 'whatsapp',
+      },
+    ],
+    isActive: true,
+    views: 84,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * Resolves whether a pamphlet is portrait or landscape
+ */
+export function getPamphletOrientation(pamphlet?: {
+  orientation?: PamphletOrientation;
+  pages?: Array<Partial<PamphletPageItem>>;
+}): PamphletOrientation {
+  if (!pamphlet) return 'portrait';
+  if (pamphlet.orientation) return pamphlet.orientation;
+  const firstPage = pamphlet.pages?.[0];
+  if (firstPage?.orientation) return firstPage.orientation;
+  return 'portrait';
 }

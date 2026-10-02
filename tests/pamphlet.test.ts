@@ -3,6 +3,8 @@ import {
   isValidPamphletSlug,
   cleanPamphletSlug,
   getSamplePamphlet,
+  getSampleLandscapePamphlet,
+  getPamphletOrientation,
 } from '@/lib/pamphlets/utils';
 import { PAMPHLET_THEMES } from '@/lib/pamphlets/themes';
 import { mapPamphletFromRow } from '@/lib/storage/pamphlets';
@@ -60,6 +62,22 @@ describe('E-Pamphlet — Sample Template & DB Mapping', () => {
     expect(sample.actionButtons.length).toBeGreaterThan(0);
     expect(sample.displayMode).toBe('flipbook');
     expect(sample.theme).toBe('emerald');
+    expect(sample.orientation).toBe('portrait');
+  });
+
+  it('generates a rich landscape sample pamphlet', () => {
+    const sample = getSampleLandscapePamphlet();
+    expect(sample.slug).toBe('buku-program-persidangan-inovasi');
+    expect(sample.pages.length).toBe(6);
+    expect(sample.orientation).toBe('landscape');
+    expect(sample.pages[0].orientation).toBe('landscape');
+  });
+
+  it('correctly resolves orientation via getPamphletOrientation', () => {
+    expect(getPamphletOrientation({ orientation: 'landscape' })).toBe('landscape');
+    expect(getPamphletOrientation({ orientation: 'portrait' })).toBe('portrait');
+    expect(getPamphletOrientation({ pages: [{ orientation: 'landscape', id: '1', pageNumber: 1, imageUrl: '' }] })).toBe('landscape');
+    expect(getPamphletOrientation()).toBe('portrait');
   });
 
   it('maps database rows safely with fallbacks', () => {
@@ -85,5 +103,6 @@ describe('E-Pamphlet — Sample Template & DB Mapping', () => {
     expect(mapped.actionButtons).toEqual([]);
     expect(mapped.isActive).toBe(true);
     expect(mapped.views).toBe(0);
+    expect(mapped.orientation).toBe('portrait');
   });
 });

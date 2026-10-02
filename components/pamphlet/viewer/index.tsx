@@ -7,7 +7,7 @@ import {
   PamphletTheme,
 } from '@/lib/types/pamphlets';
 import { PAMPHLET_THEMES } from '@/lib/pamphlets/themes';
-import { playPageTurnSound } from '@/lib/pamphlets/utils';
+import { playPageTurnSound, getPamphletOrientation } from '@/lib/pamphlets/utils';
 import { PamphletToolbar } from './toolbar';
 import { ThumbnailsStrip } from './thumbnails-strip';
 import { FlipbookView, FlipbookViewRef } from './flipbook-view';
@@ -43,6 +43,10 @@ export function PamphletViewer({
   const pages = React.useMemo(() => {
     return Array.isArray(pamphlet.pages) ? pamphlet.pages : [];
   }, [pamphlet.pages]);
+
+  const orientation = React.useMemo(() => {
+    return getPamphletOrientation(pamphlet);
+  }, [pamphlet]);
 
   const totalPages = pages.length;
 
@@ -214,6 +218,7 @@ export function PamphletViewer({
                 pages={pages}
                 currentPage={currentPage}
                 zoom={zoom}
+                orientation={orientation}
                 onPrevPage={handlePrevPage}
                 onNextPage={handleNextPage}
                 onPageChange={handlePageChange}
@@ -225,6 +230,7 @@ export function PamphletViewer({
                 pages={pages}
                 currentPage={currentPage}
                 zoom={zoom}
+                orientation={orientation}
                 onPrevPage={() => handlePageChange(Math.max(1, currentPage - 1))}
                 onNextPage={() =>
                   handlePageChange(Math.min(totalPages, currentPage + 1))
@@ -236,6 +242,7 @@ export function PamphletViewer({
               <VerticalView
                 pages={pages}
                 zoom={zoom}
+                orientation={orientation}
                 onPageVisible={(pageNum) => setCurrentPage(pageNum)}
               />
             )}
@@ -248,6 +255,7 @@ export function PamphletViewer({
         pages={pages}
         currentPage={currentPage}
         theme={theme}
+        orientation={orientation}
         isOpen={showThumbnails}
         onClose={() => setShowThumbnails(false)}
         onSelectPage={(pageNum) => {

@@ -3,12 +3,14 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { PamphletPageItem } from '@/lib/types/pamphlets';
+import { PamphletPageItem, PamphletOrientation } from '@/lib/types/pamphlets';
+import { cn } from '@/lib/utils';
 
 interface SliderViewProps {
   pages: PamphletPageItem[];
   currentPage: number;
   zoom: number;
+  orientation?: PamphletOrientation;
   onPrevPage: () => void;
   onNextPage: () => void;
 }
@@ -17,6 +19,7 @@ export function SliderView({
   pages,
   currentPage,
   zoom,
+  orientation,
   onPrevPage,
   onNextPage,
 }: SliderViewProps) {
@@ -34,6 +37,7 @@ export function SliderView({
 
   if (!pages || pages.length === 0) return null;
 
+  const isLandscape = orientation === 'landscape' || pages[0]?.orientation === 'landscape';
   const activePage = pages[currentPage - 1];
 
   const slideVariants = {
@@ -81,7 +85,10 @@ export function SliderView({
 
       {/* Main Slide Stage */}
       <div
-        className="relative max-h-[82vh] w-auto aspect-[1/1.414] flex items-center justify-center"
+        className={cn(
+          'relative max-h-[82vh] flex items-center justify-center transition-all',
+          isLandscape ? 'w-auto max-w-[92vw] aspect-[1.414/1]' : 'w-auto aspect-[1/1.414]'
+        )}
         style={{
           transform: `scale(${zoom})`,
           transformOrigin: 'center center',

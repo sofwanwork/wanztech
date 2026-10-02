@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
-import { PamphletPageItem } from '@/lib/types/pamphlets';
+import { PamphletPageItem, PamphletOrientation } from '@/lib/types/pamphlets';
 import { motion } from 'framer-motion';
 import { playPageTurnSound } from '@/lib/pamphlets/utils';
 import { cn } from '@/lib/utils';
@@ -16,6 +16,7 @@ interface FlipbookViewProps {
   pages: PamphletPageItem[];
   currentPage: number;
   zoom: number;
+  orientation?: PamphletOrientation;
   onPrevPage: () => void;
   onNextPage: () => void;
   onPageChange?: (pageNumber: number) => void;
@@ -83,7 +84,7 @@ function computeSpread(page: number, pages: PamphletPageItem[]): SpreadState {
 
 export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>(
   function FlipbookView(
-    { pages, currentPage, zoom, onPrevPage, onNextPage, onPageChange },
+    { pages, currentPage, zoom, orientation, onPrevPage, onNextPage, onPageChange },
     ref
   ) {
     const [isDesktop, setIsDesktop] = React.useState(false);
@@ -290,12 +291,28 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
       return null;
     }
 
-    // Exact fixed CSS calculations so the book never shifts, resizes, or vibrates
-    const DESKTOP_BOOK_HEIGHT = 'min(76vh, 650px)';
-    const DESKTOP_BOOK_WIDTH = `calc(${DESKTOP_BOOK_HEIGHT} / 1.414 * 2)`;
+    const isLandscape =
+      orientation === 'landscape' ||
+      pages[0]?.orientation === 'landscape';
 
-    const MOBILE_BOOK_HEIGHT = 'min(calc(100dvh - 160px), calc(88vw * 1.414))';
-    const MOBILE_BOOK_WIDTH = 'calc(min(calc(100dvh - 160px), calc(88vw * 1.414)) / 1.414)';
+    // Exact fixed CSS calculations so the book never shifts, resizes, or vibrates
+    // 1. Portrait Book: Single page ~1 : 1.414. Two-page spread ~1.414 : 1.
+    // 2. Landscape Book: Single page ~1.414 : 1. Two-page spread ~2.828 : 1.
+    const DESKTOP_BOOK_HEIGHT = isLandscape
+      ? 'min(56vh, calc(90vw / 2.828))'
+      : 'min(76vh, 650px)';
+
+    const DESKTOP_BOOK_WIDTH = isLandscape
+      ? `calc(${DESKTOP_BOOK_HEIGHT} * 2.828)`
+      : `calc(${DESKTOP_BOOK_HEIGHT} / 1.414 * 2)`;
+
+    const MOBILE_BOOK_WIDTH = isLandscape
+      ? 'min(calc((100dvh - 160px) * 1.414), 88vw)'
+      : 'calc(min(calc(100dvh - 160px), calc(88vw * 1.414)) / 1.414)';
+
+    const MOBILE_BOOK_HEIGHT = isLandscape
+      ? `calc(${MOBILE_BOOK_WIDTH} / 1.414)`
+      : 'min(calc(100dvh - 160px), calc(88vw * 1.414))';
 
     // Pages currently displayed on the static base layer
     const displayBaseLeftPage =

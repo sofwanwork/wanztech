@@ -1529,3 +1529,44 @@ Memperbaiki susun atur studio rekaan e-Sijil pada skrin 14 inci (dan komputer ri
    - **Kunci Nisbah Aspek Tegar A4**: Formula CSS dinamik memastikan ketinggian dan lebar mematuhi nisbah 1 : 1.414 secara tepat dengan mengambil kira bar atas dan bawah (`100dvh - 160px`), menghapuskan semua ruang putih kosong.
    - **Leretan Sentuh Pintar (*Swipe Gesture*)**: Penjejakan `onTouchStart` dan `onTouchEnd` membolehkan pengguna meleret ke kiri untuk helaian seterusnya dan ke kanan untuk helaian sebelumnya dengan ambang minimum 35px.
    - **Kinematik Selakan Mudah Alih Lembut**: Helaian meluncur dan melipat dengan lengkungan 3D halus (-20 darjah) ke kiri/kanan (`x: -105% / 105%`) secara kemas, menampakkan helaian di bawahnya tanpa herotan.
+
+---
+
+# Sokongan Penuh Orientasi Landskap (Melintang) Untuk Buku Program & 3D Flipbook ✅ SIAP <!-- id: landscape-pamphlet-support -->
+
+**Matlamat**: Menyediakan sokongan orientasi Landskap (Melintang / Horizontal A4 & 16:9) secara menyeluruh pada enjin 3D Flipbook, Mod Gelangsar (Slider), Tatal Menegak (Vertical Scroll), Jalur Lakaran Kecil (Thumbnails), serta Pengesan Orientasi Automatik dalam Pembina Buku Program (Pamphlet Builder).
+
+- [x] 1. Definisi Jenis & Skema Data Kalis Pecah (`lib/types/pamphlets.ts` & `lib/storage/pamphlets.ts`) <!-- id: 1 -->
+  - Tambah jenis `PamphletOrientation = 'portrait' | 'landscape'` pada `Pamphlet` dan `PamphletPageItem`.
+  - Simpan orientasi di dalam JSONB `pages` bagi mengelakkan ralat ketiadaan lajur Supabase `PGRST204`.
+- [x] 2. Logik Geometri Nisbah Aspek 3D Flipbook (`components/pamphlet/viewer/flipbook-view.tsx`) <!-- id: 2 -->
+  - Pada Komputer Meja (Desktop): Spread dwi-halaman landskap menggunakan nisbah `2.828 : 1` dengan formula saiz adaptif `height: min(56vh, calc(90vw / 2.828))` dan `width: calc(height * 2.828)`.
+  - Pada Telefon Pintar (Mobile): Menggunakan kad mendatar `width: min(calc((100dvh - 160px) * 1.414), 88vw)` dan `height: calc(width / 1.414)`.
+- [x] 3. Sokongan Landskap Pada Mod Paparan Lain <!-- id: 3 -->
+  - `components/pamphlet/viewer/slider-view.tsx`: Bertukar secara automatik kepada `aspect-[1.414/1] max-w-[92vw]`.
+  - `components/pamphlet/viewer/vertical-view.tsx`: Bertukar kepada `aspect-[1.414/1] max-w-4xl`.
+  - `components/pamphlet/viewer/thumbnails-strip.tsx`: Bertukar kepada kad mendatar `w-24 sm:w-28 aspect-[1.414/1]`.
+- [x] 4. Pengesanan Orientasi Automatik & UI Pembina (`app/(dashboard)/pamphlet-builder/[id]/client.tsx`) <!-- id: 4 -->
+  - Muat naik imej membaca `naturalWidth` dan `naturalHeight`. Jika nisbah > 1.05, sistem secara automatik menetapkan `pageOrientation: 'landscape'`.
+  - Togol Orientasi Buku Program manual (`[ 📱 Potret (Menegak) ]` vs `[ 💻 Landskap (Melintang) ]`) dalam Tab Halaman.
+  - Butang 1-Klik Contoh Demo Landskap (`getSampleLandscapePamphlet()`) bersama 6 helaian beresolusi tinggi.
+- [x] 5. Ujian Unit & Pengesahan Kualiti <!-- id: 5 -->
+  - 323 / 323 ujian vitest lulus (termasuk 8 ujian khusus di `tests/pamphlet.test.ts`).
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / amaran ESLint.
+- [x] 6. Kemas kini `lessons.md`, `memory.md`, dan `task.md`. <!-- id: 6 -->
+
+---
+
+## Reviu Pelaksanaan: Sokongan Orientasi Landskap (Melintang)
+
+1. **Seni Bina Geometri Nisbah Aspek (Aspect Ratio Math)**:
+   - Bagi **Potret**, satu helaian A4 mempunyai nisbah $1 : \sqrt{2} \approx 1 : 1.414$. Apabila dua helaian dibuka (spread), nisbah keseluruhan menjadi $\sqrt{2} : 1 \approx 1.414 : 1$.
+   - Bagi **Landskap**, satu helaian mendatar mempunyai nisbah $\sqrt{2} : 1 \approx 1.414 : 1$. Apabila dua helaian landskap dibuka bersebelahan, nisbah spread menjadi $2\sqrt{2} : 1 \approx 2.828 : 1$.
+   - Menggunakan formula `height: min(56vh, calc(90vw / 2.828))` memastikan buku tidak melimpah keluar daripada skrin komputer riba (seperti resolusi 1366x768 atau 1920x1080) dan kekal berada dalam kawasan paparan tanpa herotan atau sempadan hitam (*letterboxing*).
+2. **Sifar Migrasi DB & Kalis Masa Depan (Zero-Migration JSONB Pattern)**:
+   - Data orientasi disimpan di dalam struktur JSONB `pages` (dan boleh dipetakan daripada lajur jadual jika ditambah kemudian hari).
+   - Helper `getPamphletOrientation()` mengekstrak orientasi dengan selamat walaupun pangkalan data belum mempunyai lajur `orientation` tersendiri.
+3. **Pengesanan Pintar Klien (Smart Client Auto-Detection)**:
+   - Apabila penganjur memuat naik fail grafik/slaid pembentangan, enjin builder secara automatik mengukur nisbah saiz gambar. Jika imej melintang dikesan, tetapan ditukar serta-merta kepada Landskap tanpa memerlukan konfigurasi rumit.
+

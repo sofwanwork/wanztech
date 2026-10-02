@@ -1658,6 +1658,27 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - **Ujian & Kualiti**:
     - 321 / 321 ujian unit lulus (37 suites).
     - 0 ralat TypeScript (`tsc --noEmit`), 0 ralat / amaran ESLint.
+- **2026-10-02 (Sokongan Penuh Orientasi Landskap / Melintang Untuk E-Pamphlet & 3D Flipbook)**:
+  - **Latar Belakang & Keperluan**: Pengguna memerhatikan bahawa paparan sebelum ini dioptimumkan untuk nisbah A4 Potret (Menegak) dan menanyakan tentang sokongan untuk dokumen/buku program Landskap (Melintang / Horizontal, contohnya slaid perbentangan atau buku program majlis format landskap).
+  - **Penyelesaian Kejuruteraan Dilaksanakan**:
+    - **Geometri Nisbah Aspek 3D Flipbook Landskap**:
+      - Pada Komputer Meja (Desktop): Satu halaman landskap mempunyai nisbah $1.414 : 1$. Dua halaman bersebelahan (spread) membentuk nisbah ultra-lebar $2.828 : 1$. Menggunakan formula `height: min(56vh, calc(90vw / 2.828))` dan `width: calc(height * 2.828)` mengelakkan limpahan skrin (> 1800px) pada komputer riba 1080p/768p dan memaparkan buku secara seimbang tanpa sempadan hitam (*letterboxing*).
+      - Pada Telefon Pintar (Mobile): Menggunakan formula kad mendatar `width: min(calc((100dvh - 160px) * 1.414), 88vw)` dan `height: calc(width / 1.414)`.
+    - **Mod Paparan Lain**:
+      - `SliderView`: Beralih daripada `aspect-[1/1.414]` kepada `aspect-[1.414/1] max-w-[92vw]` secara automatik.
+      - `VerticalView`: Beralih daripada `aspect-[1/1.414] max-w-2xl` kepada `aspect-[1.414/1] max-w-4xl`.
+      - `ThumbnailsStrip`: Menggunakan kad lakaran kecil mendatar `w-24 sm:w-28 aspect-[1.414/1]`.
+    - **Penyimpanan Skema Kalis Masa Depan (Zero-Migration JSONB Pattern)**:
+      - Jenis data `PamphletOrientation = 'portrait' | 'landscape'` ditambah pada `Pamphlet` dan `PamphletPageItem`.
+      - Disimpan di dalam objek JSONB `pages` sedia ada bagi mengelakkan ralat ketiadaan lajur Supabase `PGRST204`.
+      - `getPamphletOrientation(pamphlet)` mengekstrak orientasi dengan selamat daripada parameter atau halaman pertama dengan fallback `'portrait'`.
+    - **Pengesanan Pintar Klien & Antaramuka Pembina (`client.tsx`)**:
+      - Muat naik gambar memeriksa `naturalWidth` dan `naturalHeight` imej. Jika nisbah lebar/tinggi > 1.05, orientasi ditukar secara automatik kepada Landskap.
+      - Togol manual Orientasi Buku Program (`[ 📱 Potret (Menegak) ]` vs `[ 💻 Landskap (Melintang) ]`) disediakan di Tab Halaman.
+      - Butang contoh demo 1-klik "Contoh Landskap" (`getSampleLandscapePamphlet()`) bersama 6 helaian resolusi tinggi.
+  - **Ujian & Kualiti**:
+    - 323 / 323 ujian vitest lulus (termasuk 8 ujian menyeluruh di `tests/pamphlet.test.ts`).
+    - 0 ralat TypeScript (`tsc --noEmit`), 0 ralat / 0 amaran ESLint.
 
 
 

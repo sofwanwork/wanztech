@@ -8,11 +8,18 @@ import {
   PamphletPageItem,
   PamphletTheme,
   PamphletActionButton,
+  PamphletOrientation,
 } from '@/lib/types/pamphlets';
 import { PAMPHLET_THEMES } from '@/lib/pamphlets/themes';
-import { cleanPamphletSlug, isValidPamphletSlug, getSamplePamphlet } from '@/lib/pamphlets/utils';
+import {
+  cleanPamphletSlug,
+  isValidPamphletSlug,
+  getSamplePamphlet,
+  getSampleLandscapePamphlet,
+} from '@/lib/pamphlets/utils';
 import { updatePamphletAction } from '@/actions/pamphlets';
 import { PamphletViewer } from '@/components/pamphlet/viewer';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -141,13 +148,34 @@ export function PamphletBuilderClient({
           });
         }
 
+        // Auto-detect image aspect ratio and orientation
+        let pageOrientation: PamphletOrientation = pamphlet.orientation || 'portrait';
+        let pageRatio = 1.414;
+        try {
+          const img = new Image();
+          img.src = imageUrl;
+          await new Promise<void>((resolve) => {
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+          });
+          if (img.naturalWidth && img.naturalHeight) {
+            pageRatio = +(img.naturalWidth / img.naturalHeight).toFixed(3);
+            if (pageRatio > 1.05) {
+              pageOrientation = 'landscape';
+            }
+          }
+        } catch {
+          // fallback gracefully
+        }
+
         const existingCount = (pamphlet.pages || []).length + newPages.length;
         newPages.push({
           id: uuidv4(),
           pageNumber: existingCount + 1,
           title: `Halaman ${existingCount + 1}`,
           imageUrl,
-          aspectRatio: 1.414,
+          aspectRatio: pageRatio,
+          orientation: pageOrientation,
         });
       }
 
@@ -155,7 +183,8 @@ export function PamphletBuilderClient({
         const updatedPages = [...(prev.pages || []), ...newPages];
         // Set cover image automatically if not set yet
         const coverImage = prev.coverImage || updatedPages[0]?.imageUrl || '';
-        return { ...prev, pages: updatedPages, coverImage };
+        const orientation = prev.orientation || newPages[0]?.orientation || 'portrait';
+        return { ...prev, pages: updatedPages, coverImage, orientation };
       });
 
       toast.success(`${files.length} muka surat berjaya dimuat naik!`, { id: toastId });
@@ -214,16 +243,45 @@ export function PamphletBuilderClient({
     }));
   };
 
-  // Load sample demo pages
+  // Load sample demo pages (Portrait)
   const handleLoadDemoPages = () => {
     const demo = getSamplePamphlet();
     setPamphlet((prev) => ({
       ...prev,
+      orientation: 'portrait',
       pages: demo.pages,
       coverImage: demo.coverImage,
       actionButtons: demo.actionButtons,
     }));
-    toast.success('Muka surat contoh berjaya dimuatkan ke editor!');
+    toast.success('Muka surat contoh Potret berjaya dimuatkan ke editor!');
+  };
+
+  // Load sample demo pages (Landscape)
+  const handleLoadLandscapeDemoPages = () => {
+    const demo = getSampleLandscapePamphlet();
+    setPamphlet((prev) => ({
+      ...prev,
+      orientation: 'landscape',
+      pages: demo.pages,
+      coverImage: demo.coverImage,
+      actionButtons: demo.actionButtons,
+    }));
+    toast.success('Muka surat contoh Landskap berjaya dimuatkan ke editor!');
+  };
+
+  // Switch booklet orientation between portrait and landscape
+  const handleOrientationChange = (newOrientation: PamphletOrientation) => {
+    setPamphlet((prev) => ({
+      ...prev,
+      orientation: newOrientation,
+      pages: (prev.pages || []).map((p) => ({
+        ...p,
+        orientation: newOrientation,
+      })),
+    }));
+    toast.info(
+      `Orientasi ditukar ke ${newOrientation === 'landscape' ? 'Landskap (Melintang)' : 'Potret (Menegak)'}`
+    );
   };
 
   // Add Action Button
@@ -403,18 +461,73 @@ export function PamphletBuilderClient({
                   </Button>
 
                   {(!pamphlet.pages || pamphlet.pages.length === 0) && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleLoadDemoPages}
-                      size="sm"
-                      className="gap-1.5 text-xs"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                      <span>Muat Contoh 6 Muka Surat</span>
-                    </Button>
+                    <>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleLoadDemoPages}
+                        size="sm"
+                        className="gap-1.5 text-xs"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Contoh Potret</span>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleLoadLandscapeDemoPages}
+                        size="sm"
+                        className="gap-1.5 text-xs"
+                      >
+                        <Monitor className="w-3.5 h-3.5 text-blue-500" />
+                        <span>Contoh Landskap</span>
+                      </Button>
+                    </>
                   )}
                 </div>
+              </div>
+
+              {/* Orientation Selector Card */}
+              <div className="p-3.5 rounded-2xl border border-gray-200 bg-gray-50/70 space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <span>Orientasi Buku Program</span>
+                  </Label>
+                  <span className="text-[11px] font-semibold text-primary px-2 py-0.5 rounded-full bg-primary/10">
+                    {pamphlet.orientation === 'landscape' ? '💻 Landskap (Melintang)' : '📱 Potret (Menegak)'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleOrientationChange('portrait')}
+                    className={cn(
+                      'flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border text-xs font-semibold transition-all',
+                      pamphlet.orientation !== 'landscape'
+                        ? 'border-primary bg-primary text-white shadow-xs font-bold'
+                        : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-100'
+                    )}
+                  >
+                    <Smartphone className="w-3.5 h-3.5" />
+                    <span>Potret (Menegak)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOrientationChange('landscape')}
+                    className={cn(
+                      'flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border text-xs font-semibold transition-all',
+                      pamphlet.orientation === 'landscape'
+                        ? 'border-primary bg-primary text-white shadow-xs font-bold'
+                        : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-100'
+                    )}
+                  >
+                    <Monitor className="w-3.5 h-3.5" />
+                    <span>Landskap (Melintang)</span>
+                  </button>
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-normal">
+                  Sistem melaraskan geometri paparan 3D Flipbook & slaid secara pintar mengikut orientasi buku program anda.
+                </p>
               </div>
 
               {/* Pages List */}
@@ -440,7 +553,14 @@ export function PamphletBuilderClient({
                         className="flex items-center gap-3 p-2.5 rounded-xl border border-gray-200 bg-white hover:border-primary/50 transition-all shadow-2xs group"
                       >
                         {/* Page Number & Thumbnail */}
-                        <div className="relative w-12 aspect-[1/1.414] rounded-lg overflow-hidden border border-gray-200 bg-slate-900 shrink-0">
+                        <div
+                          className={cn(
+                            'relative rounded-lg overflow-hidden border border-gray-200 bg-slate-900 shrink-0 transition-all',
+                            pamphlet.orientation === 'landscape'
+                              ? 'w-16 aspect-[1.414/1]'
+                              : 'w-12 aspect-[1/1.414]'
+                          )}
+                        >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={page.imageUrl}

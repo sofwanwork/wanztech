@@ -3,7 +3,7 @@
 import React from 'react';
 import { X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { PamphletPageItem, PamphletTheme } from '@/lib/types/pamphlets';
+import { PamphletPageItem, PamphletTheme, PamphletOrientation } from '@/lib/types/pamphlets';
 import { PAMPHLET_THEMES } from '@/lib/pamphlets/themes';
 import { cn } from '@/lib/utils';
 
@@ -11,6 +11,7 @@ interface ThumbnailsStripProps {
   pages: PamphletPageItem[];
   currentPage: number;
   theme: PamphletTheme;
+  orientation?: PamphletOrientation;
   isOpen: boolean;
   onClose: () => void;
   onSelectPage: (pageNumber: number) => void;
@@ -20,6 +21,7 @@ export function ThumbnailsStrip({
   pages,
   currentPage,
   theme,
+  orientation,
   isOpen,
   onClose,
   onSelectPage,
@@ -27,6 +29,8 @@ export function ThumbnailsStrip({
   if (!isOpen) return null;
 
   const themeObj = PAMPHLET_THEMES[theme] || PAMPHLET_THEMES.dark;
+
+  const isLandscape = orientation === 'landscape' || pages[0]?.orientation === 'landscape';
 
   return (
     <aside
@@ -75,7 +79,8 @@ export function ThumbnailsStrip({
               {/* Thumbnail Image Box */}
               <div
                 className={cn(
-                  'relative w-20 sm:w-24 aspect-[1/1.414] rounded-lg overflow-hidden border-2 shadow-md bg-black/10 transition-all',
+                  'relative rounded-lg overflow-hidden border-2 shadow-md bg-black/10 transition-all',
+                  isLandscape ? 'w-24 sm:w-28 aspect-[1.414/1]' : 'w-20 sm:w-24 aspect-[1/1.414]',
                   isActive
                     ? 'border-primary ring-2 ring-primary/40 shadow-lg'
                     : 'border-current/20 hover:border-primary/60'

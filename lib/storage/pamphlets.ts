@@ -113,6 +113,7 @@ export function mapPamphletFromRow(row: any): Pamphlet {
     pdfUrl: row.pdf_url || '',
     theme: row.theme || 'dark',
     displayMode: row.display_mode || 'flipbook',
+    orientation: row.orientation || row.pages?.[0]?.orientation || 'portrait',
     pages: Array.isArray(row.pages) ? row.pages : [],
     actionButtons: Array.isArray(row.action_buttons) ? row.action_buttons : [],
     isActive: row.is_active ?? true,
