@@ -10,7 +10,7 @@ import { PAMPHLET_THEMES } from '@/lib/pamphlets/themes';
 import { playPageTurnSound } from '@/lib/pamphlets/utils';
 import { PamphletToolbar } from './toolbar';
 import { ThumbnailsStrip } from './thumbnails-strip';
-import { FlipbookView } from './flipbook-view';
+import { FlipbookView, FlipbookViewRef } from './flipbook-view';
 import { SliderView } from './slider-view';
 import { VerticalView } from './vertical-view';
 import { trackPamphletViewAction } from '@/actions/pamphlets';
@@ -38,6 +38,7 @@ export function PamphletViewer({
   const [isFullscreen, setIsFullscreen] = React.useState(false);
   const [showThumbnails, setShowThumbnails] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const flipbookRef = React.useRef<FlipbookViewRef>(null);
 
   const pages = React.useMemo(() => {
     return Array.isArray(pamphlet.pages) ? pamphlet.pages : [];
@@ -67,38 +68,20 @@ export function PamphletViewer({
   // Spread-aware page change handlers for Desktop 3D Flipbook mode
   const handleNextPage = React.useCallback(() => {
     if (currentPage >= totalPages) return;
-    if (
-      displayMode === 'flipbook' &&
-      typeof window !== 'undefined' &&
-      window.innerWidth >= 1024
-    ) {
-      if (currentPage === 1) {
-        handlePageChange(Math.min(totalPages, 2));
-      } else {
-        const currentLeft = currentPage % 2 === 0 ? currentPage : currentPage - 1;
-        handlePageChange(Math.min(totalPages, currentLeft + 2));
-      }
-    } else {
-      handlePageChange(Math.min(totalPages, currentPage + 1));
+    if (displayMode === 'flipbook' && flipbookRef.current) {
+      flipbookRef.current.flipNext();
+      return;
     }
+    handlePageChange(Math.min(totalPages, currentPage + 1));
   }, [currentPage, totalPages, displayMode, handlePageChange]);
 
   const handlePrevPage = React.useCallback(() => {
     if (currentPage <= 1) return;
-    if (
-      displayMode === 'flipbook' &&
-      typeof window !== 'undefined' &&
-      window.innerWidth >= 1024
-    ) {
-      if (currentPage <= 3) {
-        handlePageChange(1);
-      } else {
-        const currentLeft = currentPage % 2 === 0 ? currentPage : currentPage - 1;
-        handlePageChange(Math.max(1, currentLeft - 2));
-      }
-    } else {
-      handlePageChange(Math.max(1, currentPage - 1));
+    if (displayMode === 'flipbook' && flipbookRef.current) {
+      flipbookRef.current.flipPrev();
+      return;
     }
+    handlePageChange(Math.max(1, currentPage - 1));
   }, [currentPage, displayMode, handlePageChange]);
 
   // Zoom handlers
@@ -227,6 +210,7 @@ export function PamphletViewer({
           <>
             {displayMode === 'flipbook' && (
               <FlipbookView
+                ref={flipbookRef}
                 pages={pages}
                 currentPage={currentPage}
                 zoom={zoom}

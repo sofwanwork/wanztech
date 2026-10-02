@@ -1614,6 +1614,21 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
     - `components/pamphlet/viewer/index.tsx`: Diselaraskan navigasi spread supaya setiap klik atau pintasan anak panah membalikkan helaian demi helaian tanpa tersekat.
     - Penunjuk bar navigasi bawah kini memaparkan penunjuk spread pintar (`2-3 / 6`).
     - 321 / 321 ujian unit lulus, 0 ralat TypeScript, 0 ralat ESLint.
+- **2026-10-02 (Pembaikan Kestabilan Geometri & Penghapusan Jitter/Pergerakan Flipbook)**:
+  - **Punca Isu "Bergerak-gerak / Tak Statik"**:
+    - Pada paparan asal, muka hadapan (Cover) dipaparkan dalam kontena selebar 1 halaman sahaja, manakala halaman dalaman dipaparkan dalam kontena dwi-halaman selebar 2 halaman. Apabila beralih dari Halaman 1 ke 2-3, saiz kontena melompat dua kali ganda secara mengejut, menyebabkan keseluruhan bingkai buku mengembang dan menganjak ke kiri dan kanan.
+    - Penggunaan nisbah aspek dinamik dalam kontena flexbox menyebabkan pelayar mengira semula reka letak (*layout recalculation*) pada setiap bingkai animasi 3D, mengakibatkan getaran/goncangan (jitter).
+  - **Penyelesaian Kejuruteraan Reka Bentuk Statik**:
+    - **Dimensi Berkunci**: Kontena pentas buku dikunci secara mutlak kepada formula CSS nisbah aspek tetap (`height: min(76vh, 650px)` dan `width: calc(min(76vh, 650px) / 1.414 * 2)` untuk desktop).
+    - **Pancang Tulang Buku Kekal**: Tulang belakang buku (*spine*) dipancang tepat di tengah (`left: 50%`) secara mutlak.
+    - **Slot Helaian Asas Kekal**: Slot kiri (0% hingga 50%) dan slot kanan (50% hingga 100%) tidak pernah dinyah-lekap (*unmount*). Semasa paparan Muka Hadapan (Page 1), slot kiri memaparkan bayangan kulit dalam buku (*inside cover binder*), mengekalkan kelebaran buku sentiasa 2 halaman tanpa pernah berubah saiz.
+    - **Lapisan Helaian Selakan Tindanan (*Overlay Turning Leaf*)**: Helaian berputar hanya muncul sebagai lapisan tindanan di atas tulang buku semasa animasi selakan 520ms dan lesap sebaik sahaja selesai mendarat, mengelakkan sebarang rombakan reka letak DOM.
+    - **Penyegerakan Navigasi Penuh (`forwardRef`)**: Mendedahkan `flipbookRef.current.flipNext()` dan `flipPrev()` menerusi `useImperativeHandle` supaya sebarang input (anak panah papan kekunci, butang bar navigasi bawah, butang terapung tepi, dan klik helaian) memacu animasi selakan 3D yang sama secara seragam.
+    - **Mod Telefon Pintar (Mobile 3D Peel)**: Menggunakan lengkungan 3D mesra peranti mudah alih (`rotateY: -80deg`, `x: -22%`, bayangan gradien kertas) dengan penyingkapan helaian asas yang kekal di tengah skrin telefon tanpa terkeluar daripada sempadan.
+  - **Ujian & Kualiti**:
+    - 321 / 321 ujian unit lulus (37 suites).
+    - 0 ralat TypeScript (`tsc --noEmit`), 0 ralat / 0 amaran ESLint.
+
 
 
 

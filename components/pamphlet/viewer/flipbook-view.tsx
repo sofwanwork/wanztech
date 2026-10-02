@@ -1,10 +1,16 @@
 'use client';
 
 import React from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
 import { PamphletPageItem } from '@/lib/types/pamphlets';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { playPageTurnSound } from '@/lib/pamphlets/utils';
+import { cn } from '@/lib/utils';
+
+export interface FlipbookViewRef {
+  flipNext: () => void;
+  flipPrev: () => void;
+}
 
 interface FlipbookViewProps {
   pages: PamphletPageItem[];
@@ -37,7 +43,7 @@ function computeSpread(page: number, pages: PamphletPageItem[]): SpreadState {
     };
   }
 
-  // Cover is always Page 1 solo on the right
+  // Cover: Page 1 solo on right side of spine
   if (page <= 1) {
     return {
       isCover: true,
@@ -75,598 +81,589 @@ function computeSpread(page: number, pages: PamphletPageItem[]): SpreadState {
   };
 }
 
-export function FlipbookView({
-  pages,
-  currentPage,
-  zoom,
-  onPrevPage,
-  onNextPage,
-  onPageChange,
-}: FlipbookViewProps) {
-  const [isDesktop, setIsDesktop] = React.useState(false);
-  const [isFlipping, setIsFlipping] = React.useState(false);
-  const [flipDirection, setFlipDirection] = React.useState<'next' | 'prev'>('next');
-  const [activeSpread, setActiveSpread] = React.useState<SpreadState>(() =>
-    computeSpread(currentPage, pages)
-  );
+export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>(
+  function FlipbookView(
+    { pages, currentPage, zoom, onPrevPage, onNextPage, onPageChange },
+    ref
+  ) {
+    const [isDesktop, setIsDesktop] = React.useState(false);
+    const [isFlipping, setIsFlipping] = React.useState(false);
+    const [flipDirection, setFlipDirection] = React.useState<'next' | 'prev'>('next');
+    const [activeSpread, setActiveSpread] = React.useState<SpreadState>(() =>
+      computeSpread(currentPage, pages)
+    );
 
-  // Flipping leaf snapshot (holds the front and back pages during animation)
-  const [turningLeaf, setTurningLeaf] = React.useState<{
-    frontPage: PamphletPageItem | null;
-    backPage: PamphletPageItem | null;
-  } | null>(null);
+    // Snapshot of pages for the turning leaf during animation
+    const [turningLeaf, setTurningLeaf] = React.useState<{
+      frontPage: PamphletPageItem | null;
+      backPage: PamphletPageItem | null;
+    } | null>(null);
 
-  // Target spread waiting to be committed after flip animation
-  const targetSpreadRef = React.useRef<SpreadState | null>(null);
-  const targetPageRef = React.useRef<number>(currentPage);
+    // Target spread waiting to be committed after flip animation
+    const targetSpreadRef = React.useRef<SpreadState | null>(null);
+    const targetPageRef = React.useRef<number>(currentPage);
 
-  React.useEffect(() => {
-    const checkIsDesktop = () => {
-      setIsDesktop(window.innerWidth >= 1024);
-    };
-    checkIsDesktop();
-    window.addEventListener('resize', checkIsDesktop);
-    return () => window.removeEventListener('resize', checkIsDesktop);
-  }, []);
+    React.useEffect(() => {
+      const checkIsDesktop = () => {
+        setIsDesktop(window.innerWidth >= 1024);
+      };
+      checkIsDesktop();
+      window.addEventListener('resize', checkIsDesktop);
+      return () => window.removeEventListener('resize', checkIsDesktop);
+    }, []);
 
-  // Sync when currentPage changes externally (e.g., from thumbnails drawer)
-  React.useEffect(() => {
-    if (!isFlipping) {
-      setActiveSpread(computeSpread(currentPage, pages));
-    }
-  }, [currentPage, pages, isFlipping]);
-
-  const canGoPrev = currentPage > 1;
-  const canGoNext = currentPage < pages.length;
-
-  /**
-   * Triggers a physically realistic 3D page flip
-   */
-  const handleFlipNext = () => {
-    if (isFlipping || !canGoNext) return;
-
-    playPageTurnSound();
-
-    let nextPage: number;
-    if (activeSpread.isCover) {
-      nextPage = 2;
-    } else {
-      const currentLeft = activeSpread.leftPageNum || 2;
-      nextPage = currentLeft + 2;
-      if (nextPage > pages.length) {
-        nextPage = pages.length;
+    // Sync when currentPage changes externally (e.g., from thumbnails drawer)
+    React.useEffect(() => {
+      if (!isFlipping) {
+        setActiveSpread(computeSpread(currentPage, pages));
       }
-    }
+    }, [currentPage, pages, isFlipping]);
 
-    const nextSpread = computeSpread(nextPage, pages);
-    targetSpreadRef.current = nextSpread;
-    targetPageRef.current = nextPage;
+    const canGoPrev = isDesktop ? !activeSpread.isCover : currentPage > 1;
+    const canGoNext = isDesktop
+      ? !activeSpread.isBackCover &&
+        (activeSpread.rightPageNum === null || activeSpread.rightPageNum < pages.length)
+      : currentPage < pages.length;
 
-    // Turning leaf: Front face is current right page; Back face is next left page
-    setTurningLeaf({
-      frontPage: activeSpread.rightPage,
-      backPage: nextSpread.leftPage,
-    });
+    /**
+     * Triggers a physically realistic 3D page flip with zero layout shift
+     */
+    const handleFlipNext = React.useCallback(() => {
+      if (isFlipping) return;
 
-    setFlipDirection('next');
-    setIsFlipping(true);
-  };
+      if (!isDesktop) {
+        if (currentPage >= pages.length) return;
+        playPageTurnSound();
+        const nextPage = Math.min(pages.length, currentPage + 1);
+        targetPageRef.current = nextPage;
+        targetSpreadRef.current = computeSpread(nextPage, pages);
+        setTurningLeaf({
+          frontPage: pages[currentPage - 1] || null,
+          backPage: pages[nextPage - 1] || null,
+        });
+        setFlipDirection('next');
+        setIsFlipping(true);
+        return;
+      }
 
-  const handleFlipPrev = () => {
-    if (isFlipping || !canGoPrev) return;
+      if (
+        activeSpread.isBackCover ||
+        (activeSpread.rightPageNum !== null && activeSpread.rightPageNum >= pages.length)
+      ) {
+        return;
+      }
 
-    playPageTurnSound();
+      playPageTurnSound();
 
-    let prevPage: number;
-    if (activeSpread.isBackCover) {
-      prevPage = pages.length - 2;
-    } else if (activeSpread.leftPageNum && activeSpread.leftPageNum <= 2) {
-      prevPage = 1;
-    } else {
-      const currentLeft = activeSpread.leftPageNum || 4;
-      prevPage = Math.max(1, currentLeft - 2);
-    }
-
-    const prevSpread = computeSpread(prevPage, pages);
-    targetSpreadRef.current = prevSpread;
-    targetPageRef.current = prevPage;
-
-    // Turning leaf: Front face is current left page; Back face is previous right page
-    setTurningLeaf({
-      frontPage: activeSpread.leftPage,
-      backPage: prevSpread.rightPage,
-    });
-
-    setFlipDirection('prev');
-    setIsFlipping(true);
-  };
-
-  const onFlipAnimationComplete = () => {
-    if (targetSpreadRef.current) {
-      setActiveSpread(targetSpreadRef.current);
-      const newPage = targetPageRef.current;
-      targetSpreadRef.current = null;
-      setIsFlipping(false);
-      setTurningLeaf(null);
-
-      if (onPageChange) {
-        onPageChange(newPage);
-      } else if (flipDirection === 'next') {
-        onNextPage();
+      let nextPage: number;
+      if (activeSpread.isCover) {
+        nextPage = 2;
       } else {
-        onPrevPage();
+        const currentLeft = activeSpread.leftPageNum || 2;
+        nextPage = currentLeft + 2;
+        if (nextPage > pages.length) {
+          nextPage = pages.length;
+        }
       }
-    } else {
-      setIsFlipping(false);
-      setTurningLeaf(null);
+
+      const nextSpread = computeSpread(nextPage, pages);
+      targetSpreadRef.current = nextSpread;
+      targetPageRef.current = nextPage;
+
+      // Turning leaf: Front face is current right page; Back face is next left page
+      setTurningLeaf({
+        frontPage: activeSpread.rightPage,
+        backPage: nextSpread.leftPage,
+      });
+
+      setFlipDirection('next');
+      setIsFlipping(true);
+    }, [isFlipping, isDesktop, currentPage, pages, activeSpread]);
+
+    const handleFlipPrev = React.useCallback(() => {
+      if (isFlipping) return;
+
+      if (!isDesktop) {
+        if (currentPage <= 1) return;
+        playPageTurnSound();
+        const prevPage = Math.max(1, currentPage - 1);
+        targetPageRef.current = prevPage;
+        targetSpreadRef.current = computeSpread(prevPage, pages);
+        setTurningLeaf({
+          frontPage: pages[currentPage - 1] || null,
+          backPage: pages[prevPage - 1] || null,
+        });
+        setFlipDirection('prev');
+        setIsFlipping(true);
+        return;
+      }
+
+      if (activeSpread.isCover) return;
+
+      playPageTurnSound();
+
+      let prevPage: number;
+      if (activeSpread.isBackCover) {
+        prevPage = pages.length - 2;
+      } else if (activeSpread.leftPageNum && activeSpread.leftPageNum <= 2) {
+        prevPage = 1;
+      } else {
+        const currentLeft = activeSpread.leftPageNum || 4;
+        prevPage = Math.max(1, currentLeft - 2);
+      }
+
+      const prevSpread = computeSpread(prevPage, pages);
+      targetSpreadRef.current = prevSpread;
+      targetPageRef.current = prevPage;
+
+      // Turning leaf: Front face is current left page; Back face is previous right page
+      setTurningLeaf({
+        frontPage: activeSpread.leftPage,
+        backPage: prevSpread.rightPage,
+      });
+
+      setFlipDirection('prev');
+      setIsFlipping(true);
+    }, [isFlipping, isDesktop, currentPage, pages, activeSpread]);
+
+    // Expose flipNext and flipPrev via ref so external controls (keyboard/toolbar) trigger 3D animation
+    React.useImperativeHandle(
+      ref,
+      () => ({
+        flipNext: handleFlipNext,
+        flipPrev: handleFlipPrev,
+      }),
+      [handleFlipNext, handleFlipPrev]
+    );
+
+    const onFlipAnimationComplete = () => {
+      if (targetSpreadRef.current) {
+        setActiveSpread(targetSpreadRef.current);
+        const newPage = targetPageRef.current;
+        targetSpreadRef.current = null;
+        setIsFlipping(false);
+        setTurningLeaf(null);
+
+        if (onPageChange) {
+          onPageChange(newPage);
+        } else if (flipDirection === 'next') {
+          onNextPage();
+        } else {
+          onPrevPage();
+        }
+      } else {
+        setIsFlipping(false);
+        setTurningLeaf(null);
+      }
+    };
+
+    if (!pages || pages.length === 0) {
+      return null;
     }
-  };
 
-  if (!pages || pages.length === 0) {
-    return null;
-  }
+    // Exact fixed CSS calculations so the book never shifts, resizes, or vibrates
+    const DESKTOP_BOOK_HEIGHT = 'min(76vh, 650px)';
+    const DESKTOP_BOOK_WIDTH = `calc(${DESKTOP_BOOK_HEIGHT} / 1.414 * 2)`;
 
-  return (
-    <div className="relative w-full h-full flex items-center justify-center p-3 sm:p-6 md:p-8 overflow-hidden select-none">
-      {/* Previous Page Floating Circle Button */}
-      {canGoPrev && (
-        <button
-          onClick={handleFlipPrev}
-          disabled={isFlipping}
-          className="absolute left-2 sm:left-4 md:left-8 z-30 h-11 w-11 md:h-14 md:w-14 rounded-full bg-black/50 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-md shadow-2xl transition-all transform hover:scale-110 active:scale-95 border border-white/20 disabled:opacity-50 cursor-pointer"
-          title="Selak ke Halaman Sebelumnya"
-        >
-          <ChevronLeft className="h-6 w-6 md:h-8 md:w-8" />
-        </button>
-      )}
+    const MOBILE_BOOK_HEIGHT = 'min(76vh, 580px)';
+    const MOBILE_BOOK_WIDTH = `calc(${MOBILE_BOOK_HEIGHT} / 1.414)`;
 
-      {/* Next Page Floating Circle Button */}
-      {canGoNext && (
-        <button
-          onClick={handleFlipNext}
-          disabled={isFlipping}
-          className="absolute right-2 sm:right-4 md:right-8 z-30 h-11 w-11 md:h-14 md:w-14 rounded-full bg-black/50 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-md shadow-2xl transition-all transform hover:scale-110 active:scale-95 border border-white/20 disabled:opacity-50 cursor-pointer"
-          title="Selak ke Halaman Seterusnya"
-        >
-          <ChevronRight className="h-6 w-6 md:h-8 md:w-8" />
-        </button>
-      )}
+    // Pages currently displayed on the static base layer
+    const displayBaseLeftPage =
+      isFlipping && flipDirection === 'prev'
+        ? targetSpreadRef.current?.leftPage
+        : activeSpread.leftPage;
 
-      {/* 3D Book Stage Container */}
-      <div
-        className="relative flex items-center justify-center transition-transform duration-200 ease-out"
-        style={{
-          transform: `scale(${zoom})`,
-          transformOrigin: 'center center',
-          perspective: '2500px',
-        }}
-      >
-        {isDesktop ? (
-          /* ========================================================
-             DESKTOP TWO-PAGE 3D SPREAD MODE
-             ======================================================== */
-          <div
-            className="relative flex items-center shadow-2xl rounded-2xl"
-            style={{
-              perspective: '2500px',
-              transformStyle: 'preserve-3d',
-            }}
+    const displayBaseRightPage =
+      isFlipping && flipDirection === 'next'
+        ? targetSpreadRef.current?.rightPage
+        : activeSpread.rightPage;
+
+    return (
+      <div className="relative w-full h-full flex items-center justify-center p-3 sm:p-6 md:p-8 overflow-hidden select-none">
+        {/* Previous Page Floating Circle Button */}
+        {canGoPrev && (
+          <button
+            onClick={handleFlipPrev}
+            disabled={isFlipping}
+            className="absolute left-3 sm:left-6 md:left-10 z-40 h-12 w-12 md:h-14 md:w-14 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur-md shadow-2xl transition-transform active:scale-95 border border-white/20 disabled:opacity-40 cursor-pointer"
+            title="Selak ke Halaman Sebelumnya"
           >
-            {/* 1. SOLO COVER VIEW (Page 1) */}
-            {activeSpread.isCover && !isFlipping && (
+            <ChevronLeft className="h-6 w-6 md:h-8 md:w-8" />
+          </button>
+        )}
+
+        {/* Next Page Floating Circle Button */}
+        {canGoNext && (
+          <button
+            onClick={handleFlipNext}
+            disabled={isFlipping}
+            className="absolute right-3 sm:right-6 md:right-10 z-40 h-12 w-12 md:h-14 md:w-14 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur-md shadow-2xl transition-transform active:scale-95 border border-white/20 disabled:opacity-40 cursor-pointer"
+            title="Selak ke Halaman Seterusnya"
+          >
+            <ChevronRight className="h-6 w-6 md:h-8 md:w-8" />
+          </button>
+        )}
+
+        {/* 3D Book Stage Container — Fixed Zoom & Perspective */}
+        <div
+          className="relative flex items-center justify-center transition-transform duration-200 ease-out"
+          style={{
+            transform: `scale(${zoom})`,
+            transformOrigin: 'center center',
+          }}
+        >
+          {isDesktop ? (
+            /* ========================================================
+               DESKTOP TWO-PAGE SPREAD — ROCK-SOLID STATIC CONTAINER
+               Spine is locked permanently in the dead-center at 50%.
+               ======================================================== */
+            <div
+              className="relative rounded-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.6)] select-none"
+              style={{
+                height: DESKTOP_BOOK_HEIGHT,
+                width: DESKTOP_BOOK_WIDTH,
+                maxWidth: '92vw',
+                perspective: '2500px',
+                transformStyle: 'preserve-3d',
+              }}
+            >
+              {/* 1. LEFT PAGE BASE (Strictly left: 0, width: 50%) */}
               <div
-                onClick={handleFlipNext}
-                className="relative max-h-[80vh] w-auto aspect-[1/1.414] rounded-r-2xl rounded-l-xs overflow-hidden shadow-2xl border border-black/20 bg-white cursor-pointer group transition-transform duration-300 hover:-rotate-y-2"
-                style={{ transformOrigin: 'left center' }}
-                title="Klik untuk buka buku program"
+                onClick={canGoPrev ? handleFlipPrev : undefined}
+                className={cn(
+                  'absolute left-0 top-0 bottom-0 w-1/2 rounded-l-2xl overflow-hidden bg-white border border-black/15 shadow-inner',
+                  canGoPrev ? 'cursor-pointer' : 'cursor-default'
+                )}
+                title={canGoPrev ? 'Klik untuk selak ke halaman sebelumnya' : undefined}
               >
-                {/* Book Spine Shadow Effect (Left edge) */}
-                <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-black/40 via-black/15 to-transparent pointer-events-none z-10" />
-                {/* Soft Surface Sheen */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none z-10" />
-                {/* Turn Hint on Hover */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors pointer-events-none z-10" />
-
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={activeSpread.rightPage?.imageUrl}
-                  alt={activeSpread.rightPage?.title || 'Muka Hadapan (Cover)'}
-                  className="w-full h-full object-contain pointer-events-none"
-                  draggable={false}
-                />
-              </div>
-            )}
-
-            {/* 2. SOLO BACK COVER VIEW */}
-            {activeSpread.isBackCover && !isFlipping && (
-              <div
-                onClick={handleFlipPrev}
-                className="relative max-h-[80vh] w-auto aspect-[1/1.414] rounded-l-2xl rounded-r-xs overflow-hidden shadow-2xl border border-black/20 bg-white cursor-pointer group transition-transform duration-300 hover:rotate-y-2"
-                style={{ transformOrigin: 'right center' }}
-                title="Klik untuk selak ke belakang"
-              >
-                {/* Book Spine Shadow Effect (Right edge) */}
-                <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-black/40 via-black/15 to-transparent pointer-events-none z-10" />
-                <div className="absolute inset-0 bg-gradient-to-tl from-transparent via-white/10 to-transparent pointer-events-none z-10" />
-
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={activeSpread.leftPage?.imageUrl}
-                  alt={activeSpread.leftPage?.title || 'Halaman Belakang'}
-                  className="w-full h-full object-contain pointer-events-none"
-                  draggable={false}
-                />
-              </div>
-            )}
-
-            {/* 3. STATIC OPEN SPREAD (When Not Flipping) */}
-            {!activeSpread.isCover && !activeSpread.isBackCover && !isFlipping && (
-              <div
-                className="relative flex items-center max-h-[80vh] rounded-2xl overflow-hidden shadow-2xl border border-black/20 bg-white"
-                style={{ transformStyle: 'preserve-3d' }}
-              >
-                {/* Left Page (Click to flip prev) */}
-                <div
-                  onClick={handleFlipPrev}
-                  className="relative h-full aspect-[1/1.414] max-h-[80vh] overflow-hidden bg-white border-r border-black/10 cursor-pointer group"
-                  title="Klik untuk selak ke halaman sebelumnya"
-                >
-                  {activeSpread.leftPage ? (
-                    <>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={activeSpread.leftPage.imageUrl}
-                        alt={activeSpread.leftPage.title || `Halaman ${activeSpread.leftPage.pageNumber}`}
-                        className="w-full h-full object-contain pointer-events-none"
-                        draggable={false}
-                      />
-                      {/* Spine Crease shadow on the right edge */}
-                      <div className="absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-black/35 via-black/10 to-transparent pointer-events-none z-10" />
-                      {/* Hover tint */}
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors pointer-events-none z-10" />
-                    </>
-                  ) : (
-                    <div className="w-full h-full bg-slate-50 flex items-center justify-center text-xs text-muted-foreground">
-                      (Halaman Kosong)
-                    </div>
-                  )}
-                </div>
-
-                {/* Center Book Spine 3D Groove */}
-                <div className="w-2 h-full bg-gradient-to-r from-black/40 via-black/15 to-black/40 z-20 shrink-0 shadow-inner" />
-
-                {/* Right Page (Click to flip next) */}
-                <div
-                  onClick={handleFlipNext}
-                  className="relative h-full aspect-[1/1.414] max-h-[80vh] overflow-hidden bg-white cursor-pointer group"
-                  title="Klik untuk selak ke halaman seterusnya"
-                >
-                  {activeSpread.rightPage ? (
-                    <>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={activeSpread.rightPage.imageUrl}
-                        alt={activeSpread.rightPage.title || `Halaman ${activeSpread.rightPage.pageNumber}`}
-                        className="w-full h-full object-contain pointer-events-none"
-                        draggable={false}
-                      />
-                      {/* Spine Crease shadow on the left edge */}
-                      <div className="absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-black/35 via-black/10 to-transparent pointer-events-none z-10" />
-                      {/* Hover tint */}
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors pointer-events-none z-10" />
-                    </>
-                  ) : (
-                    <div className="w-full h-full bg-slate-50 flex items-center justify-center text-xs text-muted-foreground">
-                      (Halaman Kosong)
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* 4. ACTIVE 3D TURNING ANIMATION STAGE */}
-            {isFlipping && turningLeaf && (
-              <div
-                className="relative flex items-center max-h-[80vh] rounded-2xl overflow-visible shadow-2xl border border-black/20 bg-white"
-                style={{
-                  transformStyle: 'preserve-3d',
-                  perspective: '2500px',
-                }}
-              >
-                {/* STATIC BASE LEFT PAGE */}
-                <div className="relative h-full aspect-[1/1.414] max-h-[80vh] overflow-hidden bg-white border-r border-black/10">
-                  {flipDirection === 'next' ? (
-                    /* In Next flip: Old left page sits underneath */
-                    activeSpread.leftPage ? (
-                      <>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={activeSpread.leftPage.imageUrl}
-                          alt="Halaman Kiri"
-                          className="w-full h-full object-contain pointer-events-none"
-                        />
-                        <div className="absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-black/35 via-black/10 to-transparent pointer-events-none z-10" />
-                      </>
-                    ) : (
-                      <div className="w-full h-full bg-slate-100" />
-                    )
-                  ) : (
-                    /* In Prev flip: Target left page is already visible underneath */
-                    targetSpreadRef.current?.leftPage ? (
-                      <>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={targetSpreadRef.current.leftPage.imageUrl}
-                          alt="Halaman Kiri Baharu"
-                          className="w-full h-full object-contain pointer-events-none"
-                        />
-                        <div className="absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-black/35 via-black/10 to-transparent pointer-events-none z-10" />
-                      </>
-                    ) : (
-                      <div className="w-full h-full bg-slate-100" />
-                    )
-                  )}
-                </div>
-
-                {/* CENTER SPINE GROOVE */}
-                <div className="w-2 h-full bg-gradient-to-r from-black/40 via-black/15 to-black/40 z-20 shrink-0" />
-
-                {/* STATIC BASE RIGHT PAGE */}
-                <div className="relative h-full aspect-[1/1.414] max-h-[80vh] overflow-hidden bg-white">
-                  {flipDirection === 'next' ? (
-                    /* In Next flip: Target right page is already waiting underneath */
-                    targetSpreadRef.current?.rightPage ? (
-                      <>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={targetSpreadRef.current.rightPage.imageUrl}
-                          alt="Halaman Kanan Baharu"
-                          className="w-full h-full object-contain pointer-events-none"
-                        />
-                        <div className="absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-black/35 via-black/10 to-transparent pointer-events-none z-10" />
-                      </>
-                    ) : (
-                      <div className="w-full h-full bg-slate-100" />
-                    )
-                  ) : (
-                    /* In Prev flip: Old right page sits underneath */
-                    activeSpread.rightPage ? (
-                      <>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={activeSpread.rightPage.imageUrl}
-                          alt="Halaman Kanan"
-                          className="w-full h-full object-contain pointer-events-none"
-                        />
-                        <div className="absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-black/35 via-black/10 to-transparent pointer-events-none z-10" />
-                      </>
-                    ) : (
-                      <div className="w-full h-full bg-slate-100" />
-                    )
-                  )}
-                </div>
-
-                {/* ========================================================
-                    PHYSICAL 3D TURNING LEAF
-                    ======================================================== */}
-                {flipDirection === 'next' ? (
-                  /* FLIP NEXT: Leaf starts at right side, rotates around left spine (0 to -180deg) */
-                  <motion.div
-                    key="flipping-leaf-next"
-                    initial={{ rotateY: 0 }}
-                    animate={{ rotateY: -180 }}
-                    transition={{
-                      duration: 0.55,
-                      ease: [0.25, 1, 0.5, 1],
-                    }}
-                    onAnimationComplete={onFlipAnimationComplete}
-                    className="absolute right-0 top-0 bottom-0 aspect-[1/1.414] max-h-[80vh] z-30"
-                    style={{
-                      transformOrigin: 'left center',
-                      transformStyle: 'preserve-3d',
-                    }}
-                  >
-                    {/* FRONT SIDE OF TURNING LEAF (Faces right before flip) */}
-                    <div
-                      className="absolute inset-0 bg-white overflow-hidden shadow-2xl rounded-r-2xl"
-                      style={{
-                        backfaceVisibility: 'hidden',
-                        WebkitBackfaceVisibility: 'hidden',
-                        transform: 'rotateY(0deg)',
-                      }}
-                    >
-                      {turningLeaf.frontPage ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
-                          src={turningLeaf.frontPage.imageUrl}
-                          alt="Turning Front"
-                          className="w-full h-full object-contain pointer-events-none"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-slate-100" />
-                      )}
-                      {/* Dynamic Paper Lighting/Shadow as it curls */}
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: [0, 0.45, 0] }}
-                        transition={{ duration: 0.55 }}
-                        className="absolute inset-0 bg-gradient-to-l from-black/40 via-black/20 to-transparent pointer-events-none"
-                      />
-                    </div>
-
-                    {/* BACK SIDE OF TURNING LEAF (Faces left after flip) */}
-                    <div
-                      className="absolute inset-0 bg-white overflow-hidden shadow-2xl rounded-l-2xl"
-                      style={{
-                        backfaceVisibility: 'hidden',
-                        WebkitBackfaceVisibility: 'hidden',
-                        transform: 'rotateY(180deg)',
-                      }}
-                    >
-                      {turningLeaf.backPage ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
-                          src={turningLeaf.backPage.imageUrl}
-                          alt="Turning Back"
-                          className="w-full h-full object-contain pointer-events-none"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-slate-100" />
-                      )}
-                      {/* Dynamic Paper Lighting/Shadow as it lands */}
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: [0, 0.45, 0] }}
-                        transition={{ duration: 0.55 }}
-                        className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/20 to-transparent pointer-events-none"
-                      />
-                    </div>
-                  </motion.div>
+                {displayBaseLeftPage ? (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={displayBaseLeftPage.imageUrl}
+                      alt={displayBaseLeftPage.title || `Halaman ${displayBaseLeftPage.pageNumber}`}
+                      className="w-full h-full object-contain pointer-events-none"
+                      draggable={false}
+                    />
+                    {/* Spine Crease Shadow (Darkens towards spine on right edge) */}
+                    <div className="absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-black/40 via-black/15 to-transparent pointer-events-none z-10" />
+                  </>
                 ) : (
-                  /* FLIP PREV: Leaf starts at left side, rotates around right spine (0 to 180deg) */
-                  <motion.div
-                    key="flipping-leaf-prev"
-                    initial={{ rotateY: 0 }}
-                    animate={{ rotateY: 180 }}
-                    transition={{
-                      duration: 0.55,
-                      ease: [0.25, 1, 0.5, 1],
-                    }}
-                    onAnimationComplete={onFlipAnimationComplete}
-                    className="absolute left-0 top-0 bottom-0 aspect-[1/1.414] max-h-[80vh] z-30"
-                    style={{
-                      transformOrigin: 'right center',
-                      transformStyle: 'preserve-3d',
-                    }}
-                  >
-                    {/* FRONT SIDE (Faces left before flip) */}
-                    <div
-                      className="absolute inset-0 bg-white overflow-hidden shadow-2xl rounded-l-2xl"
-                      style={{
-                        backfaceVisibility: 'hidden',
-                        WebkitBackfaceVisibility: 'hidden',
-                        transform: 'rotateY(0deg)',
-                      }}
-                    >
-                      {turningLeaf.frontPage ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
-                          src={turningLeaf.frontPage.imageUrl}
-                          alt="Turning Front"
-                          className="w-full h-full object-contain pointer-events-none"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-slate-100" />
-                      )}
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: [0, 0.45, 0] }}
-                        transition={{ duration: 0.55 }}
-                        className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/20 to-transparent pointer-events-none"
-                      />
+                  /* Closed Book Left Inside Binder / Desk Silhouette */
+                  <div className="w-full h-full bg-slate-950/20 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center border-r border-black/10">
+                    <div className="h-12 w-12 rounded-xl bg-white/10 flex items-center justify-center text-white/70 mb-3 border border-white/15">
+                      <BookOpen className="h-6 w-6" />
                     </div>
-
-                    {/* BACK SIDE (Faces right after flip) */}
-                    <div
-                      className="absolute inset-0 bg-white overflow-hidden shadow-2xl rounded-r-2xl"
-                      style={{
-                        backfaceVisibility: 'hidden',
-                        WebkitBackfaceVisibility: 'hidden',
-                        transform: 'rotateY(-180deg)',
-                      }}
-                    >
-                      {turningLeaf.backPage ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
-                          src={turningLeaf.backPage.imageUrl}
-                          alt="Turning Back"
-                          className="w-full h-full object-contain pointer-events-none"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-slate-100" />
-                      )}
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: [0, 0.45, 0] }}
-                        transition={{ duration: 0.55 }}
-                        className="absolute inset-0 bg-gradient-to-l from-black/40 via-black/20 to-transparent pointer-events-none"
-                      />
-                    </div>
-                  </motion.div>
+                    <p className="text-xs font-semibold text-white/80">Buku Program Digital</p>
+                    <p className="text-[11px] text-white/50 mt-1">Klik helaian kanan untuk mula membaca</p>
+                  </div>
                 )}
               </div>
-            )}
-          </div>
-        ) : (
-          /* ========================================================
-             MOBILE SINGLE PAGE 3D FLIP MODE
-             ======================================================== */
-          <div className="relative max-h-[78vh] w-auto aspect-[1/1.414] flex items-center justify-center">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={`page-${currentPage}`}
-                initial={{
-                  opacity: 0.5,
-                  rotateY: flipDirection === 'next' ? 60 : -60,
-                  scale: 0.92,
-                }}
-                animate={{
-                  opacity: 1,
-                  rotateY: 0,
-                  scale: 1,
-                }}
-                exit={{
-                  opacity: 0.5,
-                  rotateY: flipDirection === 'next' ? -60 : 60,
-                  scale: 0.92,
-                }}
-                transition={{
-                  duration: 0.4,
-                  ease: [0.25, 1, 0.5, 1],
-                }}
-                className="relative h-full w-full rounded-2xl overflow-hidden shadow-2xl border border-black/20 bg-white cursor-pointer"
-                style={{
-                  transformStyle: 'preserve-3d',
-                  transformOrigin: flipDirection === 'next' ? 'left center' : 'right center',
-                }}
+
+              {/* 2. CENTER BOOK SPINE (Permanently anchored at 50% center line) */}
+              <div
+                className="absolute left-1/2 top-0 bottom-0 w-2 -translate-x-1/2 z-20 bg-gradient-to-r from-black/40 via-black/15 to-black/40 shadow-inner pointer-events-none"
+              />
+
+              {/* 3. RIGHT PAGE BASE (Strictly left: 50%, width: 50%) */}
+              <div
+                onClick={canGoNext ? handleFlipNext : undefined}
+                className={cn(
+                  'absolute right-0 top-0 bottom-0 w-1/2 rounded-r-2xl overflow-hidden bg-white border border-black/15 shadow-inner',
+                  canGoNext ? 'cursor-pointer' : 'cursor-default'
+                )}
+                title={canGoNext ? 'Klik untuk selak ke halaman seterusnya' : undefined}
+              >
+                {displayBaseRightPage ? (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={displayBaseRightPage.imageUrl}
+                      alt={displayBaseRightPage.title || `Halaman ${displayBaseRightPage.pageNumber}`}
+                      className="w-full h-full object-contain pointer-events-none"
+                      draggable={false}
+                    />
+                    {/* Spine Crease Shadow (Darkens towards spine on left edge) */}
+                    <div className="absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-black/40 via-black/15 to-transparent pointer-events-none z-10" />
+                  </>
+                ) : (
+                  /* End of Book Right Inside Binder / Desk Silhouette */
+                  <div className="w-full h-full bg-slate-950/20 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center border-l border-black/10">
+                    <div className="h-12 w-12 rounded-xl bg-white/10 flex items-center justify-center text-white/70 mb-3 border border-white/15">
+                      <BookOpen className="h-6 w-6" />
+                    </div>
+                    <p className="text-xs font-semibold text-white/80">Tamat Buku Program</p>
+                    <p className="text-[11px] text-white/50 mt-1">Klik helaian kiri untuk kembali</p>
+                  </div>
+                )}
+              </div>
+
+              {/* ========================================================
+                  4. OVERLAY 3D TURNING LEAF (Active only during the 520ms flip)
+                  Anchored strictly on the center spine. Zero layout shift.
+                 ======================================================== */}
+              {isFlipping && turningLeaf && (
+                <>
+                  {flipDirection === 'next' ? (
+                    /* NEXT FLIP: Leaf starts on right side (left: 50%), rotates around spine (0 -> -180deg) */
+                    <motion.div
+                      key="desktop-turning-leaf-next"
+                      initial={{ rotateY: 0 }}
+                      animate={{ rotateY: -180 }}
+                      transition={{
+                        duration: 0.52,
+                        ease: [0.25, 1, 0.5, 1],
+                      }}
+                      onAnimationComplete={onFlipAnimationComplete}
+                      className="absolute top-0 bottom-0 z-30"
+                      style={{
+                        left: '50%',
+                        width: '50%',
+                        transformOrigin: 'left center',
+                        transformStyle: 'preserve-3d',
+                      }}
+                    >
+                      {/* Front Face of Turning Leaf (Current Right Page before flip) */}
+                      <div
+                        className="absolute inset-0 bg-white overflow-hidden shadow-2xl rounded-r-2xl border border-black/10"
+                        style={{
+                          backfaceVisibility: 'hidden',
+                          WebkitBackfaceVisibility: 'hidden',
+                          transform: 'rotateY(0deg)',
+                        }}
+                      >
+                        {turningLeaf.frontPage ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={turningLeaf.frontPage.imageUrl}
+                            alt="Turning Front"
+                            className="w-full h-full object-contain pointer-events-none"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-slate-100" />
+                        )}
+                        {/* Dynamic Paper Lighting/Shadow during rotation */}
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: [0, 0.5, 0] }}
+                          transition={{ duration: 0.52 }}
+                          className="absolute inset-0 bg-gradient-to-l from-black/45 via-black/20 to-transparent pointer-events-none"
+                        />
+                      </div>
+
+                      {/* Back Face of Turning Leaf (Destination Left Page after flip) */}
+                      <div
+                        className="absolute inset-0 bg-white overflow-hidden shadow-2xl rounded-l-2xl border border-black/10"
+                        style={{
+                          backfaceVisibility: 'hidden',
+                          WebkitBackfaceVisibility: 'hidden',
+                          transform: 'rotateY(180deg)',
+                        }}
+                      >
+                        {turningLeaf.backPage ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={turningLeaf.backPage.imageUrl}
+                            alt="Turning Back"
+                            className="w-full h-full object-contain pointer-events-none"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-slate-100" />
+                        )}
+                        {/* Dynamic Paper Lighting as it lands on left page */}
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: [0, 0.5, 0] }}
+                          transition={{ duration: 0.52 }}
+                          className="absolute inset-0 bg-gradient-to-r from-black/45 via-black/20 to-transparent pointer-events-none"
+                        />
+                      </div>
+                    </motion.div>
+                  ) : (
+                    /* PREV FLIP: Leaf starts on left side (left: 0), rotates around spine (0 -> 180deg) */
+                    <motion.div
+                      key="desktop-turning-leaf-prev"
+                      initial={{ rotateY: 0 }}
+                      animate={{ rotateY: 180 }}
+                      transition={{
+                        duration: 0.52,
+                        ease: [0.25, 1, 0.5, 1],
+                      }}
+                      onAnimationComplete={onFlipAnimationComplete}
+                      className="absolute top-0 bottom-0 z-30"
+                      style={{
+                        left: '0%',
+                        width: '50%',
+                        transformOrigin: 'right center',
+                        transformStyle: 'preserve-3d',
+                      }}
+                    >
+                      {/* Front Face (Current Left Page before flip) */}
+                      <div
+                        className="absolute inset-0 bg-white overflow-hidden shadow-2xl rounded-l-2xl border border-black/10"
+                        style={{
+                          backfaceVisibility: 'hidden',
+                          WebkitBackfaceVisibility: 'hidden',
+                          transform: 'rotateY(0deg)',
+                        }}
+                      >
+                        {turningLeaf.frontPage ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={turningLeaf.frontPage.imageUrl}
+                            alt="Turning Front"
+                            className="w-full h-full object-contain pointer-events-none"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-slate-100" />
+                        )}
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: [0, 0.5, 0] }}
+                          transition={{ duration: 0.52 }}
+                          className="absolute inset-0 bg-gradient-to-r from-black/45 via-black/20 to-transparent pointer-events-none"
+                        />
+                      </div>
+
+                      {/* Back Face (Destination Right Page after flip) */}
+                      <div
+                        className="absolute inset-0 bg-white overflow-hidden shadow-2xl rounded-r-2xl border border-black/10"
+                        style={{
+                          backfaceVisibility: 'hidden',
+                          WebkitBackfaceVisibility: 'hidden',
+                          transform: 'rotateY(-180deg)',
+                        }}
+                      >
+                        {turningLeaf.backPage ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={turningLeaf.backPage.imageUrl}
+                            alt="Turning Back"
+                            className="w-full h-full object-contain pointer-events-none"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-slate-100" />
+                        )}
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: [0, 0.5, 0] }}
+                          transition={{ duration: 0.52 }}
+                          className="absolute inset-0 bg-gradient-to-l from-black/45 via-black/20 to-transparent pointer-events-none"
+                        />
+                      </div>
+                    </motion.div>
+                  )}
+                </>
+              )}
+            </div>
+          ) : (
+            /* ========================================================
+               MOBILE SINGLE PAGE — ROCK-SOLID STATIC CONTAINER
+               Locked to exact aspect ratio, no container remounting.
+               ======================================================== */
+            <div
+              className="relative select-none shadow-2xl rounded-2xl"
+              style={{
+                height: MOBILE_BOOK_HEIGHT,
+                width: MOBILE_BOOK_WIDTH,
+                maxWidth: '92vw',
+                perspective: '2000px',
+                transformStyle: 'preserve-3d',
+              }}
+            >
+              {/* Base Page (reveals destination page underneath during turn) */}
+              <div
+                className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl border border-black/15 bg-white cursor-pointer"
                 onClick={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect();
                   const clickX = e.clientX - rect.left;
                   if (clickX > rect.width / 2) {
-                    if (canGoNext) {
-                      setFlipDirection('next');
-                      playPageTurnSound();
-                      if (onPageChange) onPageChange(currentPage + 1);
-                      else onNextPage();
-                    }
+                    handleFlipNext();
                   } else {
-                    if (canGoPrev) {
-                      setFlipDirection('prev');
-                      playPageTurnSound();
-                      if (onPageChange) onPageChange(currentPage - 1);
-                      else onPrevPage();
-                    }
+                    handleFlipPrev();
                   }
                 }}
               >
-                {/* Book Edge Spine Gradient */}
+                {/* Spine Crease on left edge */}
                 <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-black/30 via-black/10 to-transparent pointer-events-none z-10" />
-                {/* Gentle Surface Lighting Sheen */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none z-10" />
 
-                {/* Page Image */}
+                {/* Base Image */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={pages[currentPage - 1]?.imageUrl}
-                  alt={pages[currentPage - 1]?.title || `Halaman ${currentPage}`}
+                  src={
+                    isFlipping
+                      ? pages[targetPageRef.current - 1]?.imageUrl
+                      : pages[currentPage - 1]?.imageUrl
+                  }
+                  alt="Halaman"
                   className="w-full h-full object-contain pointer-events-none"
                   draggable={false}
                 />
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        )}
+
+                {/* Reveal shadow on base page */}
+                {isFlipping && (
+                  <motion.div
+                    initial={{ opacity: 0.45 }}
+                    animate={{ opacity: 0 }}
+                    transition={{ duration: 0.42 }}
+                    className="absolute inset-0 bg-black/40 pointer-events-none z-10"
+                  />
+                )}
+              </div>
+
+              {/* Mobile Turning Leaf */}
+              {isFlipping && turningLeaf && (
+                <motion.div
+                  key={`mobile-turning-${currentPage}`}
+                  initial={{
+                    rotateY: 0,
+                    x: 0,
+                    opacity: 1,
+                  }}
+                  animate={{
+                    rotateY: flipDirection === 'next' ? -80 : 80,
+                    x: flipDirection === 'next' ? '-22%' : '22%',
+                    opacity: 0,
+                  }}
+                  transition={{
+                    duration: 0.42,
+                    ease: [0.25, 1, 0.5, 1],
+                  }}
+                  onAnimationComplete={onFlipAnimationComplete}
+                  className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl border border-black/15 bg-white z-30"
+                  style={{
+                    transformOrigin: flipDirection === 'next' ? 'left center' : 'right center',
+                    transformStyle: 'preserve-3d',
+                  }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={turningLeaf.frontPage?.imageUrl || pages[currentPage - 1]?.imageUrl}
+                    alt="Turning Page"
+                    className="w-full h-full object-contain pointer-events-none"
+                  />
+                  {/* Dynamic paper lighting/shadow as the page curls away */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 0.6 }}
+                    transition={{ duration: 0.42 }}
+                    className={cn(
+                      'absolute inset-0 pointer-events-none',
+                      flipDirection === 'next'
+                        ? 'bg-gradient-to-r from-black/20 via-black/40 to-black/70'
+                        : 'bg-gradient-to-l from-black/20 via-black/40 to-black/70'
+                    )}
+                  />
+                </motion.div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
+);
+
+FlipbookView.displayName = 'FlipbookView';
+

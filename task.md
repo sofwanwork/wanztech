@@ -1424,3 +1424,32 @@ Memperbaiki susun atur studio rekaan e-Sijil pada skrin 14 inci (dan komputer ri
      - Membolehkan hadirin klik terus pada muka surat kanan untuk selak ke hadapan, atau klik muka surat kiri untuk selak ke belakang.
      - Menyegerakkan penunjuk halaman di bar navigasi bawah (`2-3 / 6`) dan membolehkan pintasan papan kekunci (Anak Panah Kiri/Kanan) menyemak helaian demi helaian tanpa tersekat.
 
+---
+
+# Pembaikan Kestabilan Geometri & Penghapusan Jitter 3D Flipbook (Tak Bergerak-gerak) ✅ SIAP <!-- id: fix-flipbook-jitter -->
+
+**Matlamat**: Menyelesaikan aduan pengguna mengenai buku program digital yang "bergerak-gerak / tak statik" sewaktu diselak, mengunci geometri pentas buku secara mutlak, memancangkan tulang buku kekal di tengah (50%), dan menyatukan seluruh kawalan navigasi (papan kekunci, palang bawah, klik helaian) ke enjin 3D.
+
+- [x] 1. Kunci dimensi kontena buku secara mutlak (`DESKTOP_BOOK_HEIGHT = min(76vh, 650px)`, `DESKTOP_BOOK_WIDTH = calc(height / 1.414 * 2)`) untuk mengelakkan *layout shift*. <!-- id: 1 -->
+- [x] 2. Pancangkan tulang buku (*spine*) tepat di garisan tengah `left: 50%` secara kekal. <!-- id: 2 -->
+- [x] 3. Kekalkan slot tapak halaman kiri (0% - 50%) dan kanan (50% - 100%) tanpa dinyah-lekap (*zero-unmount*); pada Muka Hadapan (Page 1), paparkan slot kulit dalaman di sebelah kiri agar kelebaran buku sentiasa 2 muka surat. <!-- id: 3 -->
+- [x] 4. Helaian selakan 3D hanya dipasang sebagai lapisan tindanan (*overlay turning leaf*) semasa selakan 520ms dan lesap sebaik sahaja selesai mendarat. <!-- id: 4 -->
+- [x] 5. Menyatukan kawalan papan kekunci (Anak Panah Kiri/Kanan) dan butang palang navigasi bawah menggunakan `forwardRef` & `useImperativeHandle` (`flipbookRef.current.flipNext()` / `flipPrev()`). <!-- id: 5 -->
+- [x] 6. Animasi selakan 3D mesra mudah alih (*mobile 3D peel & curl*) yang kemas di tengah skrin tanpa terkeluar sempadan. <!-- id: 6 -->
+- [x] 7. Pengesahan kualiti penuh: 321 / 321 ujian unit vitest lulus, `npm run typecheck` (0 ralat), `npm run lint` (0 ralat/amaran). <!-- id: 7 -->
+- [x] 8. Kemas kini `memory.md`, `lessons.md`, dan `task.md`. <!-- id: 8 -->
+
+---
+
+## Reviu Pembaikan: Kestabilan Geometri & Penghapusan Jitter 3D Flipbook
+
+1. **Punca Asal Ralat (Root Cause)**:
+   - Apabila pengguna berada pada Muka Hadapan (Page 1), saiz kontena sebelum ini ditetapkan kepada 1 halaman sahaja (~450px lebar). Sebaik pengguna menekan selak seterusnya, kontena bertukar secara mendadak kepada dwi-halaman (~900px lebar). Perbezaan saiz 2x ganda ini menyebabkan seluruh buku melompat dan menganjak secara mengejut ("bergerak-gerak").
+   - Penggunaan nisbah aspek dinamik dalam kontena flexbox menyebabkan pelayar mengira semula reka letak (*layout recalculation*) pada setiap bingkai animasi 3D, menghasilkan getaran (jitter).
+2. **Penyelesaian Dilaksanakan**:
+   - **Dimensi Berkunci**: Kontena dwi-halaman desktop sentiasa menggunakan formula CSS nisbah aspek tetap A4 (`height: min(76vh, 650px)` dan `width: calc(min(76vh, 650px) / 1.414 * 2)`), dengan tulang buku dipancang tepat di tengah (`left: 50%`).
+   - **Slot Kulit Dalaman Estetik**: Semasa di Muka Hadapan (Page 1), slot kiri memaparkan bayangan kulit dalaman buku ("Buku Program Digital - Klik helaian kanan untuk mula membaca"). Saiz buku kekal statik dan tidak berganjak walau 1 piksel pun.
+   - **Tindanan Selakan 3D Bebas Getaran**: Helaian berputar hanya muncul sebagai lapisan tindanan (*overlay leaf*) semasa selakan 520ms berputar 180 darjah melintasi tulang buku, kemudian lesap sebaik sahaja selesai mendarat.
+   - **Penyegerakan Navigasi Penuh**: Menggunakan `useImperativeHandle` supaya sebarang input (anak panah papan kekunci, butang bar navigasi bawah, butang terapung tepi, dan klik helaian) memacu animasi selakan 3D yang sama secara seragam.
+
+
