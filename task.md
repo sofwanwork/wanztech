@@ -1452,4 +1452,25 @@ Memperbaiki susun atur studio rekaan e-Sijil pada skrin 14 inci (dan komputer ri
    - **Tindanan Selakan 3D Bebas Getaran**: Helaian berputar hanya muncul sebagai lapisan tindanan (*overlay leaf*) semasa selakan 520ms berputar 180 darjah melintasi tulang buku, kemudian lesap sebaik sahaja selesai mendarat.
    - **Penyegerakan Navigasi Penuh**: Menggunakan `useImperativeHandle` supaya sebarang input (anak panah papan kekunci, butang bar navigasi bawah, butang terapung tepi, dan klik helaian) memacu animasi selakan 3D yang sama secara seragam.
 
+---
+
+# Pembaikan Jarak Butang Dialog Cipta E-Pamphlet ✅ SIAP <!-- id: fix-dialog-button-spacing -->
+
+**Matlamat**: Membaiki ruang jarak antara butang "Batal" dan "Seterusnya →" pada modal "Cipta E-Pamphlet Baharu" yang terlalu rapat akibat penggunaan `sm:gap-0`.
+
+- [x] 1. Kenal pasti kelas `sm:gap-0` dalam `<DialogFooter>` pada `app/(dashboard)/pamphlets/client.tsx`. <!-- id: 1 -->
+- [x] 2. Kemas kini kelas kepada `className="pt-2 gap-2 sm:gap-3"` untuk jarak 12px mendatar yang seimbang dan kemas. <!-- id: 2 -->
+- [x] 3. Pengesahan kualiti: 321 / 321 ujian vitest lulus, `npm run typecheck` (0 ralat), `npm run lint` (0 ralat/amaran). <!-- id: 3 -->
+- [x] 4. Kemas kini `lessons.md`, `memory.md`, dan `task.md`. <!-- id: 4 -->
+
+---
+
+## Reviu Pembaikan: Jarak Butang Dialog Cipta E-Pamphlet
+
+1. **Punca Masalah (Root Cause)**:
+   - `<DialogFooter>` di `CreatePamphletDialog` menggunakan kelas Tailwind `gap-2 sm:gap-0`. Pada skrin komputer (`sm:` dan ke atas), `sm:gap-0` telah membatalkan jurang jarak antara butang, menyebabkan butang "Batal" dan "Seterusnya →" melekat rapat tanpa sebarang ruang pemisah.
+2. **Penyelesaian**:
+   - Menukar kelas kepada `className="pt-2 gap-2 sm:gap-3"`. Ini memberikan jurang mendatar 12px (`0.75rem`) yang kemas dan konsisten dengan standard sistem reka bentuk KlikForm.
+
+
 

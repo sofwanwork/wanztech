@@ -224,7 +224,7 @@ export function CreatePamphletDialog({
             </div>
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="pt-2 gap-2 sm:gap-3">
             <Button
               type="button"
               variant="outline"

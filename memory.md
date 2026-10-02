@@ -1628,6 +1628,10 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - **Ujian & Kualiti**:
     - 321 / 321 ujian unit lulus (37 suites).
     - 0 ralat TypeScript (`tsc --noEmit`), 0 ralat / 0 amaran ESLint.
+- **2026-10-02 (Pembaikan Jarak Butang Dialog Cipta E-Pamphlet)**:
+  - **Punca Masalah**: `DialogFooter` pada modal `CreatePamphletDialog` (`app/(dashboard)/pamphlets/client.tsx`) mengandungi kelas `sm:gap-0` yang membatalkan jarak antara butang `Batal` dan `Seterusnya →` pada skrin desktop, menyebabkannya melekat rapat.
+  - **Penyelesaian**: Menggantikan `gap-2 sm:gap-0` dengan `className="pt-2 gap-2 sm:gap-3"` untuk memastikan jurang 12px mendatar yang seimbang dan kemas antara butang tindakan.
+  - 321 / 321 ujian unit lulus, 0 ralat TypeScript, 0 ralat ESLint.
 
 
 
