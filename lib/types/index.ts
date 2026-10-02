@@ -77,5 +77,16 @@ export type {
   BioPageWithLinks,
 } from './bio-links';
 
+// Pamphlet types
+export type {
+  PamphletDisplayMode,
+  PamphletTheme,
+  PamphletActionButtonType,
+  PamphletActionButton,
+  PamphletPageItem,
+  PamphletThemeConfig,
+  Pamphlet,
+} from './pamphlets';
+
 // Re-export constants (will be moved to lib/constants later)
 export { TIER_LIMITS } from '../constants/subscription-tiers';

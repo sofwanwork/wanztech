@@ -17,6 +17,7 @@ import {
   ClipboardList,
   ScrollText,
   Sparkles,
+  BookOpen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createFormAction } from '@/actions/forms';
@@ -99,6 +100,12 @@ export function DashboardSidebar({ profile, onNavigate, isMobile = false }: Side
       href: '/bio',
       icon: Sparkles,
       active: pathname.startsWith('/bio'),
+    },
+    {
+      title: 'E-Pamphlet',
+      href: '/pamphlets',
+      icon: BookOpen,
+      active: pathname.startsWith('/pamphlets') || pathname.startsWith('/pamphlet-builder'),
     },
     {
       title: 'Audit Log',

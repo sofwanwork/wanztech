@@ -1570,6 +1570,34 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
 - **Deployment ID**: `dpl_Bm4TpjSfpkpmQpyNmZk8kC5QtVSt`
 - **Status**: Ready, 54 routes built successfully, 0 errors.
 
+## System Improvements (2026-10-02 — E-Pamphlet & Buku Program Digital Viewer)
+- **Modul E-Pamphlet & Buku Program Digital Dilancarkan**:
+  - Dicipta produk baharu untuk membolehkan penganjur majlis (sekolah, seminar, sukan, korporat) mencipta dan mengedarkan buku program digital dengan paparan interaktif.
+  - **Tiga Mod Paparan Pintar**:
+    - **3D Flipbook**: Mensimulasikan helaian buku fizikal dengan bayang lipatan tengah (*spine shadow*), kesan lengkungan helaian (*sheen gradient*), dan paparan 2-muka surat serentak pada desktop (*two-page spread*) serta 1-muka surat pada telefon pintar.
+    - **Touch Slider**: Leretan sentuhan mendatar menggunakan `framer-motion` dengan pengesanan leret laju (*swipe gesture*).
+    - **Continuous Vertical Scroll**: Skrol menegak berterusan dengan integrasi `IntersectionObserver` untuk mengesan muka surat aktif secara automatik.
+  - **Ciri Interaktif Lengkap**:
+    - Kawalan Zum pintar (Zoom In, Zoom Out, Reset 100%) sehingga 250% untuk membaca teks tentatif yang kecil.
+    - Bilah pratonton muka surat (*Filmstrip Thumbnails Drawer*) di bahagian bawah untuk navigasi pantas.
+    - Kesan bunyi selak kertas lembut (*paper turn rustle*) berasaskan Web Audio API sintetik tanpa aset luaran.
+    - Mod Skrin Penuh (*Fullscreen Mode*).
+    - Butang tindakan acara bersepadu: Muat Turun PDF asal, Kongsi ke WhatsApp (`wa.me`), Salin Pautan, dan butang tindakan khusus (Check-In Kehadiran, Tebus E-Sijil).
+    - Empat tema suasana ambien: Cinema Dark, Clean Studio, Warm Ivory Paper, dan Royal Emerald.
+  - **Papan Pemuka & Studio Penyunting**:
+    - Papan pemuka di `/pamphlets` dengan statistik tontonan dan dialog penjanaan Kod QR beresolusi tinggi (PNG 1000px) sedia cetak pada gegantung (bunting) dewan.
+    - Studio penyunting di `/pamphlet-builder/[id]` dengan muat naik imej berganda serentak, penyusunan muka surat (*drag/move order*), dan pratonton langsung (*live interactive preview*) mengikut saiz Desktop dan Mobile.
+    - Laluan awam di `/p/[slug]` dan `/p/demo` (contoh interaktif segera).
+  - **Seni Bina & Keselamatan**:
+    - Migrasi jadual `public.pamphlets` (`supabase/migrations/20261002000000_add_pamphlets.sql`) dengan polisi RLS selamat dan carian bypass RLS awam melalui admin client.
+    - Perlindungan ralat 42P01 dengan fallback selamat jika jadual belum dimigrasi.
+    - Laluan `/p/` dan `/pamphlet` didaftarkan dalam `publicRoutes` di `proxy.ts`, dan `/pamphlets` serta `/pamphlet-builder` dalam `protectedRoutes`.
+  - **Ujian & Kualiti**:
+    - Ditambah ujian unit di `tests/pamphlet.test.ts` dan `tests/pamphlet-storage.test.ts`.
+    - 317 / 317 ujian unit lulus merentas 37 suite ujian.
+    - 0 ralat TypeScript (`tsc --noEmit`), 0 ralat/amaran ESLint.
+    - Binaan pengeluaran Next.js 16 bersih (58 laluan).
+
 
 
 

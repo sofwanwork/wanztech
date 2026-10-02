@@ -1296,3 +1296,74 @@ Memperbaiki susun atur studio rekaan e-Sijil pada skrin 14 inci (dan komputer ri
 4. Melampirkan event listener `mousemove` dan `mouseup` pada objek `window` apabila seretan bermula, membolehkan pergerakan lancar dan tidak terputus walaupun tetikus bergerak laju ke luar kawasan kanvas.
 5. Memastikan rekod sejarah Undo/Redo hanya ditambah apabila berlaku perubahan kedudukan sebenar (`hasMovedRef`), mengelakkan catatan kosong sewaktu klik pemilihan elemen.
 
+---
+
+# Ciri E-Pamphlet & Buku Program Digital Viewer Yang Cantik ✅ SIAP
+
+**Matlamat**: Membina sistem Viewer E-Pamphlet / Buku Program Digital yang anggun, interaktif dan mesra telefon pintar (dengan mod 3D Flipbook, Touch Slider, dan Continuous Vertical Scroll, Pinch-to-Zoom, Filmstrip Thumbnails, Audio Selak Muka Surat, Butang Tindakan Majlis, dan Kod QR Majlis).
+
+- [x] 1. Takrifan Jenis & Konfigurasi (`lib/types/pamphlets.ts` & `lib/types/index.ts`)
+  - Takrifkan `Pamphlet`, `PamphletPageItem`, `PamphletTheme`, `PamphletDisplayMode`, `PamphletActionButton`.
+  - Tambah had `maxPamphlets` dalam `TIER_LIMITS` (`lib/constants/subscription-tiers.ts`) dan jenis `TierLimits`.
+  - Tema visual: `dark` (Cinema Dark), `light` (Clean Studio), `paper` (Warm Ivory), `emerald` (Royal Emerald).
+  - Mod paparan: `flipbook` (3D Page Flip), `slide` (Touch Carousel), `vertical` (Continuous Feed).
+- [x] 2. Migrasi Database & Lapisan Storan (`supabase/migrations/20261002000000_add_pamphlets.sql` & `lib/storage/pamphlets.ts`)
+  - SQL migration untuk jadual `public.pamphlets` (id, user_id, slug, title, description, event_date, location, cover_image, pdf_url, theme, display_mode, pages, action_buttons, is_active, views, created_at, updated_at).
+  - RLS policies (owner-only write, public read if active).
+  - Fungsi storage: `getPamphlets`, `getPamphletById`, `getPamphletPublic`, `createPamphlet`, `updatePamphlet`, `deletePamphlet`, `incrementPamphletViews`.
+  - Pengendalian ralat kalis 42P01 dengan fallback selamat.
+- [x] 3. Tindakan Pelayan (Server Actions) (`actions/pamphlets.ts`)
+  - `createPamphletAction`, `updatePamphletAction`, `deletePamphletAction`, `trackPamphletViewAction`.
+  - Revalidasi path (`/pamphlets`, `/p/[slug]`, `/pamphlet-builder/[id]`).
+- [x] 4. Komponen Teras: Viewer E-Pamphlet Interaktif (`components/pamphlet/viewer/index.tsx`)
+  - **Mod 3D Flipbook**: Kesan helaian buku fizikal dengan bayang lipatan tengah (*crease shadow*), lengkungan helaian (*sheen gradient*), paparan 2-muka surat serentak (desktop spread) dan 1-muka surat (mudah alih).
+  - **Mod Touch Slider**: Leretan lancar berasaskan sentuhan (*touch gestures/swipe*) dengan `framer-motion`.
+  - **Mod Vertical Feed**: Skrol ke bawah secara berterusan dengan margin kemas dan pengesanan muka surat aktif menerusi `IntersectionObserver`.
+  - **Pinch-to-zoom & Controls Zoom (+ / - / Reset)**: Zum sehingga 250% untuk membaca tulisan kecil tentatif/jadual.
+  - **Bilah Pratonton Pantas (Filmstrip Thumbnails)**: Laci mini di bawah dengan nombor muka surat dan tajuk bahagian.
+  - **Audio Selak Kertas (Subtle Page Turn Sound)**: Sintesis audio kertas lembut berasaskan Web Audio API (tanpa fail audio berat).
+  - **Mod Skrin Penuh (Fullscreen API)**.
+  - **Butang Tindakan Bersepadu**: Muat Turun PDF asal, Kongsi WhatsApp (`wa.me`), Salin Pautan, dan butang tindakan acara (cth: "Daftar Hadir / Check-In", "Tebus E-Sijil").
+- [x] 5. Halaman Awam Viewer (`app/(public)/p/[slug]/page.tsx` & fallback `/pamphlet/[id]/page.tsx`)
+  - Paparan mesra telefon pintar & desktop tanpa gangguan menu luaran.
+  - Metadata OpenGraph lengkap (tajuk majlis, penerangan, gambar muka depan) untuk paparan kad cantik di WhatsApp & media sosial.
+  - Sokongan mod demo segera di `/p/demo` yang memaparkan 6 muka surat contoh yang lengkap.
+  - Daftar laluan dalam `proxy.ts` senarai `publicRoutes`.
+- [x] 6. Papan Pemuka Dashboard (`app/(dashboard)/pamphlets/page.tsx` & `client.tsx`)
+  - Tambah menu "E-Pamphlet" dalam sidebar (`components/dashboard/sidebar.tsx`).
+  - Senarai kad pamphlet dengan gambar muka depan, bilangan muka surat, statistik tontonan, dan togol aktif.
+  - Modal Kongsi & Muat Turun Kod QR bersaiz besar (PNG) sedia cetak untuk banner majlis.
+  - Pautan pantas "Lihat Demo Langsung" untuk panduan pengguna.
+- [x] 7. Studio Pembina Pamphlet (`app/(dashboard)/pamphlet-builder/[id]/page.tsx` & `client.tsx`)
+  - Borang maklumat acara (Tajuk, Slug unik, Penerangan, Tarikh, Lokasi, Pautan PDF asal).
+  - Pengurus Muka Surat: Muat naik imej berganda serentak, susun atur turutan (*re-order*), label tajuk muka surat.
+  - Butang segera "Muat Contoh 6 Muka Surat" untuk pengguna menguji sebelum memuat naik rekaan sendiri.
+  - Tetapan Mod Paparan (Flipbook vs Slider vs Skrol Menegak) dan Tema Ambien.
+  - Konfigurasi Butang Tindakan Acara (Pautan Borang Check-In, Hubungi WhatsApp, dll).
+  - Pratonton Langsung (*Live Interactive Preview*) bersebelahan dengan togol paparan Desktop & Mobile.
+- [x] 8. Ujian Unit & Pengesahan Kualiti Penuh
+  - Ujian unit untuk pengesahan slug, tema, logik flipping, dan operasi storan di `tests/pamphlet.test.ts` & `tests/pamphlet-storage.test.ts`.
+  - `npm test`: 317 / 317 ujian lulus merentas 37 suite ujian.
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm run build`: Kompilasi pengeluaran Next.js 16 berjaya (58 laluan).
+  - Kemas kini `memory.md`, `lessons.md`, dan `task.md`.
+
+---
+
+## Reviu Pelaksanaan: Ciri E-Pamphlet & Buku Program Digital
+
+1. **Seni Bina Sistem (Modern Digital Booklet)**:
+   - **Tiga Mod Paparan Serba Boleh**:
+     - *3D Flipbook*: Mensimulasikan buku fizikal dengan bayang lipatan tulang belakang buku (*spine shadow*), lengkungan helaian berkilau (*subtle sheen gradient*), dan susunan dwi-muka surat (*two-page spread*) pada skrin desktop serta helaian tunggal pada telefon pintar.
+     - *Touch Slider*: Leretan sentuhan mendatar menggunakan `framer-motion` dengan penjejakan kelajuan leret (*swipe velocity*).
+     - *Vertical Feed*: Skrol menegak berterusan dengan integrasi `IntersectionObserver` untuk mengesan muka surat aktif.
+   - **Sintesis Audio Helaian Tanpa Aset**:
+     - Kesan bunyi selak kertas dihasilkan menggunakan Web Audio API sintetik secara terus dalam pelayar web tanpa sebarang muat turun fail MP3 luaran.
+2. **Pengalaman Responden & Acara Majlis**:
+   - Pautan ringkas dan anggun `/p/[slug]` dengan sokongan metadata OpenGraph penuh supaya apabila pautan dikongsi ke WhatsApp atau Facebook, pratonton kad poster majlis dipaparkan dengan kemas.
+   - Penyediaan modal Kod QR sedia muat turun (format PNG 1000px berkualiti tinggi) untuk diletakkan pada gegantung (bunting) atau poster di pintu masuk dewan acara.
+   - Butang tindakan acara bersepadu menghubungkan hadirin terus ke borang pendaftaran/kehadiran 1-QR KlikForm, portal semakan e-Sijil, atau mesej WhatsApp urusetia.
+3. **Studio Penyunting Bersepadu**:
+   - Membolehkan penganjur memuat naik berbilang helaian imej (PNG/JPG) serentak, menyusun kedudukan muka surat dengan pantas, dan melihat pratonton langsung (*live interactive preview*) mengikut saiz Desktop mahupun Telefon Pintar.
+

@@ -20,6 +20,7 @@ describe('Tier limits — semantic correctness', () => {
     expect(TIER_LIMITS.free.maxQRCodes).toBe(5);
     expect(TIER_LIMITS.free.maxShortLinks).toBe(5);
     expect(TIER_LIMITS.free.maxBioPages).toBe(1);
+    expect(TIER_LIMITS.free.maxPamphlets).toBe(2);
   });
 
   it('pro & enterprise are unlimited (-1) across the board', () => {
@@ -31,6 +32,7 @@ describe('Tier limits — semantic correctness', () => {
       expect(t.maxQRCodes).toBe(-1);
       expect(t.maxShortLinks).toBe(-1);
       expect(t.maxBioPages).toBe(-1);
+      expect(t.maxPamphlets).toBe(-1);
     }
   });
 });
