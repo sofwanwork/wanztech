@@ -226,6 +226,35 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
       setIsFlipping(true);
     }, [isFlipping, isDesktop, currentPage, pages, activeSpread]);
 
+    // Touch swipe gesture handling for mobile screens
+    const touchStartXRef = React.useRef<number | null>(null);
+    const touchStartYRef = React.useRef<number | null>(null);
+
+    const handleTouchStart = React.useCallback((e: React.TouchEvent) => {
+      touchStartXRef.current = e.touches[0].clientX;
+      touchStartYRef.current = e.touches[0].clientY;
+    }, []);
+
+    const handleTouchEnd = React.useCallback(
+      (e: React.TouchEvent) => {
+        if (touchStartXRef.current === null || touchStartYRef.current === null) return;
+        const deltaX = e.changedTouches[0].clientX - touchStartXRef.current;
+        const deltaY = e.changedTouches[0].clientY - touchStartYRef.current;
+        touchStartXRef.current = null;
+        touchStartYRef.current = null;
+
+        // Ensure horizontal swipe is dominant and exceeds 35px threshold
+        if (Math.abs(deltaX) > 35 && Math.abs(deltaX) > Math.abs(deltaY) * 1.3) {
+          if (deltaX < 0) {
+            handleFlipNext();
+          } else {
+            handleFlipPrev();
+          }
+        }
+      },
+      [handleFlipNext, handleFlipPrev]
+    );
+
     // Expose flipNext and flipPrev via ref so external controls (keyboard/toolbar) trigger 3D animation
     React.useImperativeHandle(
       ref,
@@ -265,8 +294,8 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
     const DESKTOP_BOOK_HEIGHT = 'min(76vh, 650px)';
     const DESKTOP_BOOK_WIDTH = `calc(${DESKTOP_BOOK_HEIGHT} / 1.414 * 2)`;
 
-    const MOBILE_BOOK_HEIGHT = 'min(76vh, 580px)';
-    const MOBILE_BOOK_WIDTH = `calc(${MOBILE_BOOK_HEIGHT} / 1.414)`;
+    const MOBILE_BOOK_HEIGHT = 'min(calc(100dvh - 160px), calc(88vw * 1.414))';
+    const MOBILE_BOOK_WIDTH = 'calc(min(calc(100dvh - 160px), calc(88vw * 1.414)) / 1.414)';
 
     // Pages currently displayed on the static base layer
     const displayBaseLeftPage =
@@ -281,24 +310,24 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
 
     return (
       <div className="relative w-full h-full flex items-center justify-center p-3 sm:p-6 md:p-8 overflow-hidden select-none">
-        {/* Previous Page Floating Circle Button */}
+        {/* Previous Page Floating Circle Button (Desktop only; hidden on mobile to avoid obscuring content) */}
         {canGoPrev && (
           <button
             onClick={handleFlipPrev}
             disabled={isFlipping}
-            className="absolute left-3 sm:left-6 md:left-10 z-40 h-12 w-12 md:h-14 md:w-14 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur-md shadow-2xl transition-transform active:scale-95 border border-white/20 disabled:opacity-40 cursor-pointer"
+            className="hidden lg:flex absolute left-3 sm:left-6 md:left-10 z-40 h-12 w-12 md:h-14 md:w-14 rounded-full bg-black/60 hover:bg-black/90 text-white items-center justify-center backdrop-blur-md shadow-2xl transition-transform active:scale-95 border border-white/20 disabled:opacity-40 cursor-pointer"
             title="Selak ke Halaman Sebelumnya"
           >
             <ChevronLeft className="h-6 w-6 md:h-8 md:w-8" />
           </button>
         )}
 
-        {/* Next Page Floating Circle Button */}
+        {/* Next Page Floating Circle Button (Desktop only; hidden on mobile to avoid obscuring content) */}
         {canGoNext && (
           <button
             onClick={handleFlipNext}
             disabled={isFlipping}
-            className="absolute right-3 sm:right-6 md:right-10 z-40 h-12 w-12 md:h-14 md:w-14 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur-md shadow-2xl transition-transform active:scale-95 border border-white/20 disabled:opacity-40 cursor-pointer"
+            className="hidden lg:flex absolute right-3 sm:right-6 md:right-10 z-40 h-12 w-12 md:h-14 md:w-14 rounded-full bg-black/60 hover:bg-black/90 text-white items-center justify-center backdrop-blur-md shadow-2xl transition-transform active:scale-95 border border-white/20 disabled:opacity-40 cursor-pointer"
             title="Selak ke Halaman Seterusnya"
           >
             <ChevronRight className="h-6 w-6 md:h-8 md:w-8" />
@@ -617,6 +646,8 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                Locked to exact aspect ratio, no container remounting.
                ======================================================== */
             <div
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
               className="relative select-none shadow-2xl rounded-2xl"
               style={{
                 height: MOBILE_BOOK_HEIGHT,
@@ -639,8 +670,8 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                   }
                 }}
               >
-                {/* Spine Crease on left edge */}
-                <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-black/30 via-black/10 to-transparent pointer-events-none z-10" />
+                {/* Subtle Spine Crease on left edge */}
+                <div className="absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-black/15 to-transparent pointer-events-none z-10" />
 
                 {/* Base Image */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -658,30 +689,30 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                 {/* Reveal shadow on base page */}
                 {isFlipping && (
                   <motion.div
-                    initial={{ opacity: 0.45 }}
+                    initial={{ opacity: 0.35 }}
                     animate={{ opacity: 0 }}
-                    transition={{ duration: 0.42 }}
-                    className="absolute inset-0 bg-black/40 pointer-events-none z-10"
+                    transition={{ duration: 0.38, ease: 'easeOut' }}
+                    className="absolute inset-0 bg-black/30 pointer-events-none z-10"
                   />
                 )}
               </div>
 
-              {/* Mobile Turning Leaf */}
+              {/* Mobile Turning Leaf — Smooth, natural 3D curl and glide without detachment */}
               {isFlipping && turningLeaf && (
                 <motion.div
                   key={`mobile-turning-${currentPage}`}
                   initial={{
                     rotateY: 0,
-                    x: 0,
+                    x: '0%',
                     opacity: 1,
                   }}
                   animate={{
-                    rotateY: flipDirection === 'next' ? -80 : 80,
-                    x: flipDirection === 'next' ? '-22%' : '22%',
+                    rotateY: flipDirection === 'next' ? -20 : 20,
+                    x: flipDirection === 'next' ? '-105%' : '105%',
                     opacity: 0,
                   }}
                   transition={{
-                    duration: 0.42,
+                    duration: 0.38,
                     ease: [0.25, 1, 0.5, 1],
                   }}
                   onAnimationComplete={onFlipAnimationComplete}
@@ -698,19 +729,19 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                     className="w-full h-full object-contain pointer-events-none"
                   />
 
-                  {/* Spine Crease on left edge (Persistent across flip) */}
-                  <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-black/30 via-black/10 to-transparent pointer-events-none z-10" />
+                  {/* Subtle Spine Crease on left edge (Persistent across flip) */}
+                  <div className="absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-black/15 to-transparent pointer-events-none z-10" />
 
                   {/* Dynamic paper lighting/shadow as the page curls away */}
                   <motion.div
                     initial={{ opacity: 0 }}
-                    animate={{ opacity: 0.6 }}
-                    transition={{ duration: 0.42 }}
+                    animate={{ opacity: 0.4 }}
+                    transition={{ duration: 0.38, ease: 'easeIn' }}
                     className={cn(
                       'absolute inset-0 pointer-events-none',
                       flipDirection === 'next'
-                        ? 'bg-gradient-to-r from-black/20 via-black/40 to-black/70'
-                        : 'bg-gradient-to-l from-black/20 via-black/40 to-black/70'
+                        ? 'bg-gradient-to-r from-transparent via-black/10 to-black/30'
+                        : 'bg-gradient-to-l from-transparent via-black/10 to-black/30'
                     )}
                   />
                 </motion.div>

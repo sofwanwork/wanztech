@@ -85,7 +85,15 @@ export function PamphletToolbar({
   onToggleThumbnails,
 }: ToolbarProps) {
   const [copied, setCopied] = React.useState(false);
+  const [isDesktop, setIsDesktop] = React.useState(false);
   const themeObj = PAMPHLET_THEMES[theme] || PAMPHLET_THEMES.dark;
+
+  React.useEffect(() => {
+    const checkIsDesktop = () => setIsDesktop(window.innerWidth >= 1024);
+    checkIsDesktop();
+    window.addEventListener('resize', checkIsDesktop);
+    return () => window.removeEventListener('resize', checkIsDesktop);
+  }, []);
 
   const handleCopyLink = () => {
     if (typeof window === 'undefined') return;
@@ -422,14 +430,14 @@ export function PamphletToolbar({
         <button
           onClick={onToggleThumbnails}
           className={cn(
-            'px-2.5 py-1 text-xs font-semibold rounded-lg hover:bg-current/10 transition-colors flex items-center gap-1.5',
+            'px-2.5 py-1 text-xs font-semibold rounded-lg hover:bg-current/10 transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0',
             showThumbnails && 'bg-current/15 text-primary font-bold'
           )}
           title="Buka Pratonton Muka Surat"
         >
-          <LayoutGrid className="h-3.5 w-3.5 opacity-70" />
-          <span className="font-mono">
-            {displayMode === 'flipbook' && currentPage > 1 && currentPage < totalPages
+          <LayoutGrid className="h-3.5 w-3.5 opacity-70 shrink-0" />
+          <span className="font-mono whitespace-nowrap">
+            {isDesktop && displayMode === 'flipbook' && currentPage > 1 && currentPage < totalPages
               ? `${currentPage % 2 === 0 ? currentPage : currentPage - 1}-${Math.min(totalPages, (currentPage % 2 === 0 ? currentPage : currentPage - 1) + 1)} / ${totalPages}`
               : `${currentPage} / ${totalPages || 1}`}
           </span>

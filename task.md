@@ -1500,6 +1500,32 @@ Memperbaiki susun atur studio rekaan e-Sijil pada skrin 14 inci (dan komputer ri
    - **Alur Tulang Tengah Kekal**: Alur tulang buku tengah dinaikkan ke `z-40` supaya garisan tengah buku kekal terpelihara tanpa terganggu.
    - **Pencahayaan Bergradasi Semulajadi**: Helaian memalap dengan lembut dari 0 ke 0.35 apabila berserenjang dengan mata dan mencerah semula ke 0 apabila mendarat rata, mewujudkan peralihan pencahayaan yang licin tanpa kelipan.
 
+---
 
+# Pembaikan Pengalaman Pengguna (UX) 3D Flipbook Pada Paparan Telefon Pintar (Mobile View) ✅ SIAP <!-- id: fix-mobile-flipbook-ux -->
 
+**Matlamat**: Menyelesaikan kejanggalan paparan 3D Flipbook pada skrin telefon pintar (seperti dalam screenshot `media_1790932541914.png`), termasuk butang anak panah terapung gergasi yang menutup teks risalah, penunjuk nombor halaman bar alat yang terputus 2 baris, herotan nisbah aspek (ruang putih kosong besar di atas & bawah), ketiadaan gesture leretan sentuh (touch swipe), dan animasi selakan yang terkeluar dari paksi engsel.
 
+- [x] 1. Sembunyikan Butang Anak Panah Terapung Gergasi pada Skrin Mudah Alih (`hidden lg:flex` di `components/pamphlet/viewer/flipbook-view.tsx`) supaya paparan risalah 100% jelas dan tidak terhalang. <!-- id: 1 -->
+- [x] 2. Kunci Nisbah Aspek Tetap A4 pada Mudah Alih (`min(calc(100dvh - 160px), calc(88vw * 1.414))` dan lebar berkadaran `/ 1.414`) bagi menghapuskan ruang kosong putih di atas dan bawah imej. <!-- id: 2 -->
+- [x] 3. Sokongan Leretan Skrin Sentuh Pintar (*Touch Swipe Gestures*) menerusi `onTouchStart` dan `onTouchEnd` dengan ambang pergerakan 35px. <!-- id: 3 -->
+- [x] 4. Animasi Selakan Mudah Alih Seimbang & Semulajadi (*Natural Page Curl & Slide Transition*) tanpa anjakan paksi yang melayang keluar skrin. <!-- id: 4 -->
+- [x] 5. Lembutkan Jalur Lipatan Tulang Buku pada Skrin Sempit (`w-4 bg-gradient-to-r from-black/15 to-transparent`). <!-- id: 5 -->
+- [x] 6. Formatkan Penunjuk Halaman Bar Navigasi Bawah Mengikut Skrin (`1 / 6` pada telefon pintar vs `2-3 / 6` dwi-halaman pada komputer meja) bersama `whitespace-nowrap shrink-0` di `components/pamphlet/viewer/toolbar.tsx`. <!-- id: 6 -->
+- [x] 7. Pengesahan kualiti: 321 / 321 ujian vitest lulus, `npm run typecheck` (0 ralat), `npm run lint` (0 ralat/amaran). <!-- id: 7 -->
+- [x] 8. Kemas kini `lessons.md`, `memory.md`, dan `task.md`. <!-- id: 8 -->
+
+---
+
+## Reviu Pembaikan: Pengalaman 3D Flipbook Mudah Alih (Mobile View)
+
+1. **Punca Masalah (Root Cause)**:
+   - **Butang Anak Panah Terapung Menutup Risalah**: Butang bulat `<` dan `>` menggunakan kedudukan mutlak dengan `left-3` dan `right-3`. Pada skrin telefon selebar ~380px, kedua-dua butang ini bertindih tepat di atas 20-30% kandungan gambar dan teks risalah.
+   - **Penunjuk Nombor Halaman Terputus**: Bar navigasi bawah memaparkan format dwi-halaman desktop `2-3 / 6` walaupun telefon memaparkan 1 halaman tunggal, dan kekurangan `whitespace-nowrap` menyebabkannya terbelah kepada 2 baris ("2-3" di atas, "/ 6" di bawah).
+   - **Nisbah Aspek Tidak Tepat**: Ketinggian kontena telefon `min(76vh, 580px)` dengan `maxWidth: 92vw` menghasilkan nisbah lebih tinggi daripada nisbah standard A4 (1 : 1.414), meninggalkan ruang putih kosong yang luas di bahagian atas dan bawah risalah.
+   - **Kinematik Selakan Pelik**: Animasi mudah alih menggunakan `rotateY: -80deg, x: '-22%'` pada engsel sisi, menyebabkan helaian berputar terlepas dari paksi tulang buku dan melayang secara pepenjuru ke luar skrin.
+2. **Penyelesaian**:
+   - **Paparan Penuh Tanpa Halangan**: Butang bulat terapung disembunyikan pada skrin mudah alih (`hidden lg:flex`). Navigasi mudah alih dijalankan melalui leretan sentuh (*swipe gesture*), ketukan pada bahagian kiri/kanan halaman, atau bar alat bawah.
+   - **Kunci Nisbah Aspek Tegar A4**: Formula CSS dinamik memastikan ketinggian dan lebar mematuhi nisbah 1 : 1.414 secara tepat dengan mengambil kira bar atas dan bawah (`100dvh - 160px`), menghapuskan semua ruang putih kosong.
+   - **Leretan Sentuh Pintar (*Swipe Gesture*)**: Penjejakan `onTouchStart` dan `onTouchEnd` membolehkan pengguna meleret ke kiri untuk helaian seterusnya dan ke kanan untuk helaian sebelumnya dengan ambang minimum 35px.
+   - **Kinematik Selakan Mudah Alih Lembut**: Helaian meluncur dan melipat dengan lengkungan 3D halus (-20 darjah) ke kiri/kanan (`x: -105% / 105%`) secara kemas, menampakkan helaian di bawahnya tanpa herotan.

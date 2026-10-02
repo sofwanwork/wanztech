@@ -1640,6 +1640,24 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
     - **Pencahayaan Semula Jadi Helaian**: Menyelaraskan animasi pencahayaan gradien supaya helaian memalap secara lancar (`opacity: 0 -> 0.35`) sewaktu terangkat menegak dan mencerah semula (`opacity: 0.35 -> 0`) sewaktu mendarat mendatar.
     - **Bayangan Tindanan Lembut Halaman Tapak**: Menambah bayangan tindanan lembut (*soft ambient cast shadow*) pada halaman tapak di bawah helaian berputar.
   - 321 / 321 ujian unit lulus, 0 ralat TypeScript, 0 ralat ESLint.
+- **2026-10-02 (Pembaikan Pengalaman Pengguna (UX) 3D Flipbook Pada Paparan Telefon Pintar / Mobile View)**:
+  - **Punca Isu ("mobile view macam pelik 3d flipbook")**:
+    - Dua butang bulat anak panah terapung gergasi (`<` dan `>`) berada di atas dokumen dan menutup 20-30% kandungan teks/imej risalah pada skrin telefon sempit.
+    - Penunjuk nombor halaman bar navigasi bawah memaparkan format dwi-halaman desktop `2-3 / 6` pada skrin satu halaman mudah alih dan terbelah kepada 2 baris ("2-3" di atas, "/ 6" di bawah) akibat kekurangan `whitespace-nowrap`.
+    - Nisbah aspek kontena mudah alih terlalu tinggi (`min(76vh, 580px)` vs `maxWidth: 92vw`), menghasilkan ruang kosong putih yang besar di atas dan bawah gambar risalah.
+    - Animasi selakan mudah alih (`rotateY: -80deg, x: '-22%'`) melepaskan helaian daripada engsel tulang dan menerbangkannya secara pepenjuru ke luar skrin secara tidak semulajadi.
+    - Ketiadaan sokongan leretan sentuh (*touch swipe gestures*).
+    - Jalur bayang lipatan tulang buku terlalu gelap dan tebal (`w-8 from-black/30`), kelihatan seperti tompokan kotoran pada halaman telefon yang sempit.
+  - **Penyelesaian Dilaksanakan**:
+    - **Paparan Penuh Tanpa Gangguan**: Butang bulat terapung disembunyikan pada mod mudah alih (`hidden lg:flex`) dan hanya dipaparkan pada desktop (>= 1024px) di margin luar.
+    - **Kunci Nisbah Aspek Tegar A4**: Formula CSS dinamik `height: min(calc(100dvh - 160px), calc(88vw * 1.414))` dan `width: calc(height / 1.414)` mengunci nisbah 1 : 1.414 secara tepat dengan mengambil kira ruang bar atas dan bar navigasi bawah, menghapuskan ruang kosong putih sepenuhnya.
+    - **Sokongan Leretan Skrin Sentuh Pintar (*Touch Swipe*)**: Menggunakan penjejakan `onTouchStart` dan `onTouchEnd` dengan ambang mendatar minimum 35px — leret ke kiri untuk helaian seterusnya, leret ke kanan untuk helaian sebelumnya.
+    - **Animasi Selakan Mudah Alih Seimbang**: Helaian meluncur dan melipat dengan lengkungan halus 3D (`rotateY: -20 / 20`, `x: -105% / 105%`, tempoh 0.38s), menampakkan helaian seterusnya/sebelumnya di lapisan tapak dengan lancar.
+    - **Jalur Bayangan Tulang Buku Lembut**: Dikecilkan kepada `w-4 bg-gradient-to-r from-black/15 to-transparent` untuk rupa lipatan kertas yang anggun.
+    - **Penunjuk Muka Surat Bar Navigasi Bawah**: Memaparkan nombor tunggal `1 / 6` pada skrin mudah alih dan dwi-halaman `2-3 / 6` pada komputer meja, dengan `whitespace-nowrap shrink-0` agar sentiasa kekal 1 baris.
+  - **Ujian & Kualiti**:
+    - 321 / 321 ujian unit lulus (37 suites).
+    - 0 ralat TypeScript (`tsc --noEmit`), 0 ralat / amaran ESLint.
 
 
 
