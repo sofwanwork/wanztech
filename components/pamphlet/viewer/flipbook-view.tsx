@@ -346,8 +346,26 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                       className="w-full h-full object-contain pointer-events-none"
                       draggable={false}
                     />
-                    {/* Spine Crease Shadow (Darkens towards spine on right edge) */}
+                    {/* Permanent Spine Crease Shadow (Darkens towards spine on right edge) */}
                     <div className="absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-black/40 via-black/15 to-transparent pointer-events-none z-10" />
+
+                    {/* Ambient cast shadow reacting during flip */}
+                    {isFlipping && flipDirection === 'next' && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: [0, 0, 0.25, 0] }}
+                        transition={{ duration: 0.52, times: [0, 0.4, 0.85, 1], ease: 'easeInOut' }}
+                        className="absolute inset-0 bg-gradient-to-l from-black/20 via-black/5 to-transparent pointer-events-none z-15"
+                      />
+                    )}
+                    {isFlipping && flipDirection === 'prev' && (
+                      <motion.div
+                        initial={{ opacity: 0.3 }}
+                        animate={{ opacity: 0 }}
+                        transition={{ duration: 0.35, ease: 'easeOut' }}
+                        className="absolute inset-0 bg-gradient-to-l from-black/20 via-black/5 to-transparent pointer-events-none z-15"
+                      />
+                    )}
                   </>
                 ) : (
                   /* Closed Book Left Inside Binder / Desk Silhouette */
@@ -361,9 +379,9 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                 )}
               </div>
 
-              {/* 2. CENTER BOOK SPINE (Permanently anchored at 50% center line) */}
+              {/* 2. CENTER BOOK SPINE (Permanently anchored at 50% center line, elevated z-40) */}
               <div
-                className="absolute left-1/2 top-0 bottom-0 w-2 -translate-x-1/2 z-20 bg-gradient-to-r from-black/40 via-black/15 to-black/40 shadow-inner pointer-events-none"
+                className="absolute left-1/2 top-0 bottom-0 w-2 -translate-x-1/2 z-40 bg-gradient-to-r from-black/50 via-black/25 to-black/50 shadow-inner pointer-events-none"
               />
 
               {/* 3. RIGHT PAGE BASE (Strictly left: 50%, width: 50%) */}
@@ -384,8 +402,26 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                       className="w-full h-full object-contain pointer-events-none"
                       draggable={false}
                     />
-                    {/* Spine Crease Shadow (Darkens towards spine on left edge) */}
+                    {/* Permanent Spine Crease Shadow (Darkens towards spine on left edge) */}
                     <div className="absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-black/40 via-black/15 to-transparent pointer-events-none z-10" />
+
+                    {/* Ambient cast shadow reacting during flip */}
+                    {isFlipping && flipDirection === 'next' && (
+                      <motion.div
+                        initial={{ opacity: 0.3 }}
+                        animate={{ opacity: 0 }}
+                        transition={{ duration: 0.35, ease: 'easeOut' }}
+                        className="absolute inset-0 bg-gradient-to-r from-black/20 via-black/5 to-transparent pointer-events-none z-15"
+                      />
+                    )}
+                    {isFlipping && flipDirection === 'prev' && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: [0, 0, 0.25, 0] }}
+                        transition={{ duration: 0.52, times: [0, 0.4, 0.85, 1], ease: 'easeInOut' }}
+                        className="absolute inset-0 bg-gradient-to-r from-black/20 via-black/5 to-transparent pointer-events-none z-15"
+                      />
+                    )}
                   </>
                 ) : (
                   /* End of Book Right Inside Binder / Desk Silhouette */
@@ -443,12 +479,16 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                         ) : (
                           <div className="w-full h-full bg-slate-100" />
                         )}
-                        {/* Dynamic Paper Lighting/Shadow during rotation */}
+
+                        {/* Permanent Spine Crease Shadow (matching right base page at t=0) */}
+                        <div className="absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-black/40 via-black/15 to-transparent pointer-events-none z-10" />
+
+                        {/* Dynamic Paper Lighting during rotation */}
                         <motion.div
                           initial={{ opacity: 0 }}
-                          animate={{ opacity: [0, 0.5, 0] }}
-                          transition={{ duration: 0.52 }}
-                          className="absolute inset-0 bg-gradient-to-l from-black/45 via-black/20 to-transparent pointer-events-none"
+                          animate={{ opacity: 0.35 }}
+                          transition={{ duration: 0.26, ease: 'easeIn' }}
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-black/10 to-black/30 pointer-events-none z-20"
                         />
                       </div>
 
@@ -471,12 +511,16 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                         ) : (
                           <div className="w-full h-full bg-slate-100" />
                         )}
-                        {/* Dynamic Paper Lighting as it lands on left page */}
+
+                        {/* Permanent Spine Crease Shadow (matching left base page at t=520ms) */}
+                        <div className="absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-black/40 via-black/15 to-transparent pointer-events-none z-10" />
+
+                        {/* Dynamic Paper Landing Lighting: Starts shaded and brightens as it lands flat */}
                         <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: [0, 0.5, 0] }}
-                          transition={{ duration: 0.52 }}
-                          className="absolute inset-0 bg-gradient-to-r from-black/45 via-black/20 to-transparent pointer-events-none"
+                          initial={{ opacity: 0.35 }}
+                          animate={{ opacity: 0 }}
+                          transition={{ duration: 0.26, delay: 0.26, ease: 'easeOut' }}
+                          className="absolute inset-0 bg-gradient-to-l from-transparent via-black/10 to-black/30 pointer-events-none z-20"
                         />
                       </div>
                     </motion.div>
@@ -518,11 +562,16 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                         ) : (
                           <div className="w-full h-full bg-slate-100" />
                         )}
+
+                        {/* Permanent Spine Crease Shadow (matching left base page at t=0) */}
+                        <div className="absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-black/40 via-black/15 to-transparent pointer-events-none z-10" />
+
+                        {/* Dynamic Paper Lighting during rotation */}
                         <motion.div
                           initial={{ opacity: 0 }}
-                          animate={{ opacity: [0, 0.5, 0] }}
-                          transition={{ duration: 0.52 }}
-                          className="absolute inset-0 bg-gradient-to-r from-black/45 via-black/20 to-transparent pointer-events-none"
+                          animate={{ opacity: 0.35 }}
+                          transition={{ duration: 0.26, ease: 'easeIn' }}
+                          className="absolute inset-0 bg-gradient-to-l from-transparent via-black/10 to-black/30 pointer-events-none z-20"
                         />
                       </div>
 
@@ -545,11 +594,16 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                         ) : (
                           <div className="w-full h-full bg-slate-100" />
                         )}
+
+                        {/* Permanent Spine Crease Shadow (matching right base page at t=520ms) */}
+                        <div className="absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-black/40 via-black/15 to-transparent pointer-events-none z-10" />
+
+                        {/* Dynamic Paper Landing Lighting: Starts shaded and brightens as it lands flat */}
                         <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: [0, 0.5, 0] }}
-                          transition={{ duration: 0.52 }}
-                          className="absolute inset-0 bg-gradient-to-l from-black/45 via-black/20 to-transparent pointer-events-none"
+                          initial={{ opacity: 0.35 }}
+                          animate={{ opacity: 0 }}
+                          transition={{ duration: 0.26, delay: 0.26, ease: 'easeOut' }}
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-black/10 to-black/30 pointer-events-none z-20"
                         />
                       </div>
                     </motion.div>
@@ -643,6 +697,10 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                     alt="Turning Page"
                     className="w-full h-full object-contain pointer-events-none"
                   />
+
+                  {/* Spine Crease on left edge (Persistent across flip) */}
+                  <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-black/30 via-black/10 to-transparent pointer-events-none z-10" />
+
                   {/* Dynamic paper lighting/shadow as the page curls away */}
                   <motion.div
                     initial={{ opacity: 0 }}

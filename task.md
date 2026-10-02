@@ -1472,5 +1472,34 @@ Memperbaiki susun atur studio rekaan e-Sijil pada skrin 14 inci (dan komputer ri
 2. **Penyelesaian**:
    - Menukar kelas kepada `className="pt-2 gap-2 sm:gap-3"`. Ini memberikan jurang mendatar 12px (`0.75rem`) yang kemas dan konsisten dengan standard sistem reka bentuk KlikForm.
 
+---
+
+# Pembaikan Kesinambungan Bayang Tulang Buku 3D Flipbook ✅ SIAP <!-- id: fix-flipbook-shadow-continuity -->
+
+**Matlamat**: Menghapuskan isu bayang lipatan tulang buku yang hilang pada saat selakan bermula dan muncul secara mengejut pada akhir selakan ("shadow hilang dulu baru ada").
+
+- [x] 1. Kenal pasti ketiadaan bayangan lipatan tulang buku (*spine crease shadow*) pada lapisan helaian berputar (*turning leaf*). <!-- id: 1 -->
+- [x] 2. Tambah bayangan lipatan tulang buku kekal pada kedua-dua belah muka helaian selakan (muka hadapan & muka belakang) di `components/pamphlet/viewer/flipbook-view.tsx`. <!-- id: 2 -->
+- [x] 3. Tingkatkan `z-index` alur tengah tulang buku kepada `z-40` supaya tidak tertutup oleh helaian selakan. <!-- id: 3 -->
+- [x] 4. Selaraskan pencahayaan dinamik helaian berputar (`opacity: 0 -> 0.35` sewaktu menegak, `opacity: 0.35 -> 0` sewaktu mendarat). <!-- id: 4 -->
+- [x] 5. Tambah bayangan tindanan lembut (*soft ambient drop shadow*) pada halaman tapak di bawah helaian berputar. <!-- id: 5 -->
+- [x] 6. Tambah bayangan tulang buku kekal pada mod telefon pintar (*mobile turning leaf*). <!-- id: 6 -->
+- [x] 7. Pengesahan kualiti: 321 / 321 ujian unit lulus, `npm run typecheck` (0 ralat), `npm run lint` (0 ralat/amaran). <!-- id: 7 -->
+- [x] 8. Kemas kini `lessons.md`, `memory.md`, dan `task.md`. <!-- id: 8 -->
+
+---
+
+## Reviu Pembaikan: Kesinambungan Bayang Tulang Buku 3D Flipbook
+
+1. **Punca Asal Ralat (Root Cause)**:
+   - Bayangan lipatan tulang buku (*spine crease shadow*) sebelum ini hanya wujud pada halaman tapak (*base pages*).
+   - Apabila pengguna memulakan selakan helaian, komponen helaian berputar (*turning leaf*) dinaikkan di atas (`z-30`) dan menutup halaman tapak. Kerana helaian berputar tidak mempunyai bayangan lipatan pada engselnya, bayangan di bahagian tulang buku hilang serta-merta pada saat `t=0`.
+   - Sebaik sahaja putaran selesai pada `t=520ms` dan helaian dinyah-lekap, halaman tapak asal muncul semula bersama bayangannya, menyebabkan bayangan itu seolah-olah "hilang dulu baru ada".
+2. **Penyelesaian Dilaksanakan**:
+   - **Bayangan Tulang Buku Berterusan**: Kedua-dua permukaan helaian selakan kini dilengkapi bayangan lipatan tulang buku yang sepadan dengan kedudukan asalnya.
+   - **Alur Tulang Tengah Kekal**: Alur tulang buku tengah dinaikkan ke `z-40` supaya garisan tengah buku kekal terpelihara tanpa terganggu.
+   - **Pencahayaan Bergradasi Semulajadi**: Helaian memalap dengan lembut dari 0 ke 0.35 apabila berserenjang dengan mata dan mencerah semula ke 0 apabila mendarat rata, mewujudkan peralihan pencahayaan yang licin tanpa kelipan.
+
+
 
 

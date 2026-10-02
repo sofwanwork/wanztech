@@ -1632,6 +1632,14 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - **Punca Masalah**: `DialogFooter` pada modal `CreatePamphletDialog` (`app/(dashboard)/pamphlets/client.tsx`) mengandungi kelas `sm:gap-0` yang membatalkan jarak antara butang `Batal` dan `Seterusnya →` pada skrin desktop, menyebabkannya melekat rapat.
   - **Penyelesaian**: Menggantikan `gap-2 sm:gap-0` dengan `className="pt-2 gap-2 sm:gap-3"` untuk memastikan jurang 12px mendatar yang seimbang dan kemas antara butang tindakan.
   - 321 / 321 ujian unit lulus, 0 ralat TypeScript, 0 ralat ESLint.
+- **2026-10-02 (Pembaikan Kesinambungan Bayang Tulang Buku 3D Flipbook — Menghapuskan Isu Shadow Hilang Dulu Baru Ada)**:
+  - **Punca Masalah**: Bayangan lipatan tulang buku (*spine crease shadow*) sebelum ini hanya diletakkan pada halaman tapak (*base pages*). Apabila helaian selakan (*turning leaf*) dipasang di lapisan atas (`z-30`), ia menutup halaman tapak tanpa membawa sebarang bayangan tulang buku pada engselnya. Akibatnya pada saat `t=0` (mula selak), bayangan tulang buku hilang serta-merta, dan hanya muncul semula secara mengejut pada `t=520ms` apabila helaian dinyah-lekap.
+  - **Penyelesaian Dilaksanakan**:
+    - **Bayangan Tulang Buku Kekal**: Menambah bayangan lipatan tulang buku secara kekal pada kedua-dua muka helaian selakan (*front face* dan *back face*) pada sisi engsel yang sepadan dengan kedudukan tulang buku asal.
+    - **Peningkatan Z-Index Alur Tulang Buku**: Meningkatkan `z-index` alur tengah tulang buku kepada `z-40` supaya tidak ditenggelami oleh helaian selakan (`z-30`).
+    - **Pencahayaan Semula Jadi Helaian**: Menyelaraskan animasi pencahayaan gradien supaya helaian memalap secara lancar (`opacity: 0 -> 0.35`) sewaktu terangkat menegak dan mencerah semula (`opacity: 0.35 -> 0`) sewaktu mendarat mendatar.
+    - **Bayangan Tindanan Lembut Halaman Tapak**: Menambah bayangan tindanan lembut (*soft ambient cast shadow*) pada halaman tapak di bawah helaian berputar.
+  - 321 / 321 ujian unit lulus, 0 ralat TypeScript, 0 ralat ESLint.
 
 
 
