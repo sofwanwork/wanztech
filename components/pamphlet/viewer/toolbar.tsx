@@ -23,6 +23,7 @@ import {
   Award,
   QrCode,
   MessageCircle,
+  FileText,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -49,11 +50,14 @@ interface ToolbarProps {
   soundEnabled: boolean;
   isFullscreen: boolean;
   showThumbnails: boolean;
-  onPageChange: (page: number) => void;
+  pageSpreadMode?: 'auto' | 'single' | 'double';
+  isTwoPageSpread?: boolean;
+  onPageChange: (pageNumber: number) => void;
   onNextPage?: () => void;
   onPrevPage?: () => void;
   onDisplayModeChange: (mode: PamphletDisplayMode) => void;
   onThemeChange: (theme: PamphletTheme) => void;
+  onToggleSpreadMode?: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onZoomReset: () => void;
@@ -72,11 +76,13 @@ export function PamphletToolbar({
   soundEnabled,
   isFullscreen,
   showThumbnails,
+  isTwoPageSpread,
   onPageChange,
   onNextPage,
   onPrevPage,
   onDisplayModeChange,
   onThemeChange,
+  onToggleSpreadMode,
   onZoomIn,
   onZoomOut,
   onZoomReset,
@@ -437,7 +443,7 @@ export function PamphletToolbar({
         >
           <LayoutGrid className="h-3.5 w-3.5 opacity-70 shrink-0" />
           <span className="font-mono whitespace-nowrap">
-            {isDesktop && displayMode === 'flipbook' && currentPage > 1 && currentPage < totalPages
+            {(isTwoPageSpread ?? isDesktop) && displayMode === 'flipbook' && currentPage > 1 && currentPage < totalPages
               ? `${currentPage % 2 === 0 ? currentPage : currentPage - 1}-${Math.min(totalPages, (currentPage % 2 === 0 ? currentPage : currentPage - 1) + 1)} / ${totalPages}`
               : `${currentPage} / ${totalPages || 1}`}
           </span>
@@ -454,6 +460,33 @@ export function PamphletToolbar({
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
+
+        {/* Spread Mode Toggle (1 Halaman vs 2 Halaman) */}
+        {displayMode === 'flipbook' && onToggleSpreadMode && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggleSpreadMode}
+            className="h-8 px-2 text-xs gap-1.5 rounded-xl hover:bg-current/10 shrink-0 font-medium"
+            title={
+              isTwoPageSpread
+                ? 'Tukar ke 1 Muka Surat (Teks Lebih Besar & Jelas)'
+                : 'Tukar ke 2 Muka Surat (Buku Fizikal)'
+            }
+          >
+            {isTwoPageSpread ? (
+              <>
+                <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span className="hidden sm:inline">1 Halaman</span>
+              </>
+            ) : (
+              <>
+                <BookOpen className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span className="hidden sm:inline">2 Halaman</span>
+              </>
+            )}
+          </Button>
+        )}
 
         {/* Zoom Controls Divider */}
         <div className="h-4 w-[1px] bg-current/20 mx-0.5" />

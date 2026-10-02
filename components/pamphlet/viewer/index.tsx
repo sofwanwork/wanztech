@@ -20,11 +20,13 @@ import { BookOpen } from 'lucide-react';
 interface PamphletViewerProps {
   pamphlet: Pamphlet;
   previewMode?: boolean;
+  forceMobile?: boolean;
 }
 
 export function PamphletViewer({
   pamphlet,
   previewMode = false,
+  forceMobile = false,
 }: PamphletViewerProps) {
   const [currentPage, setCurrentPage] = React.useState(1);
   const [displayMode, setDisplayMode] = React.useState<PamphletDisplayMode>(
@@ -33,12 +35,17 @@ export function PamphletViewer({
   const [theme, setTheme] = React.useState<PamphletTheme>(
     pamphlet.theme || 'dark'
   );
+  const [pageSpreadMode, setPageSpreadMode] = React.useState<'auto' | 'single' | 'double'>('auto');
   const [zoom, setZoom] = React.useState(1);
   const [soundEnabled, setSoundEnabled] = React.useState(false);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
   const [showThumbnails, setShowThumbnails] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const flipbookRef = React.useRef<FlipbookViewRef>(null);
+
+  const handleToggleSpreadMode = React.useCallback(() => {
+    setPageSpreadMode((prev) => (prev === 'single' ? 'double' : 'single'));
+  }, []);
 
   const pages = React.useMemo(() => {
     return Array.isArray(pamphlet.pages) ? pamphlet.pages : [];
@@ -185,11 +192,19 @@ export function PamphletViewer({
         soundEnabled={soundEnabled}
         isFullscreen={isFullscreen}
         showThumbnails={showThumbnails}
+        pageSpreadMode={pageSpreadMode}
+        isTwoPageSpread={
+          !forceMobile &&
+          pageSpreadMode !== 'single' &&
+          (pageSpreadMode === 'double' ||
+            (typeof window !== 'undefined' && window.innerWidth >= 880))
+        }
         onPageChange={handlePageChange}
         onNextPage={handleNextPage}
         onPrevPage={handlePrevPage}
         onDisplayModeChange={setDisplayMode}
         onThemeChange={setTheme}
+        onToggleSpreadMode={handleToggleSpreadMode}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
         onZoomReset={handleZoomReset}
@@ -219,9 +234,12 @@ export function PamphletViewer({
                 currentPage={currentPage}
                 zoom={zoom}
                 orientation={orientation}
+                pageSpreadMode={pageSpreadMode}
+                forceMobile={forceMobile}
                 onPrevPage={handlePrevPage}
                 onNextPage={handleNextPage}
                 onPageChange={handlePageChange}
+                onZoomChange={setZoom}
               />
             )}
 

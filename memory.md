@@ -1679,6 +1679,20 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - **Ujian & Kualiti**:
     - 323 / 323 ujian vitest lulus (termasuk 8 ujian menyeluruh di `tests/pamphlet.test.ts`).
     - 0 ralat TypeScript (`tsc --noEmit`), 0 ralat / 0 amaran ESLint.
+- **2026-10-02 (Pengoptimuman Kebolehbacaan Skrin Kecil, Zum Pintar & Penyingkiran Gangguan Butang 3D Flipbook)**:
+  - **Latar Belakang & Punca Isu ("tak nampak sgt utk screen kecik")**:
+    - Pengguna melaporkan teks risalah terperinci sukar dibaca pada skrin kecil / komputer riba / panel pratonton builder (`media_1790934120002.png`), dan butang anak panah terapung bulat `<` dan `>` bertindih tepat di atas perenggan teks risalah.
+    - Punca teknikal: `FlipbookView` sebelum ini hanya menyemak `window.innerWidth >= 1024` secara global. Dalam antaramuka pembina yang dibahagi dua, ruang pratonton sebenar hanya berkelebaran ~650px - 750px. Memaksa paparan dwi-halaman (2-page spread) dalam ruang sempit mengecilkan muka surat kepada ~300px, mengakibatkan teks terlalu halus. Di samping itu, kedudukan mutlak `right-3` pada butang terapung menyebabkan ia terdorong ke dalam permukaan dokumen.
+  - **Penyelesaian Kejuruteraan Dilaksanakan**:
+    - **Penyesuaian Responsif Berasaskan Kontena (`ResizeObserver`)**: Membaca dimensi sebenar kontena pentas buku. Jika lebar kontena < 880px, sistem secara automatik mengaktifkan **Mod 1 Muka Surat (Single Page)**, membesarkan muka surat untuk memenuhi ruang paparan sepenuhnya dan menjadikan teks **hampir 70% lebih besar & jelas**.
+    - **Pengawal Margin Sisi (Side Margin Guard)**: Butang terapung `<` dan `>` hanya dirender jika terdapat ruang kosong sekurang-kurangnya 56px di sisi buku (`sideMargin >= 56`). Jika ruang sempit, butang disembunyikan supaya teks tidak sesekali terhalang.
+    - **Ciri Dwi-Klik Zum & Seret Bebas (Drag-to-Pan)**: Pengguna boleh mendwi-klik di mana-mana bahagian muka surat untuk zum segera ke 1.85x, dan menyeret tetikus/jari untuk menatal ke mana-mana sudut risalah dengan lancar. Dwi-klik sekali lagi atau tekan butang "Reset" pada pill terapung untuk kembali ke 100%.
+    - **Togol 1 Halaman vs 2 Halaman**: Disediakan butang `[ 📄 1 Halaman ]` / `[ 📖 2 Halaman ]` pada palang alat bawah untuk membolehkan pembaca memilih mod paparan pilihan pada bila-bila masa.
+    - **Kembangkan Pratonton Builder**: Ditambah butang `[ ⛶ Skrin Penuh ]` di bar pembina bagi membolehkan penganjur menyembunyikan panel tepi dan menyemak buku program dalam paparan penuh dengan 1 klik.
+    - **Penyelarasan Simulasi Telefon**: Majukan `forceMobile={previewDevice === 'mobile'}` ke `PamphletViewer` untuk menjamin rendering satu halaman yang tepat dalam simulator telefon.
+  - **Ujian & Kualiti**:
+    - 323 / 323 ujian vitest lulus merentas 37 suite ujian.
+    - 0 ralat TypeScript (`tsc --noEmit`), 0 ralat / 0 amaran ESLint.
 
 
 

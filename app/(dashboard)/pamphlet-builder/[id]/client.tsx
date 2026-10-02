@@ -48,6 +48,8 @@ import {
   QrCode,
   Award,
   Loader2,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
@@ -64,6 +66,7 @@ export function PamphletBuilderClient({
   const [isSaving, startSaveTransition] = useTransition();
   const [isUploading, setIsUploading] = useState(false);
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
+  const [isPreviewExpanded, setIsPreviewExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<'pages' | 'details' | 'appearance'>('pages');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -376,6 +379,29 @@ export function PamphletBuilderClient({
             </Button>
           </div>
 
+          {/* Expand / Minimize Preview Toggle */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsPreviewExpanded((prev) => !prev)}
+            className={`hidden md:flex h-7 px-2.5 rounded-lg text-xs gap-1.5 border border-gray-200 ${
+              isPreviewExpanded ? 'bg-primary/10 text-primary font-semibold border-primary/30' : 'text-gray-600 hover:text-gray-900'
+            }`}
+            title={isPreviewExpanded ? 'Kembali ke paparan split' : 'Kembangkan pratonton ke skrin penuh'}
+          >
+            {isPreviewExpanded ? (
+              <>
+                <Minimize2 className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Kecilkan</span>
+              </>
+            ) : (
+              <>
+                <Maximize2 className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Skrin Penuh</span>
+              </>
+            )}
+          </Button>
+
           <Button asChild variant="outline" size="sm" className="gap-1.5 font-medium rounded-xl">
             <Link href={`/p/${pamphlet.slug}`} target="_blank">
               <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
@@ -402,7 +428,12 @@ export function PamphletBuilderClient({
       {/* Main Builder Body (Split Left: Controls, Right: Live Interactive Preview) */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Side: Configuration Panel */}
-        <div className="w-full lg:w-[480px] xl:w-[520px] bg-white border-r border-gray-200 flex flex-col shrink-0 overflow-y-auto">
+        <div
+          className={cn(
+            'w-full lg:w-[480px] xl:w-[520px] bg-white border-r border-gray-200 flex flex-col shrink-0 overflow-y-auto transition-all duration-300',
+            isPreviewExpanded && 'hidden'
+          )}
+        >
           <Tabs
             value={activeTab}
             onValueChange={(v) => setActiveTab(v as 'pages' | 'details' | 'appearance')}
@@ -898,7 +929,12 @@ export function PamphletBuilderClient({
         </div>
 
         {/* Right Side: Live Interactive Pamphlet Preview */}
-        <div className="hidden lg:flex flex-1 bg-slate-950 items-center justify-center p-6 overflow-hidden relative">
+        <div
+          className={cn(
+            'flex flex-1 bg-slate-950 items-center justify-center p-3 sm:p-6 overflow-hidden relative transition-all duration-300',
+            !isPreviewExpanded && 'hidden lg:flex'
+          )}
+        >
           <div
             className={`transition-all duration-300 relative shadow-2xl overflow-hidden rounded-2xl border border-white/10 ${
               previewDevice === 'mobile'
@@ -906,7 +942,11 @@ export function PamphletBuilderClient({
                 : 'w-full h-full'
             }`}
           >
-            <PamphletViewer pamphlet={pamphlet} previewMode={true} />
+            <PamphletViewer
+              pamphlet={pamphlet}
+              previewMode={true}
+              forceMobile={previewDevice === 'mobile'}
+            />
           </div>
         </div>
       </div>

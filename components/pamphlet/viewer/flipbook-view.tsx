@@ -12,14 +12,17 @@ export interface FlipbookViewRef {
   flipPrev: () => void;
 }
 
-interface FlipbookViewProps {
+export interface FlipbookViewProps {
   pages: PamphletPageItem[];
   currentPage: number;
   zoom: number;
   orientation?: PamphletOrientation;
+  pageSpreadMode?: 'auto' | 'single' | 'double';
+  forceMobile?: boolean;
   onPrevPage: () => void;
   onNextPage: () => void;
   onPageChange?: (pageNumber: number) => void;
+  onZoomChange?: (zoom: number) => void;
 }
 
 interface SpreadState {
@@ -84,10 +87,29 @@ function computeSpread(page: number, pages: PamphletPageItem[]): SpreadState {
 
 export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>(
   function FlipbookView(
-    { pages, currentPage, zoom, orientation, onPrevPage, onNextPage, onPageChange },
+    {
+      pages,
+      currentPage,
+      zoom,
+      orientation,
+      pageSpreadMode = 'auto',
+      forceMobile = false,
+      onPrevPage,
+      onNextPage,
+      onPageChange,
+      onZoomChange,
+    },
     ref
   ) {
-    const [isDesktop, setIsDesktop] = React.useState(false);
+    const containerRef = React.useRef<HTMLDivElement>(null);
+    const [containerDimensions, setContainerDimensions] = React.useState<{
+      width: number;
+      height: number;
+    }>({
+      width: typeof window !== 'undefined' ? window.innerWidth : 1024,
+      height: typeof window !== 'undefined' ? window.innerHeight : 768,
+    });
+
     const [isFlipping, setIsFlipping] = React.useState(false);
     const [flipDirection, setFlipDirection] = React.useState<'next' | 'prev'>('next');
     const [activeSpread, setActiveSpread] = React.useState<SpreadState>(() =>
@@ -104,13 +126,47 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
     const targetSpreadRef = React.useRef<SpreadState | null>(null);
     const targetPageRef = React.useRef<number>(currentPage);
 
+    // Pan & Drag state when zoomed in
+    const [panOffset, setPanOffset] = React.useState<{ x: number; y: number }>({ x: 0, y: 0 });
+    const isDraggingRef = React.useRef(false);
+    const dragStartRef = React.useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+    const panStartRef = React.useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+    const lastClickTimeRef = React.useRef<number>(0);
+
+    // Reset pan offset when zoom returns to 1.0
     React.useEffect(() => {
-      const checkIsDesktop = () => {
-        setIsDesktop(window.innerWidth >= 1024);
+      if (zoom <= 1.0) {
+        setPanOffset({ x: 0, y: 0 });
+      }
+    }, [zoom]);
+
+    // Container-aware sizing via ResizeObserver
+    React.useEffect(() => {
+      if (!containerRef.current) return;
+      const updateSize = () => {
+        if (!containerRef.current) return;
+        const { clientWidth, clientHeight } = containerRef.current;
+        if (clientWidth > 0 && clientHeight > 0) {
+          setContainerDimensions({ width: clientWidth, height: clientHeight });
+        }
       };
-      checkIsDesktop();
-      window.addEventListener('resize', checkIsDesktop);
-      return () => window.removeEventListener('resize', checkIsDesktop);
+      updateSize();
+      const ro = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
+            setContainerDimensions({
+              width: entry.contentRect.width,
+              height: entry.contentRect.height,
+            });
+          }
+        }
+      });
+      ro.observe(containerRef.current);
+      window.addEventListener('resize', updateSize);
+      return () => {
+        ro.disconnect();
+        window.removeEventListener('resize', updateSize);
+      };
     }, []);
 
     // Sync when currentPage changes externally (e.g., from thumbnails drawer)
@@ -120,8 +176,17 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
       }
     }, [currentPage, pages, isFlipping]);
 
-    const canGoPrev = isDesktop ? !activeSpread.isCover : currentPage > 1;
-    const canGoNext = isDesktop
+    // Automatically determine whether to use 2-page spread or single page:
+    // 1. If forceMobile or explicit pageSpreadMode === 'single', use 1 page.
+    // 2. If pageSpreadMode === 'double', force 2-page spread.
+    // 3. Auto: use 2-page spread only when container width >= 880px so each page has comfortable width.
+    const isTwoPageSpread =
+      !forceMobile &&
+      pageSpreadMode !== 'single' &&
+      (pageSpreadMode === 'double' || containerDimensions.width >= 880);
+
+    const canGoPrev = isTwoPageSpread ? !activeSpread.isCover : currentPage > 1;
+    const canGoNext = isTwoPageSpread
       ? !activeSpread.isBackCover &&
         (activeSpread.rightPageNum === null || activeSpread.rightPageNum < pages.length)
       : currentPage < pages.length;
@@ -132,7 +197,7 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
     const handleFlipNext = React.useCallback(() => {
       if (isFlipping) return;
 
-      if (!isDesktop) {
+      if (!isTwoPageSpread) {
         if (currentPage >= pages.length) return;
         playPageTurnSound();
         const nextPage = Math.min(pages.length, currentPage + 1);
@@ -179,12 +244,12 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
 
       setFlipDirection('next');
       setIsFlipping(true);
-    }, [isFlipping, isDesktop, currentPage, pages, activeSpread]);
+    }, [isFlipping, isTwoPageSpread, currentPage, pages, activeSpread]);
 
     const handleFlipPrev = React.useCallback(() => {
       if (isFlipping) return;
 
-      if (!isDesktop) {
+      if (!isTwoPageSpread) {
         if (currentPage <= 1) return;
         playPageTurnSound();
         const prevPage = Math.max(1, currentPage - 1);
@@ -225,7 +290,49 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
 
       setFlipDirection('prev');
       setIsFlipping(true);
-    }, [isFlipping, isDesktop, currentPage, pages, activeSpread]);
+    }, [isFlipping, isTwoPageSpread, currentPage, pages, activeSpread]);
+
+    // Double tap/click detection for quick zoom toggling
+    const handleDoubleTapOrClick = React.useCallback(() => {
+      const now = Date.now();
+        if (now - lastClickTimeRef.current < 320) {
+          // Double click detected!
+          if (zoom > 1.05) {
+            if (onZoomChange) onZoomChange(1.0);
+            setPanOffset({ x: 0, y: 0 });
+          } else {
+            if (onZoomChange) onZoomChange(1.85);
+          }
+          lastClickTimeRef.current = 0;
+          return true;
+        }
+        lastClickTimeRef.current = now;
+        return false;
+      },
+      [zoom, onZoomChange]
+    );
+
+    // Mouse drag-to-pan handlers when zoomed
+    const handleMouseDown = (e: React.MouseEvent) => {
+      if (zoom <= 1.0) return;
+      isDraggingRef.current = true;
+      dragStartRef.current = { x: e.clientX, y: e.clientY };
+      panStartRef.current = { ...panOffset };
+    };
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+      if (!isDraggingRef.current || zoom <= 1.0) return;
+      const dx = e.clientX - dragStartRef.current.x;
+      const dy = e.clientY - dragStartRef.current.y;
+      setPanOffset({
+        x: panStartRef.current.x + dx,
+        y: panStartRef.current.y + dy,
+      });
+    };
+
+    const handleMouseUp = () => {
+      isDraggingRef.current = false;
+    };
 
     // Touch swipe gesture handling for mobile screens
     const touchStartXRef = React.useRef<number | null>(null);
@@ -295,24 +402,47 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
       orientation === 'landscape' ||
       pages[0]?.orientation === 'landscape';
 
-    // Exact fixed CSS calculations so the book never shifts, resizes, or vibrates
-    // 1. Portrait Book: Single page ~1 : 1.414. Two-page spread ~1.414 : 1.
-    // 2. Landscape Book: Single page ~1.414 : 1. Two-page spread ~2.828 : 1.
-    const DESKTOP_BOOK_HEIGHT = isLandscape
-      ? 'min(56vh, calc(90vw / 2.828))'
-      : 'min(76vh, 650px)';
+    // Container-aware responsive calculations
+    // Available width and height inside the stage container (subtract padding and header/footer)
+    const availW = Math.max(260, containerDimensions.width - 24);
+    const availH = Math.max(260, containerDimensions.height - 110);
 
-    const DESKTOP_BOOK_WIDTH = isLandscape
-      ? `calc(${DESKTOP_BOOK_HEIGHT} * 2.828)`
-      : `calc(${DESKTOP_BOOK_HEIGHT} / 1.414 * 2)`;
+    let bookWidth: number;
+    let bookHeight: number;
 
-    const MOBILE_BOOK_WIDTH = isLandscape
-      ? 'min(calc((100dvh - 160px) * 1.414), 88vw)'
-      : 'calc(min(calc(100dvh - 160px), calc(88vw * 1.414)) / 1.414)';
+    if (isTwoPageSpread) {
+      // 2-page spread:
+      // Portrait spread ratio: (2 / 1.414) ≈ 1.414 : 1
+      // Landscape spread ratio: (2 * 1.414) ≈ 2.828 : 1
+      const spreadRatio = isLandscape ? 2.828 : 1.414;
+      let targetH = Math.min(availH, isLandscape ? 580 : 680);
+      let targetW = targetH * spreadRatio;
 
-    const MOBILE_BOOK_HEIGHT = isLandscape
-      ? `calc(${MOBILE_BOOK_WIDTH} / 1.414)`
-      : 'min(calc(100dvh - 160px), calc(88vw * 1.414))';
+      if (targetW > availW * 0.94) {
+        targetW = availW * 0.94;
+        targetH = targetW / spreadRatio;
+      }
+      bookWidth = Math.round(targetW);
+      bookHeight = Math.round(targetH);
+    } else {
+      // Single page mode (makes text huge on small screens/laptops/mobile!):
+      // Portrait single page ratio: (1 / 1.414) ≈ 0.707 : 1
+      // Landscape single page ratio: (1.414 / 1) ≈ 1.414 : 1
+      const pageRatio = isLandscape ? 1.414 : 0.707;
+      let targetH = availH;
+      let targetW = targetH * pageRatio;
+
+      if (targetW > availW * 0.94) {
+        targetW = availW * 0.94;
+        targetH = targetW / pageRatio;
+      }
+      bookWidth = Math.round(targetW);
+      bookHeight = Math.round(targetH);
+    }
+
+    // Side margin check to prevent floating buttons from ever overlapping text!
+    const sideMargin = (containerDimensions.width - bookWidth) / 2;
+    const showFloatingNav = isTwoPageSpread && sideMargin >= 56;
 
     // Pages currently displayed on the static base layer
     const displayBaseLeftPage =
@@ -326,40 +456,68 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
         : activeSpread.rightPage;
 
     return (
-      <div className="relative w-full h-full flex items-center justify-center p-3 sm:p-6 md:p-8 overflow-hidden select-none">
-        {/* Previous Page Floating Circle Button (Desktop only; hidden on mobile to avoid obscuring content) */}
-        {canGoPrev && (
+      <div
+        ref={containerRef}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        className="relative w-full h-full flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-hidden select-none"
+      >
+        {/* Subtle Zoom Indicator & Reset Pill when zoomed in */}
+        {zoom > 1.0 && (
+          <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 bg-black/85 backdrop-blur-md text-white px-3.5 py-1.5 rounded-full text-xs font-medium flex items-center gap-2 shadow-2xl border border-white/20 select-none pointer-events-auto">
+            <span>Zum {Math.round(zoom * 100)}%</span>
+            <span className="opacity-40">•</span>
+            <span className="opacity-80">Seret untuk tatal</span>
+            <span className="opacity-40">•</span>
+            <button
+              type="button"
+              onClick={() => {
+                if (onZoomChange) onZoomChange(1.0);
+                setPanOffset({ x: 0, y: 0 });
+              }}
+              className="underline hover:text-primary transition-colors cursor-pointer"
+            >
+              Reset (100%)
+            </button>
+          </div>
+        )}
+
+        {/* Previous Page Floating Circle Button (Displayed only when generous side margin is available) */}
+        {showFloatingNav && canGoPrev && (
           <button
             onClick={handleFlipPrev}
             disabled={isFlipping}
-            className="hidden lg:flex absolute left-3 sm:left-6 md:left-10 z-40 h-12 w-12 md:h-14 md:w-14 rounded-full bg-black/60 hover:bg-black/90 text-white items-center justify-center backdrop-blur-md shadow-2xl transition-transform active:scale-95 border border-white/20 disabled:opacity-40 cursor-pointer"
+            className="flex absolute left-3 sm:left-5 md:left-7 z-40 h-11 w-11 md:h-13 md:w-13 rounded-full bg-black/60 hover:bg-black/90 text-white items-center justify-center backdrop-blur-md shadow-2xl transition-transform active:scale-95 border border-white/20 disabled:opacity-40 cursor-pointer"
             title="Selak ke Halaman Sebelumnya"
           >
-            <ChevronLeft className="h-6 w-6 md:h-8 md:w-8" />
+            <ChevronLeft className="h-6 w-6" />
           </button>
         )}
 
-        {/* Next Page Floating Circle Button (Desktop only; hidden on mobile to avoid obscuring content) */}
-        {canGoNext && (
+        {/* Next Page Floating Circle Button (Displayed only when generous side margin is available) */}
+        {showFloatingNav && canGoNext && (
           <button
             onClick={handleFlipNext}
             disabled={isFlipping}
-            className="hidden lg:flex absolute right-3 sm:right-6 md:right-10 z-40 h-12 w-12 md:h-14 md:w-14 rounded-full bg-black/60 hover:bg-black/90 text-white items-center justify-center backdrop-blur-md shadow-2xl transition-transform active:scale-95 border border-white/20 disabled:opacity-40 cursor-pointer"
+            className="flex absolute right-3 sm:right-5 md:right-7 z-40 h-11 w-11 md:h-13 md:w-13 rounded-full bg-black/60 hover:bg-black/90 text-white items-center justify-center backdrop-blur-md shadow-2xl transition-transform active:scale-95 border border-white/20 disabled:opacity-40 cursor-pointer"
             title="Selak ke Halaman Seterusnya"
           >
-            <ChevronRight className="h-6 w-6 md:h-8 md:w-8" />
+            <ChevronRight className="h-6 w-6" />
           </button>
         )}
 
-        {/* 3D Book Stage Container — Fixed Zoom & Perspective */}
+        {/* 3D Book Stage Container — Fixed Zoom, Pan & Perspective */}
         <div
-          className="relative flex items-center justify-center transition-transform duration-200 ease-out"
+          className="relative flex items-center justify-center transition-transform duration-150 ease-out"
           style={{
-            transform: `scale(${zoom})`,
+            transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom})`,
             transformOrigin: 'center center',
+            cursor: zoom > 1 ? (isDraggingRef.current ? 'grabbing' : 'grab') : undefined,
           }}
         >
-          {isDesktop ? (
+          {isTwoPageSpread ? (
             /* ========================================================
                DESKTOP TWO-PAGE SPREAD — ROCK-SOLID STATIC CONTAINER
                Spine is locked permanently in the dead-center at 50%.
@@ -367,21 +525,24 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
             <div
               className="relative rounded-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.6)] select-none"
               style={{
-                height: DESKTOP_BOOK_HEIGHT,
-                width: DESKTOP_BOOK_WIDTH,
-                maxWidth: '92vw',
+                height: `${bookHeight}px`,
+                width: `${bookWidth}px`,
+                maxWidth: '96vw',
                 perspective: '2500px',
                 transformStyle: 'preserve-3d',
               }}
             >
               {/* 1. LEFT PAGE BASE (Strictly left: 0, width: 50%) */}
               <div
-                onClick={canGoPrev ? handleFlipPrev : undefined}
+                onClick={() => {
+                  if (handleDoubleTapOrClick()) return;
+                  if (canGoPrev) handleFlipPrev();
+                }}
                 className={cn(
                   'absolute left-0 top-0 bottom-0 w-1/2 rounded-l-2xl overflow-hidden bg-white border border-black/15 shadow-inner',
                   canGoPrev ? 'cursor-pointer' : 'cursor-default'
                 )}
-                title={canGoPrev ? 'Klik untuk selak ke halaman sebelumnya' : undefined}
+                title={canGoPrev ? 'Klik untuk selak (Dwi-klik untuk zum)' : 'Dwi-klik untuk zum'}
               >
                 {displayBaseLeftPage ? (
                   <>
@@ -432,12 +593,15 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
 
               {/* 3. RIGHT PAGE BASE (Strictly left: 50%, width: 50%) */}
               <div
-                onClick={canGoNext ? handleFlipNext : undefined}
+                onClick={() => {
+                  if (handleDoubleTapOrClick()) return;
+                  if (canGoNext) handleFlipNext();
+                }}
                 className={cn(
                   'absolute right-0 top-0 bottom-0 w-1/2 rounded-r-2xl overflow-hidden bg-white border border-black/15 shadow-inner',
                   canGoNext ? 'cursor-pointer' : 'cursor-default'
                 )}
-                title={canGoNext ? 'Klik untuk selak ke halaman seterusnya' : undefined}
+                title={canGoNext ? 'Klik untuk selak (Dwi-klik untuk zum)' : 'Dwi-klik untuk zum'}
               >
                 {displayBaseRightPage ? (
                   <>
@@ -667,9 +831,9 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
               onTouchEnd={handleTouchEnd}
               className="relative select-none shadow-2xl rounded-2xl"
               style={{
-                height: MOBILE_BOOK_HEIGHT,
-                width: MOBILE_BOOK_WIDTH,
-                maxWidth: '92vw',
+                height: `${bookHeight}px`,
+                width: `${bookWidth}px`,
+                maxWidth: '96vw',
                 perspective: '2000px',
                 transformStyle: 'preserve-3d',
               }}
@@ -678,6 +842,7 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
               <div
                 className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl border border-black/15 bg-white cursor-pointer"
                 onClick={(e) => {
+                  if (handleDoubleTapOrClick()) return;
                   const rect = e.currentTarget.getBoundingClientRect();
                   const clickX = e.clientX - rect.left;
                   if (clickX > rect.width / 2) {
@@ -686,6 +851,7 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                     handleFlipPrev();
                   }
                 }}
+                title="Klik sisi untuk selak (Dwi-klik untuk zum)"
               >
                 {/* Subtle Spine Crease on left edge */}
                 <div className="absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-black/15 to-transparent pointer-events-none z-10" />

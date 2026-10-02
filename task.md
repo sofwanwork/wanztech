@@ -1570,3 +1570,46 @@ Memperbaiki susun atur studio rekaan e-Sijil pada skrin 14 inci (dan komputer ri
 3. **Pengesanan Pintar Klien (Smart Client Auto-Detection)**:
    - Apabila penganjur memuat naik fail grafik/slaid pembentangan, enjin builder secara automatik mengukur nisbah saiz gambar. Jika imej melintang dikesan, tetapan ditukar serta-merta kepada Landskap tanpa memerlukan konfigurasi rumit.
 
+---
+
+# Pengoptimuman Kebolehbacaan Skrin Kecil, Zum Pintar & Penyingkiran Gangguan Butang 3D Flipbook ✅ SIAP <!-- id: small-screen-zoom-readability -->
+
+**Matlamat**: Menyelesaikan masalah teks kecil dan butang menutupi risalah pada skrin kecil / komputer riba / pratonton pembina (seperti dalam screenshot `media_1790934120002.png`), dengan melaksanakan mod penyesuaian kontena (Container-Aware Single/Double Page), penyingkiran butang anak panah yang bertindih di atas kandungan, fungsi Dwi-Klik untuk Zum & Tatal Bebas (Drag-to-Pan), togol 1 Muka Surat vs 2 Muka Surat, dan mod kembangan pratonton pembina.
+
+- [x] 1. Penyesuaian Saiz Pintar Mengikut Kontena (`ResizeObserver`) di `components/pamphlet/viewer/flipbook-view.tsx` <!-- id: 1 -->
+  - Gantikan `window.innerWidth >= 1024` dengan ukuran sebenar lebar kontena (`containerWidth`).
+  - Apabila kontena < 880px (skrin kecil, komputer riba 14-inci, panel pratonton builder), beralih secara automatik kepada **Mod 1 Muka Surat (Single Page)** supaya muka surat mengembang sepenuhnya dan teks risalah berlipat kali ganda lebih besar & jelas.
+- [x] 2. Hapuskan Butang Anak Panah Terapung Bertindih di Atas Kandungan <!-- id: 2 -->
+  - Periksa margin sisi `(containerWidth - bookWidth) / 2`. Jika margin sisi < 56px, sembunyikan butang anak panah terapung bulat `<` / `>` supaya langsung tidak menutupi teks risalah.
+- [x] 3. Ciri Dwi-Klik Untuk Zum & Tatal Bebas (Drag-to-Pan) <!-- id: 3 -->
+  - Dwi-klik / dwi-ketik pada halaman untuk membesarkan halaman terus ke 1.85x bagi membaca teks halus.
+  - Membolehkan tatalan bebas dengan menyeret tetikus/jari (*drag-to-pan*) semasa zum aktif (`zoom > 1.0`).
+  - Dwi-klik sekali lagi atau tekan butang "Reset (100%)" pada pill terapung untuk kembali ke saiz asal.
+- [x] 4. Togol 1 Muka Surat vs 2 Muka Surat Pada Bar Navigasi (`toolbar.tsx`) <!-- id: 4 -->
+  - Sediakan togol pantas `[ 📄 1 Halaman ]` / `[ 📖 2 Halaman ]` supaya pembaca pada bila-bila masa boleh memilih untuk membesarkan teks ke saiz maksimum.
+- [x] 5. Penambahbaikan Pembina Buku Program (`app/(dashboard)/pamphlet-builder/[id]/client.tsx`) <!-- id: 5 -->
+  - Majukan mod peranti `forceMobile={previewDevice === 'mobile'}` ke `PamphletViewer` semasa simulasi telefon aktif.
+  - Tambah butang togol `[ ⛶ Skrin Penuh ]` / `[ ⛶ Kecilkan ]` di bar atas builder untuk melihat buku program pada saiz penuh semasa mengedit.
+- [x] 6. Ujian, Pengesahan & Dokumentasi <!-- id: 6 -->
+  - 323 / 323 ujian vitest lulus.
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - Kemas kini `lessons.md`, `memory.md`, dan `task.md`.
+
+---
+
+## Reviu Pembaikan: Kebolehbacaan Skrin Kecil & Penyingkiran Gangguan Butang
+
+1. **Punca Masalah (Root Cause)**:
+   - **Teks Terlalu Kecil Pada Skrin Kecil / Panel Builder**: `FlipbookView` sebelum ini menilai `window.innerWidth >= 1024` secara global. Walaupun skrin komputer riba mempunyai resolusi 1280px atau 1366px, ruang pratonton di dalam builder hanya mempunyai kelebaran ~650px - 750px kerana sebahagian skrin digunakan oleh panel konfigurasi kiri. Memaksa paparan dwi-halaman (2-page spread) dalam ruang selebar 700px mengecilkan setiap helaian kepada ~300px sahaja, menyebabkan teks risalah menjadi terlalu halus dan sukar dibaca.
+   - **Butang Anak Panah Bertindih di Atas Kandungan**: Butang anak panah terapung `<` dan `>` diletakkan secara mutlak pada `right-3`. Apabila kelebaran buku hampir menyamai kelebaran kontena, butang ini terhimpit masuk ke dalam kawasan halaman dan menutup tepat di atas perenggan teks risalah.
+   - **Ketiadaan Zum Pantas & Tatal**: Pembaca tidak dapat membesarkan bahagian teks tertentu dan menggesernya secara bebas untuk membaca jadual terperinci.
+2. **Penyelesaian Dilaksanakan**:
+   - **Penyesuaian Berasaskan Kontena (`ResizeObserver`)**: Apabila kontena < 880px, sistem secara automatik bertukar kepada **Mod 1 Muka Surat (Single Page)**. Halaman mengembang memenuhi keseluruhan ketinggian dan kelebaran kontena, menjadikan saiz teks **hampir 70% lebih besar dan tajam**.
+   - **Kawalan Ruang Margin Sisi (Side Margin Guard)**: Butang terapung `<` dan `>` hanya dipaparkan jika terdapat ruang margin kosong sekurang-kurangnya 56px di sisi buku (`sideMargin >= 56`). Jika ruang sempit, butang disembunyikan sepenuhnya supaya teks tidak sesekali terhalang.
+   - **Dwi-Klik Zum & Seret Bebas (Drag-to-Pan)**: Pengguna boleh mendwi-klik di mana-mana bahagian muka surat untuk zum segera ke 1.85x, dan menyeret tetikus/jari untuk menatal ke mana-mana sudut risalah dengan lancar.
+   - **Togol 1 Halaman vs 2 Halaman**: Disediakan butang `[ 📄 1 Halaman ]` / `[ 📖 2 Halaman ]` pada palang alat bawah untuk membolehkan pembaca memilih mod paparan pilihan pada bila-bila masa.
+   - **Kembangkan Pratonton Builder**: Ditambah butang `[ ⛶ Skrin Penuh ]` di bar pembina bagi membolehkan penganjur menyembunyikan panel tepi dan menyemak buku program dalam paparan penuh dengan 1 klik.
+
+
+
