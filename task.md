@@ -1367,3 +1367,29 @@ Memperbaiki susun atur studio rekaan e-Sijil pada skrin 14 inci (dan komputer ri
 3. **Studio Penyunting Bersepadu**:
    - Membolehkan penganjur memuat naik berbilang helaian imej (PNG/JPG) serentak, menyusun kedudukan muka surat dengan pantas, dan melihat pratonton langsung (*live interactive preview*) mengikut saiz Desktop mahupun Telefon Pintar.
 
+---
+
+# Pembaikan & Ketahanan: PostgREST PGRST205 / Skema Jadual Pamphlets <!-- id: bugfix-pgrst205 -->
+
+**Matlamat**: Mengendalikan ketiadaan jadual `public.pamphlets` di Supabase secara anggun (menghapuskan `Error fetching pamphlets: Object` yang berpunca daripada kod ralat PostgREST `PGRST205`), menyediakan ralat yang jelas, dan membekalkan notis panduan migrasi 1-klik di Dashboard.
+
+- [x] 1. Kenal pasti kod ralat PostgREST `PGRST205` & `42P01` dalam `isMissingTableError` (`lib/storage/pamphlets.ts`). <!-- id: 1 -->
+- [x] 2. Lindungi fungsi-fungsi storan `getPamphlets`, `createPamphlet`, `updatePamphlet`, dan `deletePamphlet` dengan mesej panduan yang jelas. <!-- id: 2 -->
+- [x] 3. Tambah fungsi semakan `isPamphletsTableReady()` dan komponen notis panduan migrasi SQL 1-klik di `app/(dashboard)/pamphlets/page.tsx` & `client.tsx`. <!-- id: 3 -->
+- [x] 4. Kemas kini `tests/pamphlet-storage.test.ts` untuk mengesahkan pengendalian `PGRST205` secara anggun tanpa melemparkan ralat tidak terkawal. <!-- id: 4 -->
+- [x] 5. Pengesahan penuh kualiti: `npm test`, `npm run typecheck`, `npm run lint`. <!-- id: 5 -->
+- [x] 6. Dokumentasikan penemuan di `memory.md` dan `lessons.md`. <!-- id: 6 -->
+
+---
+
+## Reviu Pembaikan: Pengendalian Anggun Ketiadaan Jadual Supabase (PGRST205)
+
+1. **Punca Masalah (Root Cause)**:
+   - Apabila jadual `pamphlets` belum wujud di Supabase, PostgREST v12 mengembalikan ralat `PGRST205` (`Could not find the table 'public.pamphlets' in the schema cache`), bukannya ralat Postgres mentah `42P01`.
+   - Pemeriksaan awal hanya menyemak `error.code === '42P01'`, menyebabkan ralat `PGRST205` dilemparkan ke blok `catch` dan mencetak `console.error('Error fetching pamphlets:', Object)` pada setiap muat semula halaman pelayan.
+2. **Penyelesaian Dilaksanakan**:
+   - `isMissingTableError(error)` kini mengesan kod `PGRST205`, `42P01`, `PGRST204`, `PGRST200`, dan teks `schema cache` / `does not exist`.
+   - `getPamphlets()` mengembalikan tatasusunan kosong `[]` secara senyap tanpa mencemari log ralat konsol pelayan.
+   - Papan pemuka `/pamphlets` kini memaparkan banner notis pintar `PamphletDatabaseNotice` dengan butang 1-klik "Salin Skrip SQL" sekiranya jadual belum dimigrasi di Supabase.
+   - 321 ujian unit lulus 100% tanpa sebarang ralat atau amaran.
+

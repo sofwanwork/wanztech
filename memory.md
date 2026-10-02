@@ -1597,6 +1597,15 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
     - 317 / 317 ujian unit lulus merentas 37 suite ujian.
     - 0 ralat TypeScript (`tsc --noEmit`), 0 ralat/amaran ESLint.
     - Binaan pengeluaran Next.js 16 bersih (58 laluan).
+- **2026-10-02 (Pembaikan Ketahanan: PostgREST PGRST205 Table Missing Fallback)**:
+  - **Punca Ralat**: Log pelayan `Error fetching pamphlets: Object` dikesan di konsol pelayar apabila melawat `/pamphlets`. Ini berlaku kerana PostgREST v12 memulangkan kod `PGRST205` (`Could not find the table 'public.pamphlets' in the schema cache`), bukannya kod mentah Postgres `42P01`. Pemeriksaan awal hanya menyemak `error.code === '42P01'`, menyebabkan ralat tidak ditangkap dan dilemparkan ke konsol.
+  - **Penambahbaikan**:
+    - Memperluas `isMissingTableError` dalam `lib/storage/pamphlets.ts` untuk mengendalikan `PGRST205`, `42P01`, `PGRST204`, `PGRST200`, dan padanan frasa `schema cache` / `does not exist`.
+    - `getPamphlets()` mengembalikan `[]` secara selamat tanpa sebarang `console.error` yang mengganggu.
+    - `createPamphlet`, `updatePamphlet`, dan `deletePamphlet` memberikan mesej penjelasan yang jelas (`PAMPHLET_TABLE_MISSING_MESSAGE`) yang membimbing pengguna untuk menjalankan migrasi SQL.
+    - Menambah fungsi semakan `isPamphletsTableReady()` dan komponen pintar `PamphletDatabaseNotice` pada papan pemuka `/pamphlets` dengan butang 1-klik "Salin Skrip SQL" serta pendedahan kod SQL lengkap.
+    - Ditambah 4 ujian unit baharu dalam `tests/pamphlet-storage.test.ts` untuk memastikan ketahanan ralat ini berterusan.
+    - 321 / 321 ujian unit lulus 100%, 0 ralat TypeScript, 0 ralat ESLint.
 
 
 

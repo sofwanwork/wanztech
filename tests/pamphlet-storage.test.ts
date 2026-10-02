@@ -32,6 +32,9 @@ import {
   getPamphlets,
   createPamphlet,
   getPamphletPublic,
+  isMissingTableError,
+  isPamphletsTableReady,
+  PAMPHLET_TABLE_MISSING_MESSAGE,
 } from '@/lib/storage/pamphlets';
 
 beforeEach(() => {
@@ -45,7 +48,9 @@ beforeEach(() => {
   builder.eq = vi.fn().mockReturnValue(builder);
   builder.neq = vi.fn().mockReturnValue(builder);
   builder.order = vi.fn().mockReturnValue(builder);
+  builder.limit = vi.fn().mockReturnValue(builder);
   builder.single = vi.fn().mockResolvedValue({ data: null, error: null });
+  builder.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
 
   builder.then = (resolve: any) => resolve({ data: [], error: null });
 
@@ -147,5 +152,86 @@ describe('E-Pamphlet — Storage Operations', () => {
     expect(p).not.toBeNull();
     expect(p?.title).toBe('Kejohanan Sukan Tahunan');
     expect(p?.displayMode).toBe('slide');
+  });
+
+  describe('PostgREST PGRST205 & Missing Table Resilience', () => {
+    it('isMissingTableError correctly identifies PGRST205, 42P01, and schema cache errors', () => {
+      expect(isMissingTableError({ code: 'PGRST205', message: "Could not find the table 'public.pamphlets' in the schema cache" })).toBe(true);
+      expect(isMissingTableError({ code: '42P01', message: 'relation "pamphlets" does not exist' })).toBe(true);
+      expect(isMissingTableError({ code: 'PGRST204' })).toBe(true);
+      expect(isMissingTableError({ message: 'could not find the table in schema cache' })).toBe(true);
+      expect(isMissingTableError({ code: '23505', message: 'duplicate key' })).toBe(false);
+      expect(isMissingTableError(null)).toBe(false);
+    });
+
+    it('getPamphlets returns empty array gracefully when table is missing (PGRST205)', async () => {
+      const builder: any = {};
+      builder.select = vi.fn().mockReturnValue(builder);
+      builder.eq = vi.fn().mockReturnValue(builder);
+      builder.order = vi.fn().mockResolvedValue({
+        data: null,
+        error: {
+          code: 'PGRST205',
+          message: "Could not find the table 'public.pamphlets' in the schema cache",
+        },
+      });
+
+      mockState.from.mockReturnValue(builder);
+
+      const items = await getPamphlets();
+      expect(items).toEqual([]);
+    });
+
+    it('isPamphletsTableReady returns false when PGRST205 is encountered and true when healthy', async () => {
+      // 1. Table missing case
+      const missingBuilder: any = {};
+      missingBuilder.select = vi.fn().mockReturnValue(missingBuilder);
+      missingBuilder.limit = vi.fn().mockResolvedValue({
+        data: null,
+        error: {
+          code: 'PGRST205',
+          message: "Could not find the table 'public.pamphlets' in the schema cache",
+        },
+      });
+      mockState.from.mockReturnValue(missingBuilder);
+
+      const readyBefore = await isPamphletsTableReady();
+      expect(readyBefore).toBe(false);
+
+      // 2. Table healthy case
+      const healthyBuilder: any = {};
+      healthyBuilder.select = vi.fn().mockReturnValue(healthyBuilder);
+      healthyBuilder.limit = vi.fn().mockResolvedValue({
+        data: [{ id: 'pamphlet-1' }],
+        error: null,
+      });
+      mockState.from.mockReturnValue(healthyBuilder);
+
+      const readyAfter = await isPamphletsTableReady();
+      expect(readyAfter).toBe(true);
+    });
+
+    it('createPamphlet throws clear migration guidance message when table is missing', async () => {
+      const builder: any = {};
+      builder.select = vi.fn().mockReturnValue(builder);
+      builder.eq = vi.fn().mockReturnValue(builder);
+      builder.maybeSingle = vi.fn().mockResolvedValue({
+        data: null,
+        error: {
+          code: 'PGRST205',
+          message: "Could not find the table 'public.pamphlets' in the schema cache",
+        },
+      });
+      builder.then = (resolve: any) => resolve({ count: 0, data: null, error: null });
+
+      mockState.from.mockReturnValue(builder);
+
+      await expect(
+        createPamphlet({
+          slug: 'majlis-tahunan',
+          title: 'Majlis Tahunan 2026',
+        })
+      ).rejects.toThrow(PAMPHLET_TABLE_MISSING_MESSAGE);
+    });
   });
 });

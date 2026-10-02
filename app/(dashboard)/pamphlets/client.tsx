@@ -528,3 +528,69 @@ export function PamphletCard({
     </div>
   );
 }
+
+/**
+ * Notice banner displayed when the pamphlets table has not been created yet in Supabase
+ */
+export function PamphletDatabaseNotice({ sqlScript }: { sqlScript: string }) {
+  const [copied, setCopied] = useState(false);
+  const [showSql, setShowSql] = useState(false);
+
+  const handleCopySql = async () => {
+    try {
+      await navigator.clipboard.writeText(sqlScript);
+      setCopied(true);
+      toast.success('Skrip SQL migrasi berjaya disalin! Sila tampal di Supabase SQL Editor.');
+      setTimeout(() => setCopied(false), 3000);
+    } catch {
+      toast.error('Gagal menyalin skrip.');
+    }
+  };
+
+  return (
+    <div className="rounded-2xl border border-amber-300 bg-amber-50/90 p-5 md:p-6 shadow-xs">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="flex h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse" />
+            <h3 className="text-base font-bold text-amber-950">
+              Pangkalan Data E-Pamphlet Belum Diaktifkan
+            </h3>
+          </div>
+          <p className="text-xs md:text-sm text-amber-800 leading-relaxed max-w-3xl">
+            Jadual <code className="px-1.5 py-0.5 rounded bg-amber-200/70 font-mono text-xs text-amber-900">public.pamphlets</code> belum wujud di Supabase. Sila salin skrip SQL migrasi di bawah dan jalankan di <strong>Supabase Dashboard &gt; SQL Editor</strong> untuk membolehkan penganjur menyimpan dan menerbitkan e-pamphlet.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowSql(!showSql)}
+            className="border-amber-300 bg-amber-100/60 hover:bg-amber-100 text-amber-900 text-xs"
+          >
+            {showSql ? 'Sembunyi SQL' : 'Lihat Skrip SQL'}
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleCopySql}
+            className="bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs gap-1.5 shadow-xs"
+          >
+            {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+            <span>{copied ? 'Telah Disalin!' : 'Salin Skrip SQL'}</span>
+          </Button>
+        </div>
+      </div>
+
+      {showSql && (
+        <div className="mt-4 pt-4 border-t border-amber-200/80">
+          <div className="relative">
+            <pre className="max-h-56 overflow-auto p-3.5 rounded-xl bg-gray-900 text-gray-100 font-mono text-xs leading-relaxed">
+              <code>{sqlScript}</code>
+            </pre>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

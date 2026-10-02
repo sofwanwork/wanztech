@@ -5,6 +5,99 @@ import { TIER_LIMITS } from '@/lib/constants/subscription-tiers';
 import { getEffectiveTier } from '@/lib/storage/subscription';
 import { cleanPamphletSlug, isValidPamphletSlug } from '@/lib/pamphlets/utils';
 
+// Error message when database migration has not been run
+export const PAMPHLET_TABLE_MISSING_MESSAGE =
+  'Jadual pangkalan data "pamphlets" belum diaktifkan di Supabase. Sila jalankan migrasi SQL 20261002000000_add_pamphlets.sql di Supabase SQL Editor.';
+
+export const PAMPHLETS_SQL_MIGRATION = `-- Migration: Add pamphlets table for E-Pamphlet & Buku Program Digital
+
+create table if not exists public.pamphlets (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  slug text not null unique,
+  title text not null default '',
+  description text default '',
+  event_date text default '',
+  location text default '',
+  cover_image text default '',
+  pdf_url text default '',
+  theme text not null default 'dark',
+  display_mode text not null default 'flipbook',
+  pages jsonb not null default '[]'::jsonb,
+  action_buttons jsonb not null default '[]'::jsonb,
+  is_active boolean not null default true,
+  views integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists pamphlets_user_id_idx on public.pamphlets (user_id);
+create index if not exists pamphlets_slug_idx on public.pamphlets (slug);
+
+-- Enable RLS
+alter table public.pamphlets enable row level security;
+
+-- Policies
+drop policy if exists "pamphlets_select" on public.pamphlets;
+create policy "pamphlets_select" on public.pamphlets
+  for select using (auth.uid() = user_id or is_active = true);
+
+drop policy if exists "pamphlets_insert" on public.pamphlets;
+create policy "pamphlets_insert" on public.pamphlets
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "pamphlets_update" on public.pamphlets;
+create policy "pamphlets_update" on public.pamphlets
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+drop policy if exists "pamphlets_delete" on public.pamphlets;
+create policy "pamphlets_delete" on public.pamphlets
+  for delete using (auth.uid() = user_id);
+
+-- Touch updated_at trigger
+create or replace function public.set_pamphlets_updated_at()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_pamphlets_updated_at on public.pamphlets;
+create trigger trg_pamphlets_updated_at
+  before update on public.pamphlets
+  for each row execute function public.set_pamphlets_updated_at();
+
+notify pgrst, 'reload schema';
+`;
+
+/**
+ * Checks whether an error represents a missing table in Supabase PostgREST (PGRST205, 42P01, etc.)
+ */
+export function isMissingTableError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const err = error as { code?: string; message?: string; details?: string };
+  const code = String(err.code || '');
+  const msg = String(err.message || '').toLowerCase();
+  const details = String(err.details || '').toLowerCase();
+
+  return (
+    code === '42P01' ||
+    code === 'PGRST205' ||
+    code === 'PGRST204' ||
+    code === 'PGRST200' ||
+    code === 'PGRST116' && msg.includes('pamphlets') ||
+    msg.includes('schema cache') ||
+    msg.includes('could not find the table') ||
+    msg.includes('does not exist') ||
+    details.includes('schema cache')
+  );
+}
+
 // Helper to map DB row to Pamphlet model
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function mapPamphletFromRow(row: any): Pamphlet {
@@ -30,6 +123,22 @@ export function mapPamphletFromRow(row: any): Pamphlet {
 }
 
 /**
+ * Check whether the pamphlets table exists and is accessible
+ */
+export async function isPamphletsTableReady(): Promise<boolean> {
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.from('pamphlets').select('id').limit(1);
+    if (error && isMissingTableError(error)) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Get all pamphlets for the current authenticated user
  */
 export async function getPamphlets(): Promise<Pamphlet[]> {
@@ -48,9 +157,8 @@ export async function getPamphlets(): Promise<Pamphlet[]> {
       .order('created_at', { ascending: false });
 
     if (error) {
-      // Graceful fallback if table does not exist yet (42P01)
-      if (error.code === '42P01') {
-        console.warn('public.pamphlets table does not exist yet.');
+      if (isMissingTableError(error)) {
+        // Table not migrated yet; return empty list gracefully without throwing
         return [];
       }
       throw error;
@@ -58,6 +166,9 @@ export async function getPamphlets(): Promise<Pamphlet[]> {
 
     return (data || []).map(mapPamphletFromRow);
   } catch (err) {
+    if (isMissingTableError(err)) {
+      return [];
+    }
     console.error('Error fetching pamphlets:', err);
     return [];
   }
@@ -170,11 +281,15 @@ export async function createPamphlet(payload: {
   }
 
   // Check slug uniqueness
-  const { data: existingSlug } = await supabase
+  const { data: existingSlug, error: slugErr } = await supabase
     .from('pamphlets')
     .select('id')
     .eq('slug', cleanSlug)
-    .single();
+    .maybeSingle();
+
+  if (slugErr && isMissingTableError(slugErr)) {
+    throw new Error(PAMPHLET_TABLE_MISSING_MESSAGE);
+  }
 
   if (existingSlug) {
     throw new Error('Pautan (slug) ini telah digunakan. Sila pilih pautan lain.');
@@ -202,6 +317,9 @@ export async function createPamphlet(payload: {
     .single();
 
   if (error) {
+    if (isMissingTableError(error)) {
+      throw new Error(PAMPHLET_TABLE_MISSING_MESSAGE);
+    }
     throw new Error(error.message || 'Gagal menyimpan pamphlet.');
   }
 
@@ -244,12 +362,16 @@ export async function updatePamphlet(
       throw new Error('Slug tidak sah.');
     }
     // Check slug collision
-    const { data: existing } = await supabase
+    const { data: existing, error: checkSlugErr } = await supabase
       .from('pamphlets')
       .select('id')
       .eq('slug', cleanSlug)
       .neq('id', id)
-      .single();
+      .maybeSingle();
+
+    if (checkSlugErr && isMissingTableError(checkSlugErr)) {
+      throw new Error(PAMPHLET_TABLE_MISSING_MESSAGE);
+    }
 
     if (existing) {
       throw new Error('Pautan (slug) ini telah digunakan.');
@@ -266,6 +388,9 @@ export async function updatePamphlet(
     .single();
 
   if (error) {
+    if (isMissingTableError(error)) {
+      throw new Error(PAMPHLET_TABLE_MISSING_MESSAGE);
+    }
     throw new Error(error.message || 'Gagal mengemas kini pamphlet.');
   }
 
@@ -292,6 +417,9 @@ export async function deletePamphlet(id: string): Promise<void> {
     .eq('user_id', user.id);
 
   if (error) {
+    if (isMissingTableError(error)) {
+      return;
+    }
     throw new Error(error.message || 'Gagal memadam pamphlet.');
   }
 }

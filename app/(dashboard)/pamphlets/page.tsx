@@ -1,5 +1,9 @@
-import { getPamphlets } from '@/lib/storage/pamphlets';
-import { CreatePamphletDialog, PamphletCard } from './client';
+import {
+  getPamphlets,
+  isPamphletsTableReady,
+  PAMPHLETS_SQL_MIGRATION,
+} from '@/lib/storage/pamphlets';
+import { CreatePamphletDialog, PamphletCard, PamphletDatabaseNotice } from './client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BookOpen, Eye, Sparkles, Layers, ExternalLink } from 'lucide-react';
 import { headers } from 'next/headers';
@@ -13,7 +17,10 @@ export const metadata = {
 };
 
 export default async function PamphletsDashboard() {
-  const pamphlets = await getPamphlets();
+  const [pamphlets, isTableReady] = await Promise.all([
+    getPamphlets(),
+    isPamphletsTableReady(),
+  ]);
 
   // Get app URL for link previews
   const headerList = await headers();
@@ -57,6 +64,11 @@ export default async function PamphletsDashboard() {
           <CreatePamphletDialog />
         </div>
       </div>
+
+      {/* Migration Notice if database table is not ready yet */}
+      {!isTableReady && (
+        <PamphletDatabaseNotice sqlScript={PAMPHLETS_SQL_MIGRATION} />
+      )}
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-3">
