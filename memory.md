@@ -2199,6 +2199,17 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - `npm run lint`: 0 ralat / 0 amaran ESLint.
   - `npm test`: 342 / 342 ujian unit lulus (100%) merentas kesemua 39 suite ujian.
 
+## Production Deployment (2026-10-05 — Global English Standardization, 3D Flipbook Polish & Hydration Fixes)
+- **Tarikh**: 2026-10-05
+- **Commit Git**: `de5d986` (`feat: global english UI standardization, 3d flipbook transitions polish, and builder hydration fixes`)
+- **Penyegerakan GitHub**: Berjaya ditolak ke `origin/master` (`f2a0921..de5d986`).
+- **Kaedah**: Vercel CLI (`npx vercel --prod --yes`)
+- **Status Binaan**: Selesai dalam ~2 minit, kompilasi 58 laluan (36 statik ○, 22 dinamik ƒ).
+- **ID Deployment**: `dpl_DkxpQM1b8FtBS7SPrRgbHH8EnvwP`
+- **URL Pengeluaran**: `https://www.klikform.com`
+- **URL Deployment Vercel**: `https://klikform-o4ml4s6xz-sofwan-jailanis-projects.vercel.app`
+
+
 
 
 
