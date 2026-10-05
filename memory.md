@@ -2249,7 +2249,15 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
 - **Pengesahan & Kualiti**:
   - `npm run typecheck`: 0 ralat TypeScript.
   - `npm run lint`: 0 ralat / 0 amaran ESLint.
-  - `npm test`: 345 / 345 ujian unit lulus (100%) merentas kesemua 39 suite ujian.
+## Production Deployment (2026-10-05 — Vertical Scroll Number Overlay Removal)
+- **Tarikh**: 2026-10-05
+- **Commit Git**: `6646498` (`fix: remove overlapping page number badge in vertical pamphlet view`)
+- **Penyegerakan GitHub**: Berjaya ditolak ke `origin/master` (`5fe5339..6646498`).
+- **Kaedah**: Vercel CLI (`npx vercel --prod --yes`)
+- **Status Binaan**: Selesai dalam ~2 minit, kompilasi 58 laluan (36 statik ○, 22 dinamik ƒ).
+- **ID Deployment**: `dpl_9gvmhNqSb8HALHTixodXHj6kVWSi`
+- **URL Pengeluaran**: `https://www.klikform.com`
+- **URL Deployment Vercel**: `https://klikform-gpvearvf6-sofwan-jailanis-projects.vercel.app`
 
 
 
