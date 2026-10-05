@@ -41,6 +41,7 @@ export function PamphletViewer({
   const [soundEnabled, setSoundEnabled] = React.useState(false);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
   const [showThumbnails, setShowThumbnails] = React.useState(false);
+  const [isAutoSliding, setIsAutoSliding] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const flipbookRef = React.useRef<FlipbookViewRef>(null);
 
@@ -48,6 +49,13 @@ export function PamphletViewer({
   React.useEffect(() => {
     setTheme(pamphlet.theme || DEFAULT_PAMPHLET_THEME);
   }, [pamphlet.theme]);
+
+  // Turn off auto-sliding when switching away from 'slide' mode
+  React.useEffect(() => {
+    if (displayMode !== 'slide') {
+      setIsAutoSliding(false);
+    }
+  }, [displayMode]);
 
   // Sync widescreen status deterministically after hydration
   React.useEffect(() => {
@@ -68,6 +76,20 @@ export function PamphletViewer({
   }, [pamphlet]);
 
   const totalPages = pages.length;
+
+  // Auto-slide slideshow timer (advances every 3.5s with wrap-around)
+  React.useEffect(() => {
+    if (!isAutoSliding || displayMode !== 'slide' || totalPages <= 1) return;
+
+    const interval = setInterval(() => {
+      setCurrentPage((prev) => (prev >= totalPages ? 1 : prev + 1));
+      if (soundEnabled) {
+        playPageTurnSound();
+      }
+    }, 3500);
+
+    return () => clearInterval(interval);
+  }, [isAutoSliding, displayMode, totalPages, soundEnabled]);
 
   const isTwoPageSpread = React.useMemo(() => {
     return (
@@ -240,6 +262,8 @@ export function PamphletViewer({
         onToggleSound={() => setSoundEnabled((prev) => !prev)}
         onToggleFullscreen={handleToggleFullscreen}
         onToggleThumbnails={() => setShowThumbnails((prev) => !prev)}
+        isAutoSliding={isAutoSliding}
+        onToggleAutoSlide={() => setIsAutoSliding((prev) => !prev)}
       />
 
       {/* Main Content Area */}
@@ -284,6 +308,9 @@ export function PamphletViewer({
                 onNextPage={() =>
                   handlePageChange(Math.min(totalPages, currentPage + 1))
                 }
+                onPageChange={handlePageChange}
+                isAutoSliding={isAutoSliding}
+                onToggleAutoSlide={() => setIsAutoSliding((prev) => !prev)}
               />
             )}
 

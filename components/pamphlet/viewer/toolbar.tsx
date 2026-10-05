@@ -24,6 +24,8 @@ import {
   QrCode,
   MessageCircle,
   FileText,
+  Play,
+  Pause,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -65,6 +67,8 @@ interface ToolbarProps {
   onToggleSound: () => void;
   onToggleFullscreen: () => void;
   onToggleThumbnails: () => void;
+  isAutoSliding?: boolean;
+  onToggleAutoSlide?: () => void;
 }
 
 export function PamphletToolbar({
@@ -91,6 +95,8 @@ export function PamphletToolbar({
   onToggleSound,
   onToggleFullscreen,
   onToggleThumbnails,
+  isAutoSliding = false,
+  onToggleAutoSlide,
 }: ToolbarProps) {
   const [copied, setCopied] = React.useState(false);
   const [isDesktop, setIsDesktop] = React.useState(false);
@@ -477,6 +483,32 @@ export function PamphletToolbar({
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
+
+        {/* Auto Slider Toggle (Slide Mode) */}
+        {displayMode === 'slide' && onToggleAutoSlide && totalPages > 1 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggleAutoSlide}
+            className={cn(
+              'h-8 px-2.5 text-xs gap-1.5 rounded-full hover:bg-current/10 shrink-0 font-medium transition-all',
+              isAutoSliding && 'bg-primary/20 text-primary font-bold shadow-xs'
+            )}
+            title={isAutoSliding ? 'Pause Auto Slider' : 'Start Auto Slider'}
+          >
+            {isAutoSliding ? (
+              <>
+                <Pause className="h-3.5 w-3.5 fill-current shrink-0" />
+                <span className="hidden sm:inline">Pause</span>
+              </>
+            ) : (
+              <>
+                <Play className="h-3.5 w-3.5 fill-current shrink-0" />
+                <span className="hidden sm:inline">Auto</span>
+              </>
+            )}
+          </Button>
+        )}
 
         {/* Spread Mode Toggle (Desktop only) */}
         {!isMobileLayout && displayMode === 'flipbook' && onToggleSpreadMode && totalPages >= 2 && (

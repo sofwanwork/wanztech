@@ -251,4 +251,46 @@ describe('E-Pamphlet — 1-Click Page Spread Mode Toggle Logic', () => {
   });
 });
 
+describe('E-Pamphlet — Touch Slider & Auto Slider Mechanics', () => {
+  it('correctly derives transition direction between page transitions', () => {
+    const getDirection = (currentPage: number, prevPage: number) => {
+      return currentPage > prevPage ? 1 : -1;
+    };
+
+    expect(getDirection(2, 1)).toBe(1); // Moving to next page
+    expect(getDirection(3, 2)).toBe(1); // Moving to next page
+    expect(getDirection(1, 2)).toBe(-1); // Moving to prev page
+    expect(getDirection(2, 3)).toBe(-1); // Moving to prev page
+  });
+
+  it('correctly calculates next page in auto-slider loop with wrap-around', () => {
+    const getNextAutoSlidePage = (current: number, total: number) => {
+      return current >= total ? 1 : current + 1;
+    };
+
+    const totalPages = 4;
+    expect(getNextAutoSlidePage(1, totalPages)).toBe(2);
+    expect(getNextAutoSlidePage(2, totalPages)).toBe(3);
+    expect(getNextAutoSlidePage(3, totalPages)).toBe(4);
+    // At final page, it must wrap seamlessly back to page 1
+    expect(getNextAutoSlidePage(4, totalPages)).toBe(1);
+  });
+
+  it('safely clamps slide index within valid bounds', () => {
+    const getSafePageIndex = (currentPage: number, totalPages: number) => {
+      return Math.max(0, Math.min(totalPages - 1, currentPage - 1));
+    };
+
+    const totalPages = 3;
+    expect(getSafePageIndex(1, totalPages)).toBe(0);
+    expect(getSafePageIndex(2, totalPages)).toBe(1);
+    expect(getSafePageIndex(3, totalPages)).toBe(2);
+    // Boundary guards
+    expect(getSafePageIndex(0, totalPages)).toBe(0);
+    expect(getSafePageIndex(99, totalPages)).toBe(2);
+    expect(getSafePageIndex(-5, totalPages)).toBe(0);
+  });
+});
+
+
 

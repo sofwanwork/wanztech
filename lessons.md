@@ -269,3 +269,21 @@
       - Semasa SSR pelayan dan hidrasi awal klien, kedua-dua persekitaran mengembalikan `<>{children}</>` yang menghasilkan `<Button>...</Button>` asli 100% tepat tanpa sebarang atribut sintetik Radix `aria-controls`.
       - Sejurus selepas hidrasi selesai, `useEffect` memicu `setMounted(true)` dalam kitaran tugas yang sama, mengaktifkan modal dialog Radix secara lancar di sisi klien tanpa sebarang lonjakan DOM atau kelipan visual.
       - Terapkan corak ini secara proaktif pada semua modal dialog yang membalut butang pemicu di dalam Server Component (seperti `NewCertificateDialog`, `PricingModal`, dan `DeleteCertificateButton`).
+
+- **Penyelesaian Skrin Kosong Framer Motion Touch Slider (`drag="x"` dengan `mode="popLayout"` vs `mode="wait"`)**:
+  Apabila membina pemapar gelongsor sentuh (*touch swipe carousel/slider*):
+  (1) **Pertembungan Seretan Jari dengan `mode="wait"` Menghasilkan Blank Screen Lock**:
+      Penggunaan `mode="wait"` pada `<AnimatePresence>` memaksa elemen semasa menyelesaikan animasi keluar (`exit`) sebelum elemen baharu dipasang ke dalam pokok DOM. Apabila pengguna meleret jari atau tetikus (`drag="x"`), gerakan seretan menimpa dan mengganggu nilai gerakan koordinat `x` animasi keluar. Ini menyebabkan enjin Framer Motion terlepas (*drop*) panggilan balik `onExitComplete`. Akibatnya, `<AnimatePresence>` kekal terperangkap dalam keadaan menunggu tanpa memasang slaid baharu, menyebabkan skrin menjadi kosong (blank) secara kekal.
+  (2) **Penyelesaian Muktamad: Gunakan `mode="popLayout"`**:
+      Sentiasa gunakan `mode="popLayout"` pada `<AnimatePresence>` untuk sebarang komponen yang menyokong seretan sentuh (`drag="x"`). `mode="popLayout"` segera memasang elemen slaid yang masuk ke dalam DOM secara serentak, sambil menetapkan elemen yang keluar sebagai lapisan mutlak (`absolute inset-0`). Ini membolehkan kedua-dua slaid meluncur selari tanpa bergantung kepada pengesahan `onExitComplete` yang rapuh, menghapuskan sebarang kemungkinan skrin terkunci kosong.
+  (3) **Pengiraan Arah Segerak Semasa Render (Zero-Lag Direction Tracking)**:
+      Mengira arah gerakan (`direction`) melalui `useEffect` adalah tak segerak dan menyebabkan frame render pertama sentiasa menggunakan nilai arah lapuk atau `0`. Gunakan state segerak semasa render:
+      ```tsx
+      const [[page, direction], setPageAndDirection] = useState([currentPage, 0]);
+      if (page !== currentPage) {
+        setPageAndDirection([currentPage, currentPage > page ? 1 : -1]);
+      }
+      ```
+      Ini menjamin varian gerakan kiri dan kanan (`100%` vs `-100%`) dikira dengan tepat pada kitaran render pertama tanpa sebarang pertembungan arah.
+  (4) **Prapemuatan Imej di Latar Belakang (`new Image().src`)**:
+      Prapemuat kesemua imej slaid semasa pemapar dimuatkan untuk mengelakkan kotak putih kosong akibat kelewatan muat turun imej apabila pengguna meleret pantas.

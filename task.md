@@ -198,6 +198,39 @@
 1. **Pengasingan Kitaran Hidrasi Radix Trigger (`mounted` Guard Pattern)**: Elemen `DialogTrigger` dan `AlertDialogTrigger` Radix UI yang menggunakan `asChild` menyuntik atribut dinamik seperti `aria-controls` berasaskan `useId()`. Apabila diletakkan di dalam Server Component App Router, perbezaan urutan panggilan `useId()` antara persekitaran streaming SSR dan hidrasi klien mencetuskan amaran perlanggaran DOM React 19 (`throwOnHydrationMismatch`). Memulangkan `{children}` secara natif sewaktu `!mounted` memastikan pohon DOM pelayan dan DOM hidrasi klien sepadan 100% tanpa sebarang mutasi awal, manakala interaktiviti dialog diaktifkan secara licin sebaik sahaja JavaScript sedia.
 2. **Perlindungan Menyeluruh Merentas Semua Dialog Pembangun**: Pengawal hidrasi dipasang secara serentak ke atas `<NewCertificateDialog>`, `<PricingModal>` (apabila had sijil dicapai), dan `<DeleteCertificateButton>` (pada kad templat) bagi menghapuskan terus sebarang potensi hidrasi berulang di halaman `/certificates/builder`.
 
+---
+
+# Pembaikan Skrin Kosong Touch Slider & Penambahan Ciri Auto-Slider (Touch Slider Blank Screen Fix & Auto Slider) ✅ SELESAI
+- [x] 1. Kenal pasti punca teknikal "bila slide ke kiri jadi blank":
+  - 1.1 `mode="wait"` pada `<AnimatePresence>`: Memaksa elemen lama menyelesaikan animasi keluar (`exit`) sebelum elemen baharu boleh dipasang (*mount*). Apabila seretan tetikus/jari (*drag gesture*) bertembung dengan animasi `x` atau berlaku re-render imej (`onLoad`), `onExitComplete` Framer Motion gagal dicetuskan, menyebabkan bekas paparan terperangkap dalam keadaan menunggu tanpa sebarang helaian dipaparkan (menjadi skrin kosong/blank).
+  - 1.2 State `direction` tidak segerak: Menggunakan `useEffect` untuk mengira arah pergerakan halaman menyebabkan render pertama selepas penukaran halaman masih menggunakan nilai `direction` lama atau `0`, menyebabkan animasi keluar dan masuk berlanggar ke arah yang sama.
+  - 1.3 Ketiadaan prapemuatan imej dalam `SliderView`: Helaian baharu perlu dimuat turun melalui rangkaian sebaik sahaja bertukar halaman, menyebabkan kotak putih kosong seketika semasa imej sedang dimuatkan.
+- [x] 2. Rombak seni bina animasi `SliderView` (`components/pamphlet/viewer/slider-view.tsx`):
+  - 2.1 Tukar `mode="wait"` kepada `mode="popLayout"` pada `<AnimatePresence>` supaya helaian baharu dipasang serta-merta dan bergerak serentak dengan helaian lama tanpa sebarang jeda skrin kosong.
+  - 2.2 Kira `direction` secara segerak semasa kitaran render (synchronous render-time tracking `[page, direction]`) untuk menjamin arah transisi 100% tepat pada setiap pertukaran helaian.
+  - 2.3 Tambah prapemuatan imej di latar belakang (`new Image().src`) bagi kesemua muka surat supaya imej tersedia serta-merta di dalam cache pelayar.
+  - 2.4 Kemas kini varian transisi (`enter`, `center`, `exit`) dengan peratusan CSS (`100%`, `-100%`) dan easing spring yang stabil bagi pengalaman gelongsor sentuh (*touch swipe*) yang lancar dan responsif.
+- [x] 3. Bina ciri Auto-Slider (Tayangan Automatik / Autoplay Slideshow):
+  - 3.1 Cipta pengurusan state `isAutoSliding` di `components/pamphlet/viewer/index.tsx` dan salurkan ke `SliderView` serta `PamphletToolbar`.
+  - 3.2 Laksanakan pemasa peralihan automatik (3.5 saat) dengan gelung pusingan automatik (apabila tiba di muka surat terakhir, kembali lancar ke muka surat 1).
+  - 3.3 Sediakan butang togol Auto-Slider terapung yang elegan pada antaramuka `SliderView` lengkap dengan penunjuk status (*Play/Pause* dan penunjuk denyutan status emerald).
+  - 3.4 Sediakan butang Auto-Slider pada bar navigasi bawah `PamphletToolbar` khusus untuk mod `slide`.
+- [x] 4. Jalankan pengesahan kualiti:
+  - 4.1 `npm run typecheck` (0 ralat TypeScript).
+  - 4.2 `npm run lint` (0 ralat / 0 amaran ESLint).
+  - 4.3 `npm test` (345/345 ujian lulus merentas 39 suite).
+- [x] 5. Kemas kini `lessons.md`, `memory.md`, dan `task.md`.
+
+---
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Peralihan Serentak `mode="popLayout"` Menggantikan `mode="wait"`**: Mod `wait` dalam Framer Motion menunggu animasi keluar `exit` tamat sebelum memulakan animasi masuk `enter`. Apabila pengguna menyeret slaid secara pantas (`drag="x"`), interaksi seretan menimpa kedudukan `x` animasi keluar sehingga callback `onExitComplete` tidak dicetuskan oleh enjin Framer Motion, mengakibatkan slaid baharu langsung tidak dipasang (*unmounted state lock*) dan memaparkan skrin kosong. Menggunakan `mode="popLayout"` menyelesaikan pertembungan ini secara mutlak kerana slaid baharu dipasang serta-merta pada DOM manakala slaid lama keluar secara berlapis (`absolute inset-0`).
+2. **Pengiraan Arah Segerak Semasa Render (Zero-Lag Direction Derivation)**: Menggantikan `useEffect` yang tak segerak dengan state derivation segerak `[[page, direction], setPageAndDirection]` memastikan varian pergerakan arah kiri/kanan (`dir >= 0 ? 100% : -100%`) sentiasa tepat pada frame render pertama tanpa sebarang lag atau nilai arah lapuk (`0`).
+3. **Prapemuatan Imej Menyeluruh (`new Image().src`)**: Kesemua imej slaid diprapemuat ke dalam cache memori pelayar sebaik sahaja komponen dipasang. Ini menghapuskan sebarang kelipan kotak putih kosong semasa pengguna meluncur pantas ke mana-mana halaman.
+4. **Kawalan Auto-Slider Dwi-Akses (Dual Surface Controls)**: Pengguna boleh mengaktifkan tayangan slaid automatik sama ada melalui butang pil terapung atas pentas (dengan status Play/Pause & lampu denyutan hijau emerald) ataupun melalui bar navigasi bawah pemapar (toolbar), memberikan fleksibiliti maksimum pada kedua-dua peranti mudah alih dan komputer meja.
+
+
+
 
 
 

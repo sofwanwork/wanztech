@@ -2,10 +2,11 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Smartphone } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Smartphone, Play, Pause } from 'lucide-react';
 import { PamphletPageItem, PamphletOrientation } from '@/lib/types/pamphlets';
+import { cn } from '@/lib/utils';
 
-interface SliderViewProps {
+export interface SliderViewProps {
   pages: PamphletPageItem[];
   currentPage: number;
   zoom: number;
@@ -13,6 +14,9 @@ interface SliderViewProps {
   forceMobile?: boolean;
   onPrevPage: () => void;
   onNextPage: () => void;
+  onPageChange?: (pageNumber: number) => void;
+  isAutoSliding?: boolean;
+  onToggleAutoSlide?: () => void;
 }
 
 export function SliderView({
@@ -23,10 +27,19 @@ export function SliderView({
   forceMobile = false,
   onPrevPage,
   onNextPage,
+  onPageChange,
+  isAutoSliding = false,
+  onToggleAutoSlide,
 }: SliderViewProps) {
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const [direction, setDirection] = React.useState(0);
-  const prevPageRef = React.useRef(currentPage);
+  
+  // Synchronous direction tracking during render to prevent stale or inverted transitions
+  const [[page, direction], setPageAndDirection] = React.useState([currentPage, 0]);
+
+  if (page !== currentPage) {
+    setPageAndDirection([currentPage, currentPage > page ? 1 : -1]);
+  }
+
   const [detectedRatios, setDetectedRatios] = React.useState<Record<number, number>>({});
   const [containerDimensions, setContainerDimensions] = React.useState<{
     width: number;
@@ -35,6 +48,17 @@ export function SliderView({
     width: 1024,
     height: 768,
   });
+
+  // Preload all slide images into browser cache so transitions never render blank images
+  React.useEffect(() => {
+    if (!pages || pages.length === 0) return;
+    pages.forEach((p) => {
+      if (p.imageUrl) {
+        const img = new Image();
+        img.src = p.imageUrl;
+      }
+    });
+  }, [pages]);
 
   React.useEffect(() => {
     if (!containerRef.current) return;
@@ -65,15 +89,6 @@ export function SliderView({
     };
   }, []);
 
-  React.useEffect(() => {
-    if (currentPage > prevPageRef.current) {
-      setDirection(1);
-    } else if (currentPage < prevPageRef.current) {
-      setDirection(-1);
-    }
-    prevPageRef.current = currentPage;
-  }, [currentPage]);
-
   const handleImageLoad = React.useCallback(
     (pageNum: number, e: React.SyntheticEvent<HTMLImageElement>) => {
       const img = e.currentTarget;
@@ -91,7 +106,8 @@ export function SliderView({
   if (!pages || pages.length === 0) return null;
 
   const isLandscape = orientation === 'landscape' || pages[0]?.orientation === 'landscape';
-  const activePage = pages[currentPage - 1];
+  const safeIndex = Math.max(0, Math.min(pages.length - 1, currentPage - 1));
+  const activePage = pages[safeIndex];
   const pageRatio =
     detectedRatios[currentPage] ||
     activePage?.aspectRatio ||
@@ -120,11 +136,12 @@ export function SliderView({
   const slideWidth = Math.round(targetW);
   const slideHeight = Math.round(targetH);
 
+  // Simultaneous slide transitions with popLayout to eliminate blank gaps
   const slideVariants = {
     enter: (dir: number) => ({
-      x: dir > 0 ? 300 : -300,
+      x: dir >= 0 ? '100%' : '-100%',
       opacity: 0,
-      scale: 0.95,
+      scale: 0.96,
     }),
     center: {
       zIndex: 1,
@@ -134,9 +151,9 @@ export function SliderView({
     },
     exit: (dir: number) => ({
       zIndex: 0,
-      x: dir < 0 ? 300 : -300,
+      x: dir >= 0 ? '-100%' : '100%',
       opacity: 0,
-      scale: 0.95,
+      scale: 0.96,
     }),
   };
 
@@ -145,9 +162,40 @@ export function SliderView({
       ref={containerRef}
       className="relative w-full h-full flex flex-col items-center justify-center p-2 sm:p-4 md:p-6 overflow-hidden select-none"
     >
+      {/* Floating Auto-Slider Control Pill */}
+      {pages.length > 1 && onToggleAutoSlide && (
+        <div className="absolute top-3 sm:top-5 z-20 flex items-center justify-center pointer-events-auto">
+          <button
+            type="button"
+            onClick={onToggleAutoSlide}
+            className={cn(
+              'flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold backdrop-blur-xl border shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95',
+              isAutoSliding
+                ? 'bg-primary text-primary-foreground border-primary/40 shadow-primary/30 ring-2 ring-primary/40'
+                : 'bg-black/45 hover:bg-black/70 text-white border-white/20 hover:border-white/40'
+            )}
+            title={isAutoSliding ? 'Pause Auto Slider' : 'Start Auto Slider (Slideshow)'}
+          >
+            {isAutoSliding ? (
+              <>
+                <Pause className="h-3.5 w-3.5 fill-current shrink-0" />
+                <span>Auto Slide: Playing</span>
+                <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-0.5" />
+              </>
+            ) : (
+              <>
+                <Play className="h-3.5 w-3.5 fill-current shrink-0 ml-0.5" />
+                <span>Auto Slide</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
       {/* Navigation Arrows */}
       {currentPage > 1 && (
         <button
+          type="button"
           onClick={onPrevPage}
           className="absolute left-2 sm:left-6 z-20 h-10 w-10 md:h-12 md:w-12 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center backdrop-blur-md shadow-xl transition-all transform hover:scale-110 active:scale-95 border border-white/20"
           title="Previous Page"
@@ -158,6 +206,7 @@ export function SliderView({
 
       {currentPage < pages.length && (
         <button
+          type="button"
           onClick={onNextPage}
           className="absolute right-2 sm:right-6 z-20 h-10 w-10 md:h-12 md:w-12 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center backdrop-blur-md shadow-xl transition-all transform hover:scale-110 active:scale-95 border border-white/20"
           title="Next Page"
@@ -177,7 +226,7 @@ export function SliderView({
           transformOrigin: 'center center',
         }}
       >
-        <AnimatePresence initial={false} custom={direction} mode="wait">
+        <AnimatePresence initial={false} custom={direction} mode="popLayout">
           <motion.div
             key={currentPage}
             custom={direction}
@@ -186,28 +235,39 @@ export function SliderView({
             animate="center"
             exit="exit"
             transition={{
-              x: { type: 'spring', stiffness: 300, damping: 30 },
-              opacity: { duration: 0.2 },
+              x: { type: 'spring', stiffness: 350, damping: 32 },
+              opacity: { duration: 0.22 },
             }}
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.4}
+            dragElastic={0.35}
             onDragEnd={(e, { offset, velocity }) => {
-              const swipe = Math.abs(offset.x) * velocity.x;
-              if (swipe < -10000 || offset.x < -100) {
-                if (currentPage < pages.length) onNextPage();
-              } else if (swipe > 10000 || offset.x > 100) {
-                if (currentPage > 1) onPrevPage();
+              const swipePower = Math.abs(offset.x) * velocity.x;
+              // Swiping Left (dragging to the left) -> Next Page
+              if (swipePower < -5000 || offset.x < -60) {
+                if (currentPage < pages.length) {
+                  onNextPage();
+                } else if (pages.length > 1) {
+                  onPageChange?.(1);
+                }
+              }
+              // Swiping Right (dragging to the right) -> Prev Page
+              else if (swipePower > 5000 || offset.x > 60) {
+                if (currentPage > 1) {
+                  onPrevPage();
+                } else if (pages.length > 1) {
+                  onPageChange?.(pages.length);
+                }
               }
             }}
-            className="relative h-full w-full rounded-2xl overflow-hidden shadow-2xl border border-black/15 bg-white cursor-grab active:cursor-grabbing"
+            className="absolute inset-0 h-full w-full rounded-2xl overflow-hidden shadow-2xl border border-black/15 bg-white cursor-grab active:cursor-grabbing flex items-center justify-center"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={activePage?.imageUrl}
               alt={activePage?.title || `Page ${currentPage}`}
               onLoad={(e) => handleImageLoad(currentPage, e)}
-              className="w-full h-full object-contain pointer-events-none"
+              className="w-full h-full object-contain pointer-events-none select-none"
               draggable={false}
             />
           </motion.div>

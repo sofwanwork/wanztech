@@ -2199,15 +2199,36 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - `npm run lint`: 0 ralat / 0 amaran ESLint.
   - `npm test`: 342 / 342 ujian unit lulus (100%) merentas kesemua 39 suite ujian.
 
-## Production Deployment (2026-10-05 — Global English Standardization, 3D Flipbook Polish & Hydration Fixes)
-- **Tarikh**: 2026-10-05
-- **Commit Git**: `de5d986` (`feat: global english UI standardization, 3d flipbook transitions polish, and builder hydration fixes`)
-- **Penyegerakan GitHub**: Berjaya ditolak ke `origin/master` (`f2a0921..de5d986`).
-- **Kaedah**: Vercel CLI (`npx vercel --prod --yes`)
-- **Status Binaan**: Selesai dalam ~2 minit, kompilasi 58 laluan (36 statik ○, 22 dinamik ƒ).
-- **ID Deployment**: `dpl_DkxpQM1b8FtBS7SPrRgbHH8EnvwP`
-- **URL Pengeluaran**: `https://www.klikform.com`
-- **URL Deployment Vercel**: `https://klikform-o4ml4s6xz-sofwan-jailanis-projects.vercel.app`
+## System Improvements (2026-10-05 — Pembaikan Skrin Kosong Touch Slider & Penambahan Ciri Auto-Slider)
+- **Konteks & Laporan Pengguna**:
+  1. "sy perasan bila di touch slider, bila slide ke kanan nampak gambar, tapi bila slide ke kiri jadi blank"
+  2. "pastu utk touch slider ni nak ada butang utk auto slider"
+- **Punca Masalah Skrin Kosong (Blank Screen Lock)**:
+  1. *Pertembungan `drag="x"` dengan `mode="wait"` Framer Motion*: Pada `<AnimatePresence mode="wait">`, elemen lama mesti menyelesaikan animasi keluar (`exit`) sebelum elemen baharu dipasang ke dalam pokok DOM. Apabila pengguna menyeret slaid secara sentuhan (`drag="x"`), gerakan seretan menimpa dan membatalkan transformasi `x` animasi keluar. Ini menyebabkan enjin Framer Motion terlepas (*drop*) panggilan balik `onExitComplete`. Akibatnya, `<AnimatePresence>` kekal terperangkap dalam mod menunggu dan tidak memasang slaid baharu, menyebabkan paparan terkunci sebagai skrin putih/kosong secara kekal.
+  2. *State Arah Transisi Tak Segerak*: Menggunakan `useEffect` untuk mengira arah gerakan (`direction`) menyebabkan frame render pertama sentiasa menggunakan nilai lapuk atau `0`, menyebabkan animasi keluar dan masuk berlanggar ke arah yang sama.
+  3. *Ketiadaan Prapemuatan Imej*: Helaian baharu perlu dimuat turun melalui rangkaian sebaik sahaja bertukar halaman, menyebabkan jeda kotak putih kosong seketika semasa imej sedang dimuatkan.
+- **Penyelesaian Dilaksanakan**:
+  1. `components/pamphlet/viewer/slider-view.tsx`:
+     - **Peralihan Serentak `mode="popLayout"`**: Menggantikan `mode="wait"` dengan `mode="popLayout"` pada `<AnimatePresence>`. Slaid baharu dipasang serta-merta ke dalam DOM sementara slaid lama keluar secara bertindih (`absolute inset-0`), menghapuskan sepenuhnya risiko skrin terkunci kosong.
+     - **Pengiraan Arah Segerak Semasa Render**: Mengira arah peralihan secara segerak `[[page, direction], setPageAndDirection]` semasa render untuk memastikan varian pergerakan arah kiri/kanan (`100%` vs `-100%`) tepat pada kitaran pertama.
+     - **Prapemuatan Imej Menyeluruh (`new Image().src`)**: Kesemua imej slaid diprapemuat ke dalam cache pelayar semasa mount.
+     - **Butang Togol Auto-Slider Terapung**: Menyediakan butang pil terapung atas pentas dengan status *Play / Pause* dan penunjuk denyutan hijau emerald (*emerald pulse indicator*) apabila sedang beroperasi.
+     - **Sokongan Pusingan Penuh (Wrap-Around Loop)**: Seretan melepasi halaman terakhir akan membungkus semula ke halaman 1, dan sebaliknya.
+  2. `components/pamphlet/viewer/toolbar.tsx`:
+     - Menambah prop `isAutoSliding` dan `onToggleAutoSlide` pada `ToolbarProps`.
+     - Menambah butang togol Auto-Slider pada bar navigasi bawah (*floating bottom navigator*) khusus apabila `displayMode === 'slide'`.
+  3. `components/pamphlet/viewer/index.tsx`:
+     - Menambah pengurusan state `isAutoSliding`.
+     - Membina pemasa tayangan automatik `setInterval` (3.5 saat) dengan gelung pusingan automatik (`prev >= totalPages ? 1 : prev + 1`) dan sokongan efek bunyi selakan.
+     - Mematikan tayangan automatik sekiranya pengguna beralih keluar daripada mod `slide`.
+     - Menyalurkan prop `isAutoSliding`, `onToggleAutoSlide`, dan `onPageChange` kepada `PamphletToolbar` dan `SliderView`.
+  4. `tests/pamphlet.test.ts`:
+     - Menambah suite ujian unit baharu mengesahkan pengiraan arah transisi, gelung pusingan auto-slider, dan had indeks slaid.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm test`: 345 / 345 ujian unit lulus (100%) merentas kesemua 39 suite ujian.
+
 
 
 
