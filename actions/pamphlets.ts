@@ -30,7 +30,7 @@ export async function createPamphletAction(payload: {
     console.error('Failed to create pamphlet:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Gagal mencipta e-pamphlet.',
+      error: error instanceof Error ? error.message : 'Failed to create e-pamphlet.',
     };
   }
 }
@@ -52,7 +52,7 @@ export async function updatePamphletAction(
     console.error('Failed to update pamphlet:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Gagal mengemas kini e-pamphlet.',
+      error: error instanceof Error ? error.message : 'Failed to update e-pamphlet.',
     };
   }
 }
@@ -66,7 +66,7 @@ export async function deletePamphletAction(id: string) {
     console.error('Failed to delete pamphlet:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Gagal memadam e-pamphlet.',
+      error: error instanceof Error ? error.message : 'Failed to delete e-pamphlet.',
     };
   }
 }

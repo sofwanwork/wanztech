@@ -27,7 +27,7 @@ export async function createBioPageAction(payload: {
     console.error('Failed to create bio page:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Gagal mencipta halaman bio.',
+      error: error instanceof Error ? error.message : 'Failed to create bio page.',
     };
   }
 }
@@ -49,7 +49,7 @@ export async function updateBioPageAction(
     console.error('Failed to update bio page:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Gagal mengemas kini halaman bio.',
+      error: error instanceof Error ? error.message : 'Failed to update bio page.',
     };
   }
 }
@@ -63,7 +63,7 @@ export async function deleteBioPageAction(id: string) {
     console.error('Failed to delete bio page:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Gagal memadam halaman bio.',
+      error: error instanceof Error ? error.message : 'Failed to delete bio page.',
     };
   }
 }
@@ -86,7 +86,7 @@ export async function createBioLinkAction(
     console.error('Failed to create bio link:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Gagal menambah pautan.',
+      error: error instanceof Error ? error.message : 'Failed to add link.',
     };
   }
 }
@@ -104,7 +104,7 @@ export async function updateBioLinkAction(
     console.error('Failed to update bio link:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Gagal mengemas kini pautan.',
+      error: error instanceof Error ? error.message : 'Failed to update link.',
     };
   }
 }
@@ -118,7 +118,7 @@ export async function deleteBioLinkAction(id: string, bioPageId: string) {
     console.error('Failed to delete bio link:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Gagal memadam pautan.',
+      error: error instanceof Error ? error.message : 'Failed to delete link.',
     };
   }
 }
@@ -135,7 +135,7 @@ export async function reorderBioLinksAction(
     console.error('Failed to reorder bio links:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Gagal menyusun pautan.',
+      error: error instanceof Error ? error.message : 'Failed to reorder links.',
     };
   }
 }

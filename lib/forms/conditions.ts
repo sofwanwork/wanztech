@@ -126,14 +126,14 @@ export function evaluateConditional(
  * Available operators surfaced to the rule editor UI. Order matters (UX).
  */
 export const CONDITION_OPERATORS: Array<{ value: ConditionOperator; label: string }> = [
-  { value: 'equals', label: 'sama dengan' },
-  { value: 'not_equals', label: 'tidak sama dengan' },
-  { value: 'contains', label: 'mengandungi' },
-  { value: 'not_contains', label: 'tidak mengandungi' },
-  { value: 'is_empty', label: 'kosong' },
-  { value: 'is_not_empty', label: 'tidak kosong' },
-  { value: 'gt', label: 'lebih besar dari' },
-  { value: 'lt', label: 'lebih kecil dari' },
+  { value: 'equals', label: 'equals' },
+  { value: 'not_equals', label: 'does not equal' },
+  { value: 'contains', label: 'contains' },
+  { value: 'not_contains', label: 'does not contain' },
+  { value: 'is_empty', label: 'is empty' },
+  { value: 'is_not_empty', label: 'is not empty' },
+  { value: 'gt', label: 'greater than' },
+  { value: 'lt', label: 'less than' },
 ];
 
 /**

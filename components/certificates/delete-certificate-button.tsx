@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +26,11 @@ export function DeleteCertificateButton({
   templateName,
 }: DeleteCertificateButtonProps) {
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent dialog from closing immediately
@@ -33,6 +38,19 @@ export function DeleteCertificateButton({
     await deleteCertificateTemplateAction(templateId);
     // Action will redirect, no need to reset loading or close manually
   };
+
+  if (!mounted) {
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+        title="Delete template"
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    );
+  }
 
   return (
     <AlertDialog>
@@ -48,14 +66,14 @@ export function DeleteCertificateButton({
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Padam Sijil?</AlertDialogTitle>
+          <AlertDialogTitle>Delete Certificate?</AlertDialogTitle>
           <AlertDialogDescription>
-            Adakah anda pasti ingin memadam <strong>&quot;{templateName}&quot;</strong>? Tindakan
-            ini tidak boleh dibatalkan.
+            Are you sure you want to delete <strong>&quot;{templateName}&quot;</strong>? This action
+            cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={loading}>Batal</AlertDialogCancel>
+          <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
             disabled={loading}
@@ -67,7 +85,7 @@ export function DeleteCertificateButton({
                 Deleting...
               </>
             ) : (
-              'Ya, Padam'
+              'Yes, Delete'
             )}
           </AlertDialogAction>
         </AlertDialogFooter>

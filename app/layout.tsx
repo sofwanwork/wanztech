@@ -108,7 +108,7 @@ const jsonLd = {
       '@id': 'https://klikform.com/#webapp',
       name: 'KlikForm',
       description:
-        'Platform borang online percuma untuk cipta borang pendaftaran, kutip data ke Google Sheets, dan jana sijil digital automatik.',
+        'Free online form builder to create registration forms, collect data to Google Sheets, and generate automated digital certificates.',
       url: 'https://klikform.com',
       applicationCategory: 'BusinessApplication',
       operatingSystem: 'Web',

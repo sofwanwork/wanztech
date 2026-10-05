@@ -120,7 +120,7 @@ describe('Certificate Attendance Gating — checkCertificateByICOrEmail', () => 
     expect(res.attendanceIneligible).toBe(true);
     expect(res.attendanceDetails?.status).toBe('no_record');
     expect(res.attendanceDetails?.requiredHours).toBe(6);
-    expect(res.error).toContain('Tiada rekod pendaftaran masuk');
+    expect(res.error).toContain('No check-in record');
   });
 
   it('blocks certificate claiming when participant has not checked out yet', async () => {
@@ -137,7 +137,7 @@ describe('Certificate Attendance Gating — checkCertificateByICOrEmail', () => 
     expect(res.found).toBe(false);
     expect(res.attendanceIneligible).toBe(true);
     expect(res.attendanceDetails?.status).toBe('not_checked_out');
-    expect(res.error).toContain('belum mendaftar keluar');
+    expect(res.error).toContain('have not checked out');
   });
 
   it('blocks certificate claiming when total hours attended is less than required (e.g. 3 hours vs 6 hours)', async () => {
@@ -156,9 +156,9 @@ describe('Certificate Attendance Gating — checkCertificateByICOrEmail', () => 
     expect(res.attendanceDetails?.status).toBe('insufficient_hours');
     expect(res.attendanceDetails?.attendedHours).toBe(3);
     expect(res.attendanceDetails?.requiredHours).toBe(6);
-    expect(res.attendanceDetails?.shortfallText).toBe('3 Jam');
-    expect(res.error).toContain('3 Jam');
-    expect(res.error).toContain('kurang 3 Jam');
+    expect(res.attendanceDetails?.shortfallText).toBe('3 Hours');
+    expect(res.error).toContain('3 Hours');
+    expect(res.error).toContain('short by 3 Hours');
   });
 
   it('permits certificate claiming when total hours attended meets or exceeds required', async () => {

@@ -24,16 +24,16 @@ interface PageProps {
 export const dynamic = 'force-dynamic';
 
 const PLACEHOLDER_LABELS: Record<string, string> = {
-  name: 'AHMAD BIN ABU',
-  program: 'Program Latihan Kepimpinan',
-  date: new Date().toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' }),
-  signature: 'Tandatangan',
+  name: 'JOHNATHAN DOE',
+  program: 'Leadership Training Program',
+  date: new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }),
+  signature: 'Signature',
   ic: '901234-56-7890',
   serial: 'CERT-001',
-  expiry: new Date(Date.now() + 365 * 86400000).toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' }),
-  organization: 'Sekolah Menengah Kebangsaan Seri Melati',
-  role: 'Peserta Cemerlang',
-  grade: 'Gred A (Cemerlang) / 10 Jam CPD',
+  expiry: new Date(Date.now() + 365 * 86400000).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }),
+  organization: 'Global Leadership Academy',
+  role: 'Outstanding Participant',
+  grade: 'Grade A (Distinction) / 10 CPD Hours',
 };
 
 const ICON_MAP: Record<string, React.ElementType> = {

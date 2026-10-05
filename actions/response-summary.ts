@@ -39,14 +39,14 @@ export async function getFormResponseSummary(formId: string): Promise<ResponseSu
   if (form.userId !== user.id) return { ok: false, error: 'Unauthorized' };
 
   if (!form.googleSheetUrl) {
-    return { ok: false, error: 'Borang ini tiada Google Sheet yang disambung.' };
+    return { ok: false, error: 'This form does not have a connected Google Sheet.' };
   }
   const match = form.googleSheetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
-  if (!match || !match[1]) return { ok: false, error: 'URL Google Sheet tidak sah.' };
+  if (!match || !match[1]) return { ok: false, error: 'Invalid Google Sheet URL.' };
   const sheetId = match[1];
 
   const settings = await getSettingsByFormId(formId);
-  if (!settings) return { ok: false, error: 'Tiada konfigurasi Google dijumpai.' };
+  if (!settings) return { ok: false, error: 'Google configuration not found.' };
 
   // --- Resolve auth: OAuth (with refresh) or Service Account ---
   let accessToken = settings.googleAccessToken;
@@ -81,7 +81,7 @@ export async function getFormResponseSummary(formId: string): Promise<ResponseSu
   });
 
   if (!result.success || !result.rows) {
-    return { ok: false, error: result.error || 'Gagal membaca Google Sheet.' };
+    return { ok: false, error: result.error || 'Failed to read Google Sheet.' };
   }
 
   const summaries = aggregateResponses(result.rows, form.fields);

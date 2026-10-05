@@ -84,23 +84,23 @@ export function getSamplePamphlet(id: string = 'demo-pamphlet'): Pamphlet {
   return {
     id,
     userId: 'demo-user',
-    slug: 'buku-program-anugerah-cemerlang',
-    title: 'Buku Program Hari Apresiasi & Anugerah Kecemerlangan',
+    slug: 'excellence-awards-program-book',
+    title: 'Appreciation & Excellence Awards Ceremony Program Book',
     description:
-      'Buku Program Rasmi Sempena Majlis Hari Apresiasi Murid & Anugerah Kecemerlangan Akademik Tahun 2026.',
-    eventDate: '24 Oktober 2026',
-    location: 'Dewan Gemilang Bitara, SMK Cyberjaya',
+      'Official Digital Program Book for the Annual Student Appreciation & Academic Excellence Awards 2026.',
+    eventDate: 'October 24, 2026',
+    location: 'Grand Bitara Hall, Cyberjaya',
     coverImage:
       'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=800&auto=format&fit=crop',
     pdfUrl: '',
-    theme: 'emerald',
+    theme: 'light',
     displayMode: 'flipbook',
     orientation: 'portrait',
     pages: [
       {
         id: 'p1',
         pageNumber: 1,
-        title: 'Muka Hadapan (Cover)',
+        title: 'Front Cover',
         imageUrl:
           'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=1000&auto=format&fit=crop',
         aspectRatio: 1.414,
@@ -109,7 +109,7 @@ export function getSamplePamphlet(id: string = 'demo-pamphlet'): Pamphlet {
       {
         id: 'p2',
         pageNumber: 2,
-        title: 'Kata Aluan & Falsafah',
+        title: 'Welcome Remarks & Vision',
         imageUrl:
           'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?q=80&w=1000&auto=format&fit=crop',
         aspectRatio: 1.414,
@@ -118,7 +118,7 @@ export function getSamplePamphlet(id: string = 'demo-pamphlet'): Pamphlet {
       {
         id: 'p3',
         pageNumber: 3,
-        title: 'Atur Cara & Tentatif Majlis',
+        title: 'Event Itinerary & Agenda',
         imageUrl:
           'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=1000&auto=format&fit=crop',
         aspectRatio: 1.414,
@@ -127,7 +127,7 @@ export function getSamplePamphlet(id: string = 'demo-pamphlet'): Pamphlet {
       {
         id: 'p4',
         pageNumber: 4,
-        title: 'Senarai Penerima Anugerah',
+        title: 'Award Recipients',
         imageUrl:
           'https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1000&auto=format&fit=crop',
         aspectRatio: 1.414,
@@ -136,7 +136,7 @@ export function getSamplePamphlet(id: string = 'demo-pamphlet'): Pamphlet {
       {
         id: 'p5',
         pageNumber: 5,
-        title: 'Jawatankuasa Pelaksana',
+        title: 'Organizing Committee',
         imageUrl:
           'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=1000&auto=format&fit=crop',
         aspectRatio: 1.414,
@@ -145,7 +145,7 @@ export function getSamplePamphlet(id: string = 'demo-pamphlet'): Pamphlet {
       {
         id: 'p6',
         pageNumber: 6,
-        title: 'Sekalung Penghargaan (Back Cover)',
+        title: 'Acknowledgements (Back Cover)',
         imageUrl:
           'https://images.unsplash.com/photo-1513151233558-d860c5398176?q=80&w=1000&auto=format&fit=crop',
         aspectRatio: 1.414,
@@ -155,22 +155,22 @@ export function getSamplePamphlet(id: string = 'demo-pamphlet'): Pamphlet {
     actionButtons: [
       {
         id: 'b1',
-        label: 'Daftar Kehadiran (Check-In)',
+        label: 'Check-In Attendance',
         url: '#',
         icon: 'QrCode',
         type: 'checkin',
       },
       {
         id: 'b2',
-        label: 'Tebus E-Sijil',
+        label: 'Claim E-Certificate',
         url: '#',
         icon: 'Award',
         type: 'cert',
       },
       {
         id: 'b3',
-        label: 'WhatsApp Urusetia',
-        url: 'https://wa.me/60123456789?text=Salam%20Urusetia%20Majlis',
+        label: 'Contact Secretariat',
+        url: 'https://wa.me/60123456789?text=Hello%20Event%20Secretariat',
         icon: 'MessageCircle',
         type: 'whatsapp',
       },
@@ -189,23 +189,23 @@ export function getSampleLandscapePamphlet(id: string = 'demo-landscape-pamphlet
   return {
     id,
     userId: 'demo-user',
-    slug: 'buku-program-persidangan-inovasi',
-    title: 'Buku Program Persidangan Inovasi & Digital 2026 (Landskap)',
+    slug: 'digital-innovation-conference-program',
+    title: 'Digital & Innovation Conference 2026 Program Book (Landscape)',
     description:
-      'Buku Program Rasmi Format Landskap / Slaid Sempena Persidangan Inovasi & Transformasi Digital Kebangsaan.',
-    eventDate: '15 November 2026',
-    location: 'Pusat Konvensyen Antarabangsa Putrajaya (PICC)',
+      'Official Digital Landscape / Slides Program Book for the National Digital Transformation & Innovation Conference.',
+    eventDate: 'November 15, 2026',
+    location: 'Putrajaya International Convention Centre (PICC)',
     coverImage:
       'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=1200&auto=format&fit=crop',
     pdfUrl: '',
-    theme: 'dark',
+    theme: 'light',
     displayMode: 'flipbook',
     orientation: 'landscape',
     pages: [
       {
         id: 'lp1',
         pageNumber: 1,
-        title: 'Muka Hadapan (Cover)',
+        title: 'Front Cover',
         imageUrl:
           'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=1200&auto=format&fit=crop',
         aspectRatio: 1.414,
@@ -214,7 +214,7 @@ export function getSampleLandscapePamphlet(id: string = 'demo-landscape-pamphlet
       {
         id: 'lp2',
         pageNumber: 2,
-        title: 'Ucaptama Perasmian',
+        title: 'Keynote Opening Address',
         imageUrl:
           'https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1200&auto=format&fit=crop',
         aspectRatio: 1.414,
@@ -223,7 +223,7 @@ export function getSampleLandscapePamphlet(id: string = 'demo-landscape-pamphlet
       {
         id: 'lp3',
         pageNumber: 3,
-        title: 'Jadual Sesi Plenari & Forum',
+        title: 'Plenary Sessions & Agenda',
         imageUrl:
           'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?q=80&w=1200&auto=format&fit=crop',
         aspectRatio: 1.414,
@@ -232,7 +232,7 @@ export function getSampleLandscapePamphlet(id: string = 'demo-landscape-pamphlet
       {
         id: 'lp4',
         pageNumber: 4,
-        title: 'Penceramah & Panel Jemputan',
+        title: 'Featured Speakers & Panelists',
         imageUrl:
           'https://images.unsplash.com/photo-1523580494863-6f3031224c94?q=80&w=1200&auto=format&fit=crop',
         aspectRatio: 1.414,
@@ -241,7 +241,7 @@ export function getSampleLandscapePamphlet(id: string = 'demo-landscape-pamphlet
       {
         id: 'lp5',
         pageNumber: 5,
-        title: 'Jawatankuasa Pengelola',
+        title: 'Organizing Committee',
         imageUrl:
           'https://images.unsplash.com/photo-1528605248644-14dd04022da1?q=80&w=1200&auto=format&fit=crop',
         aspectRatio: 1.414,
@@ -250,7 +250,7 @@ export function getSampleLandscapePamphlet(id: string = 'demo-landscape-pamphlet
       {
         id: 'lp6',
         pageNumber: 6,
-        title: 'Sekalung Budi & Penaja (Back Cover)',
+        title: 'Sponsors & Acknowledgements (Back Cover)',
         imageUrl:
           'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1200&auto=format&fit=crop',
         aspectRatio: 1.414,
@@ -260,22 +260,22 @@ export function getSampleLandscapePamphlet(id: string = 'demo-landscape-pamphlet
     actionButtons: [
       {
         id: 'lb1',
-        label: 'Daftar Kehadiran (Check-In)',
+        label: 'Check-In Attendance',
         url: '#',
         icon: 'QrCode',
         type: 'checkin',
       },
       {
         id: 'lb2',
-        label: 'Tebus E-Sijil',
+        label: 'Claim E-Certificate',
         url: '#',
         icon: 'Award',
         type: 'cert',
       },
       {
         id: 'lb3',
-        label: 'WhatsApp Urusetia',
-        url: 'https://wa.me/60123456789?text=Salam%20Urusetia%20Persidangan',
+        label: 'Contact Secretariat',
+        url: 'https://wa.me/60123456789?text=Hello%20Conference%20Secretariat',
         icon: 'MessageCircle',
         type: 'whatsapp',
       },

@@ -90,7 +90,7 @@ export function CertificateTemplateCard({ template }: CertificateTemplateCardPro
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-gray-900 truncate">{template.name}</h3>
             <p className="text-xs text-gray-500 mt-1" suppressHydrationWarning>
-              {new Date(template.updatedAt).toLocaleDateString('ms-MY')}
+              {new Date(template.updatedAt).toLocaleDateString('en-US')}
             </p>
           </div>
           <div className="flex items-center gap-1">
@@ -100,7 +100,7 @@ export function CertificateTemplateCard({ template }: CertificateTemplateCardPro
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 shrink-0"
-                title="Jana sijil pukal dari CSV"
+                title="Generate bulk certificates from CSV"
               >
                 <Sparkles className="h-4 w-4" />
               </Button>

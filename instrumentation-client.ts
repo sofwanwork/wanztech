@@ -1,9 +1,16 @@
 // Next.js 16 / Sentry v10 load client-side instrumentation from this file.
-// We keep the actual init in `sentry.client.config.ts` (guarded by DSN) and
-// import it here so there is a single source of truth and a single init call.
-import './sentry.client.config';
+// When Sentry is unconfigured (e.g. local dev without DSN), we avoid loading
+// the heavy Sentry bundle upfront so execution time stays well under Next.js 16ms threshold.
+const hasSentry = Boolean(process.env.NEXT_PUBLIC_SENTRY_DSN);
 
-import * as Sentry from '@sentry/nextjs';
+if (hasSentry) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require('./sentry.client.config');
+}
 
-// Reports client-side navigation transitions to Sentry (no-ops without a DSN).
-export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+export const onRouterTransitionStart = hasSentry
+  ? // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require('@sentry/nextjs').captureRouterTransitionStart
+  : undefined;
+
+

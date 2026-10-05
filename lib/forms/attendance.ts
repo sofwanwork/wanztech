@@ -87,13 +87,13 @@ export function calculateAttendanceDuration(
   const minutes = netMinutes % 60;
   const decimalHours = Math.round((netMinutes / 60) * 100) / 100;
 
-  let formattedText = '0 Minit';
+  let formattedText = '0 Minutes';
   if (hours > 0 && minutes > 0) {
-    formattedText = `${hours} Jam ${minutes} Minit`;
+    formattedText = `${hours} Hours ${minutes} Minutes`;
   } else if (hours > 0) {
-    formattedText = `${hours} Jam`;
+    formattedText = `${hours} Hours`;
   } else if (minutes > 0) {
-    formattedText = `${minutes} Minit`;
+    formattedText = `${minutes} Minutes`;
   }
 
   return {
@@ -195,11 +195,11 @@ export function checkCertificateAttendanceEligibility(
     return {
       eligible: true,
       attendedHours: 0,
-      attendedDurationFormatted: '0 Jam',
+      attendedDurationFormatted: '0 Hours',
       requiredHours: 0,
       shortfallMinutes: 0,
       shortfallText: '',
-      message: 'Layak menerima sijil.',
+      message: 'Eligible for certificate.',
     };
   }
 
@@ -208,11 +208,11 @@ export function checkCertificateAttendanceEligibility(
       eligible: false,
       reason: 'no_record',
       attendedHours: 0,
-      attendedDurationFormatted: '0 Jam',
+      attendedDurationFormatted: '0 Hours',
       requiredHours: reqHours,
       shortfallMinutes: Math.round(reqHours * 60),
-      shortfallText: `${reqHours} Jam`,
-      message: 'Tiada rekod pendaftaran masuk (Check-In) dijumpai untuk program ini.',
+      shortfallText: `${reqHours} Hours`,
+      message: 'No check-in record found for this program.',
     };
   }
 
@@ -227,7 +227,7 @@ export function checkCertificateAttendanceEligibility(
       shortfallMinutes: Math.max(0, Math.round(reqHours * 60 - elapsed.totalMinutes)),
       shortfallText: '',
       message:
-        'Anda belum mendaftar keluar (Check-Out). Sila imbas kod QR program untuk mendaftar keluar bagi merekodkan jumlah jam kehadiran anda.',
+        'You have not checked out yet. Please scan the program QR code to check out and record your total attendance hours.',
     };
   }
 
@@ -239,9 +239,9 @@ export function checkCertificateAttendanceEligibility(
     const shortH = Math.floor(shortfallMin / 60);
     const shortM = shortfallMin % 60;
     let shortfallText = '';
-    if (shortH > 0 && shortM > 0) shortfallText = `${shortH} Jam ${shortM} Minit`;
-    else if (shortH > 0) shortfallText = `${shortH} Jam`;
-    else shortfallText = `${shortM} Minit`;
+    if (shortH > 0 && shortM > 0) shortfallText = `${shortH} Hours ${shortM} Minutes`;
+    else if (shortH > 0) shortfallText = `${shortH} Hours`;
+    else shortfallText = `${shortM} Minutes`;
 
     return {
       eligible: false,
@@ -251,7 +251,7 @@ export function checkCertificateAttendanceEligibility(
       requiredHours: reqHours,
       shortfallMinutes: shortfallMin,
       shortfallText,
-      message: `Jumlah kehadiran anda adalah ${duration.formattedText} (syarat minimum: ${reqHours} Jam). Anda kurang ${shortfallText} untuk melayakkan diri menebus sijil.`,
+      message: `Your total attendance is ${duration.formattedText} (minimum requirement: ${reqHours} Hours). You are short by ${shortfallText} to be eligible for certificate claiming.`,
     };
   }
 
@@ -262,7 +262,7 @@ export function checkCertificateAttendanceEligibility(
     requiredHours: reqHours,
     shortfallMinutes: 0,
     shortfallText: '',
-    message: 'Tahniah! Anda telah memenuhi syarat jam kehadiran dan layak menerima sijil.',
+    message: 'Congratulations! You have fulfilled the required attendance hours and are eligible to claim your certificate.',
   };
 }
 
@@ -300,9 +300,9 @@ export function isEarlyCheckOut(
     const shortH = Math.floor(diff / 60);
     const shortM = diff % 60;
     let shortfallText = '';
-    if (shortH > 0 && shortM > 0) shortfallText = `${shortH} Jam ${shortM} Minit`;
-    else if (shortH > 0) shortfallText = `${shortH} Jam`;
-    else shortfallText = `${shortM} Minit`;
+    if (shortH > 0 && shortM > 0) shortfallText = `${shortH} Hours ${shortM} Minutes`;
+    else if (shortH > 0) shortfallText = `${shortH} Hours`;
+    else shortfallText = `${shortM} Minutes`;
 
     return {
       isEarly: true,

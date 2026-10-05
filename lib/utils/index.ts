@@ -50,3 +50,51 @@ export function sanitizeHtml(html: string): string {
     .replace(/javascript:/gim, '')
     .replace(/vbscript:/gim, '');
 }
+
+/**
+ * Safely converts any CSS color string to a valid 7-character lowercase hexadecimal color (#rrggbb)
+ * required by HTML5 <input type="color"> elements.
+ * Browser engines require exactly a '#' followed by 6 hex digits and reject 'transparent', rgb(), etc.
+ */
+export function toValidHexColor(color: string | undefined | null, fallback = '#000000'): string {
+  if (!color || typeof color !== 'string') return fallback;
+  const trimmed = color.trim().toLowerCase();
+
+  if (
+    trimmed === 'transparent' ||
+    trimmed === 'none' ||
+    trimmed === 'inherit' ||
+    trimmed === 'initial' ||
+    trimmed === 'unset'
+  ) {
+    return fallback;
+  }
+
+  // Handle #rrggbb
+  if (/^#[0-9a-f]{6}$/.test(trimmed)) {
+    return trimmed;
+  }
+
+  // Handle #rgb -> expand to #rrggbb
+  if (/^#[0-9a-f]{3}$/.test(trimmed)) {
+    return `#${trimmed[1]}${trimmed[1]}${trimmed[2]}${trimmed[2]}${trimmed[3]}${trimmed[3]}`;
+  }
+
+  // Handle #rrggbbaa -> truncate alpha channel
+  if (/^#[0-9a-f]{8}$/.test(trimmed)) {
+    return trimmed.substring(0, 7);
+  }
+
+  // Handle bare 6-digit hex without #
+  if (/^[0-9a-f]{6}$/.test(trimmed)) {
+    return `#${trimmed}`;
+  }
+
+  // Handle bare 3-digit hex without #
+  if (/^[0-9a-f]{3}$/.test(trimmed)) {
+    return `#${trimmed[0]}${trimmed[0]}${trimmed[1]}${trimmed[1]}${trimmed[2]}${trimmed[2]}`;
+  }
+
+  return fallback;
+}
+

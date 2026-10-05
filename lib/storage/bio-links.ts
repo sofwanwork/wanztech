@@ -161,7 +161,7 @@ export async function createBioPage(payload: {
 
   const cleanUser = cleanBioUsername(payload.username);
   if (!isValidBioUsername(cleanUser)) {
-    throw new Error('Username mestilah 3-30 aksara (huruf kecil, nombor, tanda tolak & garis bawah sahaja).');
+    throw new Error('Username must be 3-30 characters (lowercase letters, numbers, hyphens & underscores only).');
   }
 
   // Check limits and subscription
@@ -176,7 +176,7 @@ export async function createBioPage(payload: {
       .eq('user_id', user.id);
 
     if ((count || 0) >= limits.maxBioPages) {
-      throw new Error(`Anda telah mencapai had halaman bio percuma (${limits.maxBioPages}). Sila naik taraf ke Pro untuk cipta lebih banyak.`);
+      throw new Error(`You have reached the free bio pages limit (${limits.maxBioPages}). Please upgrade to Pro to create more.`);
     }
   }
 
@@ -195,10 +195,10 @@ export async function createBioPage(payload: {
 
   if (error) {
     if (error.code === '23505') {
-      throw new Error(`Username "${cleanUser}" telah digunakan. Sila pilih username lain.`);
+      throw new Error(`Username "${cleanUser}" is already taken. Please choose another username.`);
     }
     console.error('Create bio page error:', error);
-    throw new Error('Gagal mencipta halaman bio: ' + error.message);
+    throw new Error('Failed to create bio page: ' + error.message);
   }
 
   return mapPageFromRow(data);
@@ -218,7 +218,7 @@ export async function updateBioPage(
   if (updates.username !== undefined) {
     const cleanUser = cleanBioUsername(updates.username);
     if (!isValidBioUsername(cleanUser)) {
-      throw new Error('Username mestilah 3-30 aksara (huruf kecil, nombor, tanda tolak & garis bawah sahaja).');
+      throw new Error('Username must be 3-30 characters (lowercase letters, numbers, hyphens & underscores only).');
     }
     updatePayload.username = cleanUser;
   }
@@ -241,10 +241,10 @@ export async function updateBioPage(
 
   if (error) {
     if (error.code === '23505') {
-      throw new Error('Username ini telah digunakan oleh profil lain.');
+      throw new Error('This username is already taken by another profile.');
     }
     console.error('Update bio page error:', error);
-    throw new Error('Gagal mengemas kini halaman bio: ' + error.message);
+    throw new Error('Failed to update bio page: ' + error.message);
   }
 
   return mapPageFromRow(data);
@@ -264,7 +264,7 @@ export async function deleteBioPage(id: string): Promise<boolean> {
 
   if (error) {
     console.error('Delete bio page error:', error);
-    throw new Error('Gagal memadam halaman bio: ' + error.message);
+    throw new Error('Failed to delete bio page: ' + error.message);
   }
 
   return true;
@@ -294,7 +294,7 @@ export async function createBioLink(
     .single();
 
   if (pageErr || !page) {
-    throw new Error('Halaman bio tidak dijumpai.');
+    throw new Error('Bio page not found.');
   }
 
   // Get max order index
@@ -327,7 +327,7 @@ export async function createBioLink(
 
   if (error) {
     console.error('Create bio link error:', error);
-    throw new Error('Gagal menambah pautan: ' + error.message);
+    throw new Error('Failed to add link: ' + error.message);
   }
 
   return mapLinkFromRow(data);
@@ -361,7 +361,7 @@ export async function updateBioLink(
 
   if (error) {
     console.error('Update bio link error:', error);
-    throw new Error('Gagal mengemas kini pautan: ' + error.message);
+    throw new Error('Failed to update link: ' + error.message);
   }
 
   return mapLinkFromRow(data);
@@ -381,7 +381,7 @@ export async function deleteBioLink(id: string): Promise<boolean> {
 
   if (error) {
     console.error('Delete bio link error:', error);
-    throw new Error('Gagal memadam pautan: ' + error.message);
+    throw new Error('Failed to delete link: ' + error.message);
   }
 
   return true;
@@ -405,7 +405,7 @@ export async function reorderBioLinks(
     .single();
 
   if (pageErr || !page) {
-    throw new Error('Halaman bio tidak dijumpai.');
+    throw new Error('Bio page not found.');
   }
 
   // Update order_index for each id in list

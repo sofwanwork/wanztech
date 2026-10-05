@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { createClient } from '@/utils/supabase/client';
 import { compressImage } from '@/utils/image-compression';
 import { v4 as uuidv4 } from 'uuid';
+import { toValidHexColor } from '@/lib/utils';
 
 export interface QrSettings {
   dotsColor?: string;
@@ -302,7 +303,7 @@ export function QrCustomizer({ url, settings, onSettingsChange }: QrCustomizerPr
                 <Input
                   id="dots-color"
                   type="color"
-                  value={dotsColor}
+                  value={toValidHexColor(dotsColor, '#000000')}
                   onChange={(e) => updateSetting('dotsColor', e.target.value)}
                   className="h-10 w-20 p-1 cursor-pointer"
                 />
@@ -320,7 +321,7 @@ export function QrCustomizer({ url, settings, onSettingsChange }: QrCustomizerPr
                 <Input
                   id="corners-color"
                   type="color"
-                  value={cornersColor}
+                  value={toValidHexColor(cornersColor, '#000000')}
                   onChange={(e) => updateSetting('cornersColor', e.target.value)}
                   className="h-10 w-20 p-1 cursor-pointer"
                 />
@@ -338,7 +339,7 @@ export function QrCustomizer({ url, settings, onSettingsChange }: QrCustomizerPr
                 <Input
                   id="background-color"
                   type="color"
-                  value={backgroundColor}
+                  value={toValidHexColor(backgroundColor, '#ffffff')}
                   onChange={(e) => updateSetting('backgroundColor', e.target.value)}
                   className="h-10 w-20 p-1 cursor-pointer"
                 />

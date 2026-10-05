@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Layers } from 'lucide-react';
+import { Layers, AlertCircle } from 'lucide-react';
 import type {
   Form,
   FormField,
@@ -68,7 +68,7 @@ export function CertificateCategorySection({
             <p className="text-sm font-medium">Certificate by Category</p>
             <p className="text-xs text-muted-foreground">
               Give a different certificate based on a dropdown answer (e.g.
-              Urusetia / Penganjur / Peserta).
+              Committee / Organizer / Participant).
             </p>
           </div>
         </div>
@@ -81,9 +81,12 @@ export function CertificateCategorySection({
       </div>
 
       {selectFields.length === 0 && (
-        <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-xs text-amber-800">
-          ⚠️ Add a <strong>Dropdown</strong> field to your form first (e.g. a
-          &quot;Category&quot; field). Its options will be mapped to certificates here.
+        <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-xs text-amber-800 flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <span>
+            Add a <strong>Dropdown</strong> field to your form first (e.g. a
+            &quot;Category&quot; field). Its options will be mapped to certificates here.
+          </span>
         </div>
       )}
 

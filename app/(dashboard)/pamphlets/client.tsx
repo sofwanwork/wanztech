@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
 import { Pamphlet, PamphletTheme, PamphletDisplayMode } from '@/lib/types/pamphlets';
 import { cleanPamphletSlug, isValidPamphletSlug } from '@/lib/pamphlets/utils';
+import { DEFAULT_PAMPHLET_THEME } from '@/lib/pamphlets/themes';
 import {
   createPamphletAction,
   deletePamphletAction,
@@ -58,14 +59,14 @@ interface CreatePamphletDialogProps {
 }
 
 export function CreatePamphletDialog({
-  buttonText = 'Cipta E-Pamphlet',
+  buttonText = 'Create E-Pamphlet',
   variant = 'default',
   size = 'default',
 }: CreatePamphletDialogProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
-  const theme: PamphletTheme = 'emerald';
+  const theme: PamphletTheme = DEFAULT_PAMPHLET_THEME;
   const [displayMode, setDisplayMode] = useState<PamphletDisplayMode>('flipbook');
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -88,15 +89,15 @@ export function CreatePamphletDialog({
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
-      setError('Sila masukkan tajuk buku program / acara.');
+      setError('Please enter event / program book title.');
       return;
     }
     if (!slug.trim()) {
-      setError('Sila masukkan pautan (slug) ringkas.');
+      setError('Please enter short link (slug).');
       return;
     }
     if (!isValidPamphletSlug(slug)) {
-      setError('Slug mestilah 3-60 aksara menggunakan huruf kecil, nombor dan tanda sengkang (-).');
+      setError('Slug must be 3-60 characters using lowercase letters, numbers, and hyphens (-).');
       return;
     }
 
@@ -111,10 +112,10 @@ export function CreatePamphletDialog({
 
       if (res.success && res.id) {
         setOpen(false);
-        toast.success('Buku program berjaya dicipta!');
+        toast.success('Program book created successfully!');
         router.push(`/pamphlet-builder/${res.id}`);
       } else {
-        setError(res.error || 'Gagal mencipta pamphlet');
+        setError(res.error || 'Failed to create pamphlet');
       }
     });
   };
@@ -132,10 +133,10 @@ export function CreatePamphletDialog({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <BookOpen className="w-5 h-5 text-primary" />
-              Cipta E-Pamphlet Baharu
+              Create New E-Pamphlet
             </DialogTitle>
             <DialogDescription>
-              Mulakan buku program digital majlis anda. Anda boleh muat naik helaian muka surat selepas ini.
+              Start your digital event program book. You can upload pages right after.
             </DialogDescription>
           </DialogHeader>
 
@@ -148,11 +149,11 @@ export function CreatePamphletDialog({
 
             <div className="space-y-1.5">
               <Label htmlFor="pamphlet-title" className="text-xs font-semibold">
-                Tajuk Majlis / Buku Program <span className="text-destructive">*</span>
+                Event / Program Book Title <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="pamphlet-title"
-                placeholder="Contoh: Kejohanan Sukan Tahunan 2026"
+                placeholder="Example: Annual Sports Day 2026"
                 value={title}
                 onChange={handleTitleChange}
                 disabled={isPending}
@@ -162,14 +163,14 @@ export function CreatePamphletDialog({
 
             <div className="space-y-1.5">
               <Label htmlFor="pamphlet-slug" className="text-xs font-semibold">
-                Pautan URL Ringkas <span className="text-destructive">*</span>
+                Short URL Link <span className="text-destructive">*</span>
               </Label>
               <div className="flex items-center rounded-md border border-input bg-muted/40 px-3 py-2 text-sm text-muted-foreground focus-within:ring-1 focus-within:ring-ring">
                 <span className="shrink-0 text-xs font-mono opacity-60">klikform.com/p/</span>
                 <input
                   id="pamphlet-slug"
                   className="w-full bg-transparent pl-1 font-mono text-sm text-foreground focus:outline-none"
-                  placeholder="kejohanan-sukan-2026"
+                  placeholder="annual-sports-day-2026"
                   value={slug}
                   onChange={handleSlugChange}
                   disabled={isPending}
@@ -177,12 +178,12 @@ export function CreatePamphletDialog({
                 />
               </div>
               <p className="text-[11px] text-muted-foreground">
-                Hadirin majlis boleh membuka buku program menggunakan pautan ini atau mengimbas Kod QR.
+                Attendees can open the program book using this link or by scanning the QR Code.
               </p>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Pilih Mod Paparan Lalai</Label>
+              <Label className="text-xs font-semibold">Select Default Display Mode</Label>
               <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
@@ -206,7 +207,7 @@ export function CreatePamphletDialog({
                   }`}
                 >
                   <Layers className="w-4 h-4" />
-                  <span>Touch Slide</span>
+                  <span>Touch Slider</span>
                 </button>
                 <button
                   type="button"
@@ -218,7 +219,7 @@ export function CreatePamphletDialog({
                   }`}
                 >
                   <Calendar className="w-4 h-4" />
-                  <span>Skrol Menegak</span>
+                  <span>Vertical Scroll</span>
                 </button>
               </div>
             </div>
@@ -231,10 +232,10 @@ export function CreatePamphletDialog({
               onClick={() => setOpen(false)}
               disabled={isPending}
             >
-              Batal
+              Cancel
             </Button>
             <Button type="submit" disabled={isPending} className="font-semibold">
-              {isPending ? 'Mencipta...' : 'Seterusnya →'}
+              {isPending ? 'Creating...' : 'Next →'}
             </Button>
           </DialogFooter>
         </form>
@@ -266,10 +267,10 @@ export function PamphletCard({
     startTransition(async () => {
       const res = await updatePamphletAction(pamphlet.id, { isActive: checked });
       if (res.success) {
-        toast.success(checked ? 'Pamphlet diaktifkan' : 'Pamphlet dinyahaktifkan');
+        toast.success(checked ? 'Pamphlet activated' : 'Pamphlet deactivated');
       } else {
         setIsActive(!checked);
-        toast.error('Gagal mengemas kini status');
+        toast.error('Failed to update status');
       }
     });
   };
@@ -277,7 +278,7 @@ export function PamphletCard({
   const handleCopy = () => {
     navigator.clipboard.writeText(publicUrl);
     setCopied(true);
-    toast.success('Pautan pamphlet telah disalin!');
+    toast.success('Pamphlet link copied!');
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -285,10 +286,10 @@ export function PamphletCard({
     startDeleteTransition(async () => {
       const res = await deletePamphletAction(pamphlet.id);
       if (res.success) {
-        toast.success('Pamphlet telah dipadam');
+        toast.success('Pamphlet deleted');
         router.refresh();
       } else {
-        toast.error('Gagal memadam pamphlet');
+        toast.error('Failed to delete pamphlet');
       }
     });
   };
@@ -312,7 +313,7 @@ export function PamphletCard({
         ctx.drawImage(img, 0, 0, 1000, 1000);
         const pngFile = canvas.toDataURL('image/png');
         const downloadLink = document.createElement('a');
-        downloadLink.download = `QR-Buku-Program-${pamphlet.slug}.png`;
+        downloadLink.download = `QR-Program-Book-${pamphlet.slug}.png`;
         downloadLink.href = pngFile;
         downloadLink.click();
       }
@@ -335,7 +336,7 @@ export function PamphletCard({
         ) : (
           <div className="flex flex-col items-center justify-center text-slate-400 gap-1.5 p-4 text-center">
             <BookOpen className="w-8 h-8 opacity-40 text-white" />
-            <span className="text-xs font-medium text-slate-300">Belum ada muka surat</span>
+            <span className="text-xs font-medium text-slate-300">No pages yet</span>
           </div>
         )}
 
@@ -345,7 +346,7 @@ export function PamphletCard({
         {/* Status Badge & Toggle */}
         <div className="absolute top-3 right-3 flex items-center gap-2 bg-black/50 backdrop-blur-md rounded-full px-2.5 py-1 z-10 border border-white/10">
           <span className="text-[11px] font-medium text-white">
-            {isActive ? 'Aktif' : 'Tutup'}
+            {isActive ? 'Active' : 'Closed'}
           </span>
           <Switch
             checked={isActive}
@@ -377,11 +378,11 @@ export function PamphletCard({
         <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground pt-1">
           <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-2 border border-gray-100">
             <Layers className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span className="truncate">{pageCount} Halaman</span>
+            <span className="truncate">{pageCount} {pageCount === 1 ? 'Page' : 'Pages'}</span>
           </div>
           <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-2 border border-gray-100">
             <Eye className="w-4 h-4 text-sky-600 shrink-0" />
-            <span className="truncate">{pamphlet.views || 0} Tontonan</span>
+            <span className="truncate">{pamphlet.views || 0} {pamphlet.views === 1 ? 'View' : 'Views'}</span>
           </div>
         </div>
 
@@ -396,7 +397,7 @@ export function PamphletCard({
               size="icon"
               className="h-7 w-7 text-gray-500 hover:text-gray-900"
               onClick={handleCopy}
-              title="Salin Pautan"
+              title="Copy Link"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
             </Button>
@@ -405,7 +406,7 @@ export function PamphletCard({
               variant="ghost"
               size="icon"
               className="h-7 w-7 text-gray-500 hover:text-gray-900"
-              title="Buka Viewer Awam"
+              title="Open Public Viewer"
             >
               <Link href={`/p/${pamphlet.slug}`} target="_blank">
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -435,7 +436,7 @@ export function PamphletCard({
             className="w-full text-xs font-medium gap-1 rounded-xl"
           >
             <QrCode className="w-3.5 h-3.5" />
-            <span>Kod QR</span>
+            <span>QR Code</span>
           </Button>
 
           {/* Delete Dialog */}
@@ -448,23 +449,23 @@ export function PamphletCard({
                 disabled={isDeleting}
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>Padam</span>
+                <span>Delete</span>
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Padam E-Pamphlet ini?</AlertDialogTitle>
+                <AlertDialogTitle>Delete this E-Pamphlet?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Tindakan ini tidak boleh diundur. Halaman & pautan <strong>/p/{pamphlet.slug}</strong> akan ditutup serta-merta.
+                  This action cannot be undone. The page & link <strong>/p/{pamphlet.slug}</strong> will be closed immediately.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Batal</AlertDialogCancel>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={handleDelete}
                   className="bg-red-600 hover:bg-red-700 text-white"
                 >
-                  Ya, Padam
+                  Yes, Delete
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -477,10 +478,10 @@ export function PamphletCard({
         <DialogContent className="sm:max-w-md text-center">
           <DialogHeader>
             <DialogTitle className="text-center font-bold">
-              Kod QR E-Pamphlet Majlis
+              Event E-Pamphlet QR Code
             </DialogTitle>
             <DialogDescription className="text-center text-xs">
-              Cetak kod QR ini pada bunting, banner dewan, atau atur cara meja supaya hadirin boleh mengimbas terus buku program digital ini.
+              Print this QR code on buntings, hall banners, or table tent cards so attendees can scan and access this digital program book.
             </DialogDescription>
           </DialogHeader>
 
@@ -511,7 +512,7 @@ export function PamphletCard({
               className="w-full gap-1.5"
             >
               {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-              <span>Salin URL</span>
+              <span>Copy URL</span>
             </Button>
             <Button
               variant="default"
@@ -520,7 +521,7 @@ export function PamphletCard({
               className="w-full gap-1.5 font-semibold"
             >
               <Download className="w-4 h-4" />
-              <span>Muat Turun PNG</span>
+              <span>Download PNG</span>
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -540,10 +541,10 @@ export function PamphletDatabaseNotice({ sqlScript }: { sqlScript: string }) {
     try {
       await navigator.clipboard.writeText(sqlScript);
       setCopied(true);
-      toast.success('Skrip SQL migrasi berjaya disalin! Sila tampal di Supabase SQL Editor.');
+      toast.success('Migration SQL script copied successfully! Please paste it in the Supabase SQL Editor.');
       setTimeout(() => setCopied(false), 3000);
     } catch {
-      toast.error('Gagal menyalin skrip.');
+      toast.error('Failed to copy script.');
     }
   };
 
@@ -554,11 +555,11 @@ export function PamphletDatabaseNotice({ sqlScript }: { sqlScript: string }) {
           <div className="flex items-center gap-2">
             <span className="flex h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse" />
             <h3 className="text-base font-bold text-amber-950">
-              Pangkalan Data E-Pamphlet Belum Diaktifkan
+              E-Pamphlet Database Not Activated
             </h3>
           </div>
           <p className="text-xs md:text-sm text-amber-800 leading-relaxed max-w-3xl">
-            Jadual <code className="px-1.5 py-0.5 rounded bg-amber-200/70 font-mono text-xs text-amber-900">public.pamphlets</code> belum wujud di Supabase. Sila salin skrip SQL migrasi di bawah dan jalankan di <strong>Supabase Dashboard &gt; SQL Editor</strong> untuk membolehkan penganjur menyimpan dan menerbitkan e-pamphlet.
+            The <code className="px-1.5 py-0.5 rounded bg-amber-200/70 font-mono text-xs text-amber-900">public.pamphlets</code> table does not exist in Supabase yet. Please copy the migration SQL script below and run it in <strong>Supabase Dashboard &gt; SQL Editor</strong> to enable saving and publishing e-pamphlets.
           </p>
         </div>
 
@@ -569,7 +570,7 @@ export function PamphletDatabaseNotice({ sqlScript }: { sqlScript: string }) {
             onClick={() => setShowSql(!showSql)}
             className="border-amber-300 bg-amber-100/60 hover:bg-amber-100 text-amber-900 text-xs"
           >
-            {showSql ? 'Sembunyi SQL' : 'Lihat Skrip SQL'}
+            {showSql ? 'Hide SQL' : 'View SQL Script'}
           </Button>
           <Button
             size="sm"
@@ -577,7 +578,7 @@ export function PamphletDatabaseNotice({ sqlScript }: { sqlScript: string }) {
             className="bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs gap-1.5 shadow-xs"
           >
             {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>{copied ? 'Telah Disalin!' : 'Salin Skrip SQL'}</span>
+            <span>{copied ? 'Copied!' : 'Copy SQL Script'}</span>
           </Button>
         </div>
       </div>

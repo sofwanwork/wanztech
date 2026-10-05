@@ -1,1662 +1,208 @@
-# Format Nama Peserta Pada Sijil: 1 Line Untuk Nama Pendek & Max 2 Line Untuk Nama Panjang ✅ SIAP
-
-**Matlamat**: Menguatkuasakan paparan nama peserta pada sijil agar nama pendek (seperti 'SOFWAN BIN MOHD JAILANI') kekal 1 baris, manakala nama panjang dihadkan kepada maksimum 2 baris sahaja dengan penskalaan saiz fon pintar (auto-scaling).
-
-- [x] 1. Cipta Helper Tipografi Nama Pintar (`components/certificates/types.ts`)
-  - `isShortName(name)`: Mengesan nama pendek/sederhana (<= 28 aksara tanpa `\n`) untuk dikunci pada 1 baris.
-  - `getNameFontSize(name, baseSize)`: Mengira saiz fon dinamik bagi nama panjang (29-43 aksara -> ~78%, 44+ aksara -> ~62%, min 18px) supaya muat dalam 2 baris tanpa melimpah.
-  - Ujian unit di `tests/certificate-typography.test.ts` (14/14 lulus).
-- [x] 2. Kemas Kini Renderer Sijil Utama (`components/certificates/renderer/index.tsx`)
-  - Untuk nama pendek: `whitespace-nowrap`, `width: max-content`, `maxWidth: 92%` supaya tidak dipecahkan oleh lebar kotak asal.
-  - Untuk nama panjang: `whitespace-pre-line break-words line-clamp-2 [text-wrap:balance]`, `WebkitLineClamp: 2`, `overflow: hidden`.
-- [x] 3. Kemas Kini Templat Sijil Lain (`components/certificate-template.tsx`, `ClassicTemplate.tsx`, `CorporateTemplate.tsx`)
-  - Mengintegrasikan `isShortName`, `getNameFontSize`, dan `line-clamp-2` untuk keseragaman.
-- [x] 4. Pengesahan Kualiti & Ujian
-  - `npm test`: 307 / 307 ujian lulus merentas 35 suite ujian.
-  - `npm run typecheck`: 0 ralat TypeScript.
-  - `npm run lint`: 0 ralat / 0 amaran ESLint.
-  - Kemas kini `task.md` dan `memory.md`.
+# Penukaran Keseluruhan Antaramuka Sistem ke Bahasa Inggeris (Malay to English Global Standardization) ✅ SELESAI
 
----
-
-# Pembaikan Bug 1-QR Smart Check-In & Check-Out: Dua Kali Entry Data Masa Masuk Google Sheet ✅ SIAP
-
-**Matlamat**: Menyelesaikan isu di mana Google Sheets menerima dua entri berasingan kedua-duanya dengan 'Masa Masuk (Check-In)' dan tiada data 'Masa Keluar (Check-Out)'.
-
-- [x] 1. Kenal Pasti Punca Asal (Root Causes)
-  - Di `app/(public)/form/[id]/client.tsx`, apabila peserta telah `checked_in`, medan borang pendaftaran dan butang submit `[ Daftar Masuk (Check-In) ]` masih aktif di bawah banner, mengelirukan peserta untuk menekan butang daftar masuk semula.
-  - Di `actions/forms.ts`, `submitFormAction` tiada semakan pendua (`duplicate check-in guard`) jika peserta telah berstatus `checked_in`.
-  - Di `actions/attendance.ts`, `submitAttendanceCheckOutAction` tidak memperbaharui token Google OAuth (`getValidAccessToken`) dan hanya bergantung kepada `_submission_id` tanpa fallback kepada No. IC.
-  - Di `lib/api/google-sheets.ts`, pemadanan lajur pengenalan bersifat tegar (strict equality) dan gagal memadankan format IC berbeza (dengan dash vs tanpa dash).
-- [x] 2. Penguatkuasaan Pelayan (`actions/forms.ts` & `actions/attendance.ts`)
-  - Dalam `submitFormAction`, jika peserta dengan identifier yang sama telah berstatus `checked_in`, sistem secara automatik menukar tindakan kepada Check-Out, menghalang penciptaan baris check-in kedua dan mengemas kini rekod `attendance_records` serta Google Sheet kepada selesai.
-  - Dalam `submitAttendanceCheckOutAction`, perbaharui token OAuth secara automatik menerusi `getValidAccessToken` sebelum kemas kini helaian.
-  - Tambah fallback berperingkat dalam kemas kini Sheet: `_submission_id` → `record.identifierLabel` → lajur lazim IC/Emel (`No. Kad Pengenalan`, `No IC`, dsb.).
-- [x] 3. Penambahbaikan Pengalaman Pengguna / UI Klien (`app/(public)/form/[id]/client.tsx`)
-  - Gating Paparan: Apabila status peserta dikesan `checked_in`, medan pendaftaran dan butang `[ Daftar Masuk ]` **disembunyikan sepenuhnya**. Digantikan dengan **Kad Check-Out Khusus** bersama butang utama `[ Daftar Keluar Sekarang (Check-Out) ]`.
-  - Apabila status peserta `completed`, kad status "Kehadiran Lengkap" dipaparkan berserta maklumat masa masuk, masa keluar, dan durasi penuh, tanpa sebarang butang atau medan borang.
-  - Auto-Detection & Local Storage: No. IC disimpan ke dalam `localStorage` selepas Check-In pertama. Apabila peserta mengimbas QR kod yang sama pada waktu petang di telefon yang sama, sistem serta-merta mengesan identiti peserta dan terus memaparkan Kad Check-Out.
-  - Menyediakan butang "Bukan anda? [Daftar Peserta Lain]" untuk peranti yang dikongsi.
-  - Guard `handleSubmit`: Jika borang dihantar atau kekunci Enter ditekan ketika status `checked_in`, sistem secara automatik memanggil `handleCheckOut()`.
-- [x] 4. Peningkatan Ketahanan Pemadanan Google Sheets (`lib/api/google-sheets.ts`)
-  - Menyokong pemadanan fleksibel alfanumerik (menyingkirkan sengkang, ruang kosong, huruf kecil/besar) supaya `010203-04-0506` sepadan dengan `010203040506`.
-- [x] 5. Ujian, Pengesahan & Kemas Kini Dokumentasi
-  - `npm test`: 298 / 298 ujian lulus merentas 35 suite ujian (termasuk ujian unit fallback di `tests/attendance-actions.test.ts`).
-  - `npm run typecheck`: 0 ralat TypeScript.
-  - `npm run lint`: 0 ralat / 0 amaran ESLint.
-  - Kemas kini `memory.md`, `lessons.md`, dan `task.md`.
-
----
-
-## Reviu Pelaksanaan: Pembaikan Bug 1-QR Smart Check-In & Check-Out
-
-1. **Seni Bina Dwirantai (Client-Side Gating & Server-Side Fallback)**:
-   - **Klien**: Apabila identiti peserta dikenal pasti dan berstatus `checked_in`, UI borang pendaftaran ditiadakan sama sekali. Peserta hanya melihat kad status hadir dan butang jelas untuk "Daftar Keluar Sekarang".
-   - **Pelayan**: Walaupun peserta berjaya memintas klien (atau menekan Enter pada peranti berbeza), `submitFormAction` menyemak status terkini dalam `attendance_records`. Jika peserta telah check-in, tindakan dihala secara automatik ke aliran check-out tanpa menambah baris baharu ke Google Sheet.
-2. **Penyelarasan Google Sheets yang Kalis Ralat**:
-   - Token Google OAuth diperbaharui menggunakan `getValidAccessToken` sebelum sebarang kemas kini ke Google Sheets dijalankan semasa check-out.
-   - Fungsi `updateSheetRow` mempunyai pemadanan alfanumerik bebas tanda sengkang serta mekanisme carian berganda (`_submission_id` diikuti label pengenalan borang dan alias IC standard).
-3. **Pengalaman Pengguna (UX) Imbasan Petang**:
-   - Dengan simpanan `localStorage`, peserta tidak perlu lagi menaip semula nombor IC mereka sewaktu petang di pintu keluar. Membuka pautan QR serta-merta menyambut nama peserta dan memaparkan butang Check-Out.
-
----
-
-# Pembaikan Pertindihan Visual Kad Profil Bio (`BioPageCard`) ✅ SIAP
-
-**Matlamat**: Menghapuskan pertindihan cincin avatar profil bio dengan lencana tema di banner atas serta mengemaskan susun atur teks profil.
-
-- [x] 1. Kenal Pasti Punca Masalah (`app/(dashboard)/bio/client.tsx`)
-  - Banner `h-16` (64px) terlalu sempit menyebabkan cincin putih avatar (`-mt-10`) bertindih dengan lencana tema di sudut kiri atas banner.
-  - Teks profil mempunyai `pt-6` yang menyebabkan ketidakseimbangan penjajaran menegak.
-- [x] 2. Kemas Kini Susun Atur UI (`app/(dashboard)/bio/client.tsx`)
-  - Tingkatkan ketinggian banner daripada `h-16` kepada `h-20` (80px).
-  - Alihkan lencana tema (`{theme.name}`) ke sudut kanan atas sebaris dengan togol status `Active / Draft`.
-  - Biarkan zon kiri atas banner kosong agar avatar terapung secara bersih.
-  - Besarkan avatar kepada `w-16 h-16` dengan `-mt-12` dan `items-end gap-3.5`.
-  - Gantikan `pt-6` pada tajuk/handle dengan `pb-1`.
-  - Paparkan nama tema mesra pengguna `{theme.name}` pada bar statistik.
-- [x] 3. Pengesahan Kualiti
-  - `npm run typecheck`: 0 ralat TypeScript.
-  - `npm run lint`: 0 ralat ESLint.
-  - Kemas kini `memory.md` & `task.md`.
-
----
-
-# Syarat Minimum Jam Kehadiran untuk Tebus E-Sijil & Amaran Awal Check-Out ✅ SIAP
-
-**Matlamat**: Menguatkuasakan syarat kehadiran minima sebelum e-Sijil boleh ditebus, serta memberi amaran masa nyata kepada peserta jika mereka cuba mendaftar keluar (Check-Out) sebelum memenuhi jam yang ditetapkan.
-
-- [x] 1. Jenis Data & Konfigurasi (`lib/types/forms.ts`, `lib/types/index.ts`, `lib/types/attendance.ts`)
-  - Tambah `minHoursForCertificate?: number` ke dalam `CheckInOutConfig`.
-  - Tambah `checkInAtIso`, `minHoursForCertificate`, `isEarlyCheckOut`, `earlyCheckOutShortfallText` ke dalam `AttendanceSummary`.
-- [x] 2. Logik & Helper Tulen (`lib/forms/attendance.ts`)
-  - Cipta helper `checkCertificateAttendanceEligibility(record, minHoursForCertificate, breakMinutes)`.
-  - Cipta fungsi kiraan amaran check-out awal `isEarlyCheckOut(checkInAt, now, minHoursRequired, breakMinutes)`.
-  - Ujian unit di `tests/attendance.test.ts` (23/23 lulus).
-- [x] 3. Penguatkuasaan di Pelayan (Server Action) (`actions/certificates.ts`)
-  - Semak kelayakan kehadiran dalam `checkCertificateByICOrEmail` sebelum membenarkan muat turun e-Sijil.
-  - Kemas kini `CertificateCheckResult` untuk menyertakan maklumat ketidaklayakan kehadiran (`attendanceIneligible`, `attendanceDetails`).
-  - Ujian unit di `tests/certificate-attendance-gating.test.ts` (7/7 lulus).
-- [x] 4. Dialog Amaran Awal Semasa Check-Out (`app/(public)/form/[id]/client.tsx`)
-  - Pop-up amaran jika jam kehadiran belum mencukupi sebelum check-out.
-  - Pilihan jelas: "Batal & Terus Hadir" atau "Tetap Daftar Keluar".
-- [x] 5. Antara Muka Pembina Borang (`app/builder/[id]/client.tsx`)
-  - Tambah medan input "Minimum Hours for E-Certificate" di bawah seksyen Smart Check-In/Out.
-- [x] 6. Paparan Portal Tebus Sijil Awam (`app/(public)/check/[formId]/page.tsx` & `client.tsx`)
-  - Lencana syarat jam minima di bahagian atas halaman semakan.
-  - Kad amaran telus dengan perincian masa hadir vs baki jam diperlukan jika belum layak.
-- [x] 7. Ujian, Pengesahan & Kemas Kini Memori
-  - `npm test`: 297 / 297 ujian lulus merentas 35 suite ujian.
-  - `npm run typecheck`: 0 ralat TypeScript.
-  - `npm run lint`: 0 ralat / 0 amaran ESLint.
-  - Kemas kini `memory.md` dan `task.md`.
-
----
-
-## Reviu Pelaksanaan: Syarat Minimum Jam Kehadiran E-Sijil & Amaran Awal
-
-1. **Seni Bina & Penguatkuasaan**:
-   - **Form Builder**: Penganjur menetapkan syarat jam minimum (contoh: 6 Jam). Disimpan secara stateless/JSONB ke dalam `attendanceSettings.checkInOut.minHoursForCertificate`.
-   - **Pelayan (`actions/certificates.ts`)**: Semasa peserta menyemak sijil di `/check/[formId]`, sistem secara automatik mencari rekod kehadiran (`attendance_records`) menggunakan No. IC atau Emel.
-     * Jika peserta tiada rekod langsung: disekat dengan mesej tiada rekod Check-In.
-     * Jika status masih `checked_in`: disekat dan diminta lakukan Check-Out dahulu.
-     * Jika status `completed` tetapi jumlah jam kurang: disekat dengan kad amaran terperinci menunjukkan masa hadir dan baki kekurangan jam.
-2. **Pengalaman Responden (UX)**:
-   - **Amaran Awal Check-Out**: Apabila peserta cuba scan Check-Out sebelum cukup masa, modal dialog amaran terpapar memberitahu baki masa yang kurang dan memberi pilihan sama ada mahu terus hadir atau tetap daftar keluar.
-   - **Portal e-Sijil**: Menunjukkan lencana syarat jam program dan kad penjelasan mesra jika syarat jam belum mencukupi, bersama panduan menghubungi urusetia jika mempunyai pelepasan khas.
-
----
-
-# Perlindungan Anti-Tipu Kehadiran: PIN Check-Out & Live Rotating QR ✅ SIAP
-
-**Matlamat**: Menghapuskan kelemahan peserta mengambil gambar kod QR untuk scan dari rumah pada waktu petang melalui:
-1. **Solusi 2**: Kod PIN / Passcode Rahsia Check-Out yang diumumkan di pentas pada akhir program.
-2. **Solusi 3**: Skrin Projektor Kod QR Berputar Masa Nyata (*Live Rotating QR*) yang auto-refresh setiap 30 saat dengan token kriptografi bertempoh sah.
-
-- [x] 1. Jenis Data & Konfigurasi (`lib/types/forms.ts`, `lib/types/index.ts`)
-  - Tambah `checkOutPasscode?: string` pada `CheckInOutConfig`.
-  - Tambah `RotatingQrConfig` (`enabled`, `intervalSeconds`, `secret`) ke dalam `AttendanceSettings`.
-- [x] 2. Enjin Penjanaan & Pengesahan Rotating QR (`lib/forms/rotating-qr.ts`)
-  - Logik kriptografi HMAC-SHA256 berasaskan tetingkap masa (TOTP concept: 30 saat).
-  - Fungsi `generateRotatingQrPayload` dan `verifyRotatingQrToken` dengan toleransi grace period 1 tetingkap (30-60s).
-  - Ujian unit di `tests/rotating-qr.test.ts`.
-- [x] 3. Tindakan Pelayan (`actions/attendance.ts` & `actions/forms.ts`)
-  - Sokongan semakan `passcode` dalam `submitAttendanceCheckOutAction`.
-  - Tindakan `getRotatingQrLiveTokenAction` untuk menyelaraskan token langsung autoritatif pelayan ke skrin projektor.
-  - Penguatkuasaan pengesahan token rotating QR dalam `submitFormAction` (Check-In) dan `submitAttendanceCheckOutAction` (Check-Out).
-- [x] 4. Laman Skrin Projektor Dewan (`app/(public)/present/[id]/page.tsx` & `client.tsx`)
-  - Paparan skrin penuh mesra projektor/TV (tajuk program, kod QR gergasi, animasi lingkaran/bar kira detik 30 saat, jam digital UTC+8, status langsung).
-  - Butang skrin penuh (F) dan butang buka/tutup PIN pentas (P).
-- [x] 5. Antara Muka Pembina Borang (`app/builder/[id]/client.tsx`)
-  - Medan tetapan "Check-Out Passcode / PIN" di bawah Smart Check-In/Out.
-  - Togol "Live Rotating QR Code (Anti-Fraud Projector Mode)" + butang "Buka Skrin Projektor" (Present Mode).
-- [x] 6. Penguatkuasaan Borang Awam Responden (`app/(public)/form/[id]/client.tsx`)
-  - Input kod PIN semasa Check-Out (jika penganjur aktifkan passcode).
-  - Semakan token rotating QR; jika tamat tempoh / diambil daripada foto lama, sekat akses dengan mesej amaran jelas.
-- [x] 7. Ujian, Pengesahan & Deployment
-  - `npm test`: 281 / 281 lulus merentas 34 suite ujian.
-  - `npm run typecheck`: 0 ralat TypeScript.
-  - `npm run lint`: 0 ralat / 0 amaran ESLint.
-  - `npm run build`: Bersih (54 laluan Next.js 16 Turbopack).
-
----
-
-## Reviu Pelaksanaan: Perlindungan Anti-Tipu Kehadiran (PIN & Rotating QR)
-
-1. **Solusi 2 (Check-Out Passcode / PIN Pentas)**:
-   - **Konsep**: Penganjur menetapkan 4-6 digit PIN rahsia pada Form Builder (contoh: `8899`).
-   - **Pelaksanaan**:
-     - Semasa Check-In pagi, peserta mendaftar masuk secara bebas tanpa halangan.
-     - Semasa Check-Out petang, kad status peserta meminta "Kod PIN Check-Out Diperlukan".
-     - Jika peserta cuba scan dari rumah tanpa mengetahui PIN yang diumumkan di pentas oleh penceramah, cubaan daftar keluar disekat serta-merta oleh pelayan.
-2. **Solusi 3 (Live Rotating QR Code — Skrin Projektor Dewan)**:
-   - **Konsep**: Menggunakan algoritma kriptografi HMAC-SHA256 tanpa spamming database (stateless & pantas). Kod QR bertukar token setiap 30 saat (`?rq_w=...&rq_sig=...`).
-   - **Skrin Projektor (`/present/[id]`)**:
-     - Reka bentuk gelap berimpak tinggi (*ambient glow*, tipografi jelas, jam digital masa nyata, kod QR bersaiz besar ~380px untuk paparan dewan 10-30 meter).
-     - Kira detik auto-refresh 30 saat bersama bar kemajuan licin.
-     - Pintasan papan kekunci: Tekan **F** untuk skrin penuh (fullscreen), **P** untuk tayang/sembunyi PIN pentas.
-   - **Toleransi Masa (Grace Period)**:
-     - Dibenarkan 1 tetingkap masa sebelumnya (30–60 saat) bagi menampung kelewatan fokus kamera telefon peserta atau rangkaian telco perlahan.
-     - Gambar foto yang diambil beberapa minit atau jam sebelumnya (contohnya foto pagi) disahkan luput dan ditolak serta-merta dengan mesej: *"Kod QR ini telah luput atau tidak sah. Sila imbas kod QR langsung yang sedang dipaparkan di skrin dewan."*
-3. **Penyelarasan & Keselamatan**:
-   - Parameter dalaman `_rq_w` dan `_rq_sig` ditapis daripada `dbData` sebelum dihantar ke Google Sheets supaya helaian penganjur kekal bersih tanpa lajur teknikal.
-   - Laluan `/present/[id]` didaftarkan ke dalam senarai `publicRoutes` di `proxy.ts`.
-
----
-
-# Ciri Kehadiran Pintar 1 QR (Check-In & Check-Out & Kira Durasi Jam) ✅ SIAP
-
-**Matlamat**: Membolehkan peserta mengimbas 1 Kod QR yang sama untuk Daftar Masuk (Check-In) dan Daftar Keluar (Check-Out), mengira secara automatik jumlah masa/jam kehadiran dalam program, dan merekodkannya ke pangkalan data serta Google Sheets.
-
-- [x] 1. Jenis Data (`lib/types/forms.ts`, `lib/types/attendance.ts`, `lib/types/index.ts`)
-  - Tambah `CheckInOutConfig` ke dalam `AttendanceSettings` di `lib/types/forms.ts`.
-  - Takrifkan jenis `AttendanceRecord`, `AttendanceStatus`, dan `AttendanceSummary`.
-- [x] 2. Logik & Pengiraan Tulen (`lib/forms/attendance.ts`)
-  - Cipta fungsi `cleanIdentifier` (pembersihan IC / Emel).
-  - Cipta `calculateAttendanceDuration` (kira beza masa, jam & minit, tolak rehat).
-  - Cipta `formatAttendanceTime` dan `formatAttendanceDateTime` (zon masa Malaysia UTC+8).
-  - Cipta ujian unit komprehensif di `tests/attendance.test.ts`.
-- [x] 3. Migrasi Pangkalan Data (`supabase/migrations/20260928000000_add_attendance_records.sql`)
-  - Cipta jadual `attendance_records` dengan index pada `(form_id, identifier_value)` dan RLS.
-- [x] 4. Lapisan Storan (`lib/storage/attendance.ts`)
-  - Fungsi `getAttendanceRecord`, `createAttendanceRecord`, `updateAttendanceCheckOut`, `listAttendanceRecordsForForm`.
-  - Ujian unit di `tests/attendance-storage.test.ts`.
-- [x] 5. Tindakan Pelayan (`actions/attendance.ts` & `actions/forms.ts`)
-  - `checkAttendanceStatusAction` (semak sama ada belum masuk, sedang masuk, atau dah keluar).
-  - `submitFormAction` integrasi check-in automatik (merekod status dan masa masuk).
-  - `submitAttendanceCheckOutAction` (daftar keluar, kira durasi, kemas kini Google Sheets & rekod tempatan).
-  - Ujian unit di `tests/attendance-actions.test.ts`.
-- [x] 6. Antara Muka Pembina Borang (`app/builder/[id]/client.tsx`)
-  - Tambah togol "1-QR Smart Check-In & Check-Out" dalam kad Attendance & Location.
-  - Konfigurasi pemilihan medan pengenalan (Identifier Field), tempoh minimum sebelum check-out (minDurationMinutes), dan tolak waktu rehat (breakMinutes).
-- [x] 7. Antara Muka Borang Awam (`app/(public)/form/[id]/client.tsx`)
-  - Aliran responsif: pengesanan status masa nyata apabila peserta mengisi No. IC / Emel.
-  - Kad maklumat "🟢 Sedang Hadir" dengan butang pantas "Daftar Keluar Sekarang (Check-Out)".
-  - Butang dinamik "Daftar Masuk (Check-In)" bagi pendaftaran kali pertama.
-  - Skrin kejayaan khusus memaparkan ringkasan masa masuk, masa keluar, dan jumlah durasi jam kehadiran.
-- [x] 8. Ujian & Pengesahan Penuh
-  - `npm test`: 274 / 274 lulus merentas 33 suite ujian.
-  - `npm run typecheck`: 0 ralat TypeScript (`tsc --noEmit`).
-  - `npm run lint`: 0 ralat / 0 amaran ESLint.
-- [x] 9. Dokumentasi & Kemas Kini Memori
-  - Kemas kini `task.md` dan `memory.md`.
-
----
-
-## Reviu Pelaksanaan: Ciri Kehadiran Pintar 1 QR
-
-1. **Seni Bina Sistem**:
-   - **Tunggal & Lancar**: Peserta hanya perlu mengimbas 1 kod QR di pintu masuk program sepanjang hari.
-   - **Pengesanan Pintar**: Nombor Kad Pengenalan atau Emel dibersihkan secara automatik (`cleanIdentifier`) untuk menghapuskan tanda sengkang, ruang kosong, atau perbezaan huruf besar/kecil.
-   - **Keselamatan & Ketepatan**:
-     - Dilengkapi `minDurationMinutes` (lalai: 5 minit) untuk menghalang peserta daripada tertekan Check-Out serta-merta selepas Check-In.
-     - Sokongan penolakan waktu rehat (`breakMinutes`, contohnya 60 minit rehat tengah hari).
-     - Kadar panggilan (`rate limiting`) menggunakan `checkRateLimit` bagi mengelakkan percubaan spam atau penipuan.
-2. **Penyelarasan Data**:
-   - Disimpan terus ke pangkalan data Supabase (`attendance_records` dan `form_responses`).
-   - Diselaraskan ke Google Sheets penganjur dengan penambahan lajur dinamik: `Masa Masuk (Check-In)`, `Masa Keluar (Check-Out)`, `Jumlah Masa Hadir`, `Jumlah Jam (Hours)`, dan `Status Kehadiran`.
-3. **Pengalaman Pengguna (UX)**:
-   - **Pagi**: Borang memaparkan butang "Daftar Masuk (Check-In)". Selepas dihantar, skrin kejayaan memaparkan masa masuk bersama peringatan mesra untuk scan semula QR semasa tamat program.
-   - **Petang**: Apabila peserta membuka borang dan memasukkan No. IC yang sama, sistem serta-merta mengesan rekod daftar masuk pagi dan memaparkan kad status "🟢 Sedang Hadir" dengan butang jelas "Daftar Keluar Sekarang (Check-Out)".
-   - **Selesai**: Skrin memaparkan piala kejayaan, masa masuk, masa keluar, dan jumlah durasi jam sebenar yang dihadiri (contoh: **8 Jam 15 Minit**).
-
----
-
-# Revamp Laman Utama (Landing Page) — Minimalist & Framer Motion ✅ SIAP
-
-**Matlamat**: Mereka bentuk semula laman utama KlikForm (`app/page.tsx`) dengan estetik *minimalist* moden (gaya Linear / Vercel), animasi lancar menggunakan `framer-motion`, dan mengemas kini semua kandungan (*content*) agar mencerminkan ciri-ciri sebenar dan terkini (*features semasa*): Borang Pintar Google Sheets, Studio e-Sijil Canva-Style, Penjanaan Pukal CSV ke ZIP, KlikBio Link-in-Bio, Verifikasi Sijil Segera, Analitik Privasi, Logik Bersyarat & Pelbagai Halaman, serta Pematuhan PDPA.
-
-- [x] 1. Cipta komponen Hero Minimalist (`components/landing/landing-hero.tsx`) dengan animasi Framer Motion, lencana kemas, tipografi berkontras tinggi, dan mockup interaktif produk sebenar.
-- [x] 2. Cipta Bento Grid Ciri-Ciri Semasa (`components/landing/landing-features-bento.tsx`) dengan kad interaktif (Google Sheets Sync, Studio Sijil Canva-Style, Bulk CSV ZIP, KlikBio, Analitik Drop-off, Multi-page & Conditional Logic, Attendance & PDPA).
-- [x] 3. Cipta Showcase Interaktif Mendalam (`components/landing/landing-showcase.tsx`) yang membolehkan pengunjung beralih antara produk utama (Forms, Sijil, KlikBio, QR) dengan animasi tab `framer-motion`.
-- [x] 4. Cipta Seksyen Sasaran Pengguna & Kes Penggunaan Tempatan (`components/landing/landing-use-cases.tsx`) untuk Cikgu/Sekolah, Penganjur Majlis, Peniaga Online/WhatsApp, dan HR/Syarikat.
-- [x] 5. Cipta Seksyen Perbandingan Pintar ("Mengapa KlikForm?") (`components/landing/landing-comparison.tsx`) membandingkan KlikForm vs Google Forms / Canva / Linktree.
-- [x] 6. Cipta Seksyen Tindakan (CTA) & Footer Minimalist (`components/landing/landing-cta.tsx` & `components/landing/landing-footer.tsx`).
-- [x] 7. Gabungkan semua seksyen ke dalam `app/page.tsx` sebagai Server Component (mengekalkan SSG & metadata SEO penuh).
-- [x] 8. Verifikasi kualiti: `npm run lint` (0 amaran), `npm run typecheck` (0 ralat), `npm test` (252/252 lulus), dan `npm run build` (bersih, 50 laluan termasuk /health).
-- [x] 9. Kemas kini `memory.md` dan `task.md`.
-
----
-
-## Reviu Revamp Laman Utama (Landing Page)
-
-**Reka Bentuk Visual & Interaktiviti**:
-- **Estetik Minimalist**: Berteraskan reka bentuk moden berimpak tinggi ala Linear / Vercel dengan ruang bernafas yang luas, garisan sempadan mikro (`border-slate-200/80`), tipografi berkontras tinggi (`[text-wrap:balance]`, `tracking-tight`), dan lencana berstatus elegan.
-- **Animasi Framer Motion**:
-  - Hero staggered reveal (tajuk, subteks, butang CTA, lencana pengesahan).
-  - Mockup produk interaktif dengan tab langsung yang mempamerkan Form Builder, Studio E-Sijil, Google Sheets Sync, dan KlikBio menggunakan `layoutId` untuk peralihan tanpa kelipan.
-  - Skrol viewport reveal (`whileInView`, `viewport={{ once: true }}`) untuk Bento Grid dan seksyen utama.
-  - Deep-dive showcase dengan tab animasi interaktif.
-- **Kandungan Mengikut Ciri Semasa (*Features Semasa*)**:
-  1. Penyelarasan Google Sheets masa nyata tanpa webhook pihak ketiga berserta *Formula Injection Shield*.
-  2. Studio E-Sijil Canva-Style dengan pemegang penskalaan 4 bucu (*drag-to-scale*), fon Google/kaligrafi, dan *Auto-Scaling Typography* untuk tajuk program panjang.
-  3. Penjanaan Sijil Pukal (Bulk CSV to ZIP) untuk menghasilkan ratusan sijil PDF/PNG dalam beberapa saat.
-  4. Portal Semakan Awam & Kod QR Verifikasi dengan carian No. IC atau emel.
-  5. Halaman mikro KlikBio (Link-in-Bio) dengan 8 tema dan corak latar belakang estetik.
-  6. Borang dinamik: Multi-page (Page Breaks) & Conditional Logic (Skip Logic).
-  7. Analitik mesra privasi (penjejakan drop-off soalan tanpa menyimpan IP mentah) & pematuhan PDPA.
-- **Seni Bina & Prestasi**:
-  - `app/page.tsx` kekal sebagai **Server Component** (Static Site Generation `○ Static`), mengekalkan kelajuan pantas tanpa serverless cold start dan kecekapan metadata SEO penuh.
-  - Komponen animasi diasingkan ke dalam `components/landing/` dengan sempadan `"use client"`.
-  - Endpoint `/health` ditambah (`app/health/route.ts`) untuk membalas `200 OK` kepada probe kesihatan pelayan.
-  - Amaran usang `disableLogger` Sentry dibuang daripada `next.config.ts`.
-- **Kualiti & Ujian**:
-  - `npm run typecheck`: 0 ralat TypeScript.
-  - `npm run lint`: 0 amaran/ralat ESLint.
-  - `npm test`: 252 / 252 ujian lulus merentas 30 suite ujian.
-  - `npm run build`: Bersih (50 laluan).
-
----
-
-# Fasa A — Quick Wins ✅ SIAP
-
-Lima feature bebas konflik. Tiap satu mesti ada: jenis, storage, server action, UI builder/dashboard, integrasi, ujian.
-
-## 1. Conditional Logic (richer rules) ✅
-
-- [x] Extend `ConditionalConfig` di `lib/types/forms.ts` — tambah `rules: ConditionRule[]` dan `logic: 'all' | 'any'`. Backward compat: kalau `fieldId` + `value` legacy ada, normalize ke satu rule equals.
-- [x] Tulis `lib/forms/conditions.ts` — fungsi tulen `evaluateConditional(field, formData, allFields)` + `normalizeConditional(legacy)`. Operator: `equals`, `not_equals`, `contains`, `not_contains`, `is_empty`, `is_not_empty`, `gt`, `lt`.
-- [x] Replace UI di `components/forms/fields-editor/index.tsx` dengan editor multi-rule.
-- [x] Wire `isFieldVisible` di `app/(public)/form/[id]/client.tsx` panggil `evaluateConditional`.
-- [x] Tests: `tests/conditional-logic.test.ts` — 17 tests pass.
-
-## 2. Outgoing Webhooks ✅
-
-- [x] Migration: `form_webhooks` table (id, form_id, user_id, url, secret_encrypted, events, enabled, created_at). RLS owner-only.
-- [x] Type `WebhookConfig` di `lib/types/webhooks.ts`.
-- [x] `lib/storage/webhooks.ts` — CRUD (list per form, create, update, delete, recordResult).
-- [x] `lib/webhooks/dispatch.ts` — sign HMAC-SHA256, fire with timeout, retry × 3 backoff.
-- [x] `actions/webhooks.ts` — `createWebhookAction`, `updateWebhookAction`, `deleteWebhookAction`, `testWebhookAction`.
-- [x] Hook into `submitFormAction` selepas `incrementSubmissionCount`.
-- [x] Builder UI: `components/forms/webhooks-card.tsx`.
-- [x] Tests: `tests/webhook-dispatch.test.ts` — 9 tests pass.
-
-## 3. Response Edit Link ✅
-
-- [x] Migration: `response_edit_tokens` + `forms.edit_link_settings` jsonb column.
-- [x] Type `EditLinkSettings` (enabled, expiryDays, emailFieldId).
-- [x] On submit (when enabled and email field present): create token row, email respondent dengan magic link.
-- [x] New route `app/(public)/edit/[token]/page.tsx` — re-uses public form rendering with prefilled values.
-- [x] Action `submitEditedResponseAction` — verify token, find sheet row by `_submission_id`, update Sheet row, mark token used.
-- [x] Email template `getEditLinkEmail` di `lib/email/index.ts`.
-- [x] Builder UI: `components/forms/edit-link-card.tsx`.
-- [x] Tests: `tests/edit-token.test.ts` — 6 tests pass.
-
-## 4. Bulk Certificate from CSV ✅
-
-- [x] Refactor capture/blob helpers ke `lib/certificates/render.ts`.
-- [x] Pure CSV parser `lib/csv/parse.ts` — handle quoted fields, BOM, CRLF, embedded newlines.
-- [x] New dashboard page `app/(dashboard)/certificates/builder/[id]/bulk/page.tsx` + client.
-- [x] Client-side bulk generator: loop entries, render `CertificateRenderer` each, capture, push to `JSZip`. Trigger download.
-- [x] "Bulk Generate" sparkles button on certificate template card.
-- [x] Tests: `tests/csv-parse.test.ts` — 13 tests pass.
-
-## 5. Cross-form Analytics Dashboard Widget ✅
-
-- [x] Tambah `aggregateUserAnalytics(rows, days)` di `lib/analytics/aggregate.ts`.
-- [x] Add `getUserAnalyticsSummary(days)` di `actions/analytics.ts` — RLS-gated.
-- [x] New component `components/dashboard/cross-form-analytics.tsx` — 4 stat cards + 30d sparkline + top-3 forms.
-- [x] Mount di `app/(dashboard)/forms/page.tsx` antara `<DashboardStats>` dan page header.
-- [x] Tests: `tests/cross-form-analytics.test.ts` — 6 tests pass.
-
-## Verifikasi akhir ✅
-
-- [x] `npm run lint` — 0 warnings
-- [x] `npm test` — 87/87 pass across 10 suites (was 36/36)
-- [x] `npm run build` — clean, 43 routes (Next 16.2.6, Turbopack)
-- [x] Update `memory.md` dan `lessons.md`
-
----
-
-## Reviu
-
-**Skop dihantar**: 5/5 features. 51 ujian baru, 0 lint warnings, build clean.
-
-**Keputusan reka bentuk**:
-- **Conditional Logic** — ditolak shape baru penuh (rules[]) tetapi normalize legacy shape automatic, jadi tiada migration data perlu dijalankan untuk borang sedia ada. Pure evaluator senang ditest.
-- **Webhooks** — rangkaian sama macam BCL inbound (HMAC-SHA256 hex), jadi pengguna boleh re-use receiver code corak yang sama. Per-attempt timeout 5s × 3 attempts dengan exponential backoff (500ms, 1s, 2s). 4xx short-circuit kerana receiver explicit reject.
-- **Edit Link** — guna jsonb column `edit_link_settings` untuk elak proliferation. Token single-use untuk had blast radius leak. Edit mode skip file uploads, webhooks, owner email — sengaja senyap supaya owner tak banjir notif.
-- **Bulk Certificate** — pure client-side via `jszip` (sudah dalam deps). Refactor `lib/certificates/render.ts` jadi reusable supaya tidak duplicate kod render. CSV parser hand-rolled kerana zero new deps.
-- **Cross-form Analytics** — silently render nothing kalau tiada data, tak susahkan dashboard. Top-3 sahaja dalam widget — page analytics individu untuk drill-down.
-
-**Lessons baru** ditambah ke `lessons.md`:
-- `server-only` perlu di-stub dalam Vitest
-- `z.ZodError` v4 guna `.issues[]` bukan `.errors[]`
-- Type baru kena di-re-export dari `lib/types/index.ts`
-- Bulk client-render perlu 2× `requestAnimationFrame` wait
-- CSV empty check perlu `.trim()`
-- Snapshot rekey label → id bila prefill
-- Magic-link routes mesti `robots: { index: false }`
-
-**Tinggal (Fasa B & C)** — lihat `memory.md`.
-## Bug Fix: Database Error on Account Creation (2026-06-05) ✅ SIAP
-
-- [x] Identify root cause of database error on registration (trigger `handle_new_user` using incorrect column name `total_forms` and missing `month` column values)
-- [x] Create a new migration file `supabase/migrations/20260605000000_fix_handle_new_user_trigger.sql` to fix `handle_new_user` trigger function
-- [x] Test the build and lint of the project to ensure no regressions
-- [x] Document the changes in `memory.md`, `lessons.md` and `task.md`
-
-### Reviu Bug Fix:
-- **Punca Masalah**: Trigger `on_auth_user_created` yang menjalankan fungsi `public.handle_new_user()` gagal kerana mencuba untuk `INSERT` ke `public.usage` menggunakan nama kolum `total_forms` (yang sepatutnya `forms_created`) serta tidak memasukkan nilai untuk kolum `month` yang mempunyai constraint `NOT NULL`. Hal ini menyebabkan transaction pendaftaran pengguna (sign up) terbatal dan memaparkan "database error" kepada pengguna.
-
-## Bug Fix: Form Creation Block for Google OAuth Users (2026-06-05) ✅ SIAP
-
-- [x] Identify root cause of form creation blocking (strict check on `googleClientEmail`/`googlePrivateKey` instead of allowing `googleAccessToken` OAuth config)
-- [x] Update `createFormAction` in `actions/forms.ts` to allow either OAuth or Service Account configurations
-- [x] Test the build and lint to ensure everything compiled correctly
-- [x] Document the changes in `memory.md`, `lessons.md` and `task.md`
-
-### Reviu Bug Fix:
-- **Punca Masalah**: Ketika pengguna mahu mencipta borang baru (`createFormAction`), fungsi akan menyemak jika ada rekod tetapan yang sah. Namun, semakan sebelum ini hanya memeriksa kolum manual Service Account (`googleClientEmail` & `googlePrivateKey`). Ini menghalang pengguna yang menggunakan Google OAuth (yang hanya menyimpan `googleAccessToken`) daripada mencipta borang.
-- **Penyelesaian**: Mengubah semakan di `createFormAction` untuk membenarkan penciptaan borang jika pengguna telah mengkonfigurasi sama ada Google OAuth (`googleAccessToken` wujud) ATAU manual Service Account.
-
-## Redundant Trigger Cleanup (2026-06-05) ✅ SIAP
-- [x] Identify redundant trigger `on_auth_user_created_subscription` executing `handle_new_user_subscription()` on `auth.users`
-- [x] Update migration `20260605000000_fix_handle_new_user_trigger.sql` to drop the redundant trigger and function
-- [x] Redeploy to Vercel to sync migration files
-
-
-## Deployment: Update Back to Vercel (2026-06-05) ✅ SIAP
-
-- [x] Check Vercel CLI version and link status
-- [x] Deploy the application to Vercel using Vercel CLI
-- [x] Document the deployment in `memory.md` and `task.md`
-
-
-## Bug Fix: Forms Save Trigger error (2026-06-05) ✅ SIAP
-- [x] Identify the root cause of forms 500 error (`record "new" has no field "slug"` trigger error on `forms` table because the database trigger was executing `generate_short_code` function which expected `NEW.slug`)
-- [x] Create a new migration file `supabase/migrations/20260605001000_fix_forms_short_code_trigger.sql` to separate the forms trigger from the short_links trigger
-- [x] Redeploy to Vercel to sync migration files
-
-
-
-
-
----
-
-# Fasa B (mula) — Notifikasi Emel Responden (Auto-acknowledgement)
-
-**Matlamat**: Selepas responden submit borang, hantar emel pengesahan automatik kepada responden (bukan hanya kepada pemilik borang). Guna semula infra Resend + corak pemilih medan emel yang sama macam Edit Link. Tiada jadual DB baharu — hanya satu lajur jsonb pada `forms`.
-
-- [x] 1. Type `RespondentNotificationSettings` di `lib/types/forms.ts` (enabled, emailFieldId, message?, includeSummary?) + tambah ke `Form` + re-export di `lib/types/index.ts`.
-- [x] 2. Migration `supabase/migrations/20260607010000_add_respondent_notification.sql` — tambah lajur `respondent_notification jsonb`.
-- [x] 3. Pemetaan storage di `lib/storage/forms.ts` — 2× fromRow + 1× toRow (`respondent_notification`).
-- [x] 4. Template emel `getRespondentConfirmationEmail(formTitle, message?, summary?)` di `lib/email/index.ts`.
-- [x] 5. Hook fire-and-forget dalam `submitFormAction` selepas blok edit-link.
-- [x] 6. UI builder `components/forms/respondent-notification-card.tsx` (cermin EditLinkCard) + mount di `app/builder/[id]/client.tsx`.
-- [x] 7. Tests `tests/respondent-notification.test.ts` (template purity + ringkasan).
-- [x] 8. Verifikasi: `npm run lint` (0) + `npm test` (94/94) + `npm run build` (bersih).
-
-### Reviu
-- **Keputusan reka bentuk**: guna lajur `jsonb` tunggal (`respondent_notification`) macam `edit_link_settings` untuk elak proliferasi lajur. Berasingan sepenuhnya daripada `receiveEmailNotifications` (notifikasi pemilik) — dua aliran emel berbeza, dua toggle berbeza.
-- **Keselamatan**: nilai jawapan responden (subjek, ringkasan, mesej) di-escape HTML (`escapeHtml`) sebelum disuntik ke template emel, untuk halang HTML/markup injection dalam emel pengesahan. Kunci dalaman (`_submission_id` dll, prefix `_`) ditapis daripada ringkasan.
-- **Ketahanan**: blok fire-and-forget — kegagalan emel tidak sesekali gagalkan submission (try/catch + `console.warn`). Sama corak dengan blok edit-link & notifikasi pemilik.
-- **Nota (di luar skop)**: `getNewSubmissionEmail` (notifikasi pemilik sedia ada) TIDAK escape input pengguna — potensi HTML injection dalam emel pemilik. Tidak diubah dalam pass ini untuk kekal skop minimum; patut dibaiki berasingan.
-
-
----
-
-# Fasa B (sambung) — Email escaping fix + baki feature
-
-## Track 0 — Email HTML escaping (keselamatan)
-- [x] Escape semua nilai pengguna dalam `getNewSubmissionEmail` (userName, formTitle, submissionData keys/values, googleSheetUrl href).
-- [x] Escape `formTitle` dalam `getEditLinkEmail` untuk konsistensi.
-- [x] `escapeHtml` (function declaration, hoisted) boleh guna oleh semua template dalam fail.
-
-## Track 1 — PDPA Toolkit
-- [x] Type `PdpaSettings { enabled, consentText, policyUrl? }` pada `Form` + barrel.
-- [x] Migration `20260607020000_add_pdpa_settings.sql`: lajur `pdpa_settings jsonb`.
-- [x] Storage mapping (2× fromRow + toRow).
-- [x] Helper tulen `lib/forms/pdpa.ts` (`requiresPdpaConsent`, `isConsentGiven`, `isPdpaSubmissionAllowed`).
-- [x] UI builder `pdpa-card.tsx` + mount selepas RespondentNotificationCard.
-- [x] Public form: checkbox persetujuan wajib (block submit + disable butang jika tak tick); rakam `Persetujuan PDPA: Ya` dalam dbData.
-- [x] Server-side: `submitFormAction` tolak jika PDPA enabled tapi consent tiada (tak boleh bypass via scripting).
-- [x] Tests `tests/pdpa.test.ts` — 8 tests.
-
-## Track 2 — Audit Log
-- [x] Migration `20260607030000_add_audit_logs.sql`: jadual `audit_logs` + index + RLS owner-only SELECT + `prune_audit_logs()`.
-- [x] Type `lib/types/audit.ts` + barrel.
-- [x] `lib/storage/audit.ts` — `logAudit()` (resolve user, insert via admin) + `listAuditLogs()` (RLS).
-- [x] Formatter tulen `lib/audit/format.ts` (`describeAuditAction`, `describeAuditLog`, `auditActionKind`).
-- [x] Hook log pada `createFormAction` + `deleteFormAction` (sebelum redirect).
-- [x] Dashboard `app/(dashboard)/audit/page.tsx` + pautan sidebar + route terlindung di `proxy.ts`.
-- [x] Tests `tests/audit-format.test.ts` — 7 tests.
-
-## Track 3 — Multi-page Forms
-- [x] Jenis medan baharu `pagebreak` (pemisah) di `FormFieldType`.
-- [x] Helper tulen `lib/forms/pagination.ts` (`splitIntoPages`, `isMultiPage`, `findAdjacentNonEmptyPage`, `lastNonEmptyPageIndex`).
-- [x] Builder: dropdown jenis + butang "Add Page Break" + kecualikan pagebreak dari sumber syarat/required/conditional.
-- [x] Public form: render satu page setiap kali + butang Kembali/Seterusnya/Submit + indikator "Halaman X / Y"; validasi per-page pada Next; PDPA + Submit di page akhir; guard Enter; skip page kosong (conditional).
-- [x] `visibleFields` kecualikan pagebreak (tidak divalidasi/dihantar/dikira).
-- [x] Tests `tests/pagination.test.ts` — 10 tests.
-
-## Verifikasi akhir ✅
-- [x] `npm run lint` — 0 warnings.
-- [x] `npm test` — 121/121 pass across 14 suites (was 94).
-- [x] `npm run build` — clean, 44 routes (+`/audit`).
-
-## Reviu
-- **Email escaping**: `escapeHtml` diguna merentas `getNewSubmissionEmail`, `getEditLinkEmail`, `getRespondentConfirmationEmail`. Nilai responden tak boleh lagi suntik markup ke emel.
-- **PDPA**: gate dikuatkuasakan dua lapis (client UX + server enforcement) supaya tak boleh dipintas. Consent direkod sebagai lajur mesra Sheet. Logik diekstrak ke fungsi tulen untuk ujian.
-- **Audit log**: jadual immutable dari sisi klien (tiada polisi INSERT; tulis via service role sahaja). Hanya log create/delete (bukan update autosave yang bising). Formatter tulen + `force-dynamic` page.
-- **Multi-page**: guna `pagebreak` sebagai pemisah dalam array sedia ada — tiada migration, backward-compatible (borang tanpa pagebreak = 1 page). Page kosong (akibat conditional) dilangkau automatik. Semua logik pagination tulen & diuji.
-
----
-
-# Fasa B (sambung) — UX Simplification for Non-Technical Users
-
-**Matlamat**: Memudahkan antara muka Form Builder untuk pengguna bukan teknikal dengan menyembunyikan tetapan lanjutan ("Validation Rules" dan "Conditional Logic") secara lalai menggunakan Accordion.
-
-- [x] 1. Import komponen Accordion di `components/forms/fields-editor/index.tsx`.
-- [x] 2. Kemas kini `SortableField` untuk membungkus seksyen Validation dan Conditional dengan Accordion (collapsed by default).
-- [x] 3. Tambah indikator lencana (badge) jika validation/conditional aktif supaya pengguna tahu ada peraturan aktif.
-- [x] 4. Kemas kini `ConditionalLogicEditor` untuk membuang tajuk berganda.
-- [x] 5. Uji secara manual dan jalankan `npm test` serta `npm run build` untuk memastikan tiada masalah.
-
----
-
-# Fasa D — Hardening Batch (2026-07-01) ✅ SIAP
-
-Sembilan pembetulan risiko/kualiti dari audit penuh (lihat `memory.md` untuk butiran reka bentuk).
-
-## 1. form_responses — write-first, sync-async ✅
-- [x] Migration `20260701010000_add_form_responses.sql` (jadual + partial index + prune + RLS owner-only SELECT).
-- [x] `lib/storage/form-responses.ts` — insert (idempotent, 23505=duplicate), markSynced, markSyncFailed({final}), listPendingSyncResponses (join forms+settings).
-- [x] `submitFormAction`: tulis DB dahulu → Sheets sync + webhooks + 3 emel dalam `after()`.
-- [x] Cron `/api/cron/sync-responses` (*/10) + entri `vercel.json`.
-
-## 2. Payment webhook idempotency ✅
-- [x] Migration `20260701020000_payment_webhook_idempotency.sql` (`processed_at` + backfill + unique `provider_reference`).
-- [x] Route: duplicate → 200 `{duplicate:true}` tanpa kesan sampingan; `processed_at` diset serentak dengan status; SEMUA DB via admin client (fix anon/RLS silent failure).
-- [x] Initiate: `PRO_PRICE` + `KLIK-${randomUUID()}` + buang fake phone.
-
-## 3. Conditional-required fix ✅
-- [x] `lib/forms/validate-submission.ts` (pure) — reuse `evaluateConditional`, skip layout-only, ReDoS cap.
-- [x] `submitFormAction` guna modul baharu.
-
-## 4. Duplicate submit protection ✅
-- [x] Client jana `_submission_key` (randomUUID per page-load, sessionStorage); action guna sebagai submission_id (unique constraint menelan double-submit).
-- [x] Key dikosong selepas success ("Submit another response" dapat key baru).
-
-## 5. CI ✅
-- [x] `.github/workflows/ci.yml` — lint → typecheck → test → build (push/PR master).
-
-## 6. Error boundaries ✅
-- [x] `app/error.tsx`, `app/global-error.tsx`, `app/not-found.tsx`.
-
-## 7. Konsolidasi harga ✅
-- [x] `lib/constants/pricing.ts` (PRO_PRICE) — initiate, pricing page, modal, plan-card semua import dari satu tempat.
-
-## 8. React cache() dedupe ✅
-- [x] `getFormById` / `getFormByShortCode` dibalut `cache()`.
-
-## 9. Tooling ✅
-- [x] Skrip `typecheck`; deps pembangunan dipindah ke devDependencies.
-
-## Verifikasi akhir ✅
-- [x] `npm run lint` — 0 warnings
-- [x] `npm run typecheck` — clean
-- [x] `npm test` — 206/206 (25 suites; was 171)
-- [x] `npm run build` — clean, 45 routes (+`/api/cron/sync-responses`)
-
-### Reviu
-- **Write-first**: DB ialah source of truth baharu; Sheet jadi "view" yang akhirnya konsisten (cron retry). Responden tidak pernah lagi kehilangan jawapan atau menunggu webhook lambat.
-- **Idempotency**: ditetapkan sebelum sebarang geran supaya crash mid-handler tidak boleh double-grant; completed lama di-backfill `processed_at`.
-- **Admin client fix**: webhook BCL tiada cookie — anon client + RLS owner-only = silent 404; service role satu-satunya pilihan betul.
-- **Tinggal (Fasa E cadangan)**: Turnstile optional per-form, zod di semua action files, dekomposisi client.tsx (1,354 baris) + builder client (1,551 baris), responses dashboard baca form_responses, export/backup UI dari form_responses, a11y audit builder, i18n konsisten (lang="ms" pada page English), renewal/cancel flow.
-
----
-
-# Form Title 2 Baris (Multi-line Support)
-
-Membolehkan Form Title ditulis dan dipaparkan dalam 2 baris atau lebih.
-
-- [x] 1. Tukar input Form Title di `app/builder/[id]/client.tsx` kepada `<Textarea>` dengan `rows={2}`.
-- [x] 2. Kemas kini `app/(public)/form/[id]/client.tsx` dengan `whitespace-pre-line break-words` pada `<CardTitle>`.
-- [x] 3. Kemas kini `components/dashboard/form-card.tsx` dan `app/(dashboard)/responses/client.tsx` dengan `line-clamp-2 break-words whitespace-pre-line`.
-- [x] 4. Kemas kini komponen/halaman lain yang memaparkan tajuk borang (`check`, `verify`, `analytics`, `certificate-qr-card`) dan sanitasi nama metadata / muat turun / Sheet.
-- [x] 5. Uji dengan `npm test`, `npm run lint`, `npm run typecheck` dan semak manual.
-
-### Reviu
-- **Form Builder**: Input tajuk borang kini menggunakan `<Textarea rows={2}>` yang membolehkan pengguna menekan Enter untuk memasukkan baris baru secara semulajadi.
-- **Rendering**: Paparan tajuk pada borang awam, kad dashboard, semakan sijil, verifikasi dan analitik kini menyokong `whitespace-pre-line break-words` (dan `line-clamp-2` pada kad dashboard).
-- **Sanitasi**: Tajuk yang digunakan pada tag metadata `<head>`, nama fail Google Sheets, fail muat turun QR kod, serta subjek emel disanitasi secara automatik untuk menukar `\n` kepada ruang kosong (` `) supaya tiada isu pemecahan header / karakter tidak sah.
-- **Kualiti**: 206/206 ujian lulus, lint 0 ralat/amaran, typecheck bersih.
-
----
-
-# Tajuk Program 2 Baris Pada Sijil & E-Cert
-
-Membolehkan tajuk program dipaparkan dalam 2 baris atau lebih pada preview sijil, certificate builder, dan renderer e-cert.
-
-- [x] 1. Kemas kini `components/certificates/renderer/index.tsx` untuk menyokong `whitespace-pre-line` dan `break-words` pada elemen teks dan placeholder.
-- [x] 2. Kemas kini canvas di `app/(dashboard)/certificates/builder/[id]/client.tsx` dan `preview/page.tsx` untuk membuang `whitespace-nowrap` dan menambah sokongan baris baru.
-- [x] 3. Kemas kini panel penyunting teks di `components/certificates/builder/properties.tsx` kepada `<Textarea rows={2}>`.
-- [x] 4. Kemas kini semua 10 templat pra-bina (`ClassicTemplate`, `CorporateTemplate`, dsb.) dan templat warisan dengan `whitespace-pre-line break-words`.
-- [x] 5. Jalankan verifikasi ujian automatik (`npm test`, `npm run lint`, `npm run typecheck`, `npm run build`).
-
-### Reviu
-- **Certificate Renderer & Canvas**: `whiteSpace: 'nowrap'` telah ditukar kepada dinamik (`pre-line` untuk teks & placeholder, `nowrap` untuk lain-lain) berserta `wordBreak: 'break-word'`, membolehkan tajuk program memaparkan 2 baris secara automatik atau mengikut `\n`.
-- **Builder & Preview Page**: Kelas `whitespace-nowrap` pada canvas dan halaman preview digantikan dengan `whitespace-pre-line break-words`.
-- **Properties Editor**: Input teks kini menggunakan `<Textarea rows={2}>` dengan kebolehan resize y untuk memudahkan pengguna memasukkan tajuk berbilang baris secara langsung.
-- **Templat Sijil Pra-Bina**: Kesemua 10 templat sijil (`Classic`, `Corporate`, `Creative`, `Elegant`, `Minimalist`, `Modern`, `Nature`, `Premium`, `Royal`, `Vintage`) dan templat legasi dikemas kini dengan `whitespace-pre-line break-words`.
-- **Pengesahan & Deployment**: 206 ujian unit lulus (termasuk ujian multi-line program identifier), 0 lint error, typecheck TypeScript bersih, dan berjaya dideploy ke pengeluaran Vercel (`https://www.klikform.com`).
-
----
-
-# Auto-Scale Tajuk Panjang & Canva-Style Drag-To-Scale
-
-Memperkemas paparan tajuk panjang pada sijil secara automatik dan menambah kawalan penskalaan interaktif seperti Canva pada E-Cert Builder.
-
-- [x] 1. Cipta modul типоgrafi sijil dengan fungsi `getProgramFontSize` (`components/certificates/types.ts`).
-- [x] 2. Kemas kini kesemua 10 templat sijil pra-bina dan templat legasi dengan `getProgramFontSize` dan `[text-wrap:balance]`.
-- [x] 3. Kemas kini `components/certificates/renderer/index.tsx` dengan `textWrap: 'balance'` dan `maxWidth: '92%'`.
-- [x] 4. Laksanakan pemegang penskalaan Canva (4 bucu + pemegang sisi) serta logik penskalaan fon dan dimensi dalam `app/(dashboard)/certificates/builder/[id]/client.tsx`.
-- [x] 5. Tulis ujian unit di `tests/certificate-typography.test.ts` dan jalankan `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`.
----
-
-# KlikBio — Ciri Linktree / Bio Links ✅ SIAP
-
-Membina ciri mikro-landing page (Link-in-bio) lengkap untuk KlikForm dengan live preview mockup, drag-and-drop links, preset tema, pengurusan profil & media sosial, integrasi QR kod, dan halaman awam responsif.
-
-- [x] 1. Cipta skrip migrasi pangkalan data Supabase `supabase/migrations/20260830000000_add_bio_links.sql` (`bio_pages` dan `bio_links` tables + RLS + indexes).
-- [x] 2. Kemas kini jenis TypeScript di `lib/types/bio-links.ts`, `lib/types/subscription.ts`, `lib/constants/subscription-tiers.ts`, dan re-export di `lib/types/index.ts`.
-- [x] 3. Cipta modul utiliti & tema di `lib/bio-links/themes.ts`.
-- [x] 4. Cipta lapisan storan Supabase CRUD di `lib/storage/bio-links.ts`.
-- [x] 5. Cipta Server Actions di `actions/bio-links.ts` (CRUD halaman, pautan, reorder, click tracking).
-- [x] 6. Cipta halaman senarai profil dashboard di `app/(dashboard)/bio/page.tsx` dan `client.tsx`.
-- [x] 7. Cipta halaman pembina profil interaktif di `app/(dashboard)/bio-builder/[id]/page.tsx` dan `client.tsx` (dengan live mobile preview & `@dnd-kit` sortable).
-- [x] 8. Cipta halaman awam di `app/(public)/bio/[username]/page.tsx`, `client.tsx` dan laluan pintas `app/(public)/b/[username]/page.tsx`.
-- [x] 9. Kemas kini menu bar sisi di `components/dashboard/sidebar.tsx` dan laluan kawalan keselamatan di `proxy.ts`.
-- [x] 10. Tulis ujian unit di `tests/bio-links.test.ts` dan `tests/bio-storage.test.ts`.
-- [x] 11. Jalankan pengesahan kualiti (`npm run typecheck`, `npm run lint`, `npm test`, `npm run build`).
-- [x] 12. Kemas kini `memory.md` dan `task.md`.
-
----
-
-## Reviu Pelaksanaan KlikBio
-
-**Skop & Ciri Utama Dihantar**:
-1. **Pangkalan Data Supabase**: Jadual `bio_pages` dan `bio_links` dengan integriti kekunci asing (`ON DELETE CASCADE`), indeks laju pada `user_id`, `username`, dan `(bio_page_id, order_index)`, kawalan keselamatan RLS per-pemilik, serta trigger pengemaskinian `updated_at`.
-2. **Preset Tema & Reka Bentuk Visual**: 8 tema warna profesional (`Emerald Luxe`, `Onyx Dark`, `Sunset Glow`, `Deep Ocean`, `Minimal Light`, `Lavender Dusk`, `Cyber Neon`, `Midnight Gold`) serta 6 gaya butang (`Full Pill`, `Rounded XL`, `Subtle Round`, `Outline Border`, `Elevated Shadow`, `Glassmorphism`).
-3. **Penyusun Pautan Interaktif (Drag & Drop)**: Menggunakan `@dnd-kit` untuk susun atur kad pautan yang lancar, sokongan jenis pautan kustom, pautan terus WhatsApp (dengan mesej awal), pemilihan borang KlikForm secara dinamik, dan pemisah tajuk seksyen (*section header*).
-4. **Live Mobile Mockup Preview**: Paparan telefon pintar masa nyata (*instant real-time mockup*) yang mengemas kini perubahan tajuk, bio, avatar, ikon media sosial, tema, dan urutan pautan secara automatik.
-5. **Halaman Awam Responsif**: Laluan pantas `/bio/[username]` dan `/b/[username]` dengan metadata OpenGraph/Twitter dinamik, animasi `framer-motion`, penjejakan klik (*click tracking*), dan dialog perkongsian Kod QR.
-6. **Kawalan Had Langganan**: Gating automatik (`maxBioPages: 1` untuk Pelan Percuma, `-1` tanpa had untuk Pro & Enterprise).
-7. **Pengesahan & Ujian Kualiti**:
-   - `npm run typecheck` — 0 ralat TypeScript.
-   - `npm run lint` — 0 amaran ESLint.
-   - `npm test` — 224 / 224 ujian lulus merentas 28 suite ujian.
-   - `npm run build` — 49 laluan dikompilasi bersih dengan Next.js 16 (Turbopack).
-
----
-
-# Bug Fix: Glassmorphism & Button Style Contrast (2026-09-03)
-
-Isu: Bila pengguna memilih gaya butang "Glassmorphism" (terutamanya pada tema cerah "Minimal Light" dan pautan dengan "Highlight Animation"), teks tajuk pautan menjadi putih di atas latar belakang putih/lutsinar sehingga tidak kelihatan langsung ("tak nampak tulisan").
-
-- [x] 1. Cipta fungsi penentu gaya butang pintar `getBioButtonClass` di `lib/bio-links/themes.ts` yang menyelaraskan warna teks dan tahap lutsinar latar belakang berasaskan tema (cerah vs gelap), bentuk butang, dan status highlight.
-- [x] 2. Kemas kini `BUTTON_STYLES` di `lib/bio-links/themes.ts` untuk memastikan gaya `outline` dan `glass` mempunyai corner radius yang betul tanpa pertembungan warna teks.
-- [x] 3. Kemas kini Live Mobile Mockup di `app/(dashboard)/bio-builder/[id]/client.tsx` untuk menggunakan `getBioButtonClass`.
-- [x] 4. Kemas kini Halaman Awam KlikBio di `app/(public)/bio/[username]/client.tsx` untuk menggunakan `getBioButtonClass`.
-- [x] 5. Tambah ujian unit di `tests/bio-links.test.ts` bagi mengesahkan kontras teks pada gaya `glass`, `outline`, dan tema cerah/gelap dengan atau tanpa highlight.
-- [x] 6. Jalankan pengesahan kualiti (`npm test`, `npm run lint`, `npm run typecheck`, `npm run build`).
-- [x] 7. Kemas kini `memory.md`, `lessons.md` dan `task.md`.
-
----
-
-## Reviu Bug Fix: Glassmorphism Contrast
-- **Punca Masalah**:
-  1. `BUTTON_STYLES['glass'].class` sebelum ini mengandungi kelas `bg-white/10 border border-white/20` yang digabungkan terus secara rentetan (*string concatenation*) dengan `theme.highlightButtonClass` atau `theme.buttonClass`.
-  2. Apabila tema cerah seperti "Minimal Light" (`bg-slate-100`) dipilih dan pautan mempunyai status highlight aktif (`highlight: true`), `highlightButtonClass` menyuntik `text-white` (kerana asalnya direka untuk butang legap gelap `bg-slate-900`).
-  3. Kelas `bg-white/10` daripada Glassmorphism mengatasi warna latar belakang gelap, meninggalkan teks `text-white` di atas latar belakang butang putih separa lutsinar dan skrin kelabu cerah (#f1f5f9). Ini menyebabkan teks "klikform" berwarna putih tulen `rgb(255,255,255)` dan langsung tidak kelihatan.
-- **Penyelesaian**:
-  1. Dicipta fungsi `getBioButtonClass(theme, buttonStyle, isHighlight)` di `lib/bio-links/themes.ts` yang pintar mengira kelas Tailwind berasaskan kontras tema:
-     - Untuk tema cerah (`minimal`), gaya `glass` kini menggunakan latar belakang kaca frosted berkontras tinggi (`bg-white/70` atau `bg-white/90`) dengan teks gelap yang jelas (`text-slate-900` atau `text-slate-950 font-bold`).
-     - Untuk tema gelap, gaya `glass` mengekalkan frosted glass estetik (`bg-white/10` atau `bg-white/20`) dengan teks putih/aksen tema yang berkontras tinggi.
-     - Gaya `outline` turut diselaraskan supaya tidak menghasilkan teks putih di atas latar lutsinar pada tema cerah.
-  2. Kedua-dua komponen pemaparan (`MobileMockupView` di builder dan `PublicBioClient` di halaman awam) kini menggunakan `getBioButtonClass`.
-  3. Ujian unit ditambah di `tests/bio-links.test.ts` untuk memastikan teks pada tema cerah tidak sesekali mengandungi `text-white`.
-  4. 230 / 230 ujian unit lulus (28 suite ujian), 0 ralat lint, typecheck bersih, build Next.js 16 bersih.
-
----
-
-# Bug Fix: Share / QR Modal Button Overflow (2026-09-03)
-
-Isu: Butang "Copy Link" terkeluar (*overflow*) ke bahagian luar sebelah kiri modal "Share @username" pada paparan desktop.
-
-- [x] 1. Baiki susun atur butang dalam Dialog Modal di `app/(public)/bio/[username]/client.tsx` dengan menggunakan grid `grid-cols-2` yang terhad di dalam kad modal, mengelakkan pertembungan kelas `DialogFooter` (`sm:flex-row sm:justify-end`).
-- [x] 2. Baiki susun atur butang dalam Dialog Modal di `app/(dashboard)/bio/client.tsx` (kod serupa).
-- [x] 3. Jalankan pengesahan kualiti (`npm run typecheck`, `npm run lint`, `npm test`).
-- [x] 4. Kemas kini `lessons.md`, `memory.md`, dan `task.md`.
-- [x] 5. Deploy perubahan ke Vercel Production.
-
----
-
-## Reviu Bug Fix: Share / QR Modal Button Overflow
-- **Punca Masalah**:
-  1. `DialogFooter` daripada shadcn mengandungi kelas lalai `sm:flex-row sm:justify-end`.
-  2. Komponen `Button` mempunyai kelas `shrink-0` (`flex-shrink: 0`), dan setiap butang di dalam dialog diberi kelas `w-full` (100% lebar).
-  3. Dalam modal sempit `sm:max-w-xs` (320px), dua butang `w-full` dengan `shrink-0` memerlukan lebih 540px jika diletakkan bersebelahan secara mendatar (`sm:flex-row`).
-  4. Oleh sebab `sm:justify-end` menyusun anak elemen ke kanan (`justify-content: flex-end`), butang kedua ("Save QR") berada di sebelah kanan di dalam dialog, manakala butang pertama ("Copy Link") ditolak sejauh ~260px melimpah keluar (*overflow*) ke sebelah kiri skrin.
-- **Penyelesaian**:
-  1. Menggantikan `DialogFooter` yang bersifat flex-end dengan grid semulajadi `<div className="grid grid-cols-2 gap-2 w-full pt-1">`.
-  2. Meningkatkan saiz dialog daripada `sm:max-w-xs` (320px) kepada `sm:max-w-sm` (384px) untuk ruang bernafas dan susun atur yang lebih kemas.
-  3. Memperbaiki kedua-dua fail: `app/(public)/bio/[username]/client.tsx` dan `app/(dashboard)/bio/client.tsx`.
-
----
-
-# KlikBio — Corak Latar Belakang (Background Patterns)
-
-Membolehkan pengguna memilih corak latar belakang (dots, grid, stripes, waves, crosses, stars, circuit, atau none) untuk halaman KlikBio mereka dengan sokongan kontras pintar bagi tema cerah dan gelap.
-
-- [x] 1. Tambah `BioPattern` dalam `lib/types/index.ts` (barrel export).
-- [x] 2. Kemas kini `lib/bio-links/themes.ts`: eksport `BIO_PATTERNS` dan `getBioPatternStyle(pattern, theme)`.
-- [x] 3. Kemas kini `app/(dashboard)/bio-builder/[id]/client.tsx`:
-  - Tambah bahagian pemilih corak latar belakang pada Tab "Design & Theme".
-  - Paparkan corak latar belakang pada `MobileMockupView`.
-- [x] 4. Kemas kini `app/(public)/bio/[username]/client.tsx`: paparkan corak latar belakang pada `PublicBioClient`.
-- [x] 5. Tulis ujian unit di `tests/bio-links.test.ts` untuk `getBioPatternStyle`.
-- [x] 6. Pengesahan kualiti: `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`.
-- [x] 7. Commit conventional commit & deploy ke Vercel Production.
-- [x] 8. Kemas kini `memory.md` dan `task.md`.
-
----
-
-## Reviu Ciri Corak Latar Belakang KlikBio
-
-**Ringkasan Pelaksanaan**:
-1. **Pilihan Corak (8 Corak)**:
-   - `none`: Latar belakang rata tanpa corak.
-   - `dots`: Polka Dots halus (`radial-gradient`).
-   - `grid`: Modern Grid (`linear-gradient`).
-   - `stripes`: Diagonal Stripes (`repeating-linear-gradient`).
-   - `waves`: Topography Waves (vektor kontur SVG data URI).
-   - `crosses`: Minimal Crosses (tanda tambah geometri SVG data URI).
-   - `stars`: Starry Sparkles (kerlipan bintang SVG data URI).
-   - `circuit`: Tech Circuit (papan litar digital SVG data URI).
-2. **Kawalan Kontras Pintar Berasaskan Tema**:
-   - Fungsi `getBioPatternStyle(pattern, theme)` mengesan sama ada tema aktif adalah cerah (`minimal`) atau gelap/warna terang (`emerald`, `dark`, `sunset`, dll.).
-   - Tema cerah menggunakan dakwat gelap legap rendah (`rgba(15, 23, 42, 0.04 - 0.09)`), manakala tema gelap menggunakan dakwat putih lembut (`rgba(255, 255, 255, 0.06 - 0.14)`).
-   - Semua lapisan corak menggunakan `pointer-events-none` supaya tidak menghalang interaksi, klik pautan, mahupun skrol.
-3. **Penyatuan UI Builder & Halaman Awam**:
-   - Tab 2 (Design & Theme) di `bio-builder/[id]` dilengkapi kad interaktif "Background Patterns / Corak Latar" dengan preview langsung setiap corak menggunakan warna tema semasa pengguna.
-   - `MobileMockupView` memaparkan corak latar secara langsung di skrin telefon mockup.
-   - Halaman awam `/bio/[username]` memaparkan corak tetap (`fixed inset-0`) sebagai tekstur latar yang anggun.
-4. **Pengesahan & Deployment**:
-   - `npm test`: 235 / 235 ujian unit lulus (28 suite ujian).
-   - `npm run typecheck`: 0 ralat TypeScript.
-   - `npm run lint`: 0 amaran linter.
-   - `npm run build`: Kompilasi Turbopack Next.js 16 bersih (49 laluan).
-   - Git Commit: `5e6fbe7` dipush ke `origin master`.
-   - Vercel Production: `dpl_7pV17fX4R8mjatScQiiDn7hYCiCh` (`https://www.klikform.com`).
-
----
-
-# Bug Fix: 404 Page Not Found Bila Tekan Pautan Borang KlikForm di KlikBio (2026-09-06)
-
-Isu: Pengguna mendapati bila menekan pautan borang KlikForm ("klikform form") pada halaman KlikBio, paparan menunjukkan ralat 404 "Page not found".
-
-- [x] 1. Kenal pasti punca asal ralat 404 (laluan `/form/[id]` hanya menyokong UUID pangkalan data dan menolak `short_code`, manakala `bio-builder` menyimpan `/form/${chosenForm.shortCode}`).
-- [x] 2. Bina helper `getFormByIdOrShortCode` dalam `lib/storage/forms.ts` (menggunakan `cache()` dan pengesanan regex UUID untuk mencari borang secara pintar mengikut ID UUID atau short code tanpa ralat PostgreSQL).
-- [x] 3. Kemas kini `app/(public)/form/[id]/page.tsx` untuk menggunakan `getFormByIdOrShortCode` bagi `generateMetadata` dan `PublicFormPage`.
----
-
-# Form Title 2 Baris (Multi-line Support)
-
-Membolehkan Form Title ditulis dan dipaparkan dalam 2 baris atau lebih.
-
-- [x] 1. Tukar input Form Title di `app/builder/[id]/client.tsx` kepada `<Textarea>` dengan `rows={2}`.
-- [x] 2. Kemas kini `app/(public)/form/[id]/client.tsx` dengan `whitespace-pre-line break-words` pada `<CardTitle>`.
-- [x] 3. Kemas kini `components/dashboard/form-card.tsx` dan `app/(dashboard)/responses/client.tsx` dengan `line-clamp-2 break-words whitespace-pre-line`.
-- [x] 4. Kemas kini komponen/halaman lain yang memaparkan tajuk borang (`check`, `verify`, `analytics`, `certificate-qr-card`) dan sanitasi nama metadata / muat turun / Sheet.
-- [x] 5. Uji dengan `npm test`, `npm run lint`, `npm run typecheck` dan semak manual.
-
-### Reviu
-- **Form Builder**: Input tajuk borang kini menggunakan `<Textarea rows={2}>` yang membolehkan pengguna menekan Enter untuk memasukkan baris baru secara semulajadi.
-- **Rendering**: Paparan tajuk pada borang awam, kad dashboard, semakan sijil, verifikasi dan analitik kini menyokong `whitespace-pre-line break-words` (dan `line-clamp-2` pada kad dashboard).
-- **Sanitasi**: Tajuk yang digunakan pada tag metadata `<head>`, nama fail Google Sheets, fail muat turun QR kod, serta subjek emel disanitasi secara automatik untuk menukar `\n` kepada ruang kosong (` `) supaya tiada isu pemecahan header / karakter tidak sah.
-- **Kualiti**: 206/206 ujian lulus, lint 0 ralat/amaran, typecheck bersih.
-
----
-
-# Tajuk Program 2 Baris Pada Sijil & E-Cert
-
-Membolehkan tajuk program dipaparkan dalam 2 baris atau lebih pada preview sijil, certificate builder, dan renderer e-cert.
-
-- [x] 1. Kemas kini `components/certificates/renderer/index.tsx` untuk menyokong `whitespace-pre-line` dan `break-words` pada elemen teks dan placeholder.
-- [x] 2. Kemas kini canvas di `app/(dashboard)/certificates/builder/[id]/client.tsx` dan `preview/page.tsx` untuk membuang `whitespace-nowrap` dan menambah sokongan baris baru.
-- [x] 3. Kemas kini panel penyunting teks di `components/certificates/builder/properties.tsx` kepada `<Textarea rows={2}>`.
-- [x] 4. Kemas kini semua 10 templat pra-bina (`ClassicTemplate`, `CorporateTemplate`, dsb.) dan templat warisan dengan `whitespace-pre-line break-words`.
-- [x] 5. Jalankan verifikasi ujian automatik (`npm test`, `npm run lint`, `npm run typecheck`, `npm run build`).
-
-### Reviu
-- **Certificate Renderer & Canvas**: `whiteSpace: 'nowrap'` telah ditukar kepada dinamik (`pre-line` untuk teks & placeholder, `nowrap` untuk lain-lain) berserta `wordBreak: 'break-word'`, membolehkan tajuk program memaparkan 2 baris secara automatik atau mengikut `\n`.
-- **Builder & Preview Page**: Kelas `whitespace-nowrap` pada canvas dan halaman preview digantikan dengan `whitespace-pre-line break-words`.
-- **Properties Editor**: Input teks kini menggunakan `<Textarea rows={2}>` dengan kebolehan resize y untuk memudahkan pengguna memasukkan tajuk berbilang baris secara langsung.
-- **Templat Sijil Pra-Bina**: Kesemua 10 templat sijil (`Classic`, `Corporate`, `Creative`, `Elegant`, `Minimalist`, `Modern`, `Nature`, `Premium`, `Royal`, `Vintage`) dan templat legasi dikemas kini dengan `whitespace-pre-line break-words`.
-- **Pengesahan & Deployment**: 206 ujian unit lulus (termasuk ujian multi-line program identifier), 0 lint error, typecheck TypeScript bersih, dan berjaya dideploy ke pengeluaran Vercel (`https://www.klikform.com`).
-
----
-
-# Auto-Scale Tajuk Panjang & Canva-Style Drag-To-Scale
-
-Memperkemas paparan tajuk panjang pada sijil secara automatik dan menambah kawalan penskalaan interaktif seperti Canva pada E-Cert Builder.
-
-- [x] 1. Cipta modul типоgrafi sijil dengan fungsi `getProgramFontSize` (`components/certificates/types.ts`).
-- [x] 2. Kemas kini kesemua 10 templat sijil pra-bina dan templat legasi dengan `getProgramFontSize` dan `[text-wrap:balance]`.
-- [x] 3. Kemas kini `components/certificates/renderer/index.tsx` dengan `textWrap: 'balance'` dan `maxWidth: '92%'`.
-- [x] 4. Laksanakan pemegang penskalaan Canva (4 bucu + pemegang sisi) serta logik penskalaan fon dan dimensi dalam `app/(dashboard)/certificates/builder/[id]/client.tsx`.
-- [x] 5. Tulis ujian unit di `tests/certificate-typography.test.ts` dan jalankan `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`.
----
-
-# KlikBio — Ciri Linktree / Bio Links ✅ SIAP
-
-Membina ciri mikro-landing page (Link-in-bio) lengkap untuk KlikForm dengan live preview mockup, drag-and-drop links, preset tema, pengurusan profil & media sosial, integrasi QR kod, dan halaman awam responsif.
-
-- [x] 1. Cipta skrip migrasi pangkalan data Supabase `supabase/migrations/20260830000000_add_bio_links.sql` (`bio_pages` dan `bio_links` tables + RLS + indexes).
-- [x] 2. Kemas kini jenis TypeScript di `lib/types/bio-links.ts`, `lib/types/subscription.ts`, `lib/constants/subscription-tiers.ts`, dan re-export di `lib/types/index.ts`.
-- [x] 3. Cipta modul utiliti & tema di `lib/bio-links/themes.ts`.
-- [x] 4. Cipta lapisan storan Supabase CRUD di `lib/storage/bio-links.ts`.
-- [x] 5. Cipta Server Actions di `actions/bio-links.ts` (CRUD halaman, pautan, reorder, click tracking).
-- [x] 6. Cipta halaman senarai profil dashboard di `app/(dashboard)/bio/page.tsx` dan `client.tsx`.
-- [x] 7. Cipta halaman pembina profil interaktif di `app/(dashboard)/bio-builder/[id]/page.tsx` dan `client.tsx` (dengan live mobile preview & `@dnd-kit` sortable).
-- [x] 8. Cipta halaman awam di `app/(public)/bio/[username]/page.tsx`, `client.tsx` dan laluan pintas `app/(public)/b/[username]/page.tsx`.
-- [x] 9. Kemas kini menu bar sisi di `components/dashboard/sidebar.tsx` dan laluan kawalan keselamatan di `proxy.ts`.
-- [x] 10. Tulis ujian unit di `tests/bio-links.test.ts` dan `tests/bio-storage.test.ts`.
-- [x] 11. Jalankan pengesahan kualiti (`npm run typecheck`, `npm run lint`, `npm test`, `npm run build`).
-- [x] 12. Kemas kini `memory.md` dan `task.md`.
-
----
-
-## Reviu Pelaksanaan KlikBio
-
-**Skop & Ciri Utama Dihantar**:
-1. **Pangkalan Data Supabase**: Jadual `bio_pages` dan `bio_links` dengan integriti kekunci asing (`ON DELETE CASCADE`), indeks laju pada `user_id`, `username`, dan `(bio_page_id, order_index)`, kawalan keselamatan RLS per-pemilik, serta trigger pengemaskinian `updated_at`.
-2. **Preset Tema & Reka Bentuk Visual**: 8 tema warna profesional (`Emerald Luxe`, `Onyx Dark`, `Sunset Glow`, `Deep Ocean`, `Minimal Light`, `Lavender Dusk`, `Cyber Neon`, `Midnight Gold`) serta 6 gaya butang (`Full Pill`, `Rounded XL`, `Subtle Round`, `Outline Border`, `Elevated Shadow`, `Glassmorphism`).
-3. **Penyusun Pautan Interaktif (Drag & Drop)**: Menggunakan `@dnd-kit` untuk susun atur kad pautan yang lancar, sokongan jenis pautan kustom, pautan terus WhatsApp (dengan mesej awal), pemilihan borang KlikForm secara dinamik, dan pemisah tajuk seksyen (*section header*).
-4. **Live Mobile Mockup Preview**: Paparan telefon pintar masa nyata (*instant real-time mockup*) yang mengemas kini perubahan tajuk, bio, avatar, ikon media sosial, tema, dan urutan pautan secara automatik.
-5. **Halaman Awam Responsif**: Laluan pantas `/bio/[username]` dan `/b/[username]` dengan metadata OpenGraph/Twitter dinamik, animasi `framer-motion`, penjejakan klik (*click tracking*), dan dialog perkongsian Kod QR.
-6. **Kawalan Had Langganan**: Gating automatik (`maxBioPages: 1` untuk Pelan Percuma, `-1` tanpa had untuk Pro & Enterprise).
-7. **Pengesahan & Ujian Kualiti**:
-   - `npm run typecheck` — 0 ralat TypeScript.
-   - `npm run lint` — 0 amaran ESLint.
-   - `npm test` — 224 / 224 ujian lulus merentas 28 suite ujian.
-   - `npm run build` — 49 laluan dikompilasi bersih dengan Next.js 16 (Turbopack).
-
----
-
-# Bug Fix: Glassmorphism & Button Style Contrast (2026-09-03)
-
-Isu: Bila pengguna memilih gaya butang "Glassmorphism" (terutamanya pada tema cerah "Minimal Light" dan pautan dengan "Highlight Animation"), teks tajuk pautan menjadi putih di atas latar belakang putih/lutsinar sehingga tidak kelihatan langsung ("tak nampak tulisan").
-
-- [x] 1. Cipta fungsi penentu gaya butang pintar `getBioButtonClass` di `lib/bio-links/themes.ts` yang menyelaraskan warna teks dan tahap lutsinar latar belakang berasaskan tema (cerah vs gelap), bentuk butang, dan status highlight.
-- [x] 2. Kemas kini `BUTTON_STYLES` di `lib/bio-links/themes.ts` untuk memastikan gaya `outline` dan `glass` mempunyai corner radius yang betul tanpa pertembungan warna teks.
-- [x] 3. Kemas kini Live Mobile Mockup di `app/(dashboard)/bio-builder/[id]/client.tsx` untuk menggunakan `getBioButtonClass`.
-- [x] 4. Kemas kini Halaman Awam KlikBio di `app/(public)/bio/[username]/client.tsx` untuk menggunakan `getBioButtonClass`.
-- [x] 5. Tambah ujian unit di `tests/bio-links.test.ts` bagi mengesahkan kontras teks pada gaya `glass`, `outline`, dan tema cerah/gelap dengan atau tanpa highlight.
-- [x] 6. Jalankan pengesahan kualiti (`npm test`, `npm run lint`, `npm run typecheck`, `npm run build`).
-- [x] 7. Kemas kini `memory.md`, `lessons.md` dan `task.md`.
-
----
-
-## Reviu Bug Fix: Glassmorphism Contrast
-- **Punca Masalah**:
-  1. `BUTTON_STYLES['glass'].class` sebelum ini mengandungi kelas `bg-white/10 border border-white/20` yang digabungkan terus secara rentetan (*string concatenation*) dengan `theme.highlightButtonClass` atau `theme.buttonClass`.
-  2. Apabila tema cerah seperti "Minimal Light" (`bg-slate-100`) dipilih dan pautan mempunyai status highlight aktif (`highlight: true`), `highlightButtonClass` menyuntik `text-white` (kerana asalnya direka untuk butang legap gelap `bg-slate-900`).
-  3. Kelas `bg-white/10` daripada Glassmorphism mengatasi warna latar belakang gelap, meninggalkan teks `text-white` di atas latar belakang butang putih separa lutsinar dan skrin kelabu cerah (#f1f5f9). Ini menyebabkan teks "klikform" berwarna putih tulen `rgb(255,255,255)` dan langsung tidak kelihatan.
-- **Penyelesaian**:
-  1. Dicipta fungsi `getBioButtonClass(theme, buttonStyle, isHighlight)` di `lib/bio-links/themes.ts` yang pintar mengira kelas Tailwind berasaskan kontras tema:
-     - Untuk tema cerah (`minimal`), gaya `glass` kini menggunakan latar belakang kaca frosted berkontras tinggi (`bg-white/70` atau `bg-white/90`) dengan teks gelap yang jelas (`text-slate-900` atau `text-slate-950 font-bold`).
-     - Untuk tema gelap, gaya `glass` mengekalkan frosted glass estetik (`bg-white/10` atau `bg-white/20`) dengan teks putih/aksen tema yang berkontras tinggi.
-     - Gaya `outline` turut diselaraskan supaya tidak menghasilkan teks putih di atas latar lutsinar pada tema cerah.
-  2. Kedua-dua komponen pemaparan (`MobileMockupView` di builder dan `PublicBioClient` di halaman awam) kini menggunakan `getBioButtonClass`.
-  3. Ujian unit ditambah di `tests/bio-links.test.ts` untuk memastikan teks pada tema cerah tidak sesekali mengandungi `text-white`.
-  4. 230 / 230 ujian unit lulus (28 suite ujian), 0 ralat lint, typecheck bersih, build Next.js 16 bersih.
-
----
-
-# Bug Fix: Share / QR Modal Button Overflow (2026-09-03)
-
-Isu: Butang "Copy Link" terkeluar (*overflow*) ke bahagian luar sebelah kiri modal "Share @username" pada paparan desktop.
-
-- [x] 1. Baiki susun atur butang dalam Dialog Modal di `app/(public)/bio/[username]/client.tsx` dengan menggunakan grid `grid-cols-2` yang terhad di dalam kad modal, mengelakkan pertembungan kelas `DialogFooter` (`sm:flex-row sm:justify-end`).
-- [x] 2. Baiki susun atur butang dalam Dialog Modal di `app/(dashboard)/bio/client.tsx` (kod serupa).
-- [x] 3. Jalankan pengesahan kualiti (`npm run typecheck`, `npm run lint`, `npm test`).
-- [x] 4. Kemas kini `lessons.md`, `memory.md`, dan `task.md`.
-- [x] 5. Deploy perubahan ke Vercel Production.
-
----
-
-## Reviu Bug Fix: Share / QR Modal Button Overflow
-- **Punca Masalah**:
-  1. `DialogFooter` daripada shadcn mengandungi kelas lalai `sm:flex-row sm:justify-end`.
-  2. Komponen `Button` mempunyai kelas `shrink-0` (`flex-shrink: 0`), dan setiap butang di dalam dialog diberi kelas `w-full` (100% lebar).
-  3. Dalam modal sempit `sm:max-w-xs` (320px), dua butang `w-full` dengan `shrink-0` memerlukan lebih 540px jika diletakkan bersebelahan secara mendatar (`sm:flex-row`).
-  4. Oleh sebab `sm:justify-end` menyusun anak elemen ke kanan (`justify-content: flex-end`), butang kedua ("Save QR") berada di sebelah kanan di dalam dialog, manakala butang pertama ("Copy Link") ditolak sejauh ~260px melimpah keluar (*overflow*) ke sebelah kiri skrin.
-- **Penyelesaian**:
-  1. Menggantikan `DialogFooter` yang bersifat flex-end dengan grid semulajadi `<div className="grid grid-cols-2 gap-2 w-full pt-1">`.
-  2. Meningkatkan saiz dialog daripada `sm:max-w-xs` (320px) kepada `sm:max-w-sm` (384px) untuk ruang bernafas dan susun atur yang lebih kemas.
-  3. Memperbaiki kedua-dua fail: `app/(public)/bio/[username]/client.tsx` dan `app/(dashboard)/bio/client.tsx`.
-
----
-
-# KlikBio — Corak Latar Belakang (Background Patterns)
-
-Membolehkan pengguna memilih corak latar belakang (dots, grid, stripes, waves, crosses, stars, circuit, atau none) untuk halaman KlikBio mereka dengan sokongan kontras pintar bagi tema cerah dan gelap.
-
-- [x] 1. Tambah `BioPattern` dalam `lib/types/index.ts` (barrel export).
-- [x] 2. Kemas kini `lib/bio-links/themes.ts`: eksport `BIO_PATTERNS` dan `getBioPatternStyle(pattern, theme)`.
-- [x] 3. Kemas kini `app/(dashboard)/bio-builder/[id]/client.tsx`:
-  - Tambah bahagian pemilih corak latar belakang pada Tab "Design & Theme".
-  - Paparkan corak latar belakang pada `MobileMockupView`.
-- [x] 4. Kemas kini `app/(public)/bio/[username]/client.tsx`: paparkan corak latar belakang pada `PublicBioClient`.
-- [x] 5. Tulis ujian unit di `tests/bio-links.test.ts` untuk `getBioPatternStyle`.
-- [x] 6. Pengesahan kualiti: `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`.
-- [x] 7. Commit conventional commit & deploy ke Vercel Production.
-- [x] 8. Kemas kini `memory.md` dan `task.md`.
-
----
-
-## Reviu Ciri Corak Latar Belakang KlikBio
-
-**Ringkasan Pelaksanaan**:
-1. **Pilihan Corak (8 Corak)**:
-   - `none`: Latar belakang rata tanpa corak.
-   - `dots`: Polka Dots halus (`radial-gradient`).
-   - `grid`: Modern Grid (`linear-gradient`).
-   - `stripes`: Diagonal Stripes (`repeating-linear-gradient`).
-   - `waves`: Topography Waves (vektor kontur SVG data URI).
-   - `crosses`: Minimal Crosses (tanda tambah geometri SVG data URI).
-   - `stars`: Starry Sparkles (kerlipan bintang SVG data URI).
-   - `circuit`: Tech Circuit (papan litar digital SVG data URI).
-2. **Kawalan Kontras Pintar Berasaskan Tema**:
-   - Fungsi `getBioPatternStyle(pattern, theme)` mengesan sama ada tema aktif adalah cerah (`minimal`) atau gelap/warna terang (`emerald`, `dark`, `sunset`, dll.).
-   - Tema cerah menggunakan dakwat gelap legap rendah (`rgba(15, 23, 42, 0.04 - 0.09)`), manakala tema gelap menggunakan dakwat putih lembut (`rgba(255, 255, 255, 0.06 - 0.14)`).
-   - Semua lapisan corak menggunakan `pointer-events-none` supaya tidak menghalang interaksi, klik pautan, mahupun skrol.
-3. **Penyatuan UI Builder & Halaman Awam**:
-   - Tab 2 (Design & Theme) di `bio-builder/[id]` dilengkapi kad interaktif "Background Patterns / Corak Latar" dengan preview langsung setiap corak menggunakan warna tema semasa pengguna.
-   - `MobileMockupView` memaparkan corak latar secara langsung di skrin telefon mockup.
-   - Halaman awam `/bio/[username]` memaparkan corak tetap (`fixed inset-0`) sebagai tekstur latar yang anggun.
-4. **Pengesahan & Deployment**:
-   - `npm test`: 235 / 235 ujian unit lulus (28 suite ujian).
-   - `npm run typecheck`: 0 ralat TypeScript.
-   - `npm run lint`: 0 amaran linter.
-   - `npm run build`: Kompilasi Turbopack Next.js 16 bersih (49 laluan).
-   - Git Commit: `5e6fbe7` dipush ke `origin master`.
-   - Vercel Production: `dpl_7pV17fX4R8mjatScQiiDn7hYCiCh` (`https://www.klikform.com`).
-
----
-
-# Bug Fix: 404 Page Not Found Bila Tekan Pautan Borang KlikForm di KlikBio (2026-09-06)
-
-Isu: Pengguna mendapati bila menekan pautan borang KlikForm ("klikform form") pada halaman KlikBio, paparan menunjukkan ralat 404 "Page not found".
-
-- [x] 1. Kenal pasti punca asal ralat 404 (laluan `/form/[id]` hanya menyokong UUID pangkalan data dan menolak `short_code`, manakala `bio-builder` menyimpan `/form/${chosenForm.shortCode}`).
-- [x] 2. Bina helper `getFormByIdOrShortCode` dalam `lib/storage/forms.ts` (menggunakan `cache()` dan pengesanan regex UUID untuk mencari borang secara pintar mengikut ID UUID atau short code tanpa ralat PostgreSQL).
-- [x] 3. Kemas kini `app/(public)/form/[id]/page.tsx` untuk menggunakan `getFormByIdOrShortCode` bagi `generateMetadata` dan `PublicFormPage`.
-- [x] 4. Kemas kini `app/(public)/s/[code]/page.tsx` untuk menggunakan `getFormByIdOrShortCode` supaya kedua-dua laluan `/form/...` dan `/s/...` menyokong kedua-dua format ID dan short code.
-- [x] 5. Kemas kini `app/(dashboard)/bio-builder/[id]/client.tsx` untuk menjana pautan `/s/${shortCode}` secara piawai, dan membetulkan pengesanan pemilihan borang dalam dropdown.
-- [x] 6. Kemas kini `app/(public)/bio/[username]/client.tsx` untuk membuka pautan borang dalam tab baharu (`target="_blank"`) bagi mengekalkan halaman bio pelawat.
-- [x] 7. Tulis ujian unit dalam `tests/form-lookup.test.ts`.
-- [x] 8. Pengesahan kualiti: `npm test` (239/239 lulus), `npm run typecheck` (0 ralat), `npm run lint` (0 amaran), `npm run build` (bersih).
-- [x] 9. Commit conventional commit & deploy ke Vercel Production.
-- [x] 10. Kemas kini `memory.md`, `lessons.md`, dan `task.md`.
-
----
-
-## Reviu Pembaikan Ralat 404 Pautan Borang KlikBio
-
-**Punca Masalah**:
-1. Apabila pengguna memilih borang di bawah blok jenis "KlikForm Form" dalam Bio Builder, kod menetapkan pautan kepada `/form/${chosenForm.shortCode || chosenForm.id}`.
-2. Kerana kebanyakan borang mempunyai `shortCode` (cth: `daftarkursus`), pautan yang dijana adalah `/form/daftarkursus`.
-3. Di sisi pelayan, laluan `app/(public)/form/[id]/page.tsx` hanya memanggil `getFormById(id)` di mana lajur `forms.id` adalah jenis UUID PostgreSQL.
-4. Nilai `short_code` bukan UUID, menyebabkan carian PostgreSQL gagal (ralat 22P02) dan mengembalikan `undefined`, lalu memicu `notFound()` yang memaparkan skrin 404 "Page not found".
-5. Pautan borang sedia ada yang telah disimpan oleh pengguna dalam profil KlikBio mereka turut terjejas dengan ralat 404 ini.
-
-**Penyelesaian & Pencegahan Menyeluruh**:
-1. **Penyelesai Dwifungsi Pintar (`getFormByIdOrShortCode`)**:
-   - Dicipta fungsi `getFormByIdOrShortCode(identifier)` dalam `lib/storage/forms.ts` dibungkus dengan React `cache()`.
-   - Mengesan sama ada rentetan adalah format UUID menggunakan regex (`UUID_REGEX`). Jika UUID, carian ID dijalankan dahulu dengan fallback kepada short code; jika bukan UUID, carian short code dijalankan dahulu dengan fallback kepada ID.
-   - Mengelakkan ralat PostgreSQL uuid syntax sama sekali.
-2. **Kemas Kini Laluan Borang Awam**:
-   - `app/(public)/form/[id]/page.tsx`: Kini menggunakan `getFormByIdOrShortCode` dalam kedua-dua `generateMetadata` dan `PublicFormPage`.
-   - `app/(public)/s/[code]/page.tsx`: Turut menggunakan `getFormByIdOrShortCode` untuk fallback pencarian borang.
-   - Hasilnya: Sama ada pelawat mengakses `/form/[short_code]`, `/form/[uuid]`, `/s/[short_code]`, atau `/s/[uuid]`, borang sentiasa ditemui dan dimuatkan serta-merta tanpa 404!
-3. **Penyelarasan URL & UX Bio Builder**:
-   - Di `app/(dashboard)/bio-builder/[id]/client.tsx`, pemilihan borang kini menjana pautan `/s/${shortCode}` secara piawai.
-   - Pautan `type === 'link'` dinormalisasikan secara automatik dengan prefix `https://` jika pengguna tidak memasukkan protokol.
-   - Di `app/(public)/bio/[username]/client.tsx`, pautan borang dibuka dalam tab baharu (`target="_blank"`) supaya pelawat tidak kehilangan direktori halaman bio asal mereka.
-4. **Kualiti & Ujian**:
-   - Ditambah ujian unit baharu di `tests/form-lookup.test.ts` (4 ujian).
-   - `npm test`: 239/239 ujian unit lulus merentas 29 suite ujian.
-   - `npm run typecheck` & `npm run lint`: 0 ralat / 0 amaran.
-   - `npm run build`: Kompilasi Turbopack Next.js 16 bersih (49 laluan).
-   - Deployment Vercel Production: `dpl_6AwDtoTQjEM2k9GKSfPAWeeQwGoz` (`https://www.klikform.com`).
-
----
-
-# Penambahbaikan Menyeluruh E-Cert Builder (2026-09-07)
-
-Penambahbaikan menyeluruh sistem penyunting sijil (E-Cert Builder) merangkumi pembaikan pautan navigasi, sokongan eksport PDF A4, pilihan templat permulaan, aset hiasan (cop emas, bingkai, dwi-tandatangan), font kaligrafi, placeholder tambahan, dan alat penjajaran pintar.
-
-- [x] 1. **Navigasi & Eksport PDF A4 (Toolbar & Output)**
-  - [x] 1.1 Baiki pautan toolbar: tukar `/ecert/builder` → `/certificates/builder` dan preview link.
-  - [x] 1.2 Tambah fungsi dan butang `Eksport PDF (A4)` di sebelah Eksport PNG menggunakan `canvasToPdfBlob` / `jsPDF`.
-  - [x] 1.3 Tambah toggle dan render garisan panduan sempadan cetakan selamat (*Print Safe Margin / Bleed Guide*).
-- [x] 2. **Koleksi Templat Permulaan (Preset Templates)**
-  - [x] 2.1 Bina modul definisi templat pra-bina `lib/certificates/presets.ts` (Blank, Royal Gold, Corporate Blue, Academic School, Modern Workshop, Luxury Dark).
-  - [x] 2.2 Kemas kini `NewCertificateDialog` dengan galeri pilihan templat visual (kad templat, ikon, dan deskripsi).
-  - [x] 2.3 Kemas kini `createCertificateTemplateAction` untuk menyuntik elemen reka bentuk lengkap daripada preset yang dipilih.
-- [x] 3. **Aset Hiasan Rasmi Sijil & Font Kaligrafi**
-  - [x] 3.1 Tambah pilihan Cop Rasmi / Lencana (Gold Seal Badges) dan Bingkai Sijil (Decorative Borders) dalam `sidebar.tsx`.
-  - [x] 3.2 Tambah koleksi Google Fonts kaligrafi dan sijil (*Alex Brush, Pinyon Script, Great Vibes, Cormorant Garamond, Cinzel Decorative*) dalam `properties.tsx`.
-  - [x] 3.3 Suntik Google Fonts stylesheet dalam kanvas editor, preview, dan renderer untuk paparan konsisten merentas peranti.
-- [x] 4. **Placeholder Tambahan & Preset Dwi-Tandatangan**
-  - [x] 4.1 Tambah jenis placeholder baharu: `{organisasi}`, `{peranan}`, `{gred}` dalam `lib/types/certificates.ts` dan `sidebar.tsx`.
-  - [x] 4.2 Tambah fungsi dan butang pantas "Dwi-Tandatangan" (Dual Signatories) di sidebar.
-  - [x] 4.3 Kemas kini `CertificateRenderer` dan `bulk/client.tsx` untuk menyokong pemetaan data placeholder baharu.
-- [x] 5. **Alat Penjajaran Pintar Canva-Style (Align & Distribute)**
-  - [x] 5.1 Tambah butang *Pusat ke Kanvas* (*Center Horizontally / Vertically*) dalam panel properties.
-  - [x] 5.2 Tambah fungsi dan butang *Align & Distribute* bagi pilihan berbilang elemen (*multi-selection*).
-- [x] 6. **Ujian Unit & Pengesahan Kualiti**
-  - [x] 6.1 Tulis ujian unit baharu di `tests/certificate-presets.test.ts`.
-  - [x] 6.2 Jalankan `npm test` (252 / 252 ujian lulus merentas 30 suites).
-  - [x] 6.3 Jalankan `npm run typecheck` & `npm run lint` (0 ralat, 0 amaran).
-  - [x] 6.4 Jalankan `npm run build` untuk mengesahkan kompilasi Next.js 16 (bersih, 49 laluan).
-
----
-
-## Reviu Penambahbaikan Menyeluruh E-Cert Builder
-
-**Skop & Ciri Utama Dihantar**:
-1. **Navigasi & Sedia-Cetak PDF A4**:
-   - Membetulkan pepijat pautan navigasi `Toolbar`: menggantikan `/ecert/builder` lapuk dengan `/certificates/builder` dan laluan preview yang sah.
-   - Menambah butang `PDF (A4)` pada toolbar yang memproses snapshot HD kanvas (skala 3x) ke dalam dokumen A4 landskap (297mm x 210mm) dengan mampatan pantas JPEG 0.85 melalui `jsPDF`.
-   - Menambah toggle sempadan selamat cetakan fizikal (*Safe Margin / Bleed Guide* 36px) dengan garisan amaran emas lembut yang tidak disertakan dalam cetakan/muat turun sebenar.
-2. **Galeri Templat Pra-Bina (6 Preset Rasmi)**:
-   - Dicipta modul `lib/certificates/presets.ts` dengan 6 templat reka bentuk sedia guna:
-     - `Blank Canvas`: Kanvas kosong sedia untuk kustomisasi manual.
-     - `Royal Gold Excellence`: Tema emas mewah klasik sesuai untuk anugerah cemerlang dan majlis konvokesyen.
-     - `Corporate Blue Professional`: Tema biru korporat moden untuk sijil penghargaan organisasi dan syarikat.
-     - `Academic Classic`: Reka bentuk bersempadan hijau zamrud untuk pencapaian persekolahan dan universiti.
-     - `Modern Workshop`: Reka bentuk oren/amber cergas untuk latihan kemahiran, bengkel, dan seminar.
-     - `Luxury Dark Edition`: Tema hitam-emas elegan untuk pengiktirafan VIP, penaja, dan malam gala.
-   - Dialog "Cipta Templat Baharu" (`NewCertificateDialog`) dinaik taraf dengan tab visual yang memaparkan reviu mini, palet warna, dan penerangan kategori.
-   - `createCertificateTemplateAction` menyuntik kesemua elemen preset secara automatik ke dalam pangkalan data.
-3. **Aset Hiasan Rasmi & Tipografi Kaligrafi**:
-   - Ditambah lencana/cop rasmi emas (*Gold Seal Badges*): Cop Emas Anugerah, Lencana Pengesahan Lulus, Perisai Sahih, dan Piala Penghargaan.
-   - Ditambah butang pantas "Tambah Bingkai Sijil Emas" bersempadan berganda klasik.
-   - Pilihan Google Fonts kaligrafi rasmi: *Alex Brush, Pinyon Script, Great Vibes, Cormorant Garamond, Cinzel Decorative, Dancing Script*.
-   - Suntikan pautan Google Fonts secara global merentas editor, preview, dan renderer sijil.
-4. **Placeholder Tambahan & Dwi-Tandatangan**:
-   - Ditambah sokongan placeholder dinamik `{organisasi}`, `{peranan}`, dan `{gred}` merentas editor, preview, penyesuaian CSV pukal (*bulk generation*), dan renderer sijil.
-   - Ditambah butang pintar "Preset Dwi-Tandatangan" untuk menghasilkan dua blok tandatangan seimbang (cth: Pengarah & Pengerusi) dengan satu klik.
-5. **Alat Penjajaran Pintar Canva-Style (Align & Distribute)**:
-   - Modul tulen `lib/certificates/alignment.ts` menyediakan penjajaran ke kanvas (Pusat X / Pusat Y) dan penjajaran berbilang elemen (Kiri, Pusat, Kanan, Atas, Tengah, Bawah, serta pengagihan jarak mendatar/menegak sama rata).
-6. **Pengesahan & Kualiti**:
-   - Ujian unit baharu di `tests/certificate-presets.test.ts` (13 ujian).
-   - 252 / 252 ujian lulus (30 suites).
-   - Typecheck TypeScript bersih (0 ralat).
-   - ESLint bersih (0 amaran).
-   - Next.js 16 build bersih (49 routes).
-
----
-
-# Pengoptimuman E-Cert Builder Untuk Skrin Komputer Riba 14 Inci (2026-09-07)
-
-Memperbaiki susun atur studio rekaan e-Sijil pada skrin 14 inci (dan komputer riba) dengan menyingkirkan halangan bar sisi luar, melaksanakan penskalaan muat skrin automatik (*fit-to-screen*), kawalan zum Canva-style, dan menghapuskan ralat *flexbox clipping* serta dwi-scrollbar.
-
-- [x] 1. Cipta komponen pelindung `DashboardShell` di `components/dashboard/dashboard-shell.tsx` yang menyembunyikan `DashboardSidebar` & `SubscriptionBanner` serta membuang dwi-scrollbar apabila pengguna berada di studio builder `/certificates/builder/[id]` (100vw x 100vh).
-- [x] 2. Kemas kini `app/(dashboard)/layout.tsx` untuk menggunakan `DashboardShell`.
-- [x] 3. Kemas kini `app/(dashboard)/certificates/builder/[id]/client.tsx`:
-  - Laksanakan `ResizeObserver` untuk mengukur bekas kerja dan mengira `fitScale` automatik.
-  - Tetapkan dimensi kanvas berdasarkan saiz ruang supaya sijil (landskap & potret) sentiasa muat 100% tanpa perlu skrol.
-  - Gantikan `items-center justify-center` dengan `m-auto` bagi menghalang *negative coordinate clipping* pada bahagian atas dan kiri sijil.
-  - Tambah bar kawalan zum terapung Canva-style di bahagian bawah (`-`, `Muat Skrin`, `+`, `100%`).
-  - Tambah togol sembunyi/buka bar sisi elemen (*collapsible sidebar*).
-- [x] 4. Kemas kini `components/certificates/builder/toolbar.tsx` agar butang lebih responsif pada skrin sempit dan tambah butang togol bar sisi (`PanelLeft`).
-- [x] 5. Kemas kini `actions/certificate-template.ts` agar koordinat elemen lalai `DEFAULT_ELEMENTS` berpusat tepat pada $X = 561$.
-- [x] 6. Jalankan pengesahan kualiti (`npm test`, `npm run typecheck`, `npm run lint`, `npm run build`).
-- [x] 7. Deploy ke Vercel Production dan sahkan hasil.
-
----
-
-## Reviu Pengoptimuman E-Cert Builder Untuk Skrin Komputer Riba 14 Inci
-
-**Punca Masalah**:
-1. **Ruang Kerja Terhimpit**: Pada skrin komputer riba 14 inci (lazimnya 1280px atau 1366px lebar viewport), bar sisi navigasi utama KlikForm (`w-64` / 256px) kekal terpapar di sebelah kiri, memakan ruang kanvas dan memampatkan reka bentuk.
-2. **Ketiadaan Penskalaan Muat Skrin (Fit-to-Screen)**: Kanvas sebelum ini menggunakan `w-full max-w-[800px]` (atau `max-w-[500px]`) dan `aspectRatio` tanpa sekatan ketinggian. Pada ketinggian skrin 14 inci (~450px - 530px ruang kerja bersih), kanvas potret dengan ketinggian 700px+ melimpah keluar secara menegak.
-3. **Flexbox Clipping Sisi Negatif**: Pemusatan `items-center justify-center` bersama `overflow-auto` menyebabkan separuh daripada limpahan elemen ditolak ke koordinat $Y < 0$, menyebabkan teks atas dan bingkai atas terpotong secara kekal kerana pelayar web tidak membenarkan skrol ke ruang negatif.
-4. **Dwi-Scrollbar Bertindih**: Ketinggian `h-screen` pada halaman berserta `SubscriptionBanner` dan `overflow-y-auto` pada `layout.tsx` menghasilkan dua bar skrol bertindih.
-
-**Penyelesaian Yang Dilaksanakan**:
-1. **Studio Shell 100vw x 100vh Pintar (`DashboardShell`)**:
-   - Dicipta `components/dashboard/dashboard-shell.tsx` yang mengesan laluan `/certificates/builder/[id]` (termasuk `/preview` dan `/bulk`).
-   - Menyembunyikan bar sisi papan pemuka luar (`DashboardSidebar`) dan amaran langganan secara automatik untuk memberikan kanvas keluasan studio 100% tanpa sebarang halangan atau dwi-scrollbar.
-   - Apabila pengguna menekan butang `[ ← ]`, mereka kembali ke senarai sijil di mana bar sisi dashboard dipaparkan semula secara normal.
-2. **Penskalaan Muat Skrin Pintar (*Auto Fit-to-Screen*)**:
-   - `ResizeObserver` mengukur dimensi sebenar ruang kerja `containerRef`.
-   - Mengira `fitScale = Math.min((availWidth / template.width), (availHeight / template.height))`.
-   - Menetapkan kedua-dua `width` dan `height` kanvas secara dinamik. Keseluruhan sijil kini muat 100% di tengah skrin secara automatik tanpa perlu diskrol, sama ada dalam mod Landskap mahupun Potret!
-3. **Penyelesaian Flexbox Safe Centering (`m-auto`)**:
-   - Menggantikan `items-center justify-center` dengan `m-auto` pada anak flexbox. Jika saiz kanvas lebih kecil dari bekas, ia berpusat secara automatik; jika dizum melebihi skrin, ia berlabuh pada (0,0) dan membolehkan skrol semula jadi ke bawah dan ke kanan tanpa sebarang *clipping* pada bahagian atas atau kiri.
-4. **Bar Kawalan Zum Terapung (Canva-Style)**:
-   - Disediakan bar zum terapung di bahagian bawah:
-     - `[ - ]`: Zum keluar (skala berkurang 10%).
-     - `[ Muat Skrin (Fit) ]`: Menetapkan semula paparan muat skrin penuh optimum mengikut saiz tingkap semasa.
-     - `[ + ]`: Zum masuk (skala bertambah 10%).
-     - `[ 100% ]`: Paparan saiz sebenar 1:1.
-5. **Togol Bar Sisi Elemen (*Collapsible Sidebar*)**:
-   - Butang `PanelLeft` ditambah pada toolbar untuk membolehkan pengguna menyembunyikan/membuka bar sisi elemen pada bila-bila masa bagi ruang kerja yang lebih luas.
-6. **Orientasi Pintar & Koordinat Berpusat**:
-   - Pertukaran orientasi Landskap ↔ Potret kini menskalakan koordinat elemen ($X$ dan $Y$) secara berkadar terus supaya elemen kekal berpusat dan tidak terkeluar dari sempadan kanvas.
-   - `DEFAULT_ELEMENTS` dikemas kini dengan koordinat berpusat tepat pada $X = 561$ (1123 / 2).
-- [x] Pengindahan Gaya Hover & Pilihan Elemen (Hover & Selection Styling) di E-Cert Builder:
-  - [x] 1. Rombak keadaan pilihan (*selected state*): Hapuskan pertindihan dwi/tiga garisan sempadan (buang `ring-2 ring-primary ring-offset-2` luar yang bertindih dengan kotak pilihan dalam).
-  - [x] 2. Rombak gaya pemegang skala (*Canva-style handles*):
-    - Pusatkan pemegang secara tepat pada bucu menggunakan `translate` (bukan koordinat *hardcoded*).
-    - Gunakan pemegang bulatan putih bersih dengan sempadan nipis 1.5px dan bayang halus `shadow-sm`.
-    - Gunakan pemegang pil menegak/mendatar yang kemas pada sisi kiri, kanan, atas, dan bawah.
-  - [x] 3. Perhalusi elemen pemboleh ubah (*placeholder*):
-    - Apabila dipilih (*selected*): buang kotak *dashed* dalam dan warna latar ungu supaya teks kelihatan bersih dalam bingkai pilihan.
-    - Apabila tidak dipilih (*unselected*): gantikan kotak tebal kasar ungu dengan garisan *dashed* halus yang elegan (`border-dashed border-primary/30 bg-primary/[0.03]`).
-    - Sembunyikan sempadan pemboleh ubah sepenuhnya sewaktu eksport PNG/PDF.
-  - [x] 4. Tingkatkan keadaan *hover*: Tambah sorotan bingkai halus (*smooth primary outline/ring highlight*) dengan transisi lancar pada elemen yang tidak dipilih.
-  - [x] 5. Sahkan kualiti (`npm test`, `npm run typecheck`, `npm run lint`, `npm run build`).
-  - [x] 6. Deploy ke Vercel production dan kemas kini dokumentasi.
-
----
+**Matlamat**: Memenuhi permintaan pengguna ("yg mana ada bahasa melayu, tukarkan semua ke bahasa inggeris"), menukar kesemua teks antaramuka pengguna (UI), mesej ralat, tooltip, modal dialog, metadata, dan templat yang masih dalam Bahasa Melayu kepada Bahasa Inggeris secara profesional, kemas, dan konsisten di seluruh aplikasi KlikForm.
 
-# Revamp Halaman Pricing (Pricing Page) — Minimalist & Visual Polish ✅ SIAP
-
-**Matlamat**: Memperkemas dan mencantikkan halaman penentuan harga (`/pricing`), kad pelan (`components/pricing/plan-card.tsx`), dan susun atur kandungan (`app/pricing/page.tsx`) agar selari dengan estetika minimalist moden landing page KlikForm (gaya Linear/Vercel) dengan hierarki visual yang jelas, kad berkontur rounded-3xl yang seimbang, sorotan pelan Pro yang elegan, serta seksyen FAQ interaktif.
-
-- [x] 1. Perkemas kad pelan harga (`components/pricing/plan-card.tsx`):
-  - Kad 3D-feeling rounded-3xl dengan border halus berkontras (`border-slate-200/80` untuk Free/Enterprise dan `border-purple-600/40 shadow-xl ring-1 ring-purple-500/20` untuk Pro).
-  - Lencana "Paling Popular" moden dengan gradien ungu-indigo terapung elegan.
-  - Paparan harga berkontras tinggi dengan diskaun 50% "Jimat 50% Promosi" yang kemas.
-  - Ikon tanda semak (checkmarks) bulat emerald yang anggun untuk senarai ciri.
-  - Susun atur flexbox seimbang dengan `flex-1` pada bekas ciri & butang supaya ketinggian kad seragam tanpa jurang lompang.
-- [x] 2. Mereka bentuk semula halaman `app/pricing/page.tsx`:
-  - Latar belakang putih bersih (`bg-white`) dengan sentuhan grid dot pattern halus.
-  - Header tajuk dan subteks berkontras tinggi dengan jaminan ketenangan minda ("Batal bila-bila masa", "Bayaran selamat BCL / FPX", "Sedia digunakan serta-merta").
-  - Jadual/senarai FAQ moden menggunakan komponen akordion interaktif (Soalan Lazim).
-  - Footer kemas menggunakan `LandingFooter`.
-  - Pengekalan Static Site Generation (`○ Static`) tanpa server-side cookie block.
-- [x] 3. Pengesahan kualiti:
-  - `npm run lint`: 0 ralat, 0 amaran.
-  - `npm run typecheck`: 0 ralat TypeScript.
-  - `npm test`: 252 / 252 ujian unit lulus (termasuk `tests/pricing.test.ts`).
-  - `npm run build`: Kompilasi Turbopack Next.js 16 bersih.
-
----
-
-# Revamp Menu Dropdown Produk Navbar (Landing Navbar & Mobile Drawer) ✅ SIAP
-
-**Matlamat**: Mengemas kini senarai produk terkini KlikForm pada dropdown menu "Products" di desktop navbar (`components/landing-navbar.tsx`) dan mobile drawer (`components/landing-mobile-menu.tsx`) dengan reka bentuk mega-menu moden, ikon squircle berwarna unik, lencana visual `BARU` dan `HOT`, penerangan ringkas setiap produk, serta bar tindakan bawah (*trust & action bar*).
-
-- [x] 1. Perkemas Desktop Mega-Menu di `components/landing-navbar.tsx`:
-  - Menggantikan senarai 4 produk lama dengan 6 produk terkini 2026:
-    1. Online Forms (Google Sheets Sync masa nyata, Formula Injection Shield & skip logic)
-    2. Studio E-Sijil Canva (Drag-to-scale, 10+ templat & auto-scaling typography)
-    3. KlikBio Link-in-Bio (Lencana `BARU`, 8 tema warna, corak latar & pautan WhatsApp)
-    4. Jana Sijil Pukal CSV → ZIP (Lencana `HOT`, eksport ratusan sijil PDF/PNG)
-    5. Kod QR Dinamik (Resolusi cetakan tinggi & imbasan pantas)
-    6. URL Shortener (Pautan ringkas dengan analitik lawatan)
-  - Bekas mega-menu diperluas (`w-[520px] md:w-[680px] lg:w-[720px]`), bucu `rounded-3xl`, bayang terapung lembut `shadow-[0_20px_50px_rgba(15,23,42,0.12)]`.
-  - Ikon squircle berwarna khas bagi setiap produk dengan efek interaktif hover.
-  - Bar bawah (*bottom bar*): Lencana jaminan pengesahan sijil segera dan pautan pintas ke `/pricing`.
-- [x] 2. Segerakkan Navigasi Mudah Alih di `components/landing-mobile-menu.tsx`:
-  - Memasukkan kesemua 6 produk terkini dengan ikon kemas dan lencana `BARU` & `HOT`.
-- [x] 3. Pengesahan kualiti:
-  - `npm run typecheck`: 0 ralat TypeScript.
-  - `npm run lint`: 0 ralat, 0 amaran ESLint.
-  - `npm test`: 251 / 251 ujian unit lulus (30 test suites).
-
----
-
-# Pengindahan Gaya Hover & Pembetulan Susun Atur Mendatar Navbar Dropdown ✅ SIAP
-
-**Matlamat**: Menyelesaikan masalah susun atur menegak yang janggal dan kesan hover yang kasar pada kad menu "Products" (menghapuskan kotak sempadan kelabu tegar, pembalikan warna ikon gelap yang garang, dan pertembungan warna teks ungu dengan ikon hijau).
-
-- [x] 1. Pembetulan Susun Atur Mendatar (*Horizontal Layout*):
-  - Buang `flex-col` lalai dari `NavigationMenuLink` dalam `components/ui/navigation-menu.tsx`.
-  - Tetapkan susun atur mendatar `flex flex-row items-start gap-3.5` di `components/landing-navbar.tsx` (ikon kemas di sebelah kiri, tajuk & penerangan di sebelah kanan).
-- [x] 2. Pengindahan Kesan Hover (*Polished & Subtle Hover Effect*):
-  - Buang sempadan kelabu tegar `border-slate-200/60` yang kelihatan seperti kotak kaku.
-  - Gantikan dengan latar belakang lembut mengikut rona produk (`hover:bg-[color]-50/40`) tanpa sebarang garisan sempadan tajam.
-  - Ikon squircle tidak lagi bertukar menjadi blok gelap legap; sebaliknya menggunakan penskalaan lembut `scale-105` dengan rona pastel yang lebih kaya (`bg-100` / `text-700`).
-  - Warna teks tajuk semasa hover diselaraskan mengikut warna produk masing-masing (KlikBio bertukar menjadi emerald yang harmoni, bukan ungu yang bertembung).
-- [x] 3. Segerakkan menu mobile di `components/landing-mobile-menu.tsx`.
-- [x] 4. Pembuangan Bar Bawah (*Bottom Action/Trust Bar*):
-  - Membuang bar bawah `Portal Semakan Awam & Kod QR Sah disertakan automatik` dan butang `Lihat Pelan & Harga` daripada menu dropdown desktop di `components/landing-navbar.tsx` agar dropdown kekal minimalis dan fokus kepada 6 produk sahaja.
-  - Membersihkan import tidak digunakan (`ShieldCheck`, `ArrowRight`).
-- [x] 5. Pengesahan kualiti: `npm run typecheck` (0), `npm run lint` (0), `npm test` (251/251 lulus).
-
----
-
-# Halaman Khusus 6 Produk KlikForm (Dedicated Product Pages) ✅ SIAP
-
-**Matlamat**: Memastikan kesemua 6 produk di dalam menu dropdown mempunyai halaman penerangan dan pameran ciri (*product landing page*) masing-masing secara lengkap dan berasingan.
-
-- [x] 1. Cipta halaman pameran KlikBio di `app/products/bio/page.tsx` (`/products/bio`):
-  - Hero, 8 preset tema warna, 8 corak latar belakang estetik, pautan WhatsApp terus, live mobile mockup preview, kod QR perkongsian, dan analitik klik.
-- [x] 2. Cipta halaman pameran Jana Sijil Pukal di `app/products/bulk-certificates/page.tsx` (`/products/bulk-certificates`):
-  - Hero, import CSV & auto-detect lajur, penjanaan pantas terus ke arkib ZIP, format PDF/PNG HD, nombor siri & kod QR keselamatan, dan auto-scaling typography.
-- [x] 3. Kemas kini pautan dropdown di `components/landing-navbar.tsx`:
-  - `KlikBio (Link-in-Bio)` dipautkan ke `/products/bio` (bukan `/bio` dashboard).
-  - `Jana Sijil Pukal (CSV → ZIP)` dipautkan ke `/products/bulk-certificates` (bukan `/products/certificates`).
-- [x] 4. Kemas kini pautan mobile drawer di `components/landing-mobile-menu.tsx`.
-- [x] 5. Kemas kini pautan footer di `components/landing/landing-footer.tsx`.
-- [x] 6. Pengesahan kualiti: `npm run typecheck` (0), `npm run lint` (0), `npm test` (251/251 lulus).
-
----
-
-# Translasi Penuh Laman Web & Sistem ke Bahasa Inggeris (Full English Localization) ✅ SIAP
-
-**Matlamat**: Mengalihkan keseluruhan teks, penerangan ciri, antaramuka sistem, borang awam, dan emel automatik KlikForm kepada Bahasa Inggeris sepenuhnya mengikut standard antarabangsa profesional.
-
-- [x] 1. Laman Pemasaran & Landing Page:
-  - [x] `app/layout.tsx`: Tukar `lang="en"` & kemas kini metadata SEO/OpenGraph ke Bahasa Inggeris.
-  - [x] `components/landing-navbar.tsx` & `components/landing-mobile-menu.tsx`: Terjemahkan penerangan produk mega-menu & lencana (`NEW`, `HOT`).
-  - [x] `components/landing/landing-hero.tsx`: Hero badge, H1, subteks, butang CTA, bukti sosial & tab mockup.
-  - [x] `components/landing/landing-features-bento.tsx`: Semua 6 kad Bento Grid (Google Sheets, Canva Studio, Bulk CSV, KlikBio, Analytics, PDPA).
-  - [x] `components/landing/landing-showcase.tsx`: Tab interaktif showcase mendalam.
-  - [x] `components/landing/landing-use-cases.tsx`: 4 segmen sasaran pengguna.
-  - [x] `components/landing/landing-comparison.tsx`: Matriks perbandingan platform.
-  - [x] `components/landing/landing-cta.tsx` & `landing-footer.tsx`: Banner CTA & footer.
-- [x] 2. Halaman Pameran Produk (`app/products/*`):
-  - [x] `app/products/bio/page.tsx`: Terjemahkan pameran ciri KlikBio ke Bahasa Inggeris.
-  - [x] `app/products/bulk-certificates/page.tsx`: Terjemahkan pameran Jana Sijil Pukal ke Bahasa Inggeris.
-  - [x] Semak & perhalusi `forms/page.tsx`, `certificates/page.tsx`, `qr-codes/page.tsx`, `shortener/page.tsx`.
-- [x] 3. Halaman Pricing & Tetapan Harga:
-  - [x] `app/pricing/page.tsx`: Tajuk, jaminan keselamatan (FPX/BCL), dan FAQ akordion.
-  - [x] `components/pricing/plan-card.tsx`: Lencana "Most Popular", butang tindakan, dan senarai ciri pelan.
-  - [x] `lib/constants/pricing.ts`: Kemas kini deskripsi harga ke Bahasa Inggeris.
-- [x] 4. Papan Pemuka & Pembina (Dashboard & Builders):
-  - [x] `components/dashboard/cross-form-analytics.tsx`: Tajuk kad analitik.
-  - [x] `components/builder-tour.tsx`: Lawatan interaktif 5 langkah (Joyride onboarding).
-  - [x] `app/builder/[id]/client.tsx`: Status autosave ("Saving...", "Saved to cloud"), tab, dan dialog tukar templat.
-  - [x] `app/(dashboard)/certificates/builder/[id]/client.tsx` & bulk client: Kawalan zum ("Fit to Screen", "Actual Size"), pemetaan lajur CSV, butang muat turun ZIP.
-- [x] 5. Borang Awam & Notifikasi Emel:
-  - [x] `app/(public)/form/[id]/client.tsx`: Bar progres ("X / Y Answered"), butang Back/Next/Submit, skrin borang ditutup & terima kasih.
-  - [x] `app/(public)/check/[formId]/client.tsx` & `verify/[id]/page.tsx`: Input carian sijil & butang muat turun.
-  - [x] `lib/email/index.ts`: Terjemahkan kesemua 10 templat emel (notifikasi pemilik, pengesahan responden, edit magic link, peringatan langganan, resit FPX/BCL).
-  - [x] `tests/respondent-notification.test.ts`: Kemas kini jangkaan teks ujian emel.
-- [x] 6. Pengesahan Kualiti Penuh:
-  - [x] `npm run typecheck`: 0 ralat TypeScript.
-  - [x] `npm run lint`: 0 ralat, 0 amaran ESLint.
-  - [x] `npm test`: 251 / 251 ujian unit lulus (30 test suites).
-
----
-
-## Reviu Translasi Penuh Laman Web & Sistem ke Bahasa Inggeris
-
-**Skop & Pelaksanaan Translasi**:
-1. **Laman Pemasaran & Navigasi**:
-   - `app/layout.tsx`: Diselaraskan kepada `<html lang="en">` dengan metadata OpenGraph & deskripsi Bahasa Inggeris antarabangsa.
-   - `components/landing-navbar.tsx` & `components/landing-mobile-menu.tsx`: Kesemua 6 produk diterjemahkan ke Bahasa Inggeris dengan lencana moden `NEW` dan `HOT`.
-   - `components/landing/`: Komponen `landing-hero.tsx`, `landing-features-bento.tsx`, `landing-showcase.tsx`, `landing-use-cases.tsx`, `landing-comparison.tsx`, `landing-cta.tsx`, dan `landing-footer.tsx` semuanya dialihkan kepada Bahasa Inggeris standard, jelas, dan meyakinkan.
-2. **Halaman Pameran Produk (`/products/*`)**:
-   - `/products/bio`, `/products/bulk-certificates`, `/products/forms`, `/products/certificates`, `/products/qr-codes`, `/products/shortener` lengkap dengan salinan Bahasa Inggeris dan footer standard `LandingFooter`.
-3. **Harga & Langganan**:
-   - `/pricing` dan kad `plan-card.tsx` menggunakan Bahasa Inggeris ("Most Popular", "Get Started Free", "Upgrade to Pro", "Cancel anytime • No hidden fees", "Instant activation", "Secure FPX / BCL online banking").
-   - Mata wang kekal `RM 15` dan gerbang pembayaran kekal berorientasikan pasaran tempatan Malaysia (FPX / BCL.my).
-4. **Studio & Pembina**:
-   - Status auto-save: `Saving...` dan `Saved to cloud`.
-   - Onboarding Joyride: Langkah 1 hingga 5 lengkap dalam Bahasa Inggeris dengan kawalan `Skip`, `Next`, `Back`, dan `Finish`.
-   - Studio Sijil & Bulk Generator: Kawalan zum `Fit (X%)`, `Actual Size 100%`, label muat naik CSV, pengesanan lajur (`Name`, `Program / Event`, `Date`, `IC / ID`, dll.), dan butang `Generate & Download ZIP`.
-5. **Borang Awam & Lapisan Emel**:
-   - Paparan responden: `X / Y Answered`, `Closes in: X`, `Form Closed`, `Access Restricted`, `Submit Another Response`.
-   - Lapisan emel (`lib/email/index.ts`): Kesemua 10 templat diselaraskan kepada Bahasa Inggeris dengan escaping keselamatan HTML penuh.
-   - Ujian unit Vitest `tests/respondent-notification.test.ts` diselaraskan dan mengekalkan 100% kadar kelulusan.
-6. **Kualiti & Keandalan**:
-   - `npm run typecheck`: 0 ralat.
-   - `npm run lint`: 0 ralat/amaran.
-   - `npm test`: 251 / 251 ujian lulus merentas 30 suites.
-
----
-
-# Pengoptimuman Prestasi & Penghapusan Lag Drag E-Cert Builder ✅ SIAP
-
-**Matlamat**: Menyelesaikan masalah pergerakan terasa lambat/tersekat (*drag lag*) semasa pengguna menggerakkan atau mengubah saiz elemen pada canvas E-Cert Builder.
-
-- [x] 1. Kenal pasti punca asal lag:
-  - Kelas CSS `transition-all duration-150` pada pembungkus elemen melambatkan kemas kini kedudukan `left` dan `top` sebanyak 150ms di belakang kursor.
-  - Panggilan `canvasRef.current.getBoundingClientRect()` pada setiap event `mousemove` menyebabkan *forced synchronous reflow* berulang kali.
-  - Ketiadaan *frame throttling* (`requestAnimationFrame`) menyebabkan event tetikus berfrekuensi tinggi membebankan kitaran re-render React.
-  - Event listener `onMouseMove`/`onMouseLeave` terikat pada elemen canvas semata-mata, menyebabkan seretan pantas terputus apabila kursor terkeluar sedikit dari kanvas.
-- [x] 2. Laksanakan pengoptimuman prestasi di `app/(dashboard)/certificates/builder/[id]/client.tsx`:
-  - Nyahaktifkan transition kedudukan (`transition-none` atau khusus kepada `box-shadow,opacity`) semasa seretan/ubah saiz aktif (`isDragging || isResizing`).
-  - Tambah akselerasi GPU `willChange: 'left, top'` semasa seretan.
-  - Hapuskan panggilan `getBoundingClientRect()` pada `mousemove`; guna `currentScale` yang telah siap dikira.
-  - Laksanakan *batching* dengan `requestAnimationFrame` untuk menyelaraskan pergerakan dengan kadar segar semula skrin (60fps/120fps).
-  - Pindahkan event listener ke peringkat `window` semasa seretan/ubah saiz aktif dengan penguncian kursor `move` dan pencegahan `userSelect`.
-  - Kemas kini undo/redo history hanya jika elemen benar-benar digerakkan (`hasMovedRef`).
-- [x] 3. Pengesahan kualiti:
-  - `npm run typecheck`: 0 ralat TypeScript.
-  - `npm run lint`: 0 ralat/amaran ESLint.
-  - `npm test`: 251 / 251 ujian lulus (30 test suites).
-
----
-
-## Reviu Pengoptimuman Prestasi E-Cert Builder
-
-**Punca Masalah & Analisis Teknikal**:
-1. **Interpolasi CSS 150ms**: Pembungkus elemen menggunakan `transition-all duration-150`. Apabila `left` dan `top` dikemas kini, enjin CSS pelayar web tidak meletakkan elemen serta-merta, sebaliknya menginterpolasi koordinat selama 150ms. Ini menghasilkan sensasi terapung/tertunda di belakang tetikus.
-2. **Forced Synchronous Layout Reflow**: Setiap kali event `mousemove` berlaku, kod memanggil `canvasRef.current.getBoundingClientRect()` untuk mendapatkan skala kanvas. Ini memaksa pelayar mengira semula susun atur geometri berpuluh hingga beratus kali sesaat.
-3. **Kekerapan Event Tanpa Had (Unthrottled High-Polling Mouse Events)**: Tetikus moden menghantar 125Hz–1000Hz event. Kemas kini state React secara terus pada setiap event mencetuskan kitaran re-render yang melebihi kadar muat semula skrin (60Hz/120Hz).
-4. **Kehilangan Fokus Seretan (Canvas-Bound Listeners)**: Penggunaan `onMouseLeave={handleMouseUp}` pada kanvas menyebabkan seretan yang laju terputus sebaik sahaja kursor tergelincir melepasi garisan kanvas.
-
-**Penyelesaian Yang Dilaksanakan**:
-1. Menggantikan `transition-all duration-150` dengan `transition-[box-shadow,opacity] duration-150` dan menguatkuasakan `transition-none` apabila `isDragging || isResizing` aktif.
-2. Menggunakan `currentScale` secara langsung tanpa membuat pertanyaan geometri DOM (`getBoundingClientRect`) pada setiap event `mousemove`.
-3. Mengintegrasikan `requestAnimationFrame` (rAF) ref throttling supaya pengemaskinian state komponen berlaku selari dengan kadar bingkai paparan (60/120 FPS).
-4. Melampirkan event listener `mousemove` dan `mouseup` pada objek `window` apabila seretan bermula, membolehkan pergerakan lancar dan tidak terputus walaupun tetikus bergerak laju ke luar kawasan kanvas.
-5. Memastikan rekod sejarah Undo/Redo hanya ditambah apabila berlaku perubahan kedudukan sebenar (`hasMovedRef`), mengelakkan catatan kosong sewaktu klik pemilihan elemen.
-
----
-
-# Ciri E-Pamphlet & Buku Program Digital Viewer Yang Cantik ✅ SIAP
-
-**Matlamat**: Membina sistem Viewer E-Pamphlet / Buku Program Digital yang anggun, interaktif dan mesra telefon pintar (dengan mod 3D Flipbook, Touch Slider, dan Continuous Vertical Scroll, Pinch-to-Zoom, Filmstrip Thumbnails, Audio Selak Muka Surat, Butang Tindakan Majlis, dan Kod QR Majlis).
-
-- [x] 1. Takrifan Jenis & Konfigurasi (`lib/types/pamphlets.ts` & `lib/types/index.ts`)
-  - Takrifkan `Pamphlet`, `PamphletPageItem`, `PamphletTheme`, `PamphletDisplayMode`, `PamphletActionButton`.
-  - Tambah had `maxPamphlets` dalam `TIER_LIMITS` (`lib/constants/subscription-tiers.ts`) dan jenis `TierLimits`.
-  - Tema visual: `dark` (Cinema Dark), `light` (Clean Studio), `paper` (Warm Ivory), `emerald` (Royal Emerald).
-  - Mod paparan: `flipbook` (3D Page Flip), `slide` (Touch Carousel), `vertical` (Continuous Feed).
-- [x] 2. Migrasi Database & Lapisan Storan (`supabase/migrations/20261002000000_add_pamphlets.sql` & `lib/storage/pamphlets.ts`)
-  - SQL migration untuk jadual `public.pamphlets` (id, user_id, slug, title, description, event_date, location, cover_image, pdf_url, theme, display_mode, pages, action_buttons, is_active, views, created_at, updated_at).
-  - RLS policies (owner-only write, public read if active).
-  - Fungsi storage: `getPamphlets`, `getPamphletById`, `getPamphletPublic`, `createPamphlet`, `updatePamphlet`, `deletePamphlet`, `incrementPamphletViews`.
-  - Pengendalian ralat kalis 42P01 dengan fallback selamat.
-- [x] 3. Tindakan Pelayan (Server Actions) (`actions/pamphlets.ts`)
-  - `createPamphletAction`, `updatePamphletAction`, `deletePamphletAction`, `trackPamphletViewAction`.
-  - Revalidasi path (`/pamphlets`, `/p/[slug]`, `/pamphlet-builder/[id]`).
-- [x] 4. Komponen Teras: Viewer E-Pamphlet Interaktif (`components/pamphlet/viewer/index.tsx`)
-  - **Mod 3D Flipbook**: Kesan helaian buku fizikal dengan bayang lipatan tengah (*crease shadow*), lengkungan helaian (*sheen gradient*), paparan 2-muka surat serentak (desktop spread) dan 1-muka surat (mudah alih).
-  - **Mod Touch Slider**: Leretan lancar berasaskan sentuhan (*touch gestures/swipe*) dengan `framer-motion`.
-  - **Mod Vertical Feed**: Skrol ke bawah secara berterusan dengan margin kemas dan pengesanan muka surat aktif menerusi `IntersectionObserver`.
-  - **Pinch-to-zoom & Controls Zoom (+ / - / Reset)**: Zum sehingga 250% untuk membaca tulisan kecil tentatif/jadual.
-  - **Bilah Pratonton Pantas (Filmstrip Thumbnails)**: Laci mini di bawah dengan nombor muka surat dan tajuk bahagian.
-  - **Audio Selak Kertas (Subtle Page Turn Sound)**: Sintesis audio kertas lembut berasaskan Web Audio API (tanpa fail audio berat).
-  - **Mod Skrin Penuh (Fullscreen API)**.
-  - **Butang Tindakan Bersepadu**: Muat Turun PDF asal, Kongsi WhatsApp (`wa.me`), Salin Pautan, dan butang tindakan acara (cth: "Daftar Hadir / Check-In", "Tebus E-Sijil").
-- [x] 5. Halaman Awam Viewer (`app/(public)/p/[slug]/page.tsx` & fallback `/pamphlet/[id]/page.tsx`)
-  - Paparan mesra telefon pintar & desktop tanpa gangguan menu luaran.
-  - Metadata OpenGraph lengkap (tajuk majlis, penerangan, gambar muka depan) untuk paparan kad cantik di WhatsApp & media sosial.
-  - Sokongan mod demo segera di `/p/demo` yang memaparkan 6 muka surat contoh yang lengkap.
-  - Daftar laluan dalam `proxy.ts` senarai `publicRoutes`.
-- [x] 6. Papan Pemuka Dashboard (`app/(dashboard)/pamphlets/page.tsx` & `client.tsx`)
-  - Tambah menu "E-Pamphlet" dalam sidebar (`components/dashboard/sidebar.tsx`).
-  - Senarai kad pamphlet dengan gambar muka depan, bilangan muka surat, statistik tontonan, dan togol aktif.
-  - Modal Kongsi & Muat Turun Kod QR bersaiz besar (PNG) sedia cetak untuk banner majlis.
-  - Pautan pantas "Lihat Demo Langsung" untuk panduan pengguna.
-- [x] 7. Studio Pembina Pamphlet (`app/(dashboard)/pamphlet-builder/[id]/page.tsx` & `client.tsx`)
-  - Borang maklumat acara (Tajuk, Slug unik, Penerangan, Tarikh, Lokasi, Pautan PDF asal).
-  - Pengurus Muka Surat: Muat naik imej berganda serentak, susun atur turutan (*re-order*), label tajuk muka surat.
-  - Butang segera "Muat Contoh 6 Muka Surat" untuk pengguna menguji sebelum memuat naik rekaan sendiri.
-  - Tetapan Mod Paparan (Flipbook vs Slider vs Skrol Menegak) dan Tema Ambien.
-  - Konfigurasi Butang Tindakan Acara (Pautan Borang Check-In, Hubungi WhatsApp, dll).
-  - Pratonton Langsung (*Live Interactive Preview*) bersebelahan dengan togol paparan Desktop & Mobile.
-- [x] 8. Ujian Unit & Pengesahan Kualiti Penuh
-  - Ujian unit untuk pengesahan slug, tema, logik flipping, dan operasi storan di `tests/pamphlet.test.ts` & `tests/pamphlet-storage.test.ts`.
-  - `npm test`: 317 / 317 ujian lulus merentas 37 suite ujian.
-  - `npm run typecheck`: 0 ralat TypeScript.
-  - `npm run lint`: 0 ralat / 0 amaran ESLint.
-  - `npm run build`: Kompilasi pengeluaran Next.js 16 berjaya (58 laluan).
-  - Kemas kini `memory.md`, `lessons.md`, dan `task.md`.
-
----
-
-## Reviu Pelaksanaan: Ciri E-Pamphlet & Buku Program Digital
-
-1. **Seni Bina Sistem (Modern Digital Booklet)**:
-   - **Tiga Mod Paparan Serba Boleh**:
-     - *3D Flipbook*: Mensimulasikan buku fizikal dengan bayang lipatan tulang belakang buku (*spine shadow*), lengkungan helaian berkilau (*subtle sheen gradient*), dan susunan dwi-muka surat (*two-page spread*) pada skrin desktop serta helaian tunggal pada telefon pintar.
-     - *Touch Slider*: Leretan sentuhan mendatar menggunakan `framer-motion` dengan penjejakan kelajuan leret (*swipe velocity*).
-     - *Vertical Feed*: Skrol menegak berterusan dengan integrasi `IntersectionObserver` untuk mengesan muka surat aktif.
-   - **Sintesis Audio Helaian Tanpa Aset**:
-     - Kesan bunyi selak kertas dihasilkan menggunakan Web Audio API sintetik secara terus dalam pelayar web tanpa sebarang muat turun fail MP3 luaran.
-2. **Pengalaman Responden & Acara Majlis**:
-   - Pautan ringkas dan anggun `/p/[slug]` dengan sokongan metadata OpenGraph penuh supaya apabila pautan dikongsi ke WhatsApp atau Facebook, pratonton kad poster majlis dipaparkan dengan kemas.
-   - Penyediaan modal Kod QR sedia muat turun (format PNG 1000px berkualiti tinggi) untuk diletakkan pada gegantung (bunting) atau poster di pintu masuk dewan acara.
-   - Butang tindakan acara bersepadu menghubungkan hadirin terus ke borang pendaftaran/kehadiran 1-QR KlikForm, portal semakan e-Sijil, atau mesej WhatsApp urusetia.
-3. **Studio Penyunting Bersepadu**:
-   - Membolehkan penganjur memuat naik berbilang helaian imej (PNG/JPG) serentak, menyusun kedudukan muka surat dengan pantas, dan melihat pratonton langsung (*live interactive preview*) mengikut saiz Desktop mahupun Telefon Pintar.
-
----
-
-# Pembaikan & Ketahanan: PostgREST PGRST205 / Skema Jadual Pamphlets <!-- id: bugfix-pgrst205 -->
-
-**Matlamat**: Mengendalikan ketiadaan jadual `public.pamphlets` di Supabase secara anggun (menghapuskan `Error fetching pamphlets: Object` yang berpunca daripada kod ralat PostgREST `PGRST205`), menyediakan ralat yang jelas, dan membekalkan notis panduan migrasi 1-klik di Dashboard.
-
-- [x] 1. Kenal pasti kod ralat PostgREST `PGRST205` & `42P01` dalam `isMissingTableError` (`lib/storage/pamphlets.ts`). <!-- id: 1 -->
-- [x] 2. Lindungi fungsi-fungsi storan `getPamphlets`, `createPamphlet`, `updatePamphlet`, dan `deletePamphlet` dengan mesej panduan yang jelas. <!-- id: 2 -->
-- [x] 3. Tambah fungsi semakan `isPamphletsTableReady()` dan komponen notis panduan migrasi SQL 1-klik di `app/(dashboard)/pamphlets/page.tsx` & `client.tsx`. <!-- id: 3 -->
-- [x] 4. Kemas kini `tests/pamphlet-storage.test.ts` untuk mengesahkan pengendalian `PGRST205` secara anggun tanpa melemparkan ralat tidak terkawal. <!-- id: 4 -->
-- [x] 5. Pengesahan penuh kualiti: `npm test`, `npm run typecheck`, `npm run lint`. <!-- id: 5 -->
-- [x] 6. Dokumentasikan penemuan di `memory.md` dan `lessons.md`. <!-- id: 6 -->
-
 ---
+
+### Pelan Pelaksanaan Terperinci
+
+- [x] 1. Fasa 1: Modul E-Pamphlet & 3D Flipbook (Viewer, Dashboard, Builder, Themes & Presets)
+  - [x] 1.1 Toolbar & Navigasi Pemapar (`components/pamphlet/viewer/toolbar.tsx`)
+  - [x] 1.2 Paparan 3D Flipbook, Touch Slider, Skrol Menegak & Jalur Thumbnails (`components/pamphlet/viewer/flipbook-view.tsx`, `slider-view.tsx`, `vertical-view.tsx`, `thumbnails-strip.tsx`, `index.tsx`)
+  - [x] 1.3 Dashboard Senarai & Pengurusan E-Pamphlet (`app/(dashboard)/pamphlets/page.tsx`, `client.tsx`)
+  - [x] 1.4 Pamphlet Builder Studio (`app/(dashboard)/pamphlet-builder/[id]/page.tsx`, `client.tsx`)
+  - [x] 1.5 Tema & Pratetap Pamphlet (`lib/pamphlets/themes.ts`, `utils.ts`)
 
-## Reviu Pembaikan: Pengendalian Anggun Ketiadaan Jadual Supabase (PGRST205)
+- [x] 2. Fasa 2: Sistem Kehadiran (Smart Attendance / Check-In & Check-Out) & Semakan Sijil Awam
+  - [x] 2.1 Borang Awam Aliran Check-In & Check-Out (`app/(public)/form/[id]/client.tsx`)
+  - [x] 2.2 Pembantu Logik & Format Masa Kehadiran (`lib/forms/attendance.ts`)
+  - [x] 2.3 Skrin Projektor Kehadiran Awam (`app/(public)/present/[id]/page.tsx`, `client.tsx`)
+  - [x] 2.4 Halaman Semakan Sijil Awam & Kelayakan Kehadiran (`app/(public)/check/[formId]/client.tsx`)
+  - [x] 2.5 Halaman Sunting Jawapan (`app/(public)/edit/[token]/page.tsx`)
+
+- [x] 3. Fasa 3: Modul E-Sijil & Builder (Presets, Dialogs, Cards & Canvas Studio)
+  - [x] 3.1 Templat Pra-bina Sijil (`lib/certificates/presets.ts`)
+  - [x] 3.2 Dialog Cipta & Padam Sijil, Kad Templat & Kad QR (`components/certificates/new-certificate-dialog.tsx`, `delete-certificate-button.tsx`, `certificate-template-card.tsx`, `components/certificate-qr-card.tsx`)
+  - [x] 3.3 Studio Pembina Sijil (`app/(dashboard)/certificates/builder/[id]/client.tsx`, `components/certificates/builder/*`)
+
+- [x] 4. Fasa 4: Banner Langganan, Server Actions & Mesej Ralat Storan
+  - [x] 4.1 Banner Peringatan Langganan Dashboard (`components/dashboard/subscription-banner.tsx`)
+  - [x] 4.2 Bio Builder Toast (`app/(dashboard)/bio-builder/[id]/client.tsx`)
+  - [x] 4.3 Mesej Ralat Server Actions (`actions/attendance.ts`, `actions/certificate-template.ts`, `actions/certificates.ts`, `actions/forms.ts`, `actions/bio-links.ts`, `actions/pamphlets.ts`, `actions/edit-response.ts`, `actions/response-summary.ts`, `actions/webhooks.ts`)
+  - [x] 4.4 Mesej Ralat Storan (`lib/storage/subscription.ts`, `lib/storage/pamphlets.ts`, `lib/storage/bio-links.ts`, `lib/storage/short-links.ts`)
+
+- [x] 5. Fasa 5: Metadata SEO & JSON-LD Utama
+  - [x] 5.1 Metadata Halaman Utama & JSON-LD (`app/page.tsx`, `app/layout.tsx`)
+  - [x] 5.2 Metadata Laluan Awam Pamphlet (`app/(public)/p/[slug]/page.tsx`)
 
-1. **Punca Masalah (Root Cause)**:
-   - Apabila jadual `pamphlets` belum wujud di Supabase, PostgREST v12 mengembalikan ralat `PGRST205` (`Could not find the table 'public.pamphlets' in the schema cache`), bukannya ralat Postgres mentah `42P01`.
-   - Pemeriksaan awal hanya menyemak `error.code === '42P01'`, menyebabkan ralat `PGRST205` dilemparkan ke blok `catch` dan mencetak `console.error('Error fetching pamphlets:', Object)` pada setiap muat semula halaman pelayan.
-2. **Penyelesaian Dilaksanakan**:
-   - `isMissingTableError(error)` kini mengesan kod `PGRST205`, `42P01`, `PGRST204`, `PGRST200`, dan teks `schema cache` / `does not exist`.
-   - `getPamphlets()` mengembalikan tatasusunan kosong `[]` secara senyap tanpa mencemari log ralat konsol pelayan.
-   - Papan pemuka `/pamphlets` kini memaparkan banner notis pintar `PamphletDatabaseNotice` dengan butang 1-klik "Salin Skrip SQL" sekiranya jadual belum dimigrasi di Supabase.
-   - 321 ujian unit lulus 100% tanpa sebarang ralat atau amaran.
+- [x] 6. Fasa 6: Penyelarasan Ujian & Pengesahan Kualiti Menyeluruh
+  - [x] 6.1 Selaras ujian unit yang menyemak mesej format/ralat (`tests/attendance.test.ts`, `tests/certificate-attendance-gating.test.ts`, `tests/pamphlet-storage.test.ts`, `tests/bio-storage.test.ts`, `tests/pamphlet.test.ts`, `tests/attendance-actions.test.ts`)
+  - [x] 6.2 `npm run typecheck`: 0 ralat TypeScript
+  - [x] 6.3 `npm run lint`: 0 ralat / 0 amaran ESLint
+  - [x] 6.4 `npm test`: 330 / 330 ujian unit lulus (37 suites)
+
+- [x] 7. Fasa 7: Kemas Kini Memori & Dokumentasi
+  - [x] Kemas kini `task.md`, `lessons.md`, dan `memory.md`
+
+---
+
+# Pembersihan Emoji Antaramuka untuk Estetika Minimalis ✅ SELESAI
+- [x] Buang emoji `💻` dan `📱` dari pill status orientasi buku (`app/(dashboard)/pamphlet-builder/[id]/client.tsx`)
+- [x] Gantikan emoji amaran/status (⛔, 🚫, 🔒, 📌, ⏳, ⚠️, 🎉, 💬, ❤️) dengan ikon monokromatik Lucide SVG merentas aplikasi (`client.tsx`, `page.tsx`, `stats.tsx`, `landing-hero.tsx`, `landing-footer.tsx`)
+- [x] Sahkan `npm run typecheck` (0 ralat)
+- [x] Sahkan `npm run lint` (0 ralat / 0 amaran)
+- [x] Sahkan `npm test` (330/330 ujian lulus)
+
+---
+
+# Pengoptimuman Paparan Mudah Alih Pemapar E-Pamphlet (Mobile Pamphlet Viewer Optimization) ✅ SELESAI
+- [x] Kenal pasti punca ketidakseimbangan visual pada paparan telefon (nisbah landskap pada skrin menegak & kawalan desktop di dalam simulator telefon).
+- [x] Ringkaskan bar kawalan bawah (bottom navigator) pada mod mudah alih kepada bentuk pil minimalis: `[ < ]   [ ⊞ 1 / 2 ]   [ > ]`.
+- [x] Sembunyikan butang yang tidak kritikal pada header telefon (Palette dan Sound) serta buang label teks "Flipbook" supaya tajuk program/acara tidak dipotong (`IG...` -> teks penuh).
+- [x] Luaskan kelebaran dokumen landskap pada telefon daripada `width - 24` ke `width - 8` untuk memaksimumkan ketajaman dan saiz teks flyer.
+- [x] Tambahkan petunjuk visual minimalis monokromatik (`Rotate phone for full-width • Double-tap to zoom`) di ruang bawah risalah landskap.
+- [x] Forward `forceMobile={forceMobile}` daripada `PamphletViewer` kepada `PamphletToolbar` dan `SliderView`.
+- [x] Sahkan `npm run typecheck` (0 ralat), `npm run lint` (0 ralat), dan `npm test` (330/330 ujian lulus).
+
+---
+
+# Penghapusan Kesan Denyutan (Pulse Effect) Semasa Selakan Helaian 3D Flipbook ✅ SELESAI
+- [x] 1. Kenal pasti 4 punca teknikal kesan "pulse effect" pada paparan Desktop dan Mobile (khasnya dokumen 2 muka surat yang beroperasi dalam Single Page Mode):
+  - 1.1 Putaran 3D `rotateY: 0 -> -85deg` dengan `transformOrigin: 'left center'` dan `perspective: 5000px` yang menghayunkan bucu kanan muka surat ke hadapan ke arah mata pengguna (pembesaran perspektif 3D / bulking forward).
+  - 1.2 `opacity: [1, 1, 0]` yang melarutkan helaian secara tiba-tiba di tengah animasi.
+  - 1.3 Pertukaran `src` imej tapak yang tidak segerak (flicker `targetPage -> currentPage -> targetPage`) semasa `isFlipping` selesai sebelum state induk dikemas kini.
+  - 1.4 `ResizeObserver` yang dicipta semula pada setiap perubahan `currentPage`, mencetuskan penilaian semula saiz dan nisbah imej sebaik sahaja animasi tamat.
+- [x] 2. Laksanakan `displayedPage` untuk menyelaraskan lapisan imej tapak secara stabil tanpa sebarang kelipan `src`.
+- [x] 3. Reka semula animasi selakan 1 muka surat (Single Page & Mobile) kepada kelengkungan kertas 3D sejati (*3D Paper Curl & Peel* `rotateY: -25deg`, `rotateZ: -3deg`, bayangan tebal 3D, dan kilauan silinder) yang kekal 100% di dalam sempadan dokumen tanpa terpelanting keluar skrin ke kawasan kosong.
+- [x] 4. Kunci `ResizeObserver` kepada permulaan komponen (mount-only `[]`) tanpa bergantung kepada `[currentPage]`.
+- [x] 5. Sahkan `npm run typecheck` (0 ralat), `npm run lint` (0 ralat), dan `npm test` (330/330 lulus).
+- [x] 6. Dokumentasikan penemuan dan penyelesaian dalam `lessons.md` dan `memory.md`.
+
+---
+
+# Penghapusan Glitch Selepas Animasi 3D Flip (Post-Flip Visual Glitch Elimination) ✅ SELESAI
+- [x] 1. Siasat & baiki punca lonjakan transformasi `targetShiftX` semasa `targetSpreadRef.current = null` di penghujung animasi.
+- [x] 2. Hentikan pertukaran mendadak sumber imej (`img.src`) pada helaian tapak (Base Page) semasa unmount helaian selakan menerusi pra-pemaparan berlapis (*seamless pre-rendered handoff*).
+- [x] 3. Selesaikan pepijat selakan undur (*PREV flip*) pada mod 1 Muka Surat (Single Page) di mana `displayedPage` tidak dikemas kini dengan betul.
+- [x] 4. Lembutkan bayangan jatuh helaian 3D (*drop-shadow pop*) supaya memudar secara dinamik ke 0 sewaktu helaian mendarat rata (0°/180°), mengelakkan bayangan terpadam mengejut.
+- [x] 5. Samakan warna dan kelegapan sempadan (*border opacity*) antara helaian selakan (`border-black/15`) dan halaman tapak (`border-black/15`) bagi mengelakkan kelipan garisan bucu.
+- [x] 6. Elakkan bunyi selakan berulang dua kali (*double page turn sound*) semasa pertukaran halaman selesai.
+- [x] 7. Uji dan sahkan `npm run typecheck`, `npm run lint`, dan `npm test`.
+- [x] 8. Kemas kini `lessons.md` dan `memory.md`.
+
+---
+
+# Penyelarasan Segerak Transisi Imej dengan Animasi 3D Flip (1-Page & 2-Pages Image Transition Sync) ✅ SELESAI
+- [x] 1. Kenal pasti punca ketidaksegerakan transisi imej dengan putaran 3D:
+  - 1.1 Lengkungan easing mendadak `[0.25, 1, 0.5, 1]` yang mencapai putaran 90° dalam ~75ms pertama, menyebabkan imej bertukar serta-merta sebelum gerakan fizikal selesai.
+  - 1.2 Ketaksimetrian logik NEXT vs PREV dalam Single Page mode (PREV terbang masuk dari luar skrin manakala NEXT mengupas halaman keluar).
+  - 1.3 Lapisan tag `<img>` bertindih pendua (*duplicate pre-mount images*) pada helaian tapak (Base Page).
+  - 1.4 Fenomena pertembungan kedalaman 3D (*Z-fighting*) pada satah putaran coplanar Z=0.
+- [x] 2. Laksanakan pra-muat imej di latar belakang (*background cache preloading*) menggunakan objek imej tanpa membebankan pohon DOM.
+- [x] 3. Buang lapisan tag `<img>` pendua pada Left, Right, dan Single Base Page untuk mengelakkan *ghosting* / *double-render*.
+- [x] 4. Selaras lengkungan masa (*easing curve*) kepada `[0.45, 0.05, 0.55, 0.95]` yang simetri supaya titik pertukaran muka surat (90°) berlaku tepat pada 50% masa selakan (260ms) bagi mod 2-Page dan 1-Page.
+- [x] 5. Tambah jarak mikro 3D `translateZ(1px)` pada permukaan hadapan dan belakang helaian selakan untuk menghapuskan *Z-fighting*.
+- [x] 6. Rombak selakan PREV Single Page supaya menanggalkan halaman semasa ke sebelah kanan (*peel right* 0% -> 105%), mendedahkan halaman sebelumnya di lapisan tapak secara konsisten dan simetri dengan NEXT.
+- [x] 7. Uji dan sahkan dengan `npm run typecheck`, `npm run lint`, dan `npm test`.
+- [x] 8. Kemas kini `lessons.md` dan `memory.md`.
 
 ---
 
-# Pembaikan: Animasi 3D Flipbook & Kontras Butang Toolbar <!-- id: fix-flipbook-toolbar -->
+# Penyelarasan Mutlak Transisi Imej 2 Halaman (Two-Page Spread Image Transition Perfection) ✅ SELESAI
+- [x] 1. Kenal pasti 6 punca teknikal ketidaksegerakan transisi imej pada paparan 2 Halaman:
+  - 1.1 `filter: drop-shadow(...)` pada bekas `<motion.div>` yang mempunyai `transform-style: preserve-3d` meruntuhkan (*flatten*) konteks 3D enjin pelayar menjadi satah 2D rata, merosakkan *backface-visibility* dan susunan kedalaman Z.
+  - 1.2 Lengkungan easing lama `[0.45, 0.05, 0.55, 0.95]` yang mempunyai kecerunan menegak curam (kecerunan 9.0 pada t=0.5) memecutkan putaran 162° dalam hanya 50ms, menyebabkan imej kelihatan seperti menyentap mendadak dan tidak selari dengan selakan fizikal.
+  - 1.3 `pagesToPreload` hanya memuatkan `currentPage ± 2`, mengabaikan muka surat kedua spread berikutnya (`currentPage + 3`) dan mencetuskan kelipan muat turun rangkaian semasa selakan 2 halaman.
+  - 1.4 Operator `??` pada `targetSpreadRef.current?.leftPage ?? activeSpread.leftPage` tersilap membuat fallback kepada halaman semasa apabila `targetSpreadRef.current.leftPage` sengaja bernilai `null` (semasa menutup buku ke Cover), menyebabkan halaman lama masih terpapar di atas meja sewaktu helaian diangkat.
+  - 1.5 Pembalikan geometri sempadan dan bucu lengkung (*corner radius & border*) serta bayang lipatan tulang (*crease gradient*) pada muka belakang helaian berputar.
+  - 1.6 Bayang jatuh helaian statik (`shadow-[-16px...]`) tidak melarut ke 0, mencetuskan lonjakan visual bayang terpadam mengejut apabila helaian mendarat rata.
+- [x] 2. Singkirkan `filter: drop-shadow(...)` daripada bekas berputar 3D untuk memelihara integriti konteks 3D tulen (*pure preserve-3d context*).
+- [x] 3. Perluas prapemuatan imej di latar belakang (`new Image().src`): prapemuat kesemua halaman bagi risalah $\le 16$ halaman atau 5 halaman ke hadapan/ke belakang bagi risalah besar agar imej sentiasa 100% sedia dalam cache memori pelayar sebelum pengguna menekan butang selakan.
+- [x] 4. Selaras lengkungan masa dan durasi kepada `duration: 0.54` dengan lengkungan fizikal organik `[0.42, 0, 0.58, 1]` yang licin merentas keseluruhan pergerakan, disegerakkan bersama peralihan CSS anjakan kontena (`transform 540ms cubic-bezier(0.42, 0, 0.58, 1)`).
+- [x] 5. Perbetulkan sempadan dan bucu lengkung muka belakang (`rounded-l-2xl border-l` untuk NEXT, `rounded-r-2xl border-r` untuk PREV) serta lokasi bayangan tulang buku (`right-0` untuk NEXT, `left-0` untuk PREV) sepadan tepat dengan halaman tapak.
+- [x] 6. Laksanakan bayang jatuh dinamik `boxShadow` yang membesar dari 0px ke 28px semasa helaian diangkat, dan melarut licin kembali ke 0px apabila helaian mendarat rata di muka surat destinasi pada 180° / 0°.
+- [x] 7. Lindungi halaman tapak semasa menutup buku ke Kulit Hadapan (Cover) atau Kulit Belakang (Back Cover) dengan pengawal `isLeftBaseHidden` dan `isRightBaseHidden` bagi menghapuskan masalah helaian pendua atau kelipan siluet.
+- [x] 8. Uji dan sahkan dengan `npm run typecheck` (0 ralat), `npm run lint` (0 ralat), dan `npm test` (330/330 lulus merentas 37 suite ujian).
+- [x] 9. Kemas kini `lessons.md` dan `memory.md`.
 
-**Matlamat**: Menyelesaikan dua isu yang dilaporkan oleh pengguna:
-1. Membina enjin animasi 3D Page Flip sebenar (*flipping leaf with perspective 2500px, 3d rotateY, dynamic paper lighting & shadow, click-to-flip* pada halaman kiri/kanan, serta membaiki pepijat navigasi 2-muka surat desktop spread).
-2. Membaiki kebolehlihatan butang tindakan atas (*Check-In, E-Sijil, WhatsApp*) dengan kontras tinggi yang jelas dan tajam pada mana-mana tema.
-
-- [x] 1. Baiki gaya butang tindakan toolbar di `components/pamphlet/viewer/toolbar.tsx` (warna teks tajam `text-slate-900`, ikon berwarna kontras, dan butang WhatsApp hijau rasmi). <!-- id: 1 -->
-- [x] 2. Reka bentuk semula enjin `FlipbookView` di `components/pamphlet/viewer/flipbook-view.tsx` dengan animasi selakan 3D helaian buku (*3D turning leaf* dwi-permukaan, bayang putaran realistik, dan klik halaman). <!-- id: 2 -->
-- [x] 3. Selaraskan navigasi spread di `components/pamphlet/viewer/index.tsx` & penunjuk muka surat toolbar (`2-3 / 6`). <!-- id: 3 -->
-- [x] 4. Pengesahan kualiti: Ujian unit vitest, `npm run typecheck`, dan `npm run lint`. <!-- id: 4 -->
-- [x] 5. Kemas kini `lessons.md` dan `memory.md`. <!-- id: 5 -->
-
----
-
-## Reviu Pembaikan: Animasi 3D Flipbook Sebenar & Kontras Butang Toolbar
-
-1. **Punca Isu Butang Toolbar**:
-   - Butang tindakan menggunakan `variant="outline"` tanpa penetapan warna teks tersurat (`text-...`). Pada tema berlatar gelap atau zamrud (`themeObj.toolbarBg` menggunakan `text-emerald-100`), teks butang mewarisi warna hijau pudina cair `#d1fae5` pada latar butang putih, menjadikannya hampir halimunan/pudar.
-   - **Penyelesaian**: Menguatkuasakan warna teks kontras tinggi `text-slate-900 font-semibold` pada butang putih dengan ikon berwarna terang (`text-emerald-600` untuk Check-In, `text-amber-600` untuk Sijil), serta warna hijau rasmi `#25D366` dengan teks putih untuk butang WhatsApp. Turut menyediakan menu tindakan kompak popover untuk paparan mudah alih.
-
-2. **Punca Isu Animasi 3D Flipbook Tidak Kelihatan**:
-   - Di paparan desktop, komponen spread 2-muka surat sebelum ini hanyalah elemen `<div>` statik tanpa sebarang pembalut `motion.div` atau transformasi `rotateY`.
-   - Logik penentuan muka surat spread sebelum ini menyebabkan navigasi dari muka surat 2 ke 3 menghasilkan paparan spread yang sama berulang kali (`[Page 2, Page 3]`), menyebabkan paparan langsung tidak berganjak apabila pengguna menekan butang seterusnya.
-   - **Penyelesaian**: Membina enjin 3D Page Flip fizikal sebenar (`perspective: 2500px`, `transformStyle: 'preserve-3d'`):
-     - Menghasilkan *3D turning leaf* dwi-permukaan yang berputar 180 darjah melintasi tulang buku (*spine*).
-     - Menambah lapisan bayang putaran (*dynamic lighting gradient shadow*) yang gelap sewaktu daun helaian menegak dan cerah apabila mendarat.
-     - Membolehkan hadirin klik terus pada muka surat kanan untuk selak ke hadapan, atau klik muka surat kiri untuk selak ke belakang.
-     - Menyegerakkan penunjuk halaman di bar navigasi bawah (`2-3 / 6`) dan membolehkan pintasan papan kekunci (Anak Panah Kiri/Kanan) menyemak helaian demi helaian tanpa tersekat.
-
----
-
-# Pembaikan Kestabilan Geometri & Penghapusan Jitter 3D Flipbook (Tak Bergerak-gerak) ✅ SIAP <!-- id: fix-flipbook-jitter -->
-
-**Matlamat**: Menyelesaikan aduan pengguna mengenai buku program digital yang "bergerak-gerak / tak statik" sewaktu diselak, mengunci geometri pentas buku secara mutlak, memancangkan tulang buku kekal di tengah (50%), dan menyatukan seluruh kawalan navigasi (papan kekunci, palang bawah, klik helaian) ke enjin 3D.
-
-- [x] 1. Kunci dimensi kontena buku secara mutlak (`DESKTOP_BOOK_HEIGHT = min(76vh, 650px)`, `DESKTOP_BOOK_WIDTH = calc(height / 1.414 * 2)`) untuk mengelakkan *layout shift*. <!-- id: 1 -->
-- [x] 2. Pancangkan tulang buku (*spine*) tepat di garisan tengah `left: 50%` secara kekal. <!-- id: 2 -->
-- [x] 3. Kekalkan slot tapak halaman kiri (0% - 50%) dan kanan (50% - 100%) tanpa dinyah-lekap (*zero-unmount*); pada Muka Hadapan (Page 1), paparkan slot kulit dalaman di sebelah kiri agar kelebaran buku sentiasa 2 muka surat. <!-- id: 3 -->
-- [x] 4. Helaian selakan 3D hanya dipasang sebagai lapisan tindanan (*overlay turning leaf*) semasa selakan 520ms dan lesap sebaik sahaja selesai mendarat. <!-- id: 4 -->
-- [x] 5. Menyatukan kawalan papan kekunci (Anak Panah Kiri/Kanan) dan butang palang navigasi bawah menggunakan `forwardRef` & `useImperativeHandle` (`flipbookRef.current.flipNext()` / `flipPrev()`). <!-- id: 5 -->
-- [x] 6. Animasi selakan 3D mesra mudah alih (*mobile 3D peel & curl*) yang kemas di tengah skrin tanpa terkeluar sempadan. <!-- id: 6 -->
-- [x] 7. Pengesahan kualiti penuh: 321 / 321 ujian unit vitest lulus, `npm run typecheck` (0 ralat), `npm run lint` (0 ralat/amaran). <!-- id: 7 -->
-- [x] 8. Kemas kini `memory.md`, `lessons.md`, dan `task.md`. <!-- id: 8 -->
-
----
-
-## Reviu Pembaikan: Kestabilan Geometri & Penghapusan Jitter 3D Flipbook
-
-1. **Punca Asal Ralat (Root Cause)**:
-   - Apabila pengguna berada pada Muka Hadapan (Page 1), saiz kontena sebelum ini ditetapkan kepada 1 halaman sahaja (~450px lebar). Sebaik pengguna menekan selak seterusnya, kontena bertukar secara mendadak kepada dwi-halaman (~900px lebar). Perbezaan saiz 2x ganda ini menyebabkan seluruh buku melompat dan menganjak secara mengejut ("bergerak-gerak").
-   - Penggunaan nisbah aspek dinamik dalam kontena flexbox menyebabkan pelayar mengira semula reka letak (*layout recalculation*) pada setiap bingkai animasi 3D, menghasilkan getaran (jitter).
-2. **Penyelesaian Dilaksanakan**:
-   - **Dimensi Berkunci**: Kontena dwi-halaman desktop sentiasa menggunakan formula CSS nisbah aspek tetap A4 (`height: min(76vh, 650px)` dan `width: calc(min(76vh, 650px) / 1.414 * 2)`), dengan tulang buku dipancang tepat di tengah (`left: 50%`).
-   - **Slot Kulit Dalaman Estetik**: Semasa di Muka Hadapan (Page 1), slot kiri memaparkan bayangan kulit dalaman buku ("Buku Program Digital - Klik helaian kanan untuk mula membaca"). Saiz buku kekal statik dan tidak berganjak walau 1 piksel pun.
-   - **Tindanan Selakan 3D Bebas Getaran**: Helaian berputar hanya muncul sebagai lapisan tindanan (*overlay leaf*) semasa selakan 520ms berputar 180 darjah melintasi tulang buku, kemudian lesap sebaik sahaja selesai mendarat.
-   - **Penyegerakan Navigasi Penuh**: Menggunakan `useImperativeHandle` supaya sebarang input (anak panah papan kekunci, butang bar navigasi bawah, butang terapung tepi, dan klik helaian) memacu animasi selakan 3D yang sama secara seragam.
-
----
-
-# Pembaikan Jarak Butang Dialog Cipta E-Pamphlet ✅ SIAP <!-- id: fix-dialog-button-spacing -->
-
-**Matlamat**: Membaiki ruang jarak antara butang "Batal" dan "Seterusnya →" pada modal "Cipta E-Pamphlet Baharu" yang terlalu rapat akibat penggunaan `sm:gap-0`.
-
-- [x] 1. Kenal pasti kelas `sm:gap-0` dalam `<DialogFooter>` pada `app/(dashboard)/pamphlets/client.tsx`. <!-- id: 1 -->
-- [x] 2. Kemas kini kelas kepada `className="pt-2 gap-2 sm:gap-3"` untuk jarak 12px mendatar yang seimbang dan kemas. <!-- id: 2 -->
-- [x] 3. Pengesahan kualiti: 321 / 321 ujian vitest lulus, `npm run typecheck` (0 ralat), `npm run lint` (0 ralat/amaran). <!-- id: 3 -->
-- [x] 4. Kemas kini `lessons.md`, `memory.md`, dan `task.md`. <!-- id: 4 -->
-
----
-
-## Reviu Pembaikan: Jarak Butang Dialog Cipta E-Pamphlet
-
-1. **Punca Masalah (Root Cause)**:
-   - `<DialogFooter>` di `CreatePamphletDialog` menggunakan kelas Tailwind `gap-2 sm:gap-0`. Pada skrin komputer (`sm:` dan ke atas), `sm:gap-0` telah membatalkan jurang jarak antara butang, menyebabkan butang "Batal" dan "Seterusnya →" melekat rapat tanpa sebarang ruang pemisah.
-2. **Penyelesaian**:
-   - Menukar kelas kepada `className="pt-2 gap-2 sm:gap-3"`. Ini memberikan jurang mendatar 12px (`0.75rem`) yang kemas dan konsisten dengan standard sistem reka bentuk KlikForm.
-
----
-
-# Pembaikan Kesinambungan Bayang Tulang Buku 3D Flipbook ✅ SIAP <!-- id: fix-flipbook-shadow-continuity -->
-
-**Matlamat**: Menghapuskan isu bayang lipatan tulang buku yang hilang pada saat selakan bermula dan muncul secara mengejut pada akhir selakan ("shadow hilang dulu baru ada").
-
-- [x] 1. Kenal pasti ketiadaan bayangan lipatan tulang buku (*spine crease shadow*) pada lapisan helaian berputar (*turning leaf*). <!-- id: 1 -->
-- [x] 2. Tambah bayangan lipatan tulang buku kekal pada kedua-dua belah muka helaian selakan (muka hadapan & muka belakang) di `components/pamphlet/viewer/flipbook-view.tsx`. <!-- id: 2 -->
-- [x] 3. Tingkatkan `z-index` alur tengah tulang buku kepada `z-40` supaya tidak tertutup oleh helaian selakan. <!-- id: 3 -->
-- [x] 4. Selaraskan pencahayaan dinamik helaian berputar (`opacity: 0 -> 0.35` sewaktu menegak, `opacity: 0.35 -> 0` sewaktu mendarat). <!-- id: 4 -->
-- [x] 5. Tambah bayangan tindanan lembut (*soft ambient drop shadow*) pada halaman tapak di bawah helaian berputar. <!-- id: 5 -->
-- [x] 6. Tambah bayangan tulang buku kekal pada mod telefon pintar (*mobile turning leaf*). <!-- id: 6 -->
-- [x] 7. Pengesahan kualiti: 321 / 321 ujian unit lulus, `npm run typecheck` (0 ralat), `npm run lint` (0 ralat/amaran). <!-- id: 7 -->
-- [x] 8. Kemas kini `lessons.md`, `memory.md`, dan `task.md`. <!-- id: 8 -->
-
 ---
 
-## Reviu Pembaikan: Kesinambungan Bayang Tulang Buku 3D Flipbook
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Pemisahan Konteks 3D**: `transformStyle: 'preserve-3d'` dikekalkan strictly tanpa sebarang CSS `filter`, `backdrop-filter`, atau `overflow: hidden` pada kontena induk. Animasi bayang dinamik dialihkan ke elemen muka hadapan dan belakang menggunakan `boxShadow` Framer Motion.
+2. **Keseimbangan Lengkungan Easing Fizikal**: Menolak kecerunan mendadak `[0.45, 0.05, 0.55, 0.95]` dan menggantikannya dengan `cubic-bezier(0.42, 0, 0.58, 1)` menghasilkan selakan buku yang anggun, realistik, dan membolehkan mata manusia mengikuti pertukaran gambar dengan lancar.
+3. **Prapemuatan Menyeluruh (Deep Preloading)**: Memandangkan buku program digital lazimnya bersaiz kecil-sederhana (2 - 16 halaman), prapemuatan agresif ke dalam memori cache pelayar menghapuskan terus sebarang kelewatan rangkaian semasa interaksi selakan.
+4. **Keserasian 1-Page vs 2-Page**: Mod 1-Page (yang telah disahkan sempurna oleh pengguna) dipelihara sepenuhnya tanpa sebarang sentuhan atau regresi.
 
-1. **Punca Asal Ralat (Root Cause)**:
-   - Bayangan lipatan tulang buku (*spine crease shadow*) sebelum ini hanya wujud pada halaman tapak (*base pages*).
-   - Apabila pengguna memulakan selakan helaian, komponen helaian berputar (*turning leaf*) dinaikkan di atas (`z-30`) dan menutup halaman tapak. Kerana helaian berputar tidak mempunyai bayangan lipatan pada engselnya, bayangan di bahagian tulang buku hilang serta-merta pada saat `t=0`.
-   - Sebaik sahaja putaran selesai pada `t=520ms` dan helaian dinyah-lekap, halaman tapak asal muncul semula bersama bayangannya, menyebabkan bayangan itu seolah-olah "hilang dulu baru ada".
-2. **Penyelesaian Dilaksanakan**:
-   - **Bayangan Tulang Buku Berterusan**: Kedua-dua permukaan helaian selakan kini dilengkapi bayangan lipatan tulang buku yang sepadan dengan kedudukan asalnya.
-   - **Alur Tulang Tengah Kekal**: Alur tulang buku tengah dinaikkan ke `z-40` supaya garisan tengah buku kekal terpelihara tanpa terganggu.
-   - **Pencahayaan Bergradasi Semulajadi**: Helaian memalap dengan lembut dari 0 ke 0.35 apabila berserenjang dengan mata dan mencerah semula ke 0 apabila mendarat rata, mewujudkan peralihan pencahayaan yang licin tanpa kelipan.
-
 ---
-
-# Pembaikan Pengalaman Pengguna (UX) 3D Flipbook Pada Paparan Telefon Pintar (Mobile View) ✅ SIAP <!-- id: fix-mobile-flipbook-ux -->
 
-**Matlamat**: Menyelesaikan kejanggalan paparan 3D Flipbook pada skrin telefon pintar (seperti dalam screenshot `media_1790932541914.png`), termasuk butang anak panah terapung gergasi yang menutup teks risalah, penunjuk nombor halaman bar alat yang terputus 2 baris, herotan nisbah aspek (ruang putih kosong besar di atas & bawah), ketiadaan gesture leretan sentuh (touch swipe), dan animasi selakan yang terkeluar dari paksi engsel.
+# Pembaikan Kunci Pendua Preset Dwi-Tandatangan E-Sijil (Dual Signature Preset Duplicate Key Bug Fix) ✅ SELESAI
+- [x] 1. Kenal pasti punca teknikal ralat `Encountered two children with the same key, el-...`:
+  - 1.1 Penjanaan ID elemen kanvas menggunakan `el-${Date.now()}` dalam `features/certificates/hooks/use-element-actions.ts`. Apabila preset menambah beberapa elemen serentak dalam milisaat yang sama, kesemua elemen mendapat ID yang serupa.
+  - 1.2 Panggilan berturut-turut `addElement` sebanyak 4 kali mencetuskan 4 transaksi `commitToHistory` berasingan dan 4 kemas kini `setTemplate` untuk satu tindakan preset.
+  - 1.3 `handleAddDualSignatures` mempunyai koordinat keras (`x: 853`) yang terkeluar daripada sempadan kanvas potret (lebar 794px).
+  - 1.4 Mesej toast masih dalam bahasa Melayu (`Dwi-Tandatangan ditambah!`) berbanding piawaian bahasa Inggeris aplikasi.
+- [x] 2. Bina fungsi penjana ID unik teguh (`generateElementId`) menggunakan kombinasi timestamp, counter tempatan, dan rentetan rawak kripto/alphanumeric bagi menjamin keunikan mutlak walaupun jutaan elemen dicipta dalam milisaat yang sama.
+- [x] 3. Sediakan fungsi kemas kini kelompok atomik `addElements` dalam `use-element-actions.ts` agar pelbagai elemen preset dimasukkan serentak dalam satu panggilan `setTemplate` dan satu rekod `commitToHistory` (1 undo step).
+- [x] 4. Kemas kini `components/certificates/builder/sidebar.tsx` untuk menggunakan `addElements` dengan koordinat adaptif orientasi (menyokong kedua-dua Landskap dan Potret) serta toast bahasa Inggeris (`Dual signatures added!`).
+- [x] 5. Kemas kini `duplicateElement` dalam `use-element-actions.ts` untuk menggunakan `generateElementId`.
+- [x] 6. Sanitasi templat legasi (`sanitizedInitialTemplate`) dalam `app/(dashboard)/certificates/builder/[id]/client.tsx` untuk menyahkan pendua ID sedia ada dalam pangkalan data secara automatik.
+- [x] 7. Tambah suite ujian unit `tests/certificate-element-actions.test.ts` (5 ujian lulus, sifar perlanggaran merentas 10,000 penjanaan serentak, batch addition atomik, dan duplikasi ID unik).
+- [x] 8. Uji dan sahkan dengan `npm run typecheck` (0 ralat), `npm run lint` (0 ralat / 0 amaran), dan `npm test` (335/335 lulus merentas 38 suite).
+- [x] 9. Kemas kini `lessons.md` dan `memory.md`.
 
-- [x] 1. Sembunyikan Butang Anak Panah Terapung Gergasi pada Skrin Mudah Alih (`hidden lg:flex` di `components/pamphlet/viewer/flipbook-view.tsx`) supaya paparan risalah 100% jelas dan tidak terhalang. <!-- id: 1 -->
-- [x] 2. Kunci Nisbah Aspek Tetap A4 pada Mudah Alih (`min(calc(100dvh - 160px), calc(88vw * 1.414))` dan lebar berkadaran `/ 1.414`) bagi menghapuskan ruang kosong putih di atas dan bawah imej. <!-- id: 2 -->
-- [x] 3. Sokongan Leretan Skrin Sentuh Pintar (*Touch Swipe Gestures*) menerusi `onTouchStart` dan `onTouchEnd` dengan ambang pergerakan 35px. <!-- id: 3 -->
-- [x] 4. Animasi Selakan Mudah Alih Seimbang & Semulajadi (*Natural Page Curl & Slide Transition*) tanpa anjakan paksi yang melayang keluar skrin. <!-- id: 4 -->
-- [x] 5. Lembutkan Jalur Lipatan Tulang Buku pada Skrin Sempit (`w-4 bg-gradient-to-r from-black/15 to-transparent`). <!-- id: 5 -->
-- [x] 6. Formatkan Penunjuk Halaman Bar Navigasi Bawah Mengikut Skrin (`1 / 6` pada telefon pintar vs `2-3 / 6` dwi-halaman pada komputer meja) bersama `whitespace-nowrap shrink-0` di `components/pamphlet/viewer/toolbar.tsx`. <!-- id: 6 -->
-- [x] 7. Pengesahan kualiti: 321 / 321 ujian vitest lulus, `npm run typecheck` (0 ralat), `npm run lint` (0 ralat/amaran). <!-- id: 7 -->
-- [x] 8. Kemas kini `lessons.md`, `memory.md`, dan `task.md`. <!-- id: 8 -->
-
 ---
 
-## Reviu Pembaikan: Pengalaman 3D Flipbook Mudah Alih (Mobile View)
-
-1. **Punca Masalah (Root Cause)**:
-   - **Butang Anak Panah Terapung Menutup Risalah**: Butang bulat `<` dan `>` menggunakan kedudukan mutlak dengan `left-3` dan `right-3`. Pada skrin telefon selebar ~380px, kedua-dua butang ini bertindih tepat di atas 20-30% kandungan gambar dan teks risalah.
-   - **Penunjuk Nombor Halaman Terputus**: Bar navigasi bawah memaparkan format dwi-halaman desktop `2-3 / 6` walaupun telefon memaparkan 1 halaman tunggal, dan kekurangan `whitespace-nowrap` menyebabkannya terbelah kepada 2 baris ("2-3" di atas, "/ 6" di bawah).
-   - **Nisbah Aspek Tidak Tepat**: Ketinggian kontena telefon `min(76vh, 580px)` dengan `maxWidth: 92vw` menghasilkan nisbah lebih tinggi daripada nisbah standard A4 (1 : 1.414), meninggalkan ruang putih kosong yang luas di bahagian atas dan bawah risalah.
-   - **Kinematik Selakan Pelik**: Animasi mudah alih menggunakan `rotateY: -80deg, x: '-22%'` pada engsel sisi, menyebabkan helaian berputar terlepas dari paksi tulang buku dan melayang secara pepenjuru ke luar skrin.
-2. **Penyelesaian**:
-   - **Paparan Penuh Tanpa Halangan**: Butang bulat terapung disembunyikan pada skrin mudah alih (`hidden lg:flex`). Navigasi mudah alih dijalankan melalui leretan sentuh (*swipe gesture*), ketukan pada bahagian kiri/kanan halaman, atau bar alat bawah.
-   - **Kunci Nisbah Aspek Tegar A4**: Formula CSS dinamik memastikan ketinggian dan lebar mematuhi nisbah 1 : 1.414 secara tepat dengan mengambil kira bar atas dan bawah (`100dvh - 160px`), menghapuskan semua ruang putih kosong.
-   - **Leretan Sentuh Pintar (*Swipe Gesture*)**: Penjejakan `onTouchStart` dan `onTouchEnd` membolehkan pengguna meleret ke kiri untuk helaian seterusnya dan ke kanan untuk helaian sebelumnya dengan ambang minimum 35px.
-   - **Kinematik Selakan Mudah Alih Lembut**: Helaian meluncur dan melipat dengan lengkungan 3D halus (-20 darjah) ke kiri/kanan (`x: -105% / 105%`) secara kemas, menampakkan helaian di bawahnya tanpa herotan.
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Penjanaan ID Bebas Kolisi (Collision-Free ID Generator)**: Menggabungkan awalan jenis elemen, timestamp, rolling increment counter modulo 1,000,000, dan rentetan rawak 6 aksara Base-36 (`${prefix}-${Date.now()}-${elementCounter}-${rand}`) menghapuskan sepenuhnya kebergantungan kepada perbezaan milisaat OS.
+2. **Kemas Kini Kelompok Atomik (`addElements`)**: Preset yang menjana berbilang elemen (seperti 2 garisan tandatangan + 2 blok teks) kini dikomit serentak dalam satu kitaran render dan satu sejarah undo (`Ctrl+Z` membatalkan keseluruhan preset, bukan elemen individu satu demi satu).
+3. **Penyelarasan Geometri Dinamik Mengikut Orientasi (Landscape vs Portrait)**: Koordinat tandatangan dikira secara nisbah perkadaran lebar dan tinggi kanvas (`w * 0.28`, `w * 0.72` untuk potret; `w * 0.25`, `w * 0.75` untuk landskap) dengan garis diletakkan pada `h - 180px` dan teks pada `lineY + 25px`. Ini memastikan tandatangan tidak terkeluar daripada sempadan kanvas atau bertindih.
+4. **Sanitasi Kunci Legasi (Self-Healing Deduplication)**: Templat lama yang disimpan dalam pangkalan data sebelum pembaikan ini disaring secara pintar semasa mount melalui `sanitizedInitialTemplate` di `client.tsx`, membaiki sebarang kunci pendua secara senyap di sisi klien tanpa merosakkan data pengguna.
 
 ---
 
-# Sokongan Penuh Orientasi Landskap (Melintang) Untuk Buku Program & 3D Flipbook ✅ SIAP <!-- id: landscape-pamphlet-support -->
-
-**Matlamat**: Menyediakan sokongan orientasi Landskap (Melintang / Horizontal A4 & 16:9) secara menyeluruh pada enjin 3D Flipbook, Mod Gelangsar (Slider), Tatal Menegak (Vertical Scroll), Jalur Lakaran Kecil (Thumbnails), serta Pengesan Orientasi Automatik dalam Pembina Buku Program (Pamphlet Builder).
-
-- [x] 1. Definisi Jenis & Skema Data Kalis Pecah (`lib/types/pamphlets.ts` & `lib/storage/pamphlets.ts`) <!-- id: 1 -->
-  - Tambah jenis `PamphletOrientation = 'portrait' | 'landscape'` pada `Pamphlet` dan `PamphletPageItem`.
-  - Simpan orientasi di dalam JSONB `pages` bagi mengelakkan ralat ketiadaan lajur Supabase `PGRST204`.
-- [x] 2. Logik Geometri Nisbah Aspek 3D Flipbook (`components/pamphlet/viewer/flipbook-view.tsx`) <!-- id: 2 -->
-  - Pada Komputer Meja (Desktop): Spread dwi-halaman landskap menggunakan nisbah `2.828 : 1` dengan formula saiz adaptif `height: min(56vh, calc(90vw / 2.828))` dan `width: calc(height * 2.828)`.
-  - Pada Telefon Pintar (Mobile): Menggunakan kad mendatar `width: min(calc((100dvh - 160px) * 1.414), 88vw)` dan `height: calc(width / 1.414)`.
-- [x] 3. Sokongan Landskap Pada Mod Paparan Lain <!-- id: 3 -->
-  - `components/pamphlet/viewer/slider-view.tsx`: Bertukar secara automatik kepada `aspect-[1.414/1] max-w-[92vw]`.
-  - `components/pamphlet/viewer/vertical-view.tsx`: Bertukar kepada `aspect-[1.414/1] max-w-4xl`.
-  - `components/pamphlet/viewer/thumbnails-strip.tsx`: Bertukar kepada kad mendatar `w-24 sm:w-28 aspect-[1.414/1]`.
-- [x] 4. Pengesanan Orientasi Automatik & UI Pembina (`app/(dashboard)/pamphlet-builder/[id]/client.tsx`) <!-- id: 4 -->
-  - Muat naik imej membaca `naturalWidth` dan `naturalHeight`. Jika nisbah > 1.05, sistem secara automatik menetapkan `pageOrientation: 'landscape'`.
-  - Togol Orientasi Buku Program manual (`[ 📱 Potret (Menegak) ]` vs `[ 💻 Landskap (Melintang) ]`) dalam Tab Halaman.
-  - Butang 1-Klik Contoh Demo Landskap (`getSampleLandscapePamphlet()`) bersama 6 helaian beresolusi tinggi.
-- [x] 5. Ujian Unit & Pengesahan Kualiti <!-- id: 5 -->
-  - 323 / 323 ujian vitest lulus (termasuk 8 ujian khusus di `tests/pamphlet.test.ts`).
-  - `npm run typecheck`: 0 ralat TypeScript.
-  - `npm run lint`: 0 ralat / amaran ESLint.
-- [x] 6. Kemas kini `lessons.md`, `memory.md`, dan `task.md`. <!-- id: 6 -->
+# Penghapusan Amaran Konsol Pelayar: Format Warna CSS Tidak Sah ("transparent" Invalid CSS Color Warning) ✅ SELESAI
+- [x] 1. Kenal pasti punca teknikal amaran konsol `The specified value "transparent" does not conform to the required format. The value must be a valid CSS color`:
+  - 1.1 Elemen HTML5 `<input type="color">` mengikut spesifikasi W3C hanya menerima format heksadesimal 7-aksara `#rrggbb` (cth. `#ffffff`).
+  - 1.2 Preset sempadan sijil (Classic Gold Border, dsb.) menetapkan `fill: 'transparent'`. Apabila bentuk (shape) ini dipilih atau dirender semula, `components/certificates/builder/properties.tsx` menyalurkan `value={selectedElement.fill || '#e5e7eb'}`. Oleh kerana `'transparent'` adalah rentetan bukan kosong (truthy), `<input type="color" value="transparent">` dicetuskan ke DOM pada setiap kitaran render/event tetikus, menghasilkan amaran berulang puluhan kali di konsol pelayar.
+- [x] 2. Bina fungsi utiliti pembersih warna sejagat `toValidHexColor(color, fallback)` di `lib/utils/index.ts` untuk menukar sebarang nilai bukan hex (seperti `'transparent'`, `'none'`, hex pendek, dsb.) kepada format 7-aksara hex yang sah bagi semua elemen `<input type="color">`.
+- [x] 3. Kemas kini `components/certificates/builder/properties.tsx`:
+  - 3.1 Gunakan `toValidHexColor` pada kesemua pemilih warna (`stroke`, `color`, `textStroke`, `fill`).
+  - 3.2 Tambah kawalan pintar "No Fill (Transparent)" untuk bentuk geometri (`rectangle` & `circle`) supaya pengguna boleh memilih isian lutsinar tanpa membebankan pemilih warna.
+  - 3.3 Tambah kawalan warna sempadan (`stroke`) dan ketebalan sempadan (`strokeWidth`) untuk bentuk segi empat / bulatan supaya pengguna boleh mengubah suai bingkai seperti Classic Border secara terus.
+- [x] 4. Kemas kini pemilih warna dalam `components/certificates/builder/sidebar.tsx`, `app/builder/[id]/client.tsx`, dan `components/forms/qr-customizer/index.tsx` dengan `toValidHexColor`.
+- [x] 5. Tambah ujian unit di `tests/valid-hex-color.test.ts` (7 ujian lulus) untuk mengesahkan fungsi `toValidHexColor` menolak `'transparent'`, mengembangkan 3-digit hex, memotong alpha 8-digit, dan memelihara 6-digit hex dengan selamat.
+- [x] 6. Uji dan sahkan dengan `npm run typecheck` (0 ralat), `npm run lint` (0 ralat / 0 amaran), dan `npm test` (342/342 lulus merentas 39 suite).
+- [x] 7. Kemas kini `lessons.md` dan `memory.md`.
 
 ---
 
-## Reviu Pelaksanaan: Sokongan Orientasi Landskap (Melintang)
-
-1. **Seni Bina Geometri Nisbah Aspek (Aspect Ratio Math)**:
-   - Bagi **Potret**, satu helaian A4 mempunyai nisbah $1 : \sqrt{2} \approx 1 : 1.414$. Apabila dua helaian dibuka (spread), nisbah keseluruhan menjadi $\sqrt{2} : 1 \approx 1.414 : 1$.
-   - Bagi **Landskap**, satu helaian mendatar mempunyai nisbah $\sqrt{2} : 1 \approx 1.414 : 1$. Apabila dua helaian landskap dibuka bersebelahan, nisbah spread menjadi $2\sqrt{2} : 1 \approx 2.828 : 1$.
-   - Menggunakan formula `height: min(56vh, calc(90vw / 2.828))` memastikan buku tidak melimpah keluar daripada skrin komputer riba (seperti resolusi 1366x768 atau 1920x1080) dan kekal berada dalam kawasan paparan tanpa herotan atau sempadan hitam (*letterboxing*).
-2. **Sifar Migrasi DB & Kalis Masa Depan (Zero-Migration JSONB Pattern)**:
-   - Data orientasi disimpan di dalam struktur JSONB `pages` (dan boleh dipetakan daripada lajur jadual jika ditambah kemudian hari).
-   - Helper `getPamphletOrientation()` mengekstrak orientasi dengan selamat walaupun pangkalan data belum mempunyai lajur `orientation` tersendiri.
-3. **Pengesanan Pintar Klien (Smart Client Auto-Detection)**:
-   - Apabila penganjur memuat naik fail grafik/slaid pembentangan, enjin builder secara automatik mengukur nisbah saiz gambar. Jika imej melintang dikesan, tetapan ditukar serta-merta kepada Landskap tanpa memerlukan konfigurasi rumit.
+# Penghapusan Ralat Hydration Mismatch Dialog Sijil Baharu (New Certificate Dialog Radix Hydration Fix) ✅ SELESAI
+- [x] 1. Kenal pasti punca teknikal ralat `Uncaught Error: Hydration failed because the server rendered HTML didn't match the client` pada `<CertificateBuilderPage>`:
+  - 1.1 `CertificateBuilderPage` merupakan Server Component tak segerak (async Server Component).
+  - 1.2 Komponen klien `<NewCertificateDialog>` dan `<PricingModal>` membalut elemen anak (`<Button>`) menggunakan `<DialogTrigger asChild>`.
+  - 1.3 Komponen Radix UI `@radix-ui/react-dialog` menjana atribut aksesibiliti `aria-controls="radix-_R_..."` berasaskan hook `useId()`. Semasa SSR di pelayan vs hidrasi di klien, penjanaan urutan ID atau format string ID (`_R_..._`) menghasilkan ketidakpadanan atribut pada elemen `<button>`, menyebabkan enjin React 19 membuang pokok DOM pelayan dan membina semula di klien.
+- [x] 2. Laksanakan pengawal hidrasi pintar (`mounted` guard) pada `components/certificates/new-certificate-dialog.tsx`:
+  - 2.1 Tambah state `mounted` dengan `useEffect` untuk mengasingkan kitaran hidrasi.
+  - 2.2 Kembalikan `<>{children}</>` secara langsung apabila `!mounted` supaya HTML pelayan dan DOM permulaan klien sepadan 100% tanpa sebarang atribut sintetik Radix `aria-controls`.
+  - 2.3 Aktifkan `<Dialog>` dan `<DialogTrigger asChild>` sebaik sahaja komponen dipasang (`mounted === true`).
+- [x] 3. Laksanakan pengawal hidrasi (`mounted` guard) yang sama pada `components/pricing-modal.tsx` dan `components/certificates/delete-certificate-button.tsx` secara proaktif untuk mengelakkan ralat berulang pada mod had sijil (Limit Reached) dan kad templat.
+- [x] 4. Jalankan ujian pengesahan:
+  - 4.1 `npm run typecheck` (0 ralat TypeScript).
+  - 4.2 `npm run lint` (0 ralat / 0 amaran ESLint).
+  - 4.3 `npm test` (342/342 ujian lulus merentas 39 suite).
+- [x] 5. Kemas kini `lessons.md` dan `memory.md`.
 
 ---
-
-# Pengoptimuman Kebolehbacaan Skrin Kecil, Zum Pintar & Penyingkiran Gangguan Butang 3D Flipbook ✅ SIAP <!-- id: small-screen-zoom-readability -->
-
-**Matlamat**: Menyelesaikan masalah teks kecil dan butang menutupi risalah pada skrin kecil / komputer riba / pratonton pembina (seperti dalam screenshot `media_1790934120002.png`), dengan melaksanakan mod penyesuaian kontena (Container-Aware Single/Double Page), penyingkiran butang anak panah yang bertindih di atas kandungan, fungsi Dwi-Klik untuk Zum & Tatal Bebas (Drag-to-Pan), togol 1 Muka Surat vs 2 Muka Surat, dan mod kembangan pratonton pembina.
-
-- [x] 1. Penyesuaian Saiz Pintar Mengikut Kontena (`ResizeObserver`) di `components/pamphlet/viewer/flipbook-view.tsx` <!-- id: 1 -->
-  - Gantikan `window.innerWidth >= 1024` dengan ukuran sebenar lebar kontena (`containerWidth`).
-  - Apabila kontena < 880px (skrin kecil, komputer riba 14-inci, panel pratonton builder), beralih secara automatik kepada **Mod 1 Muka Surat (Single Page)** supaya muka surat mengembang sepenuhnya dan teks risalah berlipat kali ganda lebih besar & jelas.
-- [x] 2. Hapuskan Butang Anak Panah Terapung Bertindih di Atas Kandungan <!-- id: 2 -->
-  - Periksa margin sisi `(containerWidth - bookWidth) / 2`. Jika margin sisi < 56px, sembunyikan butang anak panah terapung bulat `<` / `>` supaya langsung tidak menutupi teks risalah.
-- [x] 3. Ciri Dwi-Klik Untuk Zum & Tatal Bebas (Drag-to-Pan) <!-- id: 3 -->
-  - Dwi-klik / dwi-ketik pada halaman untuk membesarkan halaman terus ke 1.85x bagi membaca teks halus.
-  - Membolehkan tatalan bebas dengan menyeret tetikus/jari (*drag-to-pan*) semasa zum aktif (`zoom > 1.0`).
-  - Dwi-klik sekali lagi atau tekan butang "Reset (100%)" pada pill terapung untuk kembali ke saiz asal.
-- [x] 4. Togol 1 Muka Surat vs 2 Muka Surat Pada Bar Navigasi (`toolbar.tsx`) <!-- id: 4 -->
-  - Sediakan togol pantas `[ 📄 1 Halaman ]` / `[ 📖 2 Halaman ]` supaya pembaca pada bila-bila masa boleh memilih untuk membesarkan teks ke saiz maksimum.
-- [x] 5. Penambahbaikan Pembina Buku Program (`app/(dashboard)/pamphlet-builder/[id]/client.tsx`) <!-- id: 5 -->
-  - Majukan mod peranti `forceMobile={previewDevice === 'mobile'}` ke `PamphletViewer` semasa simulasi telefon aktif.
-  - Tambah butang togol `[ ⛶ Skrin Penuh ]` / `[ ⛶ Kecilkan ]` di bar atas builder untuk melihat buku program pada saiz penuh semasa mengedit.
-- [x] 6. Ujian, Pengesahan & Dokumentasi <!-- id: 6 -->
-  - 323 / 323 ujian vitest lulus.
-  - `npm run typecheck`: 0 ralat TypeScript.
-  - `npm run lint`: 0 ralat / 0 amaran ESLint.
-  - Kemas kini `lessons.md`, `memory.md`, dan `task.md`.
 
----
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Pengasingan Kitaran Hidrasi Radix Trigger (`mounted` Guard Pattern)**: Elemen `DialogTrigger` dan `AlertDialogTrigger` Radix UI yang menggunakan `asChild` menyuntik atribut dinamik seperti `aria-controls` berasaskan `useId()`. Apabila diletakkan di dalam Server Component App Router, perbezaan urutan panggilan `useId()` antara persekitaran streaming SSR dan hidrasi klien mencetuskan amaran perlanggaran DOM React 19 (`throwOnHydrationMismatch`). Memulangkan `{children}` secara natif sewaktu `!mounted` memastikan pohon DOM pelayan dan DOM hidrasi klien sepadan 100% tanpa sebarang mutasi awal, manakala interaktiviti dialog diaktifkan secara licin sebaik sahaja JavaScript sedia.
+2. **Perlindungan Menyeluruh Merentas Semua Dialog Pembangun**: Pengawal hidrasi dipasang secara serentak ke atas `<NewCertificateDialog>`, `<PricingModal>` (apabila had sijil dicapai), dan `<DeleteCertificateButton>` (pada kad templat) bagi menghapuskan terus sebarang potensi hidrasi berulang di halaman `/certificates/builder`.
 
-## Reviu Pembaikan: Kebolehbacaan Skrin Kecil & Penyingkiran Gangguan Butang
 
-1. **Punca Masalah (Root Cause)**:
-   - **Teks Terlalu Kecil Pada Skrin Kecil / Panel Builder**: `FlipbookView` sebelum ini menilai `window.innerWidth >= 1024` secara global. Walaupun skrin komputer riba mempunyai resolusi 1280px atau 1366px, ruang pratonton di dalam builder hanya mempunyai kelebaran ~650px - 750px kerana sebahagian skrin digunakan oleh panel konfigurasi kiri. Memaksa paparan dwi-halaman (2-page spread) dalam ruang selebar 700px mengecilkan setiap helaian kepada ~300px sahaja, menyebabkan teks risalah menjadi terlalu halus dan sukar dibaca.
-   - **Butang Anak Panah Bertindih di Atas Kandungan**: Butang anak panah terapung `<` dan `>` diletakkan secara mutlak pada `right-3`. Apabila kelebaran buku hampir menyamai kelebaran kontena, butang ini terhimpit masuk ke dalam kawasan halaman dan menutup tepat di atas perenggan teks risalah.
-   - **Ketiadaan Zum Pantas & Tatal**: Pembaca tidak dapat membesarkan bahagian teks tertentu dan menggesernya secara bebas untuk membaca jadual terperinci.
-2. **Penyelesaian Dilaksanakan**:
-   - **Penyesuaian Berasaskan Kontena (`ResizeObserver`)**: Apabila kontena < 880px, sistem secara automatik bertukar kepada **Mod 1 Muka Surat (Single Page)**. Halaman mengembang memenuhi keseluruhan ketinggian dan kelebaran kontena, menjadikan saiz teks **hampir 70% lebih besar dan tajam**.
-   - **Kawalan Ruang Margin Sisi (Side Margin Guard)**: Butang terapung `<` dan `>` hanya dipaparkan jika terdapat ruang margin kosong sekurang-kurangnya 56px di sisi buku (`sideMargin >= 56`). Jika ruang sempit, butang disembunyikan sepenuhnya supaya teks tidak sesekali terhalang.
-   - **Dwi-Klik Zum & Seret Bebas (Drag-to-Pan)**: Pengguna boleh mendwi-klik di mana-mana bahagian muka surat untuk zum segera ke 1.85x, dan menyeret tetikus/jari untuk menatal ke mana-mana sudut risalah dengan lancar.
-   - **Togol 1 Halaman vs 2 Halaman**: Disediakan butang `[ 📄 1 Halaman ]` / `[ 📖 2 Halaman ]` pada palang alat bawah untuk membolehkan pembaca memilih mod paparan pilihan pada bila-bila masa.
-   - **Kembangkan Pratonton Builder**: Ditambah butang `[ ⛶ Skrin Penuh ]` di bar pembina bagi membolehkan penganjur menyembunyikan panel tepi dan menyemak buku program dalam paparan penuh dengan 1 klik.
 
 
 
 
----
 
-# Pembaikan Isu Risalah "Nampak Separuh", Kunci Saiz Dokumen 2-Muka Surat, Penjajaran Kulit Buku & Kedudukan Terapung UI <!-- id: fix-half-view-and-2page-spread -->
-
-**Matlamat**: Menyelesaikan aduan pengguna ("kenapa nampak separuh ya" seperti dalam `media_1790936304474.png`) apabila memuat naik risalah 2-muka surat landskap, menghapuskan paparan separuh kosong, memusatkan kulit buku di tengah skrin, dan membetulkan kedudukan indikator zum serta bar alat navigasi agar tidak tersasar keluar dari kontena pratonton.
-
-- [x] 1. Penyesuaian Saiz & Logik Dokumen 1 & 2 Halaman (`components/pamphlet/viewer/flipbook-view.tsx`) <!-- id: 1 -->
-  - Bagi dokumen 1 atau 2 muka surat (`pages.length <= 2`), mod automatik lalai kepada **Mod 1 Halaman (Single Page)** agar risalah dipaparkan penuh di tengah skrin pada saiz maksimum tanpa sebelah kosong.
-  - Jika pengguna memilih mod `2 Halaman` untuk dokumen 2-muka surat, `computeSpread` memaparkan Halaman 1 di sebelah kiri dan Halaman 2 di sebelah kanan serentak.
-  - Untuk buku berbilang muka surat (`pages.length > 2`), paparan kulit hadapan (Halaman 1) dipusatkan secara anggun (`stageShiftX = -bookWidth * 0.25`) dengan menyembunyikan slot kosong kiri, dan meluncur lancar ke tengah apabila dibuka.
-- [x] 2. Pembetulan Kedudukan Terapung Pill Zum, Bar Navigasi Bawah & Ketinggian Viewer <!-- id: 2 -->
-  - Tukar pill indikator zum (`flipbook-view.tsx`) daripada `fixed top-14 left-1/2` kepada `absolute top-3 left-1/2` dalam kontena pementasan.
-  - Tukar bar navigasi terapung bawah (`toolbar.tsx`) daripada `fixed bottom-4 left-1/2` kepada `absolute bottom-4 left-1/2`.
-  - Selaraskan ketinggian `PamphletViewer` (`index.tsx`) untuk menggunakan `previewMode ? 'h-full' : 'h-screen min-h-[100dvh]'` bagi mengelakkan limpahan kontena builder.
-- [x] 3. Ujian Unit & Pengesahan Kualiti <!-- id: 3 -->
-  - Ujian unit di `tests/pamphlet.test.ts` (11/11 tests pass).
-  - `npm test` (326/326 tests pass across 37 test suites).
-  - `npm run typecheck` (0 ralat TypeScript).
-  - `npm run lint` (0 ralat / 0 amaran ESLint).
-- [x] 4. Kemas kini `lessons.md`, `memory.md`, dan `task.md`. <!-- id: 4 -->
 
----
 
-## Reviu Pelaksanaan: Pembaikan Isu Risalah "Nampak Separuh", Kunci Saiz Dokumen 2-Muka Surat & Centering Kulit Buku
-
-1. **Punca Asal Isu ("kenapa nampak separuh ya")**:
-   - Pengguna memuat naik risalah 2-muka surat berorientasi Landskap ("SAMBUNGAN RAHNU").
-   - Pada skrin komputer meja/riba yang berkelebaran >= 880px, sistem sebelum ini mengaktifkan paparan dwi-halaman (2-page spread).
-   - Dalam fungsi `computeSpread(1)`, sistem menganggap Halaman 1 sebagai Muka Hadapan (Cover) bagi buku berbilang bab dan meletakkannya pada slot kanan (`left: 50%`), manakala slot kiri (`0%` hingga `50%`) dibiarkan kosong dengan siluet buku ("Buku Program Digital").
-   - Akibatnya, pada risalah 2-muka surat atau risalah promosi/infografik, dokumen hanya memenuhi 50% ruang di sebelah kanan dan kelihatan seperti terpotong atau "separuh".
-   - Selain itu, pill penunjuk zum (`Zum 105% • Seret untuk tatal`) menggunakan kedudukan `fixed top-14 left-1/2` terhadap tetingkap pelayar secara global, menyebabkan ia terapung di atas tab penyunting pembina (`Maklumat`, `Gaya & Butang`), manakala ketinggian pemapar `h-screen` melimpah melebihi kontena pratonton.
-2. **Penyelesaian Kejuruteraan Dilaksanakan**:
-   - **Logik Khas Risalah 1 & 2 Muka Surat**:
-     - Bagi dokumen dengan $\le 2$ muka surat, sistem mod automatik kini sentiasa menggunakan **Mod 1 Muka Surat (Single Page)**. Risalah berorientasi landskap dipaparkan penuh di tengah skrin (nisbah 1.414 : 1) pada saiz maksimum tanpa sebarang ruang kosong di sebelah kiri atau kanan.
-     - Apabila pengguna menekan butang selak atau anak panah, helaian Halaman 1 melipat secara 3D dengan lancar ke Halaman 2 (juga dipaparkan penuh di tengah).
-     - Sekiranya pengguna menukar mod secara manual kepada `[ 📖 2 Halaman ]`, fungsi `computeSpread` memaparkan Halaman 1 di sebelah kiri dan Halaman 2 di sebelah kanan serentak, membolehkan kedua-dua muka surat dilihat bersebelahan tanpa sebarang ruang kosong.
-   - **Pemusatan Kulit Muka Hadapan & Belakang (`stageShiftX`)**:
-     - Bagi buku berbilang muka surat ($> 2$ muka surat), kulit hadapan (Halaman 1) dipusatkan tepat di tengah skrin dengan menganjakkan pentas buku ke kiri sebanyak 25% kelebaran (`stageShiftX = -bookWidth * 0.25`) dan menyembunyikan slot kiri yang kosong.
-     - Apabila dibuka (selak ke Halaman 2&3), pentas buku meluncur secara lancar (`transition: transform 520ms cubic-bezier(0.25, 1, 0.5, 1)`) kembali ke kedudukan tengah (`stageShiftX = 0`) serentak dengan putaran helaian 3D.
-   - **Pembetulan Kedudukan Terapung UI**:
-     - Pill Zum: Ditukar kepada `absolute top-3 left-1/2 -translate-x-1/2` di dalam kontena pemapar pentas buku, menghapuskan pertindihan dengan tab pembina.
-     - Bar Navigasi Bawah: Ditukar kepada `absolute bottom-4 left-1/2 -translate-x-1/2`, memastikan ia sentiasa berada di tengah kontena pemapar (termasuk pada simulator telefon pintar).
-     - Ketinggian Pemapar: `previewMode ? 'h-full' : 'h-screen min-h-[100dvh]'` menghalang limpahan ketinggian dalam antaramuka pembina.
-3. **Ujian & Kualiti**:
-   - 326 / 326 ujian Vitest lulus (termasuk 3 ujian baharu untuk `computeSpread` di `tests/pamphlet.test.ts`).
-   - 0 ralat TypeScript (`tsc --noEmit`), 0 ralat / 0 amaran ESLint.

@@ -36,7 +36,7 @@ import {
   PamphletDisplayMode,
   PamphletTheme,
 } from '@/lib/types/pamphlets';
-import { PAMPHLET_THEMES } from '@/lib/pamphlets/themes';
+import { PAMPHLET_THEMES, DEFAULT_PAMPHLET_THEME } from '@/lib/pamphlets/themes';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -52,6 +52,7 @@ interface ToolbarProps {
   showThumbnails: boolean;
   pageSpreadMode?: 'auto' | 'single' | 'double';
   isTwoPageSpread?: boolean;
+  forceMobile?: boolean;
   onPageChange: (pageNumber: number) => void;
   onNextPage?: () => void;
   onPrevPage?: () => void;
@@ -77,6 +78,7 @@ export function PamphletToolbar({
   isFullscreen,
   showThumbnails,
   isTwoPageSpread,
+  forceMobile = false,
   onPageChange,
   onNextPage,
   onPrevPage,
@@ -92,7 +94,8 @@ export function PamphletToolbar({
 }: ToolbarProps) {
   const [copied, setCopied] = React.useState(false);
   const [isDesktop, setIsDesktop] = React.useState(false);
-  const themeObj = PAMPHLET_THEMES[theme] || PAMPHLET_THEMES.dark;
+  const isMobileLayout = forceMobile || !isDesktop;
+  const themeObj = PAMPHLET_THEMES[theme] || PAMPHLET_THEMES[DEFAULT_PAMPHLET_THEME];
 
   React.useEffect(() => {
     const checkIsDesktop = () => setIsDesktop(window.innerWidth >= 1024);
@@ -105,7 +108,7 @@ export function PamphletToolbar({
     if (typeof window === 'undefined') return;
     navigator.clipboard.writeText(window.location.href);
     setCopied(true);
-    toast.success('Pautan pamphlet telah disalin!');
+    toast.success('Pamphlet link copied!');
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -113,7 +116,7 @@ export function PamphletToolbar({
     if (typeof window === 'undefined') return;
     const url = window.location.href;
     const text = encodeURIComponent(
-      `Sila lihat Buku Program Digital: *${pamphlet.title}*\n${url}`
+      `Please view Digital Program Book: *${pamphlet.title}*\n${url}`
     );
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
@@ -128,16 +131,16 @@ export function PamphletToolbar({
         )}
       >
         {/* Title and Event Meta */}
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="h-9 w-9 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0 border border-primary/20">
-            <BookOpen className="h-5 w-5" />
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+          <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0 border border-primary/20">
+            <BookOpen className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
-          <div className="min-w-0">
-            <h1 className="text-sm md:text-base font-bold truncate tracking-tight">
-              {pamphlet.title || 'Buku Program Digital'}
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xs sm:text-sm md:text-base font-bold truncate tracking-tight">
+              {pamphlet.title || 'Digital Program Book'}
             </h1>
             {(pamphlet.eventDate || pamphlet.location) && (
-              <p className="text-[11px] opacity-70 truncate">
+              <p className="text-[10px] sm:text-[11px] opacity-70 truncate">
                 {[pamphlet.eventDate, pamphlet.location].filter(Boolean).join(' • ')}
               </p>
             )}
@@ -150,98 +153,102 @@ export function PamphletToolbar({
           {pamphlet.actionButtons && pamphlet.actionButtons.length > 0 && (
             <>
               {/* Desktop Action Pills */}
-              <div className="hidden lg:flex items-center gap-2 mr-1 border-r pr-2 border-current/15">
-                {pamphlet.actionButtons.slice(0, 3).map((btn) => {
-                  const isWhatsapp = btn.type === 'whatsapp';
-                  const isCheckin = btn.type === 'checkin';
-                  const isCert = btn.type === 'cert';
+              {!isMobileLayout && (
+                <div className="hidden lg:flex items-center gap-2 mr-1 border-r pr-2 border-current/15">
+                  {pamphlet.actionButtons.slice(0, 3).map((btn) => {
+                    const isWhatsapp = btn.type === 'whatsapp';
+                    const isCheckin = btn.type === 'checkin';
+                    const isCert = btn.type === 'cert';
 
-                  return (
-                    <Button
-                      key={btn.id}
-                      size="sm"
-                      className={cn(
-                        'h-8 text-xs font-semibold rounded-lg shadow-sm transition-all',
-                        isWhatsapp
-                          ? 'bg-[#25D366] hover:bg-[#20ba59] text-white border-transparent'
-                          : 'bg-white hover:bg-slate-100 text-slate-900 border border-slate-300'
-                      )}
-                      onClick={() => {
-                        if (btn.url && btn.url !== '#') {
-                          window.open(btn.url, '_blank');
-                        } else {
-                          toast.info(`Tindakan: ${btn.label}`);
-                        }
-                      }}
-                    >
-                      {isCheckin && <QrCode className="h-3.5 w-3.5 mr-1.5 text-emerald-600 shrink-0" />}
-                      {isCert && <Award className="h-3.5 w-3.5 mr-1.5 text-amber-600 shrink-0" />}
-                      {isWhatsapp && (
-                        <MessageCircle className="h-3.5 w-3.5 mr-1.5 text-white fill-white/20 shrink-0" />
-                      )}
-                      {!isCheckin && !isCert && !isWhatsapp && (
-                        <ExternalLink className="h-3.5 w-3.5 mr-1.5 text-sky-600 shrink-0" />
-                      )}
-                      <span className={cn(isWhatsapp ? 'text-white' : 'text-slate-900')}>
-                        {btn.label}
-                      </span>
-                    </Button>
-                  );
-                })}
-              </div>
-
-              {/* Mobile / Tablet Compact Action Dropdown */}
-              <div className="flex lg:hidden mr-1">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 px-2.5 text-xs font-semibold bg-white text-slate-900 border-slate-300 hover:bg-slate-100 shadow-sm gap-1.5 rounded-lg"
-                      title="Tindakan Majlis"
-                    >
-                      <QrCode className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                      <span className="text-slate-900 font-semibold">Tindakan</span>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    align="end"
-                    className="w-56 p-2 space-y-1 bg-white text-slate-900 shadow-xl border border-slate-200 rounded-xl z-50"
-                  >
-                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-2 py-1">
-                      Tindakan Acara
-                    </p>
-                    {pamphlet.actionButtons.map((btn) => (
-                      <button
+                    return (
+                      <Button
                         key={btn.id}
-                        type="button"
+                        size="sm"
+                        className={cn(
+                          'h-8 text-xs font-semibold rounded-lg shadow-sm transition-all',
+                          isWhatsapp
+                            ? 'bg-[#25D366] hover:bg-[#20ba59] text-white border-transparent'
+                            : 'bg-white hover:bg-slate-100 text-slate-900 border border-slate-300'
+                        )}
                         onClick={() => {
                           if (btn.url && btn.url !== '#') {
                             window.open(btn.url, '_blank');
                           } else {
-                            toast.info(`Tindakan: ${btn.label}`);
+                            toast.info(`Action: ${btn.label}`);
                           }
                         }}
-                        className="w-full flex items-center px-2.5 py-2 text-xs font-semibold rounded-lg hover:bg-slate-100 text-left transition-colors text-slate-900"
                       >
-                        {btn.type === 'checkin' && (
-                          <QrCode className="h-4 w-4 mr-2 text-emerald-600 shrink-0" />
+                        {isCheckin && <QrCode className="h-3.5 w-3.5 mr-1.5 text-emerald-600 shrink-0" />}
+                        {isCert && <Award className="h-3.5 w-3.5 mr-1.5 text-amber-600 shrink-0" />}
+                        {isWhatsapp && (
+                          <MessageCircle className="h-3.5 w-3.5 mr-1.5 text-white fill-white/20 shrink-0" />
                         )}
-                        {btn.type === 'cert' && (
-                          <Award className="h-4 w-4 mr-2 text-amber-600 shrink-0" />
+                        {!isCheckin && !isCert && !isWhatsapp && (
+                          <ExternalLink className="h-3.5 w-3.5 mr-1.5 text-sky-600 shrink-0" />
                         )}
-                        {btn.type === 'whatsapp' && (
-                          <MessageCircle className="h-4 w-4 mr-2 text-[#25D366] shrink-0" />
-                        )}
-                        {btn.type !== 'checkin' && btn.type !== 'cert' && btn.type !== 'whatsapp' && (
-                          <ExternalLink className="h-4 w-4 mr-2 text-sky-600 shrink-0" />
-                        )}
-                        <span className="truncate text-slate-900">{btn.label}</span>
-                      </button>
-                    ))}
-                  </PopoverContent>
-                </Popover>
-              </div>
+                        <span className={cn(isWhatsapp ? 'text-white' : 'text-slate-900')}>
+                          {btn.label}
+                        </span>
+                      </Button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Mobile / Tablet Compact Action Dropdown */}
+              {isMobileLayout && (
+                <div className="flex mr-1">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-2 text-xs font-semibold bg-white text-slate-900 border-slate-300 hover:bg-slate-100 shadow-sm gap-1 rounded-lg"
+                        title="Event Actions"
+                      >
+                        <QrCode className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                        <span className="text-slate-900 font-semibold text-[11px]">Actions</span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="end"
+                      className="w-56 p-2 space-y-1 bg-white text-slate-900 shadow-xl border border-slate-200 rounded-xl z-50"
+                    >
+                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-2 py-1">
+                        Event Actions
+                      </p>
+                      {pamphlet.actionButtons.map((btn) => (
+                        <button
+                          key={btn.id}
+                          type="button"
+                          onClick={() => {
+                            if (btn.url && btn.url !== '#') {
+                              window.open(btn.url, '_blank');
+                            } else {
+                              toast.info(`Action: ${btn.label}`);
+                            }
+                          }}
+                          className="w-full flex items-center px-2.5 py-2 text-xs font-semibold rounded-lg hover:bg-slate-100 text-left transition-colors text-slate-900"
+                        >
+                          {btn.type === 'checkin' && (
+                            <QrCode className="h-4 w-4 mr-2 text-emerald-600 shrink-0" />
+                          )}
+                          {btn.type === 'cert' && (
+                            <Award className="h-4 w-4 mr-2 text-amber-600 shrink-0" />
+                          )}
+                          {btn.type === 'whatsapp' && (
+                            <MessageCircle className="h-4 w-4 mr-2 text-[#25D366] shrink-0" />
+                          )}
+                          {btn.type !== 'checkin' && btn.type !== 'cert' && btn.type !== 'whatsapp' && (
+                            <ExternalLink className="h-4 w-4 mr-2 text-sky-600 shrink-0" />
+                          )}
+                          <span className="truncate text-slate-900">{btn.label}</span>
+                        </button>
+                      ))}
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              )}
             </>
           )}
 
@@ -250,16 +257,21 @@ export function PamphletToolbar({
             <PopoverTrigger asChild>
               <Button
                 variant="ghost"
-                size="sm"
-                className="h-8 px-2.5 text-xs gap-1.5 rounded-lg border border-current/15"
-                title="Mod Paparan"
+                size={isMobileLayout ? 'icon' : 'sm'}
+                className={cn(
+                  'h-8 rounded-lg border border-current/15',
+                  isMobileLayout ? 'w-8 p-0' : 'px-2.5 text-xs gap-1.5'
+                )}
+                title="Display Mode"
               >
                 {displayMode === 'flipbook' && <BookOpen className="h-3.5 w-3.5" />}
                 {displayMode === 'slide' && <SlidersHorizontal className="h-3.5 w-3.5" />}
                 {displayMode === 'vertical' && <Scroll className="h-3.5 w-3.5" />}
-                <span className="hidden sm:inline capitalize">
-                  {displayMode === 'flipbook' ? 'Flipbook' : displayMode === 'slide' ? 'Slide' : 'Skrol'}
-                </span>
+                {!isMobileLayout && (
+                  <span className="hidden sm:inline capitalize">
+                    {displayMode === 'flipbook' ? 'Flipbook' : displayMode === 'slide' ? 'Slide' : 'Scroll'}
+                  </span>
+                )}
               </Button>
             </PopoverTrigger>
             <PopoverContent align="end" className="w-44 p-1.5 space-y-0.5">
@@ -294,61 +306,65 @@ export function PamphletToolbar({
                 )}
               >
                 <Scroll className="h-4 w-4 mr-2" />
-                <span>Skrol Menegak</span>
+                <span>Vertical Scroll</span>
               </button>
             </PopoverContent>
           </Popover>
 
-          {/* Theme Popover */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-lg"
-                title="Tukar Suasana Latar"
-              >
-                <Palette className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="end" className="w-48 p-1.5 space-y-0.5">
-              {(Object.keys(PAMPHLET_THEMES) as PamphletTheme[]).map((key) => {
-                const t = PAMPHLET_THEMES[key];
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => onThemeChange(key)}
-                    className={cn(
-                      'w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-md text-left transition-colors',
-                      theme === key ? 'font-semibold bg-accent text-accent-foreground' : 'hover:bg-accent/60'
-                    )}
-                  >
-                    <span>{t.name}</span>
-                    <span
-                      className="h-3.5 w-3.5 rounded-full border border-gray-400"
-                      style={{ backgroundColor: t.accentColor }}
-                    />
-                  </button>
-                );
-              })}
-            </PopoverContent>
-          </Popover>
+          {/* Theme Popover (Desktop only to prevent mobile clutter) */}
+          {!isMobileLayout && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 rounded-lg"
+                  title="Change Background Theme"
+                >
+                  <Palette className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-48 p-1.5 space-y-0.5">
+                {(Object.keys(PAMPHLET_THEMES) as PamphletTheme[]).map((key) => {
+                  const t = PAMPHLET_THEMES[key];
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => onThemeChange(key)}
+                      className={cn(
+                        'w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-md text-left transition-colors',
+                        theme === key ? 'font-semibold bg-accent text-accent-foreground' : 'hover:bg-accent/60'
+                      )}
+                    >
+                      <span>{t.name}</span>
+                      <span
+                        className="h-3.5 w-3.5 rounded-full border border-gray-400"
+                        style={{ backgroundColor: t.accentColor }}
+                      />
+                    </button>
+                  );
+                })}
+              </PopoverContent>
+            </Popover>
+          )}
 
-          {/* Sound Toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onToggleSound}
-            className="h-8 w-8 rounded-lg"
-            title={soundEnabled ? 'Matikan Bunyi Helaian' : 'Hidupkan Bunyi Helaian'}
-          >
-            {soundEnabled ? (
-              <Volume2 className="h-4 w-4 text-primary" />
-            ) : (
-              <VolumeX className="h-4 w-4 opacity-60" />
-            )}
-          </Button>
+          {/* Sound Toggle (Desktop only to prevent mobile clutter) */}
+          {!isMobileLayout && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onToggleSound}
+              className="h-8 w-8 rounded-lg"
+              title={soundEnabled ? 'Mute Page Sound' : 'Unmute Page Sound'}
+            >
+              {soundEnabled ? (
+                <Volume2 className="h-4 w-4 text-primary" />
+              ) : (
+                <VolumeX className="h-4 w-4 opacity-60" />
+              )}
+            </Button>
+          )}
 
           {/* Share Popover */}
           <Popover>
@@ -357,7 +373,7 @@ export function PamphletToolbar({
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 rounded-lg"
-                title="Kongsi Buku Program"
+                title="Share Program Book"
               >
                 <Share2 className="h-4 w-4" />
               </Button>
@@ -369,7 +385,7 @@ export function PamphletToolbar({
                 className="w-full flex items-center px-2.5 py-1.5 text-xs rounded-md hover:bg-accent text-left transition-colors"
               >
                 <MessageCircle className="h-4 w-4 mr-2 text-emerald-500" />
-                <span>Kongsi ke WhatsApp</span>
+                <span>Share to WhatsApp</span>
               </button>
               <button
                 type="button"
@@ -381,7 +397,7 @@ export function PamphletToolbar({
                 ) : (
                   <Copy className="h-4 w-4 mr-2" />
                 )}
-                <span>Salin Pautan</span>
+                <span>Copy Link</span>
               </button>
               {pamphlet.pdfUrl && (
                 <button
@@ -390,7 +406,7 @@ export function PamphletToolbar({
                   className="w-full flex items-center px-2.5 py-1.5 text-xs rounded-md hover:bg-accent text-left transition-colors"
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  <span>Muat Turun PDF Asal</span>
+                  <span>Download Original PDF</span>
                 </button>
               )}
             </PopoverContent>
@@ -402,7 +418,7 @@ export function PamphletToolbar({
             size="icon"
             onClick={onToggleFullscreen}
             className="h-8 w-8 rounded-lg"
-            title={isFullscreen ? 'Keluar Skrin Penuh' : 'Skrin Penuh'}
+            title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
           >
             {isFullscreen ? (
               <Minimize2 className="h-4 w-4" />
@@ -416,7 +432,8 @@ export function PamphletToolbar({
       {/* Floating Bottom Navigator Bar */}
       <footer
         className={cn(
-          'absolute bottom-4 left-1/2 -translate-x-1/2 z-30 transition-all duration-300 rounded-2xl shadow-xl border px-3 py-1.5 flex items-center gap-2 select-none backdrop-blur-xl',
+          'absolute bottom-4 left-1/2 -translate-x-1/2 z-30 transition-all duration-300 rounded-full shadow-2xl border select-none backdrop-blur-xl flex items-center',
+          isMobileLayout ? 'px-2 py-1 gap-1' : 'px-3 py-1.5 gap-2',
           themeObj.toolbarBg
         )}
       >
@@ -426,8 +443,8 @@ export function PamphletToolbar({
           size="icon"
           disabled={currentPage <= 1}
           onClick={onPrevPage || (() => onPageChange(Math.max(1, currentPage - 1)))}
-          className="h-8 w-8 rounded-xl"
-          title="Halaman Sebelumnya"
+          className="h-8 w-8 rounded-full"
+          title="Previous Page"
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
@@ -436,14 +453,14 @@ export function PamphletToolbar({
         <button
           onClick={onToggleThumbnails}
           className={cn(
-            'px-2.5 py-1 text-xs font-semibold rounded-lg hover:bg-current/10 transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0',
+            'px-2.5 py-1 text-xs font-semibold rounded-full hover:bg-current/10 transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0',
             showThumbnails && 'bg-current/15 text-primary font-bold'
           )}
-          title="Buka Pratonton Muka Surat"
+          title="Open Page Thumbnails"
         >
           <LayoutGrid className="h-3.5 w-3.5 opacity-70 shrink-0" />
-          <span className="font-mono whitespace-nowrap">
-            {(isTwoPageSpread ?? isDesktop) && displayMode === 'flipbook' && currentPage > 1 && currentPage < totalPages
+          <span className="font-mono whitespace-nowrap text-xs">
+            {!isMobileLayout && (isTwoPageSpread ?? isDesktop) && displayMode === 'flipbook' && currentPage > 1 && currentPage < totalPages
               ? `${currentPage % 2 === 0 ? currentPage : currentPage - 1}-${Math.min(totalPages, (currentPage % 2 === 0 ? currentPage : currentPage - 1) + 1)} / ${totalPages}`
               : `${currentPage} / ${totalPages || 1}`}
           </span>
@@ -455,14 +472,14 @@ export function PamphletToolbar({
           size="icon"
           disabled={currentPage >= totalPages}
           onClick={onNextPage || (() => onPageChange(Math.min(totalPages, currentPage + 1)))}
-          className="h-8 w-8 rounded-xl"
-          title="Halaman Seterusnya"
+          className="h-8 w-8 rounded-full"
+          title="Next Page"
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
 
-        {/* Spread Mode Toggle (1 Halaman vs 2 Halaman) */}
-        {displayMode === 'flipbook' && onToggleSpreadMode && (
+        {/* Spread Mode Toggle (Desktop only) */}
+        {!isMobileLayout && displayMode === 'flipbook' && onToggleSpreadMode && totalPages >= 2 && (
           <Button
             variant="ghost"
             size="sm"
@@ -470,59 +487,63 @@ export function PamphletToolbar({
             className="h-8 px-2 text-xs gap-1.5 rounded-xl hover:bg-current/10 shrink-0 font-medium"
             title={
               isTwoPageSpread
-                ? 'Tukar ke 1 Muka Surat (Teks Lebih Besar & Jelas)'
-                : 'Tukar ke 2 Muka Surat (Buku Fizikal)'
+                ? 'Currently displayed in 2 Pages (Click to switch to 1 Page)'
+                : 'Currently displayed in 1 Page (Click to switch to 2 Pages)'
             }
           >
             {isTwoPageSpread ? (
               <>
-                <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span className="hidden sm:inline">1 Halaman</span>
+                <BookOpen className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span className="hidden sm:inline">2 Pages</span>
               </>
             ) : (
               <>
-                <BookOpen className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span className="hidden sm:inline">2 Halaman</span>
+                <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span className="hidden sm:inline">1 Page</span>
               </>
             )}
           </Button>
         )}
 
-        {/* Zoom Controls Divider */}
-        <div className="h-4 w-[1px] bg-current/20 mx-0.5" />
+        {/* Zoom Controls (Desktop only) */}
+        {!isMobileLayout && (
+          <>
+            <div className="h-4 w-[1px] bg-current/20 mx-0.5" />
 
-        {/* Zoom Out */}
-        <Button
-          variant="ghost"
-          size="icon"
-          disabled={zoom <= 0.6}
-          onClick={onZoomOut}
-          className="h-8 w-8 rounded-xl"
-          title="Kecilkan (Zoom Out)"
-        >
-          <ZoomOut className="h-4 w-4" />
-        </Button>
+            {/* Zoom Out */}
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={zoom <= 0.6}
+              onClick={onZoomOut}
+              className="h-8 w-8 rounded-xl"
+              title="Zoom Out"
+            >
+              <ZoomOut className="h-4 w-4" />
+            </Button>
 
-        {/* Zoom Reset / Value */}
-        <button
-          onClick={onZoomReset}
-          className="text-[11px] font-mono font-medium px-1.5 py-0.5 rounded hover:bg-current/10 transition-colors"
-          title="Reset Zum ke 100%"
-        >
-          {Math.round(zoom * 100)}%
-        </button>
+            {/* Zoom Reset / Value */}
+            <button
+              onClick={onZoomReset}
+              className="text-[11px] font-mono font-medium px-1.5 py-0.5 rounded hover:bg-current/10 transition-colors"
+              title="Reset Zoom to 100%"
+            >
+              {Math.round(zoom * 100)}%
+            </button>
 
-        {/* Zoom In */}
-        <Button
-          variant="ghost"
-          size="icon"
-          disabled={zoom >= 2.5}
-          onClick={onZoomIn}
-          className="h-8 w-8 rounded-xl"
-          title="Besarkan (Zoom In)"
-        >
-          <ZoomIn className="h-4 w-4" />
-        </Button>
+            {/* Zoom In */}
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={zoom >= 2.5}
+              onClick={onZoomIn}
+              className="h-8 w-8 rounded-xl"
+              title="Zoom In"
+            >
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+          </>
+        )}
       </footer>
     </>
   );

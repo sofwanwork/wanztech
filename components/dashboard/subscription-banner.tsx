@@ -26,17 +26,16 @@ export function SubscriptionBanner({ status, graceDaysRemaining }: SubscriptionB
               <Clock className="h-5 w-5 text-amber-600" />
             </div>
             <div>
-              <p className="font-semibold text-amber-800">Langganan Pro anda telah tamat!</p>
+              <p className="font-semibold text-amber-800">Your Pro subscription has expired!</p>
               <p className="text-sm text-amber-700">
-                Anda mempunyai <strong>{graceDaysRemaining} hari</strong> lagi sebelum akaun disekat
-                sepenuhnya.
+                You have <strong>{graceDaysRemaining} day{graceDaysRemaining === 1 ? '' : 's'}</strong> remaining before account features are restricted.
               </p>
             </div>
           </div>
           <PricingModal>
             <Button className="bg-amber-600 hover:bg-amber-700 text-white gap-2 shrink-0">
               <CreditCard className="h-4 w-4" />
-              Renew Sekarang
+              Renew Now
             </Button>
           </PricingModal>
         </div>
@@ -54,16 +53,16 @@ export function SubscriptionBanner({ status, graceDaysRemaining }: SubscriptionB
               <XCircle className="h-5 w-5 text-red-600" />
             </div>
             <div>
-              <p className="font-semibold text-red-800">Akaun anda telah disekat!</p>
+              <p className="font-semibold text-red-800">Your account features are restricted!</p>
               <p className="text-sm text-red-700">
-                Langganan Pro anda telah tamat. Sila renew untuk terus menggunakan KlikForm.
+                Your Pro subscription has ended. Please renew to continue accessing all KlikForm features.
               </p>
             </div>
           </div>
           <PricingModal>
             <Button className="bg-red-600 hover:bg-red-700 text-white gap-2 shrink-0">
               <CreditCard className="h-4 w-4" />
-              Renew dan Unlock
+              Renew and Unlock
             </Button>
           </PricingModal>
         </div>

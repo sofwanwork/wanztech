@@ -14,9 +14,9 @@ import { LandingCta } from "@/components/landing/landing-cta";
 import { LandingFooter } from "@/components/landing/landing-footer";
 
 export const metadata: Metadata = {
-  title: "KlikForm - Platform Automasi Borang Pintar & E-Sijil No. 1 Malaysia",
+  title: "KlikForm - Next-Gen Online Forms & Automated E-Certificates",
   description:
-    "Bina borang pendaftaran, selaraskan data ke Google Sheets secara masa nyata, dan jana e-sijil digital automatik (Canva-style) dengan sistem verifikasi IC dan kod QR. Percuma & pantas.",
+    "Build registration forms, sync data to Google Sheets in real time, and generate automated digital e-certificates (Canva-style) with IC and QR code verification. Fast & free.",
   alternates: {
     canonical: "https://klikform.com",
   },

@@ -50,32 +50,32 @@ export async function checkCertificateByICOrEmail(
 
     const rl = await checkRateLimit(ip, RATE_LIMITS.certificateCheck, 'cert-check');
     if (!rl.success) {
-      return { found: false, error: 'Terlalu banyak percubaan. Sila cuba lagi selepas 1 minit.' };
+      return { found: false, error: 'Too many attempts. Please try again after 1 minute.' };
     }
 
     // Get form and settings
     const form = await getFormById(formId);
     if (!form) {
-      return { found: false, error: 'Form tidak dijumpai' };
+      return { found: false, error: 'Form not found' };
     }
 
     if (!form.eCertificateEnabled) {
-      return { found: false, error: 'E-Sijil tidak diaktifkan untuk form ini' };
+      return { found: false, error: 'E-Certificate is not enabled for this form' };
     }
 
     if (!form.googleSheetUrl) {
-      return { found: false, error: 'Google Sheet tidak dikonfigurasi' };
+      return { found: false, error: 'Google Sheet is not configured' };
     }
 
     const settings = await getSettingsByFormId(formId);
     if (!settings) {
-      return { found: false, error: 'Tiada konfigurasi integrasi dijumpai' };
+      return { found: false, error: 'No integration configuration found' };
     }
 
     // Extract sheet ID from URL
     const match = form.googleSheetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
     if (!match || !match[1]) {
-      return { found: false, error: 'URL Google Sheet tidak sah' };
+      return { found: false, error: 'Invalid Google Sheet URL' };
     }
     const sheetId = match[1];
 
@@ -130,7 +130,7 @@ export async function checkCertificateByICOrEmail(
         scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
       });
     } else {
-      return { found: false, error: 'Tiada akses (sijil autentikasi tidak sah atau tamat tempoh)' };
+      return { found: false, error: 'Unauthorized (invalid or expired authentication credentials)' };
     }
 
     const doc = new GoogleSpreadsheet(sheetId, auth);
@@ -149,12 +149,12 @@ export async function checkCertificateByICOrEmail(
         return lower === 'email' || lower === 'e-mel' || lower === 'e-mail' || lower.includes('emel') || lower.includes('alamat e-mel');
       });
       if (targetColumnIndex === -1) {
-        return { found: false, error: 'Field Email tidak dijumpai dalam Google Sheet' };
+        return { found: false, error: 'Email field not found in Google Sheet' };
       }
     } else {
       targetColumnIndex = headers.findIndex(isIcHeader);
       if (targetColumnIndex === -1) {
-        return { found: false, error: 'Field IC tidak dijumpai dalam Google Sheet' };
+        return { found: false, error: 'IC field not found in Google Sheet' };
       }
     }
 
@@ -173,7 +173,7 @@ export async function checkCertificateByICOrEmail(
     );
 
     if (nameColumnIndex === -1) {
-      return { found: false, error: 'Field Nama tidak dijumpai dalam Google Sheet' };
+      return { found: false, error: 'Name field not found in Google Sheet' };
     }
 
     // Get all rows and search
@@ -247,14 +247,14 @@ export async function checkCertificateByICOrEmail(
         // Expiration Check
         if (form.eCertificateExpiryDays && form.eCertificateExpiryDays > 0) {
           if (!date) {
-            return { found: false, error: 'Tarikh tidak dijumpai untuk pengesahan tarikh luput' };
+            return { found: false, error: 'Date not found for expiration verification' };
           }
 
           const submissionDate = parseDate(date.toString());
 
           if (!submissionDate || isNaN(submissionDate.getTime())) {
             console.error(`Date parsing failed for: ${date}`);
-            return { found: false, error: 'Format tarikh tidak sah untuk pengesahan' };
+            return { found: false, error: 'Invalid date format for verification' };
           }
 
           // normalize submission date to start of day in Malaysia time (if it isn't already)
@@ -279,7 +279,7 @@ export async function checkCertificateByICOrEmail(
           if (nowMYT > expiryDate) {
             return {
               found: false,
-              error: form.eCertificateExpiredMessage || 'Pautan sijil ini telah luput',
+              error: form.eCertificateExpiredMessage || 'This certificate link has expired',
             };
           }
         }
@@ -356,10 +356,10 @@ export async function checkCertificateByICOrEmail(
       }
     }
 
-    return { found: false, error: isEmailSearch ? 'Email tidak dijumpai dalam rekod' : 'IC tidak dijumpai dalam rekod' };
+    return { found: false, error: isEmailSearch ? 'Email not found in records' : 'IC not found in records' };
   } catch (error: unknown) {
     console.error('Certificate check error:', error);
-    return { found: false, error: 'Ralat semasa menyemak sijil' };
+    return { found: false, error: 'An error occurred while verifying certificate' };
   }
 }
 

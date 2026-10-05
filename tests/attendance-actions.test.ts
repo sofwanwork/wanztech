@@ -126,13 +126,13 @@ describe('Attendance Server Actions — submitAttendanceCheckOutAction', () => {
     expect(res.success).toBe(true);
     expect(res.summary?.status).toBe('completed');
     expect(res.summary?.durationHours).toBeGreaterThanOrEqual(1.0);
-    expect(res.summary?.durationFormatted).toContain('Jam');
+    expect(res.summary?.durationFormatted).toContain('Hour');
   });
 
   it('fails if no active check-in record exists', async () => {
     const res = await submitAttendanceCheckOutAction('form-123', '999999-99-9999');
     expect(res.success).toBe(false);
-    expect(res.error).toContain('Rekod daftar masuk');
+    expect(res.error).toContain('Check-in record not found');
   });
 
   it('falls back to identifier column if _submission_id update returns updated=false', async () => {

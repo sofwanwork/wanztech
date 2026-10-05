@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -35,11 +35,11 @@ interface NewCertificateDialogProps {
 }
 
 const CATEGORIES = [
-  { id: 'school', label: 'School', description: 'Sijil sekolah & akademik', icon: GraduationCap },
-  { id: 'corporate', label: 'Corporate', description: 'Sijil syarikat & bisnes', icon: Building2 },
-  { id: 'training', label: 'Training', description: 'Sijil kursus & latihan', icon: BookOpen },
-  { id: 'event', label: 'Event', description: 'Sijil pertandingan & acara', icon: Calendar },
-  { id: 'other', label: 'Other', description: 'Kategori lain', icon: MoreHorizontal },
+  { id: 'school', label: 'School', description: 'School & academic certificates', icon: GraduationCap },
+  { id: 'corporate', label: 'Corporate', description: 'Company & business certificates', icon: Building2 },
+  { id: 'training', label: 'Training', description: 'Course & training certificates', icon: BookOpen },
+  { id: 'event', label: 'Event', description: 'Competition & event certificates', icon: Calendar },
+  { id: 'other', label: 'Other', description: 'General & other categories', icon: MoreHorizontal },
 ];
 
 export function NewCertificateDialog({ children }: NewCertificateDialogProps) {
@@ -49,6 +49,11 @@ export function NewCertificateDialog({ children }: NewCertificateDialogProps) {
   const [selectedPreset, setSelectedPreset] = useState('royal-gold');
   const [selectedCategory, setSelectedCategory] = useState('other');
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -66,22 +71,26 @@ export function NewCertificateDialog({ children }: NewCertificateDialogProps) {
     try {
       const result = await createCertificateTemplateAction(formData);
       if (result?.error) {
-        toast.error('Gagal membina sijil', {
+        toast.error('Failed to create certificate', {
           description: result.error,
         });
         setLoading(false);
       } else if (result?.success && result.id) {
-        toast.success('Sijil berjaya dicipta!');
+        toast.success('Certificate created successfully!');
         router.push(`/certificates/builder/${result.id}`);
       }
     } catch (error) {
       console.error('Submit error:', error);
-      toast.error('Ralat sistem', {
-        description: 'Sistem mengalami gangguan pautan. Sila refresh semula.',
+      toast.error('System error', {
+        description: 'Connection error encountered. Please refresh and try again.',
       });
       setLoading(false);
     }
   };
+
+  if (!mounted) {
+    return <>{children}</>;
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -90,10 +99,10 @@ export function NewCertificateDialog({ children }: NewCertificateDialogProps) {
         <DialogHeader className="shrink-0">
           <DialogTitle className="text-xl flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-amber-500" />
-            Cipta Sijil Baharu
+            Create New Certificate
           </DialogTitle>
           <DialogDescription>
-            Pilih templat pra-bina siap guna atau bermula dengan kategori kosong.
+            Choose a ready-to-use starter preset or begin with a blank category.
           </DialogDescription>
         </DialogHeader>
 
@@ -106,11 +115,11 @@ export function NewCertificateDialog({ children }: NewCertificateDialogProps) {
             <TabsList className="grid grid-cols-2 w-full mb-4 shrink-0">
               <TabsTrigger value="presets" className="gap-2">
                 <Sparkles className="h-4 w-4" />
-                Templat Pra-Bina (Disyorkan)
+                Pre-Built Presets (Recommended)
               </TabsTrigger>
               <TabsTrigger value="categories" className="gap-2">
                 <LayoutTemplate className="h-4 w-4" />
-                Kategori Asas
+                Blank Categories
               </TabsTrigger>
             </TabsList>
 
@@ -150,7 +159,7 @@ export function NewCertificateDialog({ children }: NewCertificateDialogProps) {
                           </p>
                         </div>
                         <div className="mt-3 pt-2 border-t text-[11px] font-medium text-gray-400 uppercase tracking-wider">
-                          Kategori: {preset.category}
+                          Category: {preset.category}
                         </div>
                       </Label>
                     </div>
@@ -204,18 +213,18 @@ export function NewCertificateDialog({ children }: NewCertificateDialogProps) {
               onClick={() => setOpen(false)}
               disabled={loading}
             >
-              Batal
+              Cancel
             </Button>
             <Button type="submit" className="flex-1 gap-2" disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Membina Sijil...
+                  Creating Certificate...
                 </>
               ) : (
                 <>
                   <Plus className="h-4 w-4" />
-                  Cipta Sijil
+                  Create Certificate
                 </>
               )}
             </Button>

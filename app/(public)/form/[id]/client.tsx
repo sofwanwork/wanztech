@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/select';
 import { cn, getProxiedImageUrl, sanitizeHtml } from '@/lib/utils';
 import { format } from 'date-fns';
-import { Loader2, CheckCircle2, List, Clock, ExternalLink, LogOut, Award, KeyRound, AlertTriangle } from 'lucide-react';
+import { Loader2, CheckCircle2, List, Clock, ExternalLink, LogOut, Award, KeyRound, AlertTriangle, ShieldAlert, Lock, Info } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { submitFormAction } from '@/actions/forms';
 import {
@@ -232,13 +232,13 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
 
     if (form.attendanceSettings?.checkInOut?.checkOutPasscode) {
       if (!checkOutPin.trim()) {
-        toast.error('Sila masukkan Kod PIN Check-Out yang diumumkan di pentas.');
+        toast.error('Please enter the Check-Out PIN code announced on stage.');
         return;
       }
     }
 
     if (form.attendanceSettings?.rotatingQr?.enabled && (!rqW || !rqSig)) {
-      toast.error('Kod QR tidak sah atau telah luput. Sila imbas kod QR langsung di skrin projektor dewan.');
+      toast.error('Invalid or expired QR code. Please scan the live QR code directly on the hall projector screen.');
       return;
     }
 
@@ -271,12 +271,12 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
         try {
           localStorage.removeItem(`klikform_att_id_${form.id}`);
         } catch {}
-        toast.success('Daftar keluar berjaya direkodkan!');
+        toast.success('Check-out recorded successfully!');
       } else {
-        toast.error(res.error || 'Gagal mendaftar keluar.');
+        toast.error(res.error || 'Failed to check out.');
       }
     } catch {
-      toast.error('Ralat semasa mendaftar keluar.');
+      toast.error('An error occurred during check-out.');
     } finally {
       setCheckingOut(false);
     }
@@ -376,7 +376,7 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
 
     // Rotating QR Anti-fraud gate
     if (form.attendanceSettings?.enabled && form.attendanceSettings?.rotatingQr?.enabled && (!rqW || !rqSig)) {
-      toast.error('Kod QR tidak sah atau telah luput. Sila imbas kod QR langsung yang sedang dipaparkan di dewan.');
+      toast.error('Invalid or expired QR code. Please scan the live QR code currently displayed in the hall.');
       return;
     }
 
@@ -461,7 +461,7 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
           try {
             localStorage.removeItem(`klikform_att_id_${form.id}`);
           } catch {}
-          toast.success('Daftar keluar berjaya direkodkan!');
+          toast.success('Check-out recorded successfully!');
         } else if ('isCheckIn' in result && result.isCheckIn) {
           const checkInPayload = result as {
             checkInTime?: string;
@@ -492,7 +492,7 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
           editMode
             ? 'Response updated successfully!'
             : 'isCheckIn' in result && result.isCheckIn
-            ? 'Daftar masuk (Check-In) berjaya direkodkan!'
+            ? 'Check-in recorded successfully!'
             : 'Submitted successfully!'
         );
       } else {
@@ -700,7 +700,7 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
         <Card className="w-full max-w-md text-center border-t-4 border-red-500 shadow-lg bg-white">
           <CardHeader className="pt-8 pb-6">
             <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
-              <span className="text-2xl">🚫</span>
+              <ShieldAlert className="h-6 w-6 text-red-600" />
             </div>
             <CardTitle className="text-xl font-semibold text-gray-900">Access Restricted</CardTitle>
             <CardDescription className="whitespace-pre-wrap text-gray-600 mt-2 font-medium">
@@ -723,7 +723,7 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
         <Card className="w-full max-w-md text-center border-t-4 border-slate-500 shadow-lg bg-white">
           <CardHeader className="pt-8 pb-6">
             <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
-              <span className="text-2xl">🔒</span>
+              <Lock className="h-6 w-6 text-slate-600" />
             </div>
             <CardTitle className="text-xl font-semibold text-gray-900">Form Closed</CardTitle>
             <CardDescription className="whitespace-pre-wrap text-gray-600 mt-2 font-medium">
@@ -758,24 +758,24 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
                 <Award className="h-7 w-7" />
               </div>
               <CardTitle className="text-2xl font-bold text-gray-900">
-                Daftar Keluar Berjaya!
+                Check-Out Successful!
               </CardTitle>
               <CardDescription className="text-gray-600 mt-2">
-                Terima kasih{checkOutResult.participantName ? `, ${checkOutResult.participantName}` : ''} kerana menghadiri program ini!
+                Thank you{checkOutResult.participantName ? `, ${checkOutResult.participantName}` : ''} for attending this event!
               </CardDescription>
               <div className="mt-6 p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 text-left space-y-2.5">
                 <div className="flex justify-between items-center text-xs text-emerald-900">
-                  <span className="text-muted-foreground">Waktu Masuk:</span>
+                  <span className="text-muted-foreground">Check-In Time:</span>
                   <strong className="font-semibold">{checkOutResult.checkInTime}</strong>
                 </div>
                 <div className="flex justify-between items-center text-xs text-emerald-900">
-                  <span className="text-muted-foreground">Waktu Keluar:</span>
+                  <span className="text-muted-foreground">Check-Out Time:</span>
                   <strong className="font-semibold">{checkOutResult.checkOutTime}</strong>
                 </div>
                 <div className="pt-2 border-t border-emerald-200 flex justify-between items-center text-emerald-950">
-                  <span className="text-xs font-semibold">Jumlah Masa Kehadiran:</span>
+                  <span className="text-xs font-semibold">Total Attendance Duration:</span>
                   <strong className="text-base font-bold text-emerald-700">
-                    {checkOutResult.durationFormatted} ({checkOutResult.durationHours} Jam)
+                    {checkOutResult.durationFormatted} ({checkOutResult.durationHours} Hours)
                   </strong>
                 </div>
               </div>
@@ -786,15 +786,15 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
                 <Clock className="h-7 w-7" />
               </div>
               <CardTitle className="text-2xl font-bold text-gray-900">
-                Daftar Masuk Berjaya!
+                Check-In Successful!
               </CardTitle>
               <CardDescription className="text-gray-600 mt-2">
-                Selamat datang{checkInResult.participantName ? `, ${checkInResult.participantName}` : ''}! Masa masuk anda: <strong>{checkInResult.checkInTime}</strong>.
+                Welcome{checkInResult.participantName ? `, ${checkInResult.participantName}` : ''}! Your check-in time: <strong>{checkInResult.checkInTime}</strong>.
               </CardDescription>
               <div className="mt-4 p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 text-left flex items-start gap-2.5">
-                <span className="text-base leading-none">📌</span>
+                <Info className="h-4 w-4 text-amber-700 shrink-0 mt-0.5" />
                 <p className="leading-relaxed">
-                  <strong>Peringatan:</strong> Sila imbas semula kod QR yang sama semasa tamat program untuk mendaftar keluar (Check-Out) dan mengira jumlah jam kehadiran anda.
+                  <strong>Notice:</strong> Please scan the same QR code at the end of the event to check out and record your total attendance hours.
                 </p>
               </div>
             </CardHeader>
@@ -1075,10 +1075,10 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
               <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
               <div className="text-xs space-y-1">
                 <p className="font-bold text-sm text-amber-950">
-                  Perlindungan Anti-Fraud Aktif (Live Rotating QR)
+                  Active Anti-Fraud Protection (Live Rotating QR)
                 </p>
                 <p className="text-amber-800 leading-relaxed">
-                  Borang ini memerlukan imbasan Kod QR langsung daripada skrin projektor dewan. Gambar foto atau pautan langsung tanpa token langsung tidak dibenarkan.
+                  This form requires scanning the live QR code directly from the hall projector screen. Photos or direct links without a live token are not permitted.
                 </p>
               </div>
             </div>
@@ -1093,7 +1093,7 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
                   <div className="flex items-center gap-2">
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                       <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      Sedang Hadir
+                      Currently Present
                     </span>
                   </div>
                   <button
@@ -1101,24 +1101,24 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
                     onClick={handleResetForOtherParticipant}
                     className="text-xs text-muted-foreground hover:text-slate-900 underline transition-colors"
                   >
-                    Bukan anda?
+                    Not you?
                   </button>
                 </div>
 
                 <CardTitle className="text-xl font-bold text-emerald-950 mt-2">
-                  Pengesahan Daftar Keluar (Check-Out)
+                  Check-Out Confirmation
                 </CardTitle>
                 <CardDescription className="text-emerald-800/90 text-xs sm:text-sm">
-                  Selamat kembali{attendanceSummary.participantName ? `, ${attendanceSummary.participantName}` : ''}! Rekod kehadiran anda telah dikesan.
+                  Welcome back{attendanceSummary.participantName ? `, ${attendanceSummary.participantName}` : ''}! Your attendance record has been detected.
                 </CardDescription>
 
                 <div className="grid grid-cols-2 gap-3 text-xs bg-white/90 p-3.5 rounded-xl border border-emerald-200/80 shadow-xs mt-3">
                   <div>
-                    <span className="text-muted-foreground block text-[11px]">Waktu Masuk</span>
+                    <span className="text-muted-foreground block text-[11px]">Check-In Time</span>
                     <strong className="text-sm text-slate-900 font-semibold">{attendanceSummary.checkInTime}</strong>
                   </div>
                   <div>
-                    <span className="text-muted-foreground block text-[11px]">No. Pengenalan</span>
+                    <span className="text-muted-foreground block text-[11px]">ID / Identifier</span>
                     <strong className="text-sm text-slate-900 font-mono font-semibold">
                       {attendanceSummary.identifierValue || (identifierField ? formData[identifierField.id] : '')}
                     </strong>
@@ -1132,18 +1132,18 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
                   <div className="space-y-1.5 bg-amber-50/70 p-3.5 rounded-xl border border-amber-200 shadow-xs">
                     <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-950">
                       <KeyRound className="w-4 h-4 text-amber-600" />
-                      <span>Kod PIN Check-Out Diperlukan</span>
+                      <span>Check-Out PIN Code Required</span>
                     </div>
                     <Input
                       type="text"
-                      placeholder="Masukkan PIN dari pentas..."
+                      placeholder="Enter PIN from stage..."
                       value={checkOutPin}
                       onChange={(e) => setCheckOutPin(e.target.value)}
                       maxLength={10}
                       className="bg-white font-mono tracking-widest text-center text-base font-bold border-amber-300 focus-visible:ring-amber-500"
                     />
                     <p className="text-[11px] text-muted-foreground text-center">
-                      Sila masukkan kod PIN yang diumumkan di akhir majlis.
+                      Please enter the PIN code announced at the end of the event.
                     </p>
                   </div>
                 )}
@@ -1158,21 +1158,21 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
                     {checkingOut ? (
                       <>
                         <Loader2 className="h-5 w-5 animate-spin" />
-                        Merekod Daftar Keluar...
+                        Recording Check-Out...
                       </>
                     ) : (
                       <>
                         <LogOut className="h-5 w-5" />
-                        Daftar Keluar Sekarang (Check-Out)
+                        Check-Out Now
                       </>
                     )}
                   </Button>
                 ) : (
                   <div className="space-y-3">
                     <div className="text-xs text-amber-800 bg-amber-50/90 p-3.5 rounded-xl border border-amber-200 flex items-start gap-2.5">
-                      <span className="text-base">⏳</span>
+                      <Clock className="h-4 w-4 text-amber-700 shrink-0 mt-0.5" />
                       <span className="leading-relaxed">
-                        Anda baru mendaftar masuk. Sila tunggu <strong>{attendanceSummary.minDurationRemainingMinutes} minit</strong> lagi sebelum dibenarkan mendaftar keluar.
+                        You just checked in. Please wait <strong>{attendanceSummary.minDurationRemainingMinutes} more minutes</strong> before being allowed to check out.
                       </span>
                     </div>
                     <Button
@@ -1181,7 +1181,7 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
                       className="w-full bg-slate-200 text-slate-500 cursor-not-allowed font-medium py-3 h-auto rounded-xl flex items-center justify-center gap-2"
                     >
                       <Clock className="h-4 w-4" />
-                      Menunggu Masa Minimum ({attendanceSummary.minDurationRemainingMinutes} minit baki)
+                      Waiting for Minimum Duration ({attendanceSummary.minDurationRemainingMinutes} mins remaining)
                     </Button>
                   </div>
                 )}
@@ -1192,7 +1192,7 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
                     onClick={handleResetForOtherParticipant}
                     className="text-xs text-slate-500 hover:text-slate-800 underline transition-colors"
                   >
-                    Bukan anda atau ingin daftar peserta baharu? Klik di sini
+                    Not you or want to register a new participant? Click here
                   </button>
                 </div>
               </CardContent>
@@ -1205,27 +1205,27 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
                       <AlertTriangle className="w-6 h-6" />
                     </div>
                     <AlertDialogTitle className="text-base sm:text-lg font-bold text-slate-900">
-                      Amaran: Jam Kehadiran Belum Cukup!
+                      Warning: Minimum Attendance Hours Not Met!
                     </AlertDialogTitle>
                     <AlertDialogDescription asChild>
                       <div className="text-slate-600 text-xs sm:text-sm leading-relaxed space-y-2.5">
                         <p>
-                          Syarat minimum kehadiran untuk melayakkan e-Sijil adalah{' '}
-                          <strong className="text-slate-900">{attendanceSummary.minHoursForCertificate} Jam</strong>.
+                          The minimum attendance required to be eligible for an e-Certificate is{' '}
+                          <strong className="text-slate-900">{attendanceSummary.minHoursForCertificate} Hours</strong>.
                         </p>
                         <div className="p-3 rounded-xl bg-amber-50/90 border border-amber-200 text-amber-950 font-medium text-xs">
-                          Kehadiran anda setakat ini masih kurang{' '}
+                          Your attendance so far is still short by{' '}
                           <strong className="text-rose-600">{attendanceSummary.earlyCheckOutShortfallText}</strong>.
                         </div>
                         <p className="text-rose-600 font-semibold text-xs">
-                          Jika anda mendaftar keluar sekarang, anda TIDAK AKAN DAPAT menebus e-Sijil program ini.
+                          If you check out now, you will NOT BE ABLE to claim the e-Certificate for this event.
                         </p>
                       </div>
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter className="mt-4 flex flex-col-reverse sm:flex-row gap-2">
                     <AlertDialogCancel className="w-full sm:w-auto rounded-xl">
-                      Batal &amp; Terus Hadir
+                      Cancel &amp; Continue Attending
                     </AlertDialogCancel>
                     <Button
                       type="button"
@@ -1236,10 +1236,10 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
                       {checkingOut ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
-                          Merekod...
+                          Recording...
                         </>
                       ) : (
-                        'Tetap Daftar Keluar'
+                        'Check-Out Anyway'
                       )}
                     </Button>
                   </AlertDialogFooter>
@@ -1257,26 +1257,26 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
                   <CheckCircle2 className="h-6 w-6" />
                 </div>
                 <CardTitle className="text-xl font-bold text-blue-950">
-                  Kehadiran Anda Telah Lengkap Direkodkan
+                  Your Attendance Has Been Fully Recorded
                 </CardTitle>
                 <CardDescription className="text-blue-800/80 text-xs sm:text-sm">
-                  {attendanceSummary.participantName ? `Terima kasih, ${attendanceSummary.participantName}. ` : 'Terima kasih. '}
-                  Rekod daftar masuk dan daftar keluar anda telah disahkan.
+                  {attendanceSummary.participantName ? `Thank you, ${attendanceSummary.participantName}. ` : 'Thank you. '}
+                  Your check-in and check-out records have been confirmed.
                 </CardDescription>
 
                 <div className="grid grid-cols-2 gap-3 text-xs text-blue-900 bg-white/90 p-3.5 rounded-xl border border-blue-100 text-left mt-3">
                   <div>
-                    <span className="text-muted-foreground block text-[11px]">Waktu Masuk</span>
+                    <span className="text-muted-foreground block text-[11px]">Check-In Time</span>
                     <strong className="text-sm">{attendanceSummary.checkInTime}</strong>
                   </div>
                   <div>
-                    <span className="text-muted-foreground block text-[11px]">Waktu Keluar</span>
+                    <span className="text-muted-foreground block text-[11px]">Check-Out Time</span>
                     <strong className="text-sm">{attendanceSummary.checkOutTime}</strong>
                   </div>
                   <div className="col-span-2 pt-2 border-t border-blue-100 flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-700">Jumlah Masa Hadir:</span>
+                    <span className="text-xs font-medium text-slate-700">Total Time Present:</span>
                     <strong className="text-sm text-emerald-700 font-bold">
-                      {attendanceSummary.durationFormatted} ({attendanceSummary.durationHours} Jam)
+                      {attendanceSummary.durationFormatted} ({attendanceSummary.durationHours} Hours)
                     </strong>
                   </div>
                 </div>
@@ -1289,7 +1289,7 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
                   >
                     <Link href={`/check/${form.id}`}>
                       <Award className="w-4 h-4" />
-                      Semak / Tebus E-Sijil Anda
+                      Check / Claim Your E-Certificate
                     </Link>
                   </Button>
                 )}
@@ -1299,7 +1299,7 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
                   onClick={handleResetForOtherParticipant}
                   className="w-full rounded-xl text-xs text-slate-600"
                 >
-                  Daftar Peserta Lain
+                  Register Another Participant
                 </Button>
               </CardFooter>
             </Card>
@@ -1841,10 +1841,10 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
                     {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {submitting
                       ? checkInOutEnabled
-                        ? 'Mendaftar Masuk...'
+                        ? 'Checking In...'
                         : 'Submitting...'
                       : checkInOutEnabled
-                      ? 'Daftar Masuk (Check-In)'
+                      ? 'Check-In Attendance'
                       : 'Submit'}
                   </Button>
                 )}

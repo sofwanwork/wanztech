@@ -39,16 +39,16 @@ interface CertificateBuilderClientProps {
 }
 
 const PLACEHOLDER_LABELS: Record<string, string> = {
-  name: '{Nama Peserta}',
-  program: '{Nama Program}',
-  date: '{Tarikh}',
-  signature: '{Tandatangan}',
-  expiry: '{Tarikh Luput}',
-  ic: '{No. KP}',
-  serial: '{No. Siri}',
-  organization: '{Organisasi / Sekolah}',
-  role: '{Peranan / Jawatan}',
-  grade: '{Gred / Jam Latihan}',
+  name: '{Participant Name}',
+  program: '{Program Name}',
+  date: '{Date}',
+  signature: '{Signature}',
+  expiry: '{Expiry Date}',
+  ic: '{ID / IC Number}',
+  serial: '{Serial Number}',
+  organization: '{Organization / School}',
+  role: '{Role / Position}',
+  grade: '{Grade / Training Hours}',
 };
 // ... (existing code) ...
 
@@ -82,8 +82,24 @@ interface ResizeState {
 export function CertificateBuilderClient({
   template: initialTemplate,
 }: CertificateBuilderClientProps) {
-  // 1. Core State
-  const [template, setTemplate] = useState(initialTemplate);
+  // 1. Core State — sanitize initial elements to guarantee strictly unique IDs
+  const sanitizedInitialTemplate = useMemo(() => {
+    const seen = new Set<string>();
+    let hasDuplicates = false;
+    const sanitizedElements = (initialTemplate.elements || []).map((el, i) => {
+      if (!el.id || seen.has(el.id)) {
+        hasDuplicates = true;
+        const uniqueId = `el-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 7)}`;
+        seen.add(uniqueId);
+        return { ...el, id: uniqueId };
+      }
+      seen.add(el.id);
+      return el;
+    });
+    return hasDuplicates ? { ...initialTemplate, elements: sanitizedElements } : initialTemplate;
+  }, [initialTemplate]);
+
+  const [template, setTemplate] = useState(sanitizedInitialTemplate);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // 2. UI/Interaction State
@@ -174,10 +190,11 @@ export function CertificateBuilderClient({
     commitToHistory: commitToHistoryHook, // Renamed to avoid confusion if needed
     undo: undoHistory,
     redo: redoHistory,
-  } = useCertificateHistory(initialTemplate);
+  } = useCertificateHistory(sanitizedInitialTemplate);
 
   const {
     addElement,
+    addElements,
     updateElement,
     deleteElement,
     duplicateElement,
@@ -271,7 +288,7 @@ export function CertificateBuilderClient({
         commitToHistoryHook(next);
         return next;
       });
-      toast.success('Elemen dijajarkan!');
+      toast.success('Elements aligned!');
     },
     [allSelectedIds, commitToHistoryHook]
   );
@@ -279,7 +296,7 @@ export function CertificateBuilderClient({
   const handleDistributeElements = useCallback(
     (direction: 'horizontal' | 'vertical') => {
       if (allSelectedIds.length < 3) {
-        toast.info('Pilih sekurang-kurangnya 3 elemen untuk meratakan jarak.');
+        toast.info('Select at least 3 elements to distribute spacing.');
         return;
       }
       setTemplate((prev) => {
@@ -288,7 +305,7 @@ export function CertificateBuilderClient({
         commitToHistoryHook(next);
         return next;
       });
-      toast.success('Jarak elemen diratakan!');
+      toast.success('Element spacing distributed!');
     },
     [allSelectedIds, commitToHistoryHook]
   );
@@ -333,12 +350,12 @@ export function CertificateBuilderClient({
         height: template.height,
       });
       if (result.success) {
-        toast.success('Template disimpan!');
+        toast.success('Template saved!');
       } else {
-        toast.error(result.error || 'Gagal menyimpan template');
+        toast.error(result.error || 'Failed to save template');
       }
     } catch {
-      toast.error('Gagal menyimpan template');
+      toast.error('Failed to save template');
     } finally {
       setSaving(false);
     }
@@ -360,13 +377,13 @@ export function CertificateBuilderClient({
         backgroundColor: null,
       });
       const link = document.createElement('a');
-      link.download = `${template.name || 'sijil'}.png`;
+      link.download = `${template.name || 'certificate'}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
-      toast.success('Sijil berjaya dimuat turun!');
+      toast.success('Certificate downloaded successfully!');
     } catch (error) {
       console.error('Export error:', error);
-      toast.error('Gagal mengeksport sijil');
+      toast.error('Failed to export certificate');
     } finally {
       setExporting(false);
     }
@@ -401,11 +418,11 @@ export function CertificateBuilderClient({
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
       pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
-      pdf.save(`${template.name || 'sijil'}.pdf`);
-      toast.success('Sijil berjaya dimuat turun dalam format PDF (A4)!');
+      pdf.save(`${template.name || 'certificate'}.pdf`);
+      toast.success('Certificate downloaded in PDF format (A4)!');
     } catch (error) {
       console.error('PDF export error:', error);
-      toast.error('Gagal mengeksport PDF');
+      toast.error('Failed to export PDF');
     } finally {
       setSelectedId(prevSelected);
       setExportingPdf(false);
@@ -810,6 +827,7 @@ export function CertificateBuilderClient({
         {showSidebar && (
           <CertificateEditorSidebar
             addElement={addElement}
+            addElements={addElements}
             imageInputRef={imageInputRef}
             template={template}
             onUpdateTemplate={(updates) => setTemplate((prev) => ({ ...prev, ...updates }))}

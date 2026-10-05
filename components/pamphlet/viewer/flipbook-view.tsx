@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
+import { ChevronLeft, ChevronRight, BookOpen, Smartphone } from 'lucide-react';
 import { PamphletPageItem, PamphletOrientation } from '@/lib/types/pamphlets';
 import { motion } from 'framer-motion';
 import { playPageTurnSound } from '@/lib/pamphlets/utils';
@@ -23,6 +23,7 @@ export interface FlipbookViewProps {
   onNextPage: () => void;
   onPageChange?: (pageNumber: number) => void;
   onZoomChange?: (zoom: number) => void;
+  soundEnabled?: boolean;
 }
 
 interface SpreadState {
@@ -107,6 +108,7 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
       orientation,
       pageSpreadMode = 'auto',
       forceMobile = false,
+      soundEnabled = false,
       onPrevPage,
       onNextPage,
       onPageChange,
@@ -119,9 +121,10 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
       width: number;
       height: number;
     }>({
-      width: typeof window !== 'undefined' ? window.innerWidth : 1024,
-      height: typeof window !== 'undefined' ? window.innerHeight : 768,
+      width: 1024,
+      height: 768,
     });
+    const [isMounted, setIsMounted] = React.useState(false);
 
     const [isFlipping, setIsFlipping] = React.useState(false);
     const [flipDirection, setFlipDirection] = React.useState<'next' | 'prev'>('next');
@@ -138,6 +141,7 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
     // Target spread waiting to be committed after flip animation
     const targetSpreadRef = React.useRef<SpreadState | null>(null);
     const targetPageRef = React.useRef<number>(currentPage);
+    const [displayedPage, setDisplayedPage] = React.useState<number>(currentPage);
 
     // Pan & Drag state when zoomed in
     const [panOffset, setPanOffset] = React.useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -146,6 +150,23 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
     const panStartRef = React.useRef<{ x: number; y: number }>({ x: 0, y: 0 });
     const lastClickTimeRef = React.useRef<number>(0);
 
+    // Track naturally loaded image aspect ratios per page to eliminate letterboxing/pillarboxing
+    const [detectedRatios, setDetectedRatios] = React.useState<Record<number, number>>({});
+
+    const handleImageLoad = React.useCallback(
+      (pageNum: number, e: React.SyntheticEvent<HTMLImageElement>) => {
+        const img = e.currentTarget;
+        if (img.naturalWidth && img.naturalHeight && img.naturalHeight > 0) {
+          const ratio = +(img.naturalWidth / img.naturalHeight).toFixed(3);
+          setDetectedRatios((prev) => {
+            if (prev[pageNum] === ratio) return prev;
+            return { ...prev, [pageNum]: ratio };
+          });
+        }
+      },
+      []
+    );
+
     // Reset pan offset when zoom returns to 1.0
     React.useEffect(() => {
       if (zoom <= 1.0) {
@@ -153,7 +174,7 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
       }
     }, [zoom]);
 
-    // Container-aware sizing via ResizeObserver
+    // Container-aware sizing via ResizeObserver & instant cached image detection (Mount-only)
     React.useEffect(() => {
       if (!containerRef.current) return;
       const updateSize = () => {
@@ -164,6 +185,22 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
         }
       };
       updateSize();
+
+      // Check any already-cached images in DOM for instant aspect ratio detection
+      const imgs = containerRef.current.querySelectorAll('img');
+      const cachedRatios: Record<number, number> = {};
+      imgs.forEach((img) => {
+        if (img.complete && img.naturalWidth && img.naturalHeight > 0) {
+          const ratio = +(img.naturalWidth / img.naturalHeight).toFixed(3);
+          cachedRatios[1] = ratio;
+        }
+      });
+      if (Object.keys(cachedRatios).length > 0) {
+        setDetectedRatios((prev) => ({ ...cachedRatios, ...prev }));
+      }
+
+      setIsMounted(true);
+
       const ro = new ResizeObserver((entries) => {
         for (const entry of entries) {
           if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
@@ -185,9 +222,30 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
     // Sync when currentPage changes externally (e.g., from thumbnails drawer)
     React.useEffect(() => {
       if (!isFlipping) {
+        setDisplayedPage(currentPage);
         setActiveSpread(computeSpread(currentPage, pages));
       }
     }, [currentPage, pages, isFlipping]);
+
+    // Preload adjacent pages in the background cache so image decodes never delay flip animation
+    React.useEffect(() => {
+      if (!pages || pages.length === 0) return;
+      // Preload all pages for small pamphlets (<= 16 pages) or 5 pages ahead/behind for large ones
+      const pagesToPreload =
+        pages.length <= 16
+          ? pages.map((_, i) => i + 1)
+          : Array.from({ length: 11 }, (_, i) => currentPage - 5 + i).filter(
+              (p) => p >= 1 && p <= pages.length
+            );
+
+      pagesToPreload.forEach((p) => {
+        const url = pages[p - 1]?.imageUrl;
+        if (url) {
+          const img = new Image();
+          img.src = url;
+        }
+      });
+    }, [currentPage, pages]);
 
     // Automatically determine whether to use 2-page spread or single page:
     // 1. If forceMobile or explicit pageSpreadMode === 'single', use 1 page.
@@ -218,14 +276,15 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
 
       if (!isTwoPageSpread) {
         if (currentPage >= pages.length) return;
-        playPageTurnSound();
+        if (soundEnabled) playPageTurnSound();
         const nextPage = Math.min(pages.length, currentPage + 1);
         targetPageRef.current = nextPage;
         targetSpreadRef.current = computeSpread(nextPage, pages);
         setTurningLeaf({
           frontPage: pages[currentPage - 1] || null,
-          backPage: pages[nextPage - 1] || null,
+          backPage: null,
         });
+        setDisplayedPage(nextPage);
         setFlipDirection('next');
         setIsFlipping(true);
         return;
@@ -238,7 +297,7 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
         return;
       }
 
-      playPageTurnSound();
+      if (soundEnabled) playPageTurnSound();
 
       let nextPage: number;
       if (activeSpread.isCover) {
@@ -263,21 +322,22 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
 
       setFlipDirection('next');
       setIsFlipping(true);
-    }, [isFlipping, isTwoPageSpread, currentPage, pages, activeSpread]);
+    }, [isFlipping, isTwoPageSpread, currentPage, pages, activeSpread, soundEnabled]);
 
     const handleFlipPrev = React.useCallback(() => {
       if (isFlipping) return;
 
       if (!isTwoPageSpread) {
         if (currentPage <= 1) return;
-        playPageTurnSound();
+        if (soundEnabled) playPageTurnSound();
         const prevPage = Math.max(1, currentPage - 1);
         targetPageRef.current = prevPage;
         targetSpreadRef.current = computeSpread(prevPage, pages);
         setTurningLeaf({
           frontPage: pages[currentPage - 1] || null,
-          backPage: pages[prevPage - 1] || null,
+          backPage: null,
         });
+        setDisplayedPage(prevPage);
         setFlipDirection('prev');
         setIsFlipping(true);
         return;
@@ -285,7 +345,7 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
 
       if (activeSpread.isCover) return;
 
-      playPageTurnSound();
+      if (soundEnabled) playPageTurnSound();
 
       let prevPage: number;
       if (activeSpread.isBackCover) {
@@ -309,7 +369,7 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
 
       setFlipDirection('prev');
       setIsFlipping(true);
-    }, [isFlipping, isTwoPageSpread, currentPage, pages, activeSpread]);
+    }, [isFlipping, isTwoPageSpread, currentPage, pages, activeSpread, soundEnabled]);
 
     // Double tap/click detection for quick zoom toggling
     const handleDoubleTapOrClick = React.useCallback(() => {
@@ -394,11 +454,10 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
 
     const onFlipAnimationComplete = () => {
       if (targetSpreadRef.current) {
-        setActiveSpread(targetSpreadRef.current);
+        const nextSpread = targetSpreadRef.current;
         const newPage = targetPageRef.current;
-        targetSpreadRef.current = null;
-        setIsFlipping(false);
-        setTurningLeaf(null);
+        setActiveSpread(nextSpread);
+        setDisplayedPage(newPage);
 
         if (onPageChange) {
           onPageChange(newPage);
@@ -407,6 +466,14 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
         } else {
           onPrevPage();
         }
+
+        // Seamless handoff: delay unmounting the turning leaf by one frame so the
+        // underlying base image has fully committed and painted without any 1-frame blink/flash
+        requestAnimationFrame(() => {
+          setIsFlipping(false);
+          setTurningLeaf(null);
+          targetSpreadRef.current = null;
+        });
       } else {
         setIsFlipping(false);
         setTurningLeaf(null);
@@ -417,40 +484,63 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
       orientation === 'landscape' ||
       (pages && pages[0]?.orientation === 'landscape');
 
-    // Container-aware responsive calculations
-    // Available width and height inside the stage container (subtract padding and header/footer)
-    const availW = Math.max(260, containerDimensions.width - 24);
-    const availH = Math.max(260, containerDimensions.height - 110);
+    // Primary document aspect ratio locked across all pages to eliminate container twitch/pulse during page flips
+    const documentRatio =
+      detectedRatios[1] ||
+      pages[0]?.aspectRatio ||
+      detectedRatios[currentPage] ||
+      pages[currentPage - 1]?.aspectRatio ||
+      (isLandscape ? 1.414 : 0.707);
 
+    // Single page aspect ratio (width / height)
+    // Uses real document ratio if available, otherwise falls back to standard A4 (1.414 for landscape, 0.707 for portrait)
+    const singlePageRatio =
+      documentRatio && documentRatio > 0
+        ? documentRatio
+        : isLandscape
+        ? 1.414
+        : 0.707;
+
+    const isMobile = forceMobile || containerDimensions.width < 640;
     let bookWidth: number;
     let bookHeight: number;
 
     if (isTwoPageSpread) {
       // 2-page spread:
-      // Portrait spread ratio: (2 / 1.414) ≈ 1.414 : 1
-      // Landscape spread ratio: (2 * 1.414) ≈ 2.828 : 1
-      const spreadRatio = isLandscape ? 2.828 : 1.414;
+      // Spread ratio is double a single page's aspect ratio
+      const availW = Math.max(260, containerDimensions.width - 24);
+      const availH = Math.max(260, containerDimensions.height - 110);
+      const spreadRatio = isLandscape ? singlePageRatio * 2 : (singlePageRatio || 0.707) * 2;
       let targetH = Math.min(availH, isLandscape ? 580 : 680);
       let targetW = targetH * spreadRatio;
 
-      if (targetW > availW * 0.94) {
-        targetW = availW * 0.94;
+      if (targetW > availW * 0.98) {
+        targetW = availW * 0.98;
         targetH = targetW / spreadRatio;
       }
       bookWidth = Math.round(targetW);
       bookHeight = Math.round(targetH);
     } else {
-      // Single page mode (makes text huge on small screens/laptops/mobile!):
-      // Portrait single page ratio: (1 / 1.414) ≈ 0.707 : 1
-      // Landscape single page ratio: (1.414 / 1) ≈ 1.414 : 1
-      const pageRatio = isLandscape ? 1.414 : 0.707;
-      let targetH = availH;
+      // Single page mode (Comfortable Gallery & Studio Sizing):
+      // Balanced sizing with safe clearance from bottom navigation toolbar (no text overlap!)
+      const pageRatio = singlePageRatio;
+
+      // Generous side margins on desktop/laptop, comfortable safe margins on mobile
+      const availW = isMobile
+        ? Math.max(260, isLandscape ? containerDimensions.width - 8 : containerDimensions.width - 20)
+        : Math.max(260, Math.min(containerDimensions.width * 0.90, containerDimensions.width - 64));
+
+      // Bottom clearance: 108px on desktop, 76px on mobile ensures toolbar NEVER overlaps bottom content
+      const availH = Math.max(200, containerDimensions.height - (isMobile ? 76 : 108));
+
+      let targetH = Math.min(availH, isLandscape ? 560 : 700);
       let targetW = targetH * pageRatio;
 
-      if (targetW > availW * 0.94) {
-        targetW = availW * 0.94;
+      if (targetW > availW) {
+        targetW = availW;
         targetH = targetW / pageRatio;
       }
+
       bookWidth = Math.round(targetW);
       bookHeight = Math.round(targetH);
     }
@@ -461,14 +551,22 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
 
     // Pages currently displayed on the static base layer
     const displayBaseLeftPage =
-      isFlipping && flipDirection === 'prev'
-        ? targetSpreadRef.current?.leftPage
+      isFlipping && flipDirection === 'prev' && targetSpreadRef.current
+        ? targetSpreadRef.current.leftPage
         : activeSpread.leftPage;
 
     const displayBaseRightPage =
-      isFlipping && flipDirection === 'next'
-        ? targetSpreadRef.current?.rightPage
+      isFlipping && flipDirection === 'next' && targetSpreadRef.current
+        ? targetSpreadRef.current.rightPage
         : activeSpread.rightPage;
+
+    const isLeftBaseHidden =
+      activeSpread.isCover ||
+      (isFlipping && flipDirection === 'prev' && targetSpreadRef.current?.isCover);
+
+    const isRightBaseHidden =
+      activeSpread.isBackCover ||
+      (isFlipping && flipDirection === 'next' && targetSpreadRef.current?.isBackCover);
 
     // Calculate stageShiftX to center closed book covers in 2-page spread:
     // - On Front Cover (Page 1 solo on right): shift left by 25% of bookWidth so right page is centered in viewport.
@@ -508,9 +606,9 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
         {/* Subtle Zoom Indicator & Reset Pill when zoomed in */}
         {zoom > 1.0 && (
           <div className="absolute top-3 left-1/2 -translate-x-1/2 z-50 bg-black/85 backdrop-blur-md text-white px-3.5 py-1.5 rounded-full text-xs font-medium flex items-center gap-2 shadow-2xl border border-white/20 select-none pointer-events-auto">
-            <span>Zum {Math.round(zoom * 100)}%</span>
+            <span>Zoom {Math.round(zoom * 100)}%</span>
             <span className="opacity-40">•</span>
-            <span className="opacity-80">Seret untuk tatal</span>
+            <span className="opacity-80">Drag to pan</span>
             <span className="opacity-40">•</span>
             <button
               type="button"
@@ -531,7 +629,7 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
             onClick={handleFlipPrev}
             disabled={isFlipping}
             className="flex absolute left-3 sm:left-5 md:left-7 z-40 h-11 w-11 md:h-13 md:w-13 rounded-full bg-black/60 hover:bg-black/90 text-white items-center justify-center backdrop-blur-md shadow-2xl transition-transform active:scale-95 border border-white/20 disabled:opacity-40 cursor-pointer"
-            title="Selak ke Halaman Sebelumnya"
+            title="Turn to Previous Page"
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
@@ -543,7 +641,7 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
             onClick={handleFlipNext}
             disabled={isFlipping}
             className="flex absolute right-3 sm:right-5 md:right-7 z-40 h-11 w-11 md:h-13 md:w-13 rounded-full bg-black/60 hover:bg-black/90 text-white items-center justify-center backdrop-blur-md shadow-2xl transition-transform active:scale-95 border border-white/20 disabled:opacity-40 cursor-pointer"
-            title="Selak ke Halaman Seterusnya"
+            title="Turn to Next Page"
           >
             <ChevronRight className="h-6 w-6" />
           </button>
@@ -551,11 +649,17 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
 
         {/* 3D Book Stage Container — Fixed Zoom, Pan, Centered Covers & Perspective */}
         <div
-          className="relative flex items-center justify-center select-none"
+          suppressHydrationWarning
+          className={cn(
+            'relative flex flex-col items-center justify-center select-none transition-opacity duration-200',
+            isMounted ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          )}
           style={{
             transform: `translate(${panOffset.x + targetShiftX}px, ${panOffset.y}px) scale(${zoom})`,
             transformOrigin: 'center center',
-            transition: isDraggingRef.current ? 'none' : 'transform 520ms cubic-bezier(0.25, 1, 0.5, 1)',
+            transition: isDraggingRef.current
+              ? 'opacity 200ms ease-out'
+              : 'transform 540ms cubic-bezier(0.42, 0, 0.58, 1), opacity 200ms ease-out',
             cursor: zoom > 1 ? (isDraggingRef.current ? 'grabbing' : 'grab') : undefined,
           }}
         >
@@ -565,12 +669,13 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                Spine is locked permanently in the dead-center at 50%.
                ======================================================== */
             <div
+              suppressHydrationWarning
               className="relative rounded-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.6)] select-none"
               style={{
                 height: `${bookHeight}px`,
                 width: `${bookWidth}px`,
                 maxWidth: '96vw',
-                perspective: '2500px',
+                perspective: '5000px',
                 transformStyle: 'preserve-3d',
               }}
             >
@@ -581,120 +686,102 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                   if (canGoPrev) handleFlipPrev();
                 }}
                 className={cn(
-                  'absolute left-0 top-0 bottom-0 w-1/2 rounded-l-2xl overflow-hidden bg-white border border-black/15 shadow-inner transition-opacity duration-300',
-                  activeSpread.isCover && !isFlipping ? 'opacity-0 pointer-events-none' : 'opacity-100',
+                  'absolute left-0 top-0 bottom-0 w-1/2 rounded-l-2xl overflow-hidden bg-white border-y border-l border-r-0 border-black/15',
+                  isLeftBaseHidden ? 'opacity-0 pointer-events-none' : 'opacity-100',
                   canGoPrev ? 'cursor-pointer' : 'cursor-default'
                 )}
-                title={canGoPrev ? 'Klik untuk selak (Dwi-klik untuk zum)' : 'Dwi-klik untuk zum'}
+                title={canGoPrev ? 'Click to turn (Double-click to zoom)' : 'Double-click to zoom'}
               >
                 {displayBaseLeftPage ? (
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={displayBaseLeftPage.imageUrl}
-                      alt={displayBaseLeftPage.title || `Halaman ${displayBaseLeftPage.pageNumber}`}
+                      alt={displayBaseLeftPage.title || `Page ${displayBaseLeftPage.pageNumber}`}
+                      onLoad={(e) => handleImageLoad(displayBaseLeftPage.pageNumber, e)}
                       className="w-full h-full object-contain pointer-events-none"
                       draggable={false}
                     />
-                    {/* Permanent Spine Crease Shadow (Darkens towards spine on right edge) */}
-                    <div className="absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-black/40 via-black/15 to-transparent pointer-events-none z-10" />
-
-                    {/* Ambient cast shadow reacting during flip */}
-                    {isFlipping && flipDirection === 'next' && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: [0, 0, 0.25, 0] }}
-                        transition={{ duration: 0.52, times: [0, 0.4, 0.85, 1], ease: 'easeInOut' }}
-                        className="absolute inset-0 bg-gradient-to-l from-black/20 via-black/5 to-transparent pointer-events-none z-15"
-                      />
+                    {/* Subtle Spine Crease Shadow (Portrait only; disabled on landscape spreads) */}
+                    {!isLandscape && (
+                      <div className="absolute inset-y-0 right-0 w-4 bg-gradient-to-l from-black/10 to-transparent pointer-events-none z-10" />
                     )}
+
+                    {/* Soft ambient reveal shadow when revealing left page on prev flip */}
                     {isFlipping && flipDirection === 'prev' && (
                       <motion.div
-                        initial={{ opacity: 0.3 }}
+                        initial={{ opacity: 0.25 }}
                         animate={{ opacity: 0 }}
-                        transition={{ duration: 0.35, ease: 'easeOut' }}
-                        className="absolute inset-0 bg-gradient-to-l from-black/20 via-black/5 to-transparent pointer-events-none z-15"
+                        transition={{ duration: 0.38, ease: 'easeOut' }}
+                        className="absolute inset-0 bg-black/20 pointer-events-none z-10"
                       />
                     )}
                   </>
                 ) : (
                   /* Closed Book Left Inside Binder / Desk Silhouette */
-                  <div className="w-full h-full bg-slate-950/20 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center border-r border-black/10">
+                  <div className="w-full h-full bg-slate-950/20 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center">
                     <div className="h-12 w-12 rounded-xl bg-white/10 flex items-center justify-center text-white/70 mb-3 border border-white/15">
                       <BookOpen className="h-6 w-6" />
                     </div>
-                    <p className="text-xs font-semibold text-white/80">Buku Program Digital</p>
-                    <p className="text-[11px] text-white/50 mt-1">Klik helaian kanan untuk mula membaca</p>
+                    <p className="text-xs font-semibold text-white/80">Digital Program Book</p>
+                    <p className="text-[11px] text-white/50 mt-1">Click right page to start reading</p>
                   </div>
                 )}
               </div>
 
-              {/* 2. CENTER BOOK SPINE (Permanently anchored at 50% center line, elevated z-40) */}
-              <div
-                className={cn(
-                  'absolute left-1/2 top-0 bottom-0 w-2 -translate-x-1/2 z-40 bg-gradient-to-r from-black/50 via-black/25 to-black/50 shadow-inner pointer-events-none transition-opacity duration-300',
-                  (activeSpread.isCover || activeSpread.isBackCover) && !isFlipping ? 'opacity-0' : 'opacity-100'
-                )}
-              />
-
-              {/* 3. RIGHT PAGE BASE (Strictly left: 50%, width: 50%) */}
+              {/* 2. RIGHT PAGE BASE (Strictly left: 50%, width: 50%) */}
               <div
                 onClick={() => {
                   if (handleDoubleTapOrClick()) return;
                   if (canGoNext) handleFlipNext();
                 }}
                 className={cn(
-                  'absolute right-0 top-0 bottom-0 w-1/2 rounded-r-2xl overflow-hidden bg-white border border-black/15 shadow-inner transition-opacity duration-300',
-                  activeSpread.isBackCover && !isFlipping ? 'opacity-0 pointer-events-none' : 'opacity-100',
+                  'absolute right-0 top-0 bottom-0 w-1/2 rounded-r-2xl overflow-hidden bg-white border-y border-r border-l-0 border-black/15',
+                  isRightBaseHidden ? 'opacity-0 pointer-events-none' : 'opacity-100',
                   canGoNext ? 'cursor-pointer' : 'cursor-default'
                 )}
-                title={canGoNext ? 'Klik untuk selak (Dwi-klik untuk zum)' : 'Dwi-klik untuk zum'}
+                title={canGoNext ? 'Click to turn (Double-click to zoom)' : 'Double-click to zoom'}
               >
                 {displayBaseRightPage ? (
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={displayBaseRightPage.imageUrl}
-                      alt={displayBaseRightPage.title || `Halaman ${displayBaseRightPage.pageNumber}`}
+                      alt={displayBaseRightPage.title || `Page ${displayBaseRightPage.pageNumber}`}
+                      onLoad={(e) => handleImageLoad(displayBaseRightPage.pageNumber, e)}
                       className="w-full h-full object-contain pointer-events-none"
                       draggable={false}
                     />
-                    {/* Permanent Spine Crease Shadow (Darkens towards spine on left edge) */}
-                    <div className="absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-black/40 via-black/15 to-transparent pointer-events-none z-10" />
+                    {/* Subtle Spine Crease Shadow (Portrait only; disabled on landscape spreads) */}
+                    {!isLandscape && (
+                      <div className="absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-black/10 to-transparent pointer-events-none z-10" />
+                    )}
 
-                    {/* Ambient cast shadow reacting during flip */}
+                    {/* Soft ambient reveal shadow when revealing right page on next flip */}
                     {isFlipping && flipDirection === 'next' && (
                       <motion.div
-                        initial={{ opacity: 0.3 }}
+                        initial={{ opacity: 0.25 }}
                         animate={{ opacity: 0 }}
                         transition={{ duration: 0.35, ease: 'easeOut' }}
-                        className="absolute inset-0 bg-gradient-to-r from-black/20 via-black/5 to-transparent pointer-events-none z-15"
-                      />
-                    )}
-                    {isFlipping && flipDirection === 'prev' && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: [0, 0, 0.25, 0] }}
-                        transition={{ duration: 0.52, times: [0, 0.4, 0.85, 1], ease: 'easeInOut' }}
-                        className="absolute inset-0 bg-gradient-to-r from-black/20 via-black/5 to-transparent pointer-events-none z-15"
+                        className="absolute inset-0 bg-black/20 pointer-events-none z-10"
                       />
                     )}
                   </>
                 ) : (
                   /* End of Book Right Inside Binder / Desk Silhouette */
-                  <div className="w-full h-full bg-slate-950/20 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center border-l border-black/10">
+                  <div className="w-full h-full bg-slate-950/20 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center">
                     <div className="h-12 w-12 rounded-xl bg-white/10 flex items-center justify-center text-white/70 mb-3 border border-white/15">
                       <BookOpen className="h-6 w-6" />
                     </div>
-                    <p className="text-xs font-semibold text-white/80">Tamat Buku Program</p>
-                    <p className="text-[11px] text-white/50 mt-1">Klik helaian kiri untuk kembali</p>
+                    <p className="text-xs font-semibold text-white/80">End of Program Book</p>
+                    <p className="text-[11px] text-white/50 mt-1">Click left page to go back</p>
                   </div>
                 )}
               </div>
 
               {/* ========================================================
-                  4. OVERLAY 3D TURNING LEAF (Active only during the 520ms flip)
-                  Anchored strictly on the center spine. Zero layout shift.
+                  3. OVERLAY 3D TURNING LEAF (Active only during the 520ms flip)
+                  Zero center seam line, seamless joining.
                  ======================================================== */}
               {isFlipping && turningLeaf && (
                 <>
@@ -702,14 +789,18 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                     /* NEXT FLIP: Leaf starts on right side (left: 50%), rotates around spine (0 -> -180deg) */
                     <motion.div
                       key="desktop-turning-leaf-next"
-                      initial={{ rotateY: 0 }}
-                      animate={{ rotateY: -180 }}
+                      initial={{
+                        rotateY: 0,
+                      }}
+                      animate={{
+                        rotateY: -180,
+                      }}
                       transition={{
-                        duration: 0.52,
-                        ease: [0.25, 1, 0.5, 1],
+                        duration: 0.54,
+                        ease: [0.42, 0, 0.58, 1],
                       }}
                       onAnimationComplete={onFlipAnimationComplete}
-                      className="absolute top-0 bottom-0 z-30"
+                      className="absolute top-0 bottom-0 z-30 pointer-events-none"
                       style={{
                         left: '50%',
                         width: '50%',
@@ -718,12 +809,30 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                       }}
                     >
                       {/* Front Face of Turning Leaf (Current Right Page before flip) */}
-                      <div
-                        className="absolute inset-0 bg-white overflow-hidden shadow-2xl rounded-r-2xl border border-black/10"
+                      <motion.div
+                        initial={{
+                          opacity: 1,
+                          boxShadow: '0px 0px 0px rgba(0,0,0,0)',
+                        }}
+                        animate={{
+                          opacity: [1, 1, 0, 0],
+                          boxShadow: [
+                            '0px 0px 0px rgba(0,0,0,0)',
+                            '-14px 10px 28px rgba(0,0,0,0.22)',
+                            '0px 0px 0px rgba(0,0,0,0)',
+                            '0px 0px 0px rgba(0,0,0,0)',
+                          ],
+                        }}
+                        transition={{
+                          duration: 0.54,
+                          times: [0, 0.495, 0.505, 1],
+                          ease: 'linear',
+                        }}
+                        className="absolute inset-0 bg-white overflow-hidden rounded-r-2xl border-y border-r border-l-0 border-black/15"
                         style={{
                           backfaceVisibility: 'hidden',
                           WebkitBackfaceVisibility: 'hidden',
-                          transform: 'rotateY(0deg)',
+                          transform: 'rotateY(0deg) translateZ(1px)',
                         }}
                       >
                         {turningLeaf.frontPage ? (
@@ -737,25 +846,36 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                           <div className="w-full h-full bg-slate-100" />
                         )}
 
-                        {/* Permanent Spine Crease Shadow (matching right base page at t=0) */}
-                        <div className="absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-black/40 via-black/15 to-transparent pointer-events-none z-10" />
-
-                        {/* Dynamic Paper Lighting during rotation */}
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 0.35 }}
-                          transition={{ duration: 0.26, ease: 'easeIn' }}
-                          className="absolute inset-0 bg-gradient-to-r from-transparent via-black/10 to-black/30 pointer-events-none z-20"
-                        />
-                      </div>
+                        {!isLandscape && (
+                          <div className="absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-black/10 to-transparent pointer-events-none z-10" />
+                        )}
+                      </motion.div>
 
                       {/* Back Face of Turning Leaf (Destination Left Page after flip) */}
-                      <div
-                        className="absolute inset-0 bg-white overflow-hidden shadow-2xl rounded-l-2xl border border-black/10"
+                      <motion.div
+                        initial={{
+                          opacity: 0,
+                          boxShadow: '0px 0px 0px rgba(0,0,0,0)',
+                        }}
+                        animate={{
+                          opacity: [0, 0, 1, 1],
+                          boxShadow: [
+                            '0px 0px 0px rgba(0,0,0,0)',
+                            '0px 0px 0px rgba(0,0,0,0)',
+                            '14px 10px 28px rgba(0,0,0,0.22)',
+                            '0px 0px 0px rgba(0,0,0,0)',
+                          ],
+                        }}
+                        transition={{
+                          duration: 0.54,
+                          times: [0, 0.495, 0.505, 1],
+                          ease: 'linear',
+                        }}
+                        className="absolute inset-0 bg-white overflow-hidden rounded-l-2xl border-y border-l border-r-0 border-black/15"
                         style={{
                           backfaceVisibility: 'hidden',
                           WebkitBackfaceVisibility: 'hidden',
-                          transform: 'rotateY(180deg)',
+                          transform: 'rotateY(180deg) translateZ(1px)',
                         }}
                       >
                         {turningLeaf.backPage ? (
@@ -769,30 +889,27 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                           <div className="w-full h-full bg-slate-100" />
                         )}
 
-                        {/* Permanent Spine Crease Shadow (matching left base page at t=520ms) */}
-                        <div className="absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-black/40 via-black/15 to-transparent pointer-events-none z-10" />
-
-                        {/* Dynamic Paper Landing Lighting: Starts shaded and brightens as it lands flat */}
-                        <motion.div
-                          initial={{ opacity: 0.35 }}
-                          animate={{ opacity: 0 }}
-                          transition={{ duration: 0.26, delay: 0.26, ease: 'easeOut' }}
-                          className="absolute inset-0 bg-gradient-to-l from-transparent via-black/10 to-black/30 pointer-events-none z-20"
-                        />
-                      </div>
+                        {!isLandscape && (
+                          <div className="absolute inset-y-0 right-0 w-4 bg-gradient-to-l from-black/10 to-transparent pointer-events-none z-10" />
+                        )}
+                      </motion.div>
                     </motion.div>
                   ) : (
                     /* PREV FLIP: Leaf starts on left side (left: 0), rotates around spine (0 -> 180deg) */
                     <motion.div
                       key="desktop-turning-leaf-prev"
-                      initial={{ rotateY: 0 }}
-                      animate={{ rotateY: 180 }}
+                      initial={{
+                        rotateY: 0,
+                      }}
+                      animate={{
+                        rotateY: 180,
+                      }}
                       transition={{
-                        duration: 0.52,
-                        ease: [0.25, 1, 0.5, 1],
+                        duration: 0.54,
+                        ease: [0.42, 0, 0.58, 1],
                       }}
                       onAnimationComplete={onFlipAnimationComplete}
-                      className="absolute top-0 bottom-0 z-30"
+                      className="absolute top-0 bottom-0 z-30 pointer-events-none"
                       style={{
                         left: '0%',
                         width: '50%',
@@ -801,12 +918,30 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                       }}
                     >
                       {/* Front Face (Current Left Page before flip) */}
-                      <div
-                        className="absolute inset-0 bg-white overflow-hidden shadow-2xl rounded-l-2xl border border-black/10"
+                      <motion.div
+                        initial={{
+                          opacity: 1,
+                          boxShadow: '0px 0px 0px rgba(0,0,0,0)',
+                        }}
+                        animate={{
+                          opacity: [1, 1, 0, 0],
+                          boxShadow: [
+                            '0px 0px 0px rgba(0,0,0,0)',
+                            '14px 10px 28px rgba(0,0,0,0.22)',
+                            '0px 0px 0px rgba(0,0,0,0)',
+                            '0px 0px 0px rgba(0,0,0,0)',
+                          ],
+                        }}
+                        transition={{
+                          duration: 0.54,
+                          times: [0, 0.495, 0.505, 1],
+                          ease: 'linear',
+                        }}
+                        className="absolute inset-0 bg-white overflow-hidden rounded-l-2xl border-y border-l border-r-0 border-black/15"
                         style={{
                           backfaceVisibility: 'hidden',
                           WebkitBackfaceVisibility: 'hidden',
-                          transform: 'rotateY(0deg)',
+                          transform: 'rotateY(0deg) translateZ(1px)',
                         }}
                       >
                         {turningLeaf.frontPage ? (
@@ -820,25 +955,36 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                           <div className="w-full h-full bg-slate-100" />
                         )}
 
-                        {/* Permanent Spine Crease Shadow (matching left base page at t=0) */}
-                        <div className="absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-black/40 via-black/15 to-transparent pointer-events-none z-10" />
-
-                        {/* Dynamic Paper Lighting during rotation */}
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 0.35 }}
-                          transition={{ duration: 0.26, ease: 'easeIn' }}
-                          className="absolute inset-0 bg-gradient-to-l from-transparent via-black/10 to-black/30 pointer-events-none z-20"
-                        />
-                      </div>
+                        {!isLandscape && (
+                          <div className="absolute inset-y-0 right-0 w-4 bg-gradient-to-l from-black/10 to-transparent pointer-events-none z-10" />
+                        )}
+                      </motion.div>
 
                       {/* Back Face (Destination Right Page after flip) */}
-                      <div
-                        className="absolute inset-0 bg-white overflow-hidden shadow-2xl rounded-r-2xl border border-black/10"
+                      <motion.div
+                        initial={{
+                          opacity: 0,
+                          boxShadow: '0px 0px 0px rgba(0,0,0,0)',
+                        }}
+                        animate={{
+                          opacity: [0, 0, 1, 1],
+                          boxShadow: [
+                            '0px 0px 0px rgba(0,0,0,0)',
+                            '0px 0px 0px rgba(0,0,0,0)',
+                            '-14px 10px 28px rgba(0,0,0,0.22)',
+                            '0px 0px 0px rgba(0,0,0,0)',
+                          ],
+                        }}
+                        transition={{
+                          duration: 0.54,
+                          times: [0, 0.495, 0.505, 1],
+                          ease: 'linear',
+                        }}
+                        className="absolute inset-0 bg-white overflow-hidden rounded-r-2xl border-y border-r border-l-0 border-black/15"
                         style={{
                           backfaceVisibility: 'hidden',
                           WebkitBackfaceVisibility: 'hidden',
-                          transform: 'rotateY(-180deg)',
+                          transform: 'rotateY(-180deg) translateZ(1px)',
                         }}
                       >
                         {turningLeaf.backPage ? (
@@ -852,17 +998,10 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                           <div className="w-full h-full bg-slate-100" />
                         )}
 
-                        {/* Permanent Spine Crease Shadow (matching right base page at t=520ms) */}
-                        <div className="absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-black/40 via-black/15 to-transparent pointer-events-none z-10" />
-
-                        {/* Dynamic Paper Landing Lighting: Starts shaded and brightens as it lands flat */}
-                        <motion.div
-                          initial={{ opacity: 0.35 }}
-                          animate={{ opacity: 0 }}
-                          transition={{ duration: 0.26, delay: 0.26, ease: 'easeOut' }}
-                          className="absolute inset-0 bg-gradient-to-r from-transparent via-black/10 to-black/30 pointer-events-none z-20"
-                        />
-                      </div>
+                        {!isLandscape && (
+                          <div className="absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-black/10 to-transparent pointer-events-none z-10" />
+                        )}
+                      </motion.div>
                     </motion.div>
                   )}
                 </>
@@ -874,20 +1013,32 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                Locked to exact aspect ratio, no container remounting.
                ======================================================== */
             <div
+              suppressHydrationWarning
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
-              className="relative select-none shadow-2xl rounded-2xl"
+              className={cn(
+                'relative select-none shadow-2xl overflow-hidden',
+                isLandscape && bookWidth >= containerDimensions.width - 4
+                  ? 'rounded-none'
+                  : 'rounded-xl sm:rounded-2xl'
+              )}
               style={{
                 height: `${bookHeight}px`,
                 width: `${bookWidth}px`,
-                maxWidth: '96vw',
-                perspective: '2000px',
+                maxWidth: '100%',
+                perspective: '2500px',
                 transformStyle: 'preserve-3d',
+                willChange: 'transform',
               }}
             >
-              {/* Base Page (reveals destination page underneath during turn) */}
+              {/* Base Page (Stably shows destination page without flicker) */}
               <div
-                className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl border border-black/15 bg-white cursor-pointer"
+                className={cn(
+                  'absolute inset-0 overflow-hidden bg-white cursor-pointer shadow-xl',
+                  isLandscape && bookWidth >= containerDimensions.width - 4
+                    ? 'rounded-none border-0'
+                    : 'rounded-xl sm:rounded-2xl border border-black/15'
+                )}
                 onClick={(e) => {
                   if (handleDoubleTapOrClick()) return;
                   const rect = e.currentTarget.getBoundingClientRect();
@@ -898,84 +1049,123 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                     handleFlipPrev();
                   }
                 }}
-                title="Klik sisi untuk selak (Dwi-klik untuk zum)"
+                title="Click side to turn (Double-click to zoom)"
               >
-                {/* Subtle Spine Crease on left edge */}
-                <div className="absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-black/15 to-transparent pointer-events-none z-10" />
+                {/* Subtle Spine Crease on left edge (portrait documents only) */}
+                {!isLandscape && (
+                  <div className="absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-black/15 to-transparent pointer-events-none z-10" />
+                )}
 
                 {/* Base Image */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={
-                    isFlipping
-                      ? pages[targetPageRef.current - 1]?.imageUrl
-                      : pages[currentPage - 1]?.imageUrl
-                  }
-                  alt="Halaman"
+                  src={pages[displayedPage - 1]?.imageUrl || pages[currentPage - 1]?.imageUrl}
+                  alt="Page"
+                  onLoad={(e) => handleImageLoad(displayedPage, e)}
                   className="w-full h-full object-contain pointer-events-none"
                   draggable={false}
                 />
 
-                {/* Reveal shadow on base page */}
+                {/* Soft ambient reveal shadow on base page under the peel */}
                 {isFlipping && (
                   <motion.div
-                    initial={{ opacity: 0.35 }}
+                    initial={{ opacity: 0.2 }}
                     animate={{ opacity: 0 }}
-                    transition={{ duration: 0.38, ease: 'easeOut' }}
-                    className="absolute inset-0 bg-black/30 pointer-events-none z-10"
+                    transition={{ duration: 0.48, ease: 'easeOut' }}
+                    className="absolute inset-0 bg-black/20 pointer-events-none z-10"
                   />
                 )}
               </div>
 
-              {/* Mobile Turning Leaf — Smooth, natural 3D curl and glide without detachment */}
+              {/* Single Page 3D Paper Peel & Curl — Stays strictly inside container, zero bulge, zero flying out */}
               {isFlipping && turningLeaf && (
                 <motion.div
-                  key={`mobile-turning-${currentPage}`}
+                  key={`single-leaf-flip-${displayedPage}-${flipDirection}`}
                   initial={{
-                    rotateY: 0,
                     x: '0%',
+                    rotateY: 0,
+                    rotateZ: 0,
                     opacity: 1,
                   }}
                   animate={{
-                    rotateY: flipDirection === 'next' ? -20 : 20,
                     x: flipDirection === 'next' ? '-105%' : '105%',
-                    opacity: 0,
+                    rotateY: flipDirection === 'next' ? -25 : 25,
+                    rotateZ: flipDirection === 'next' ? -3 : 3,
+                    opacity: [1, 1, 0],
                   }}
                   transition={{
-                    duration: 0.38,
-                    ease: [0.25, 1, 0.5, 1],
+                    duration: 0.48,
+                    ease: [0.45, 0.05, 0.55, 0.95],
+                    opacity: {
+                      duration: 0.48,
+                      times: [0, 0.88, 1],
+                    },
                   }}
                   onAnimationComplete={onFlipAnimationComplete}
-                  className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl border border-black/15 bg-white z-30"
+                  className={cn(
+                    'absolute inset-0 z-30 select-none pointer-events-none',
+                    isLandscape && bookWidth >= containerDimensions.width - 4
+                      ? 'rounded-none'
+                      : 'rounded-xl sm:rounded-2xl'
+                  )}
                   style={{
-                    transformOrigin: flipDirection === 'next' ? 'left center' : 'right center',
+                    transformOrigin: flipDirection === 'next' ? 'right center' : 'left center',
                     transformStyle: 'preserve-3d',
                   }}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={turningLeaf.frontPage?.imageUrl || pages[currentPage - 1]?.imageUrl}
-                    alt="Turning Page"
-                    className="w-full h-full object-contain pointer-events-none"
-                  />
-
-                  {/* Subtle Spine Crease on left edge (Persistent across flip) */}
-                  <div className="absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-black/15 to-transparent pointer-events-none z-10" />
-
-                  {/* Dynamic paper lighting/shadow as the page curls away */}
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 0.4 }}
-                    transition={{ duration: 0.38, ease: 'easeIn' }}
+                  {/* Front Face of Turning Leaf with 3D Paper Curl Shadow and Sheen */}
+                  <div
                     className={cn(
-                      'absolute inset-0 pointer-events-none',
+                      'absolute inset-0 overflow-hidden bg-white',
                       flipDirection === 'next'
-                        ? 'bg-gradient-to-r from-transparent via-black/10 to-black/30'
-                        : 'bg-gradient-to-l from-transparent via-black/10 to-black/30'
+                        ? 'shadow-[-16px_0_36px_rgba(0,0,0,0.32),-6px_0_12px_rgba(0,0,0,0.2)]'
+                        : 'shadow-[16px_0_36px_rgba(0,0,0,0.32),6px_0_12px_rgba(0,0,0,0.2)]',
+                      isLandscape && bookWidth >= containerDimensions.width - 4
+                        ? 'rounded-none border-0'
+                        : 'rounded-xl sm:rounded-2xl border border-black/15'
                     )}
-                  />
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={turningLeaf.frontPage?.imageUrl || pages[currentPage - 1]?.imageUrl}
+                      alt="Turning Page"
+                      className="w-full h-full object-contain pointer-events-none"
+                      draggable={false}
+                    />
+                    {!isLandscape && (
+                      <div className="absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-black/15 to-transparent pointer-events-none z-10" />
+                    )}
+
+                    {/* 3D Paper Curl Cylindrical Highlight along the peeling edge */}
+                    <div
+                      className={cn(
+                        'absolute inset-y-0 w-28 pointer-events-none opacity-60',
+                        flipDirection === 'next'
+                          ? 'left-0 bg-gradient-to-r from-white/60 via-black/10 to-transparent'
+                          : 'right-0 bg-gradient-to-l from-white/60 via-black/10 to-transparent'
+                      )}
+                    />
+
+                    {/* Dynamic paper lighting across leaf body as angle changes */}
+                    <div
+                      className={cn(
+                        'absolute inset-0 pointer-events-none opacity-30',
+                        flipDirection === 'next'
+                          ? 'bg-gradient-to-r from-transparent via-black/5 to-black/25'
+                          : 'bg-gradient-to-l from-transparent via-black/5 to-black/25'
+                      )}
+                    />
+                  </div>
                 </motion.div>
               )}
+            </div>
+          )}
+
+          {/* Minimalist Mobile Landscape Hint */}
+          {isMobile && isLandscape && zoom <= 1.0 && (
+            <div className="flex items-center justify-center gap-1.5 mt-3 text-[11px] text-current opacity-60 font-medium select-none pointer-events-none transition-opacity">
+              <Smartphone className="h-3.5 w-3.5 rotate-90 shrink-0 opacity-80" />
+              <span>Rotate phone for full-width • Double-tap to zoom</span>
             </div>
           )}
         </div>

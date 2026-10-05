@@ -40,7 +40,7 @@ describe('Attendance Helpers — calculateAttendanceDuration', () => {
     expect(result.hours).toBe(8);
     expect(result.minutes).toBe(0);
     expect(result.decimalHours).toBe(8.0);
-    expect(result.formattedText).toBe('8 Jam');
+    expect(result.formattedText).toBe('8 Hours');
   });
 
   it('handles combined hours and minutes', () => {
@@ -52,7 +52,7 @@ describe('Attendance Helpers — calculateAttendanceDuration', () => {
     expect(result.hours).toBe(8);
     expect(result.minutes).toBe(15);
     expect(result.decimalHours).toBe(8.25);
-    expect(result.formattedText).toBe('8 Jam 15 Minit');
+    expect(result.formattedText).toBe('8 Hours 15 Minutes');
   });
 
   it('deducts break minutes properly', () => {
@@ -64,7 +64,7 @@ describe('Attendance Helpers — calculateAttendanceDuration', () => {
     expect(result.hours).toBe(7);
     expect(result.minutes).toBe(0);
     expect(result.decimalHours).toBe(7.0);
-    expect(result.formattedText).toBe('7 Jam');
+    expect(result.formattedText).toBe('7 Hours');
   });
 
   it('guards against negative duration if end is before start', () => {
@@ -75,7 +75,7 @@ describe('Attendance Helpers — calculateAttendanceDuration', () => {
     expect(result.totalMinutes).toBe(0);
     expect(result.hours).toBe(0);
     expect(result.minutes).toBe(0);
-    expect(result.formattedText).toBe('0 Minit');
+    expect(result.formattedText).toBe('0 Minutes');
   });
 });
 
@@ -147,7 +147,7 @@ describe('Attendance Helpers — checkCertificateAttendanceEligibility', () => {
     expect(res.eligible).toBe(false);
     expect(res.reason).toBe('no_record');
     expect(res.requiredHours).toBe(6);
-    expect(res.message).toContain('Tiada rekod');
+    expect(res.message).toContain('No check-in record');
   });
 
   it('rejects claiming certificate if participant is still checked_in (not checked-out)', () => {
@@ -159,7 +159,7 @@ describe('Attendance Helpers — checkCertificateAttendanceEligibility', () => {
     const res = checkCertificateAttendanceEligibility(record, 6);
     expect(res.eligible).toBe(false);
     expect(res.reason).toBe('not_checked_out');
-    expect(res.message).toContain('belum mendaftar keluar');
+    expect(res.message).toContain('have not checked out');
   });
 
   it('rejects claiming certificate if total hours attended is insufficient', () => {
@@ -174,9 +174,9 @@ describe('Attendance Helpers — checkCertificateAttendanceEligibility', () => {
     expect(res.attendedHours).toBe(3.5);
     expect(res.requiredHours).toBe(6);
     expect(res.shortfallMinutes).toBe(150); // 2 hours 30 mins
-    expect(res.shortfallText).toBe('2 Jam 30 Minit');
-    expect(res.message).toContain('3 Jam 30 Minit');
-    expect(res.message).toContain('kurang 2 Jam 30 Minit');
+    expect(res.shortfallText).toBe('2 Hours 30 Minutes');
+    expect(res.message).toContain('3 Hours 30 Minutes');
+    expect(res.message).toContain('short by 2 Hours 30 Minutes');
   });
 
   it('permits claiming certificate when total hours attended meets requirement', () => {
@@ -189,7 +189,7 @@ describe('Attendance Helpers — checkCertificateAttendanceEligibility', () => {
     expect(res.eligible).toBe(true);
     expect(res.attendedHours).toBe(7);
     expect(res.shortfallMinutes).toBe(0);
-    expect(res.message).toContain('Tahniah');
+    expect(res.message).toContain('Congratulations');
   });
 
   it('correctly accounts for breakMinutes deduction', () => {
@@ -203,7 +203,7 @@ describe('Attendance Helpers — checkCertificateAttendanceEligibility', () => {
     expect(res.eligible).toBe(false);
     expect(res.attendedHours).toBe(5.5);
     expect(res.shortfallMinutes).toBe(30);
-    expect(res.shortfallText).toBe('30 Minit');
+    expect(res.shortfallText).toBe('30 Minutes');
   });
 });
 
@@ -219,9 +219,9 @@ describe('Attendance Helpers — isEarlyCheckOut', () => {
     const res = isEarlyCheckOut(checkIn, now, 6); // requires 6 hours
 
     expect(res.isEarly).toBe(true);
-    expect(res.attendedDurationText).toBe('4 Jam');
+    expect(res.attendedDurationText).toBe('4 Hours');
     expect(res.requiredHours).toBe(6);
-    expect(res.shortfallText).toBe('2 Jam');
+    expect(res.shortfallText).toBe('2 Hours');
   });
 
   it('returns isEarly: false when required hours are met', () => {
@@ -230,7 +230,7 @@ describe('Attendance Helpers — isEarlyCheckOut', () => {
     const res = isEarlyCheckOut(checkIn, now, 6);
 
     expect(res.isEarly).toBe(false);
-    expect(res.attendedDurationText).toBe('7 Jam');
+    expect(res.attendedDurationText).toBe('7 Hours');
   });
 });
 

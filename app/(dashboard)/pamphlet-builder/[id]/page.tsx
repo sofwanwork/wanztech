@@ -7,8 +7,8 @@ interface PamphletBuilderPageProps {
 }
 
 export const metadata = {
-  title: 'Penyunting E-Pamphlet & Buku Program | KlikForm',
-  description: 'Urus helaian muka surat, tetapkan mod paparan 3D Flipbook, dan pautan majlis.',
+  title: 'E-Pamphlet & Program Book Builder | KlikForm',
+  description: 'Manage brochure pages, set 3D Flipbook display mode, and configure event action links.',
 };
 
 export default async function PamphletBuilderPage(

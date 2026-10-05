@@ -102,7 +102,7 @@ describe('E-Pamphlet — Storage Operations', () => {
         slug: 'ab', // <3 chars
         title: 'Too short slug',
       })
-    ).rejects.toThrow('Slug tidak sah');
+    ).rejects.toThrow('Invalid slug');
   });
 
   it('createPamphlet enforces free tier quota', async () => {
@@ -121,7 +121,7 @@ describe('E-Pamphlet — Storage Operations', () => {
         slug: 'acara-ketiga',
         title: 'Buku Program 3',
       })
-    ).rejects.toThrow('had maksimum 2 pamphlet');
+    ).rejects.toThrow('maximum limit of 2 pamphlets');
   });
 
   it('getPamphletPublic looks up by slug using admin client', async () => {

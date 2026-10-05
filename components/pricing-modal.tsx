@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -94,8 +94,12 @@ const plans = [
 
 export function PricingModal({ children }: PricingModalProps) {
   const [open, setOpen] = useState(false);
-
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleUpgrade = async (plan: string) => {
     if (plan === 'Pro') {
@@ -129,6 +133,10 @@ export function PricingModal({ children }: PricingModalProps) {
       setOpen(false);
     }
   };
+
+  if (!mounted) {
+    return <>{children}</>;
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

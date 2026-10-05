@@ -30,9 +30,9 @@ export function ResponseChartsSection({ formId }: { formId: string }) {
     try {
       const res = await getFormResponseSummary(formId);
       setData(res);
-      if (!res.ok) toast.error(res.error || 'Gagal memuatkan ringkasan jawapan');
+      if (!res.ok) toast.error(res.error || 'Failed to load response summary');
     } catch {
-      toast.error('Ralat semasa memuatkan ringkasan jawapan');
+      toast.error('An error occurred while loading response summary');
     } finally {
       setLoading(false);
     }

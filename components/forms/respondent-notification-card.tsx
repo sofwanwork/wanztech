@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { MailCheck } from 'lucide-react';
+import { MailCheck, AlertCircle } from 'lucide-react';
 import type { Form, RespondentNotificationSettings, FormField } from '@/lib/types';
 
 interface RespondentNotificationCardProps {
@@ -57,9 +57,12 @@ export function RespondentNotificationCard({
       {cfg.enabled && (
         <CardContent className="space-y-4">
           {emailFields.length === 0 ? (
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800">
-              ⚠️ Add an <strong>Email</strong> field to your form first. The
-              confirmation email will be sent to that email.
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <span>
+                Add an <strong>Email</strong> field to your form first. The
+                confirmation email will be sent to that email.
+              </span>
             </div>
           ) : (
             <div className="space-y-2">

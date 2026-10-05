@@ -50,7 +50,7 @@ export function PresenterClient({
     const updateTime = () => {
       const now = new Date();
       setCurrentTimeStr(
-        now.toLocaleTimeString('ms-MY', {
+        now.toLocaleTimeString('en-US', {
           hour: '2-digit',
           minute: '2-digit',
           second: '2-digit',
@@ -77,11 +77,11 @@ export function PresenterClient({
         }
         setErrorMsg(null);
       } else {
-        setErrorMsg(res.error || 'Gagal memuatkan token kod QR langsung.');
+        setErrorMsg(res.error || 'Failed to load live QR code token.');
       }
     } catch (err) {
       console.error('Failed to fetch rotating QR token:', err);
-      setErrorMsg('Ralat sambungan rangkaian ke pelayan.');
+      setErrorMsg('Network connection error with server.');
     } finally {
       setIsLoading(false);
       refreshLockRef.current = false;
@@ -157,16 +157,16 @@ export function PresenterClient({
           <div className="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 mx-auto flex items-center justify-center mb-5">
             <AlertTriangle className="w-8 h-8" />
           </div>
-          <h1 className="text-xl font-bold mb-2">Mod Rotating QR Belum Diaktifkan</h1>
+          <h1 className="text-xl font-bold mb-2">Rotating QR Mode Not Enabled</h1>
           <p className="text-slate-400 text-sm mb-6 leading-relaxed">
-            Borang ini belum mengaktifkan ciri <strong>Live Rotating QR Code</strong>. Sila buka tetapan borang di Form Builder dan aktifkan togol projektor anti-fraud.
+            This form has not enabled the <strong>Live Rotating QR Code</strong> feature. Please open form settings in Form Builder and enable the anti-fraud projector toggle.
           </p>
           <div className="flex flex-col gap-3">
             <Button asChild className="bg-emerald-600 hover:bg-emerald-500 text-white w-full">
-              <Link href={`/builder/${formId}`}>Buka Form Builder</Link>
+              <Link href={`/builder/${formId}`}>Open Form Builder</Link>
             </Button>
             <Button asChild variant="outline" className="border-slate-800 text-slate-300 hover:bg-slate-800">
-              <Link href={`/form/${formId}`} target="_blank">Lihat Borang Biasa</Link>
+              <Link href={`/form/${formId}`} target="_blank">View Standard Form</Link>
             </Button>
           </div>
         </div>
@@ -207,7 +207,7 @@ export function PresenterClient({
             variant="ghost"
             size="sm"
             onClick={toggleFullscreen}
-            title={isFullscreen ? 'Keluar Skrin Penuh (F)' : 'Skrin Penuh (F)'}
+            title={isFullscreen ? 'Exit Fullscreen (F)' : 'Fullscreen (F)'}
             className="text-slate-400 hover:text-white hover:bg-slate-800"
           >
             {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
@@ -222,7 +222,7 @@ export function PresenterClient({
           {formTitle}
         </h1>
         <p className="text-slate-400 text-sm sm:text-lg mb-6 font-medium">
-          Imbas kod QR di bawah untuk <strong>Daftar Masuk (Check-In)</strong> atau <strong>Daftar Keluar (Check-Out)</strong>
+          Scan the QR code below to <strong>Check-In</strong> or <strong>Check-Out</strong>
         </p>
 
         {/* QR Code Container Card */}
@@ -234,7 +234,7 @@ export function PresenterClient({
             {isLoading ? (
               <div className="w-[280px] h-[280px] sm:w-[360px] sm:h-[360px] flex flex-col items-center justify-center bg-slate-100 rounded-2xl animate-pulse text-slate-400">
                 <RefreshCw className="w-10 h-10 animate-spin mb-3 text-slate-500" />
-                <span className="text-sm font-medium">Menjana Kod QR Masa Nyata...</span>
+                <span className="text-sm font-medium">Generating Live QR Code...</span>
               </div>
             ) : errorMsg ? (
               <div className="w-[280px] h-[280px] sm:w-[360px] sm:h-[360px] flex flex-col items-center justify-center bg-red-50 text-red-600 p-4 rounded-2xl">
@@ -246,7 +246,7 @@ export function PresenterClient({
                   onClick={fetchToken}
                   className="mt-4 border-red-300 text-red-700 hover:bg-red-100"
                 >
-                  Cuba Semula
+                  Try Again
                 </Button>
               </div>
             ) : tokenPayload ? (
@@ -271,10 +271,10 @@ export function PresenterClient({
           <div className="flex items-center justify-between w-full text-xs sm:text-sm font-medium text-slate-400 mb-2">
             <span className="flex items-center gap-1.5 text-emerald-400">
               <RefreshCw className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '4s' }} />
-              Auto-Refresh Aktif
+              Auto-Refresh Active
             </span>
             <span className="font-mono font-bold text-white bg-slate-800/80 px-2.5 py-0.5 rounded-full border border-slate-700">
-              {secondsRemaining}s lagi
+              {secondsRemaining}s left
             </span>
           </div>
 
@@ -296,9 +296,9 @@ export function PresenterClient({
             <ShieldCheck className="w-5 h-5" />
           </div>
           <div>
-            <p className="font-semibold text-slate-200">Perlindungan Anti-Fraud Pintar</p>
+            <p className="font-semibold text-slate-200">Smart Anti-Fraud Protection</p>
             <p className="text-slate-500 text-[11px] sm:text-xs">
-              Kod QR ini dikemas kini setiap 30 saat. Gambar foto atau tangkapan skrin lama tidak sah.
+              This QR code updates every 30 seconds. Photos or old screenshots are invalid.
             </p>
           </div>
         </div>
@@ -308,7 +308,7 @@ export function PresenterClient({
           <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 p-2 sm:px-4 sm:py-2.5 rounded-xl shadow-lg">
             <KeyRound className="w-4 h-4 text-amber-400" />
             <div className="text-left">
-              <span className="text-[11px] text-slate-400 block font-medium">PIN Check-Out:</span>
+              <span className="text-[11px] text-slate-400 block font-medium">Check-Out PIN:</span>
               <span className="font-mono text-base font-bold tracking-widest text-amber-300">
                 {showPasscode ? checkOutPasscode : '••••••'}
               </span>
@@ -318,7 +318,7 @@ export function PresenterClient({
               size="sm"
               onClick={() => setShowPasscode((v) => !v)}
               className="text-slate-400 hover:text-white hover:bg-slate-800 ml-2 h-8 px-2"
-              title={showPasscode ? 'Sembunyi PIN' : 'Tunjuk PIN Pentas (P)'}
+              title={showPasscode ? 'Hide PIN' : 'Show Stage PIN (P)'}
             >
               {showPasscode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </Button>

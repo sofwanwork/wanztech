@@ -82,7 +82,7 @@ export function CertificateEditorToolbar({
     <div className="bg-white border-b px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2 sm:gap-4 shrink-0">
       <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" asChild>
-          <Link href="/certificates/builder" title="Kembali ke Senarai Sijil">
+          <Link href="/certificates/builder" title="Back to Certificate List">
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
@@ -93,7 +93,7 @@ export function CertificateEditorToolbar({
             size="icon"
             className="h-8 w-8 shrink-0 hidden md:flex"
             onClick={onToggleSidebar}
-            title={showSidebar ? 'Sembunyi Bar Sisi Elemen' : 'Tunjuk Bar Sisi Elemen'}
+            title={showSidebar ? 'Hide Elements Sidebar' : 'Show Elements Sidebar'}
           >
             <PanelLeft className="h-4 w-4" />
           </Button>
@@ -114,7 +114,7 @@ export function CertificateEditorToolbar({
             className="h-8 w-8"
             onClick={onUndo}
             disabled={!canUndo}
-            title="Batal (Undo)"
+            title="Undo"
           >
             <Undo className="h-4 w-4" />
           </Button>
@@ -124,7 +124,7 @@ export function CertificateEditorToolbar({
             className="h-8 w-8"
             onClick={onRedo}
             disabled={!canRedo}
-            title="Ulang (Redo)"
+            title="Redo"
           >
             <Redo className="h-4 w-4" />
           </Button>
@@ -137,7 +137,7 @@ export function CertificateEditorToolbar({
             size="icon"
             className="h-8 w-8"
             onClick={onOrientationChange}
-            title={orientation === 'landscape' ? 'Tukar ke Potret' : 'Tukar ke Landskap'}
+            title={orientation === 'landscape' ? 'Switch to Portrait' : 'Switch to Landscape'}
           >
             {orientation === 'landscape' ? (
               <RectangleHorizontal className="h-4 w-4 text-slate-700" />
@@ -175,7 +175,7 @@ export function CertificateEditorToolbar({
             size="icon"
             className="h-8 w-8 hidden sm:flex"
             onClick={onToggleGrid}
-            title="Tunjuk Grid"
+            title="Show Grid"
           >
             <Grid className="h-4 w-4" />
           </Button>
@@ -184,7 +184,7 @@ export function CertificateEditorToolbar({
             size="icon"
             className="h-8 w-8 hidden sm:flex"
             onClick={onToggleSnap}
-            title="Lekat ke Grid (Snap)"
+            title="Snap to Grid"
           >
             <Magnet className="h-4 w-4" />
           </Button>
@@ -193,7 +193,7 @@ export function CertificateEditorToolbar({
             size="icon"
             className="h-8 w-8"
             onClick={onToggleSafeMargin}
-            title={showSafeMargin ? 'Sembunyi Garis Selamat Cetakan' : 'Tunjuk Garis Selamat Cetakan (A4 Margin)'}
+            title={showSafeMargin ? 'Hide Print Margin' : 'Show Print Margin (A4 Safe Zone)'}
           >
             <Printer className="h-4 w-4" />
           </Button>
@@ -209,7 +209,7 @@ export function CertificateEditorToolbar({
           disabled={exporting || exportingPdf}
         >
           <Download className="h-3.5 w-3.5" />
-          <span className="hidden md:inline">{exporting ? 'Eksport...' : 'PNG'}</span>
+          <span className="hidden md:inline">{exporting ? 'Exporting...' : 'PNG'}</span>
         </Button>
         <Button
           variant="outline"
@@ -219,7 +219,7 @@ export function CertificateEditorToolbar({
           disabled={exportingPdf || exporting}
         >
           <FileDown className="h-3.5 w-3.5" />
-          <span className="hidden md:inline">{exportingPdf ? 'Menjana...' : 'PDF (A4)'}</span>
+          <span className="hidden md:inline">{exportingPdf ? 'Generating...' : 'PDF (A4)'}</span>
         </Button>
         <Button variant="outline" size="sm" className="gap-1 sm:gap-1.5 h-8 px-2 sm:px-3 text-xs" asChild>
           <Link href={`/certificates/builder/${templateId}/preview`}>
@@ -229,7 +229,7 @@ export function CertificateEditorToolbar({
         </Button>
         <Button onClick={onSave} disabled={saving} size="sm" className="gap-1.5 h-8 px-3 text-xs">
           <Save className="h-3.5 w-3.5" />
-          <span>{saving ? 'Menyimpan...' : 'Simpan'}</span>
+          <span>{saving ? 'Saving...' : 'Save'}</span>
         </Button>
       </div>
     </div>

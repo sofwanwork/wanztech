@@ -302,7 +302,7 @@ export async function canCreateForm(): Promise<{
     return {
       allowed: false,
       reason: 'limit_reached',
-      message: `Anda telah mencapai had ${limits.maxForms} form (Total Active). Upgrade ke Pro untuk form tanpa had!`,
+      message: `You have reached the limit of ${limits.maxForms} forms (Total Active). Upgrade to Pro for unlimited forms!`,
     };
   }
 
@@ -377,7 +377,7 @@ export async function canAcceptSubmission(
   if (currentSubmissions >= limits.maxSubmissionsPerForm) {
     return {
       allowed: false,
-      message: 'Form ini telah mencapai had pendaftaran untuk bulan ini.',
+      message: 'This form has reached the response limit for this month.',
     };
   }
 
@@ -447,7 +447,7 @@ export async function canCreateCertificate(): Promise<{ allowed: boolean; messag
   if (count >= limits.maxCertificates) {
     return {
       allowed: false,
-      message: `Anda telah mencapai had ${limits.maxCertificates} sijil untuk plan Free. Upgrade ke Pro untuk sijil tanpa had!`,
+      message: `You have reached the limit of ${limits.maxCertificates} certificates for the Free plan. Upgrade to Pro for unlimited certificates!`,
     };
   }
 
@@ -496,7 +496,7 @@ export async function canCreateQRCode(): Promise<{ allowed: boolean; message?: s
   if (count >= limits.maxQRCodes) {
     return {
       allowed: false,
-      message: `Anda telah mencapai had ${limits.maxQRCodes} QR code untuk plan Free. Upgrade ke Pro untuk QR code tanpa had!`,
+      message: `You have reached the limit of ${limits.maxQRCodes} QR codes for the Free plan. Upgrade to Pro for unlimited QR codes!`,
     };
   }
 

@@ -45,7 +45,7 @@ export async function checkAttendanceStatusAction(
   error?: string;
 }> {
   if (!formId || !rawIdentifier) {
-    return { ok: false, error: 'Borang dan pengenalan diperlukan.' };
+    return { ok: false, error: 'Form and identifier are required.' };
   }
 
   // Rate limit
@@ -53,22 +53,22 @@ export async function checkAttendanceStatusAction(
   const ip = headersList.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
   const rl = await checkRateLimit(ip, RATE_LIMITS.formSubmission, 'attendance-check');
   if (!rl.success) {
-    return { ok: false, error: 'Terlalu banyak percubaan. Sila cuba sebentar lagi.' };
+    return { ok: false, error: 'Too many attempts. Please try again in a moment.' };
   }
 
   const cleanId = cleanIdentifier(rawIdentifier);
   if (!cleanId) {
-    return { ok: false, error: 'Pengenalan tidak sah.' };
+    return { ok: false, error: 'Invalid identifier.' };
   }
 
   const form = await getFormById(formId);
   if (!form) {
-    return { ok: false, error: 'Borang tidak dijumpai.' };
+    return { ok: false, error: 'Form not found.' };
   }
 
   const checkInOutConfig = form.attendanceSettings?.checkInOut;
   if (!form.attendanceSettings?.enabled || !checkInOutConfig?.enabled) {
-    return { ok: false, error: 'Mod kehadiran pintar tidak diaktifkan pada borang ini.' };
+    return { ok: false, error: 'Smart attendance mode is not enabled on this form.' };
   }
 
   const record = await getAttendanceRecord(formId, cleanId);
@@ -145,7 +145,7 @@ export async function submitAttendanceCheckOutAction(
   error?: string;
 }> {
   if (!formId || !rawIdentifier) {
-    return { success: false, error: 'Borang dan pengenalan diperlukan.' };
+    return { success: false, error: 'Form and identifier are required.' };
   }
 
   // Rate limit
@@ -153,18 +153,18 @@ export async function submitAttendanceCheckOutAction(
   const ip = headersList.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
   const rl = await checkRateLimit(ip, RATE_LIMITS.formSubmission, 'attendance-checkout');
   if (!rl.success) {
-    return { success: false, error: 'Terlalu banyak percubaan. Sila cuba sebentar lagi.' };
+    return { success: false, error: 'Too many attempts. Please try again in a moment.' };
   }
 
   const cleanId = cleanIdentifier(rawIdentifier);
   const form = await getFormById(formId);
   if (!form) {
-    return { success: false, error: 'Borang tidak dijumpai.' };
+    return { success: false, error: 'Form not found.' };
   }
 
   const checkInOutConfig = form.attendanceSettings?.checkInOut;
   if (!form.attendanceSettings?.enabled || !checkInOutConfig?.enabled) {
-    return { success: false, error: 'Mod kehadiran pintar tidak aktif.' };
+    return { success: false, error: 'Smart attendance mode is not active.' };
   }
 
   // Passcode verification (Solution 2)
@@ -174,7 +174,7 @@ export async function submitAttendanceCheckOutAction(
     if (!actual || actual !== expected) {
       return {
         success: false,
-        error: 'Kod PIN Check-Out tidak sah. Sila masukkan PIN yang betul daripada penceramah/urusetia.',
+        error: 'Invalid Check-Out PIN. Please enter the correct PIN from the speaker/organizer.',
       };
     }
   }
@@ -194,14 +194,14 @@ export async function submitAttendanceCheckOutAction(
       return {
         success: false,
         error:
-          'Kod QR ini telah luput atau tidak sah. Sila imbas kod QR langsung yang sedang dipaparkan di skrin dewan.',
+          'This QR code has expired or is invalid. Please scan the live QR code currently displayed on the event screen.',
       };
     }
   }
 
   const record = await getAttendanceRecord(formId, cleanId);
   if (!record) {
-    return { success: false, error: 'Rekod daftar masuk (check-in) tidak dijumpai.' };
+    return { success: false, error: 'Check-in record not found.' };
   }
 
   if (record.status === 'completed') {
@@ -230,7 +230,7 @@ export async function submitAttendanceCheckOutAction(
   if (!check.canCheckOut) {
     return {
       success: false,
-      error: `Anda baru sahaja mendaftar masuk. Sila tunggu ${check.remainingMinutes} minit lagi sebelum mendaftar keluar.`,
+      error: `You just checked in. Please wait ${check.remainingMinutes} more minute${check.remainingMinutes === 1 ? '' : 's'} before checking out.`,
     };
   }
 
@@ -245,7 +245,7 @@ export async function submitAttendanceCheckOutAction(
   });
 
   if (!updatedRecord) {
-    return { success: false, error: 'Gagal mengemaskini rekod daftar keluar.' };
+    return { success: false, error: 'Failed to update check-out record.' };
   }
 
   // 2. Sync update to Google Sheets (if form has googleSheetUrl)
@@ -386,17 +386,17 @@ export async function getRotatingQrLiveTokenAction(formId: string): Promise<{
   error?: string;
 }> {
   if (!formId) {
-    return { ok: false, error: 'Borang diperlukan.' };
+    return { ok: false, error: 'Form ID is required.' };
   }
 
   const form = await getFormById(formId);
   if (!form) {
-    return { ok: false, error: 'Borang tidak dijumpai.' };
+    return { ok: false, error: 'Form not found.' };
   }
 
   const rotatingConfig = form.attendanceSettings?.rotatingQr;
   if (!form.attendanceSettings?.enabled || !rotatingConfig?.enabled) {
-    return { ok: false, error: 'Mod Rotating QR tidak diaktifkan pada borang ini.' };
+    return { ok: false, error: 'Rotating QR mode is not enabled on this form.' };
   }
 
   const headersList = await getNextHeaders();

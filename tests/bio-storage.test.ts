@@ -103,7 +103,7 @@ describe('KlikBio — Storage Operations', () => {
         username: 'ab', // <3 chars
         title: 'Short',
       })
-    ).rejects.toThrow('Username mestilah 3-30 aksara');
+    ).rejects.toThrow('Username must be 3-30 characters');
   });
 
   it('createBioPage enforces free tier quota', async () => {
@@ -122,6 +122,6 @@ describe('KlikBio — Storage Operations', () => {
         username: 'wan-second',
         title: 'Second Page',
       })
-    ).rejects.toThrow('had halaman bio percuma');
+    ).rejects.toThrow('free bio pages limit');
   });
 });

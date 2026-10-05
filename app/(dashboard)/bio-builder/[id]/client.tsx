@@ -217,7 +217,7 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
       const oldAvatarUrl = page.avatarUrl;
 
       if (!file.type.startsWith('image/')) {
-        toast.error('Sila muat naik fail gambar (PNG, JPG, WEBP).');
+        toast.error('Please upload an image file (PNG, JPG, WEBP).');
         return;
       }
 
@@ -259,14 +259,14 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
         setAvatarPreview(publicUrl);
         handleSavePage({ avatarUrl: publicUrl });
 
-        toast.success('Gambar profil berjaya dimuat naik!');
+        toast.success('Profile image uploaded successfully!');
 
         if (oldAvatarUrl && oldAvatarUrl.includes('/qr_logos/')) {
           await deleteOldAvatar(oldAvatarUrl);
         }
       } catch (error) {
         console.error('Error uploading avatar:', error);
-        toast.error('Gagal memuat naik gambar profil.');
+        toast.error('Failed to upload profile image.');
       } finally {
         setIsUploadingAvatar(false);
       }
@@ -282,7 +282,7 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
     if (oldAvatarUrl && oldAvatarUrl.includes('/qr_logos/')) {
       await deleteOldAvatar(oldAvatarUrl);
     }
-    toast.success('Gambar profil dibuang.');
+    toast.success('Profile image removed.');
   };
 
   const downloadQR = () => {

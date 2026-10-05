@@ -40,15 +40,15 @@ export function CertificateQrCard({ formId, formTitle, templateName }: Certifica
       const link = document.createElement('a');
       link.href = url;
       const safeTitle = (formTitle || 'form').replace(/\r?\n/g, ' ').replace(/\s+/g, '-').toLowerCase();
-      link.download = `qr-semakan-sijil-${safeTitle}.png`;
+      link.download = `qr-cert-check-${safeTitle}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
 
-      toast.success('QR Code dimuat turun! (1000x1000px)');
+      toast.success('QR Code downloaded! (1000x1000px)');
     } catch (error) {
       console.error('Download error:', error);
-      toast.error('Gagal memuat turun QR Code');
+      toast.error('Failed to download QR Code');
     } finally {
       setDownloading(false);
     }
@@ -100,7 +100,7 @@ export function CertificateQrCard({ formId, formTitle, templateName }: Certifica
           ) : (
             <Download className="h-4 w-4 mr-2" />
           )}
-          {downloading ? 'Memuat turun...' : 'Download QR (High Res)'}
+          {downloading ? 'Downloading...' : 'Download QR (High Res)'}
         </Button>
 
         <div className="text-sm text-gray-600">
@@ -112,7 +112,7 @@ export function CertificateQrCard({ formId, formTitle, templateName }: Certifica
           <Button variant="outline" className="w-full flex-1" size="sm" asChild>
             <Link href={checkUrl} target="_blank" rel="noopener noreferrer">
               <ExternalLink className="h-4 w-4 mr-2" />
-              Buka
+              Open
             </Link>
           </Button>
           <Button variant="ghost" size="sm" asChild>

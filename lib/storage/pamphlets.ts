@@ -4,10 +4,11 @@ import { Pamphlet } from '@/lib/types/pamphlets';
 import { TIER_LIMITS } from '@/lib/constants/subscription-tiers';
 import { getEffectiveTier } from '@/lib/storage/subscription';
 import { cleanPamphletSlug, isValidPamphletSlug } from '@/lib/pamphlets/utils';
+import { DEFAULT_PAMPHLET_THEME } from '@/lib/pamphlets/themes';
 
 // Error message when database migration has not been run
 export const PAMPHLET_TABLE_MISSING_MESSAGE =
-  'Jadual pangkalan data "pamphlets" belum diaktifkan di Supabase. Sila jalankan migrasi SQL 20261002000000_add_pamphlets.sql di Supabase SQL Editor.';
+  'Database table "pamphlets" is not yet available in Supabase. Please run the SQL migration 20261002000000_add_pamphlets.sql in your Supabase SQL Editor.';
 
 export const PAMPHLETS_SQL_MIGRATION = `-- Migration: Add pamphlets table for E-Pamphlet & Buku Program Digital
 
@@ -21,7 +22,7 @@ create table if not exists public.pamphlets (
   location text default '',
   cover_image text default '',
   pdf_url text default '',
-  theme text not null default 'dark',
+  theme text not null default 'light',
   display_mode text not null default 'flipbook',
   pages jsonb not null default '[]'::jsonb,
   action_buttons jsonb not null default '[]'::jsonb,
@@ -111,7 +112,7 @@ export function mapPamphletFromRow(row: any): Pamphlet {
     location: row.location || '',
     coverImage: row.cover_image || '',
     pdfUrl: row.pdf_url || '',
-    theme: row.theme || 'dark',
+    theme: row.theme || DEFAULT_PAMPHLET_THEME,
     displayMode: row.display_mode || 'flipbook',
     orientation: row.orientation || row.pages?.[0]?.orientation || 'portrait',
     pages: Array.isArray(row.pages) ? row.pages : [],
@@ -256,12 +257,12 @@ export async function createPamphlet(payload: {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    throw new Error('Pengguna tidak disahkan.');
+    throw new Error('User not authenticated.');
   }
 
   const cleanSlug = cleanPamphletSlug(payload.slug);
   if (!isValidPamphletSlug(cleanSlug)) {
-    throw new Error('Slug tidak sah. Sila gunakan 3-60 aksara alfanumerik dan sengkang sahaja.');
+    throw new Error('Invalid slug. Please use 3-60 alphanumeric characters and dashes only.');
   }
 
   // Check tier limits
@@ -276,7 +277,7 @@ export async function createPamphlet(payload: {
 
     if (!countErr && (count ?? 0) >= limits.maxPamphlets) {
       throw new Error(
-        `Anda telah mencapai had maksimum ${limits.maxPamphlets} pamphlet untuk pelan percuma. Sila naik taraf ke Pro untuk cipta tanpa had.`
+        `You have reached the maximum limit of ${limits.maxPamphlets} pamphlets for the free plan. Please upgrade to Pro for unlimited pamphlets.`
       );
     }
   }
@@ -293,7 +294,7 @@ export async function createPamphlet(payload: {
   }
 
   if (existingSlug) {
-    throw new Error('Pautan (slug) ini telah digunakan. Sila pilih pautan lain.');
+    throw new Error('This link (slug) is already in use. Please choose a different link.');
   }
 
   const { data, error } = await supabase
@@ -301,13 +302,13 @@ export async function createPamphlet(payload: {
     .insert({
       user_id: user.id,
       slug: cleanSlug,
-      title: payload.title || 'Buku Program Tanpa Tajuk',
+      title: payload.title || 'Untitled Program Book',
       description: payload.description || '',
       event_date: payload.eventDate || '',
       location: payload.location || '',
       cover_image: payload.coverImage || '',
       pdf_url: payload.pdfUrl || '',
-      theme: payload.theme || 'dark',
+      theme: payload.theme || DEFAULT_PAMPHLET_THEME,
       display_mode: payload.displayMode || 'flipbook',
       pages: payload.pages || [],
       action_buttons: payload.actionButtons || [],
@@ -321,7 +322,7 @@ export async function createPamphlet(payload: {
     if (isMissingTableError(error)) {
       throw new Error(PAMPHLET_TABLE_MISSING_MESSAGE);
     }
-    throw new Error(error.message || 'Gagal menyimpan pamphlet.');
+    throw new Error(error.message || 'Failed to save pamphlet.');
   }
 
   return mapPamphletFromRow(data);
@@ -340,7 +341,7 @@ export async function updatePamphlet(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    throw new Error('Pengguna tidak disahkan.');
+    throw new Error('User not authenticated.');
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -360,7 +361,7 @@ export async function updatePamphlet(
   if (updates.slug !== undefined) {
     const cleanSlug = cleanPamphletSlug(updates.slug);
     if (!isValidPamphletSlug(cleanSlug)) {
-      throw new Error('Slug tidak sah.');
+      throw new Error('Invalid slug.');
     }
     // Check slug collision
     const { data: existing, error: checkSlugErr } = await supabase
@@ -375,7 +376,7 @@ export async function updatePamphlet(
     }
 
     if (existing) {
-      throw new Error('Pautan (slug) ini telah digunakan.');
+      throw new Error('This link (slug) is already in use.');
     }
     rowUpdates.slug = cleanSlug;
   }
@@ -392,7 +393,7 @@ export async function updatePamphlet(
     if (isMissingTableError(error)) {
       throw new Error(PAMPHLET_TABLE_MISSING_MESSAGE);
     }
-    throw new Error(error.message || 'Gagal mengemas kini pamphlet.');
+    throw new Error(error.message || 'Failed to update pamphlet.');
   }
 
   return mapPamphletFromRow(data);
@@ -408,7 +409,7 @@ export async function deletePamphlet(id: string): Promise<void> {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    throw new Error('Pengguna tidak disahkan.');
+    throw new Error('User not authenticated.');
   }
 
   const { error } = await supabase
@@ -421,7 +422,7 @@ export async function deletePamphlet(id: string): Promise<void> {
     if (isMissingTableError(error)) {
       return;
     }
-    throw new Error(error.message || 'Gagal memadam pamphlet.');
+    throw new Error(error.message || 'Failed to delete pamphlet.');
   }
 }
 

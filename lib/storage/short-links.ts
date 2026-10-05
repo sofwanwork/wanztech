@@ -62,12 +62,12 @@ export async function createShortLink(slug: string, originalUrl: string): Promis
         const parsed = new URL(rawUrl);
         // Security: Only allow http and https to prevent javascript:, data:, etc.
         if (!['http:', 'https:'].includes(parsed.protocol)) {
-            throw new Error('URL mesti bermula dengan http:// atau https://');
+            throw new Error('URL must start with http:// or https://');
         }
         url = parsed.toString();
     } catch (e) {
-        if (e instanceof Error && e.message.includes('mesti')) throw e;
-        throw new Error('URL tidak sah. Sila masukkan URL yang betul.');
+        if (e instanceof Error && e.message.includes('must start')) throw e;
+        throw new Error('Invalid URL. Please enter a valid URL.');
     }
 
     // Check limits and subscription status
@@ -82,7 +82,7 @@ export async function createShortLink(slug: string, originalUrl: string): Promis
             .eq('user_id', user.id);
 
         if ((count || 0) >= limits.maxShortLinks) {
-            throw new Error(`Anda telah mencapai had pautan pendek percuma (${limits.maxShortLinks}). Sila upgrade ke Pro.`);
+            throw new Error(`You have reached the free short links limit (${limits.maxShortLinks}). Please upgrade to Pro.`);
         }
     }
 

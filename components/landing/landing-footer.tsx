@@ -1,6 +1,7 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { Heart } from "lucide-react";
 
 export function LandingFooter() {
   return (
@@ -134,7 +135,7 @@ export function LandingFooter() {
           <p>© {new Date().getFullYear()} KlikForm. All rights reserved.</p>
           <p className="flex items-center gap-1.5">
             <span>Designed &amp; Built with</span>
-            <span className="text-rose-500">❤️</span>
+            <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
             <span>in Malaysia</span>
           </p>
         </div>

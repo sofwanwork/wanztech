@@ -3,7 +3,7 @@ import { getFormsSummary } from '@/lib/storage/forms';
 import { getDashboardStats, getSubscriptionStatus } from '@/lib/storage/subscription';
 import { Button } from '@/components/ui/button';
 
-import { FileText, Search } from 'lucide-react';
+import { FileText, Search, AlertCircle } from 'lucide-react';
 import { createFormAction } from '@/actions/forms';
 import { DashboardSearch } from '@/components/dashboard/search';
 import { DashboardFilter } from '@/components/dashboard/filter';
@@ -55,8 +55,9 @@ export default async function DashboardPage(props: DashboardPageProps) {
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8">
       {/* Error Message */}
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-          ⚠️ {decodeURIComponent(error)}
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+          <span>{decodeURIComponent(error)}</span>
         </div>
       )}
 

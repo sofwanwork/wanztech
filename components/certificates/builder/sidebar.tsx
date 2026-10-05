@@ -29,9 +29,16 @@ import { createClient } from '@/utils/supabase/client';
 import { compressImage } from '@/utils/image-compression';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
+import { toValidHexColor } from '@/lib/utils';
 
 interface CertificateEditorSidebarProps {
   addElement: (type: CertificateElement['type'], extra?: Partial<CertificateElement>) => void;
+  addElements?: (
+    elements: Array<{
+      type: CertificateElement['type'];
+      extra?: Partial<CertificateElement>;
+    }>
+  ) => void;
   imageInputRef: RefObject<HTMLInputElement | null>;
   template: CertificateTemplate;
   onUpdateTemplate: (updates: Partial<CertificateTemplate>) => void;
@@ -39,76 +46,134 @@ interface CertificateEditorSidebarProps {
 
 export function CertificateEditorSidebar({
   addElement,
+  addElements,
   imageInputRef,
   template,
   onUpdateTemplate,
 }: CertificateEditorSidebarProps) {
   const handleAddDualSignatures = () => {
-    // Left signatory
-    addElement('shape', {
-      shapeType: 'line',
-      x: 270,
-      y: 630,
-      width: 220,
-      height: 2,
-      fill: '#475569',
-    });
-    addElement('text', {
-      content: 'PENGERUSI / PENASIHAT',
-      fontSize: 13,
-      fontWeight: 'bold',
-      x: 270,
-      y: 655,
-      width: 240,
-      color: '#0f172a',
-      textAlign: 'center',
-    });
-    // Right signatory
-    addElement('shape', {
-      shapeType: 'line',
-      x: 853,
-      y: 630,
-      width: 220,
-      height: 2,
-      fill: '#475569',
-    });
-    addElement('text', {
-      content: 'PENGARAH / PENGETUA',
-      fontSize: 13,
-      fontWeight: 'bold',
-      x: 853,
-      y: 655,
-      width: 240,
-      color: '#0f172a',
-      textAlign: 'center',
-    });
-    toast.success('Dwi-Tandatangan ditambah!');
+    const w = template.width || 1123;
+    const h = template.height || 794;
+    const isPortrait = h > w;
+
+    // Proportional positioning adapted for both landscape and portrait orientations
+    const leftX = isPortrait ? Math.round(w * 0.28) : Math.round(w * 0.25);
+    const rightX = isPortrait ? Math.round(w * 0.72) : Math.round(w * 0.75);
+    const lineY = Math.round(h - (isPortrait ? 180 : 150));
+    const textY = Math.round(lineY + 25);
+    const lineWidth = isPortrait ? 170 : 220;
+    const textWidth = isPortrait ? 190 : 240;
+
+    const signatureElements: Array<{
+      type: CertificateElement['type'];
+      extra?: Partial<CertificateElement>;
+    }> = [
+      // Left signatory line
+      {
+        type: 'shape',
+        extra: {
+          shapeType: 'line',
+          x: leftX,
+          y: lineY,
+          width: lineWidth,
+          height: 2,
+          fill: '#475569',
+        },
+      },
+      // Left signatory text
+      {
+        type: 'text',
+        extra: {
+          content: 'CHAIRMAN / ADVISOR',
+          fontSize: isPortrait ? 11 : 13,
+          fontWeight: 'bold',
+          x: leftX,
+          y: textY,
+          width: textWidth,
+          color: '#0f172a',
+          textAlign: 'center',
+        },
+      },
+      // Right signatory line
+      {
+        type: 'shape',
+        extra: {
+          shapeType: 'line',
+          x: rightX,
+          y: lineY,
+          width: lineWidth,
+          height: 2,
+          fill: '#475569',
+        },
+      },
+      // Right signatory text
+      {
+        type: 'text',
+        extra: {
+          content: 'DIRECTOR / PRINCIPAL',
+          fontSize: isPortrait ? 11 : 13,
+          fontWeight: 'bold',
+          x: rightX,
+          y: textY,
+          width: textWidth,
+          color: '#0f172a',
+          textAlign: 'center',
+        },
+      },
+    ];
+
+    if (addElements) {
+      addElements(signatureElements);
+    } else {
+      signatureElements.forEach((el) => addElement(el.type, el.extra));
+    }
+
+    toast.success('Dual signatures added!');
   };
 
   const handleAddClassicBorder = () => {
     const w = template.width || 1123;
     const h = template.height || 794;
-    addElement('shape', {
-      shapeType: 'rectangle',
-      x: Math.round(w / 2),
-      y: Math.round(h / 2),
-      width: Math.round(w - 80),
-      height: Math.round(h - 80),
-      fill: 'transparent',
-      stroke: '#d97706',
-      strokeWidth: 3,
-    });
-    addElement('shape', {
-      shapeType: 'rectangle',
-      x: Math.round(w / 2),
-      y: Math.round(h / 2),
-      width: Math.round(w - 100),
-      height: Math.round(h - 100),
-      fill: 'transparent',
-      stroke: '#f59e0b',
-      strokeWidth: 1,
-    });
-    toast.success('Bingkai emas klasik ditambah!');
+
+    const borderElements: Array<{
+      type: CertificateElement['type'];
+      extra?: Partial<CertificateElement>;
+    }> = [
+      {
+        type: 'shape',
+        extra: {
+          shapeType: 'rectangle',
+          x: Math.round(w / 2),
+          y: Math.round(h / 2),
+          width: Math.round(w - 80),
+          height: Math.round(h - 80),
+          fill: 'transparent',
+          stroke: '#d97706',
+          strokeWidth: 3,
+        },
+      },
+      {
+        type: 'shape',
+        extra: {
+          shapeType: 'rectangle',
+          x: Math.round(w / 2),
+          y: Math.round(h / 2),
+          width: Math.round(w - 100),
+          height: Math.round(h - 100),
+          fill: 'transparent',
+          stroke: '#f59e0b',
+          strokeWidth: 1,
+        },
+      },
+    ];
+
+    if (addElements) {
+      addElements(borderElements);
+    } else {
+      borderElements.forEach((el) => addElement(el.type, el.extra));
+    }
+
+    toast.success('Classic gold border added!');
   };
 
   const handleBackgroundUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,7 +185,7 @@ export function CertificateEditorSidebar({
       return;
     }
 
-    const toastId = toast.loading('Memuat naik gambar latar...');
+    const toastId = toast.loading('Uploading background image...');
 
     try {
       const compressedFile = await compressImage(file, 0.7);
@@ -168,10 +233,10 @@ export function CertificateEditorSidebar({
       } = supabase.storage.from('certificate_backgrounds').getPublicUrl(filePath);
 
       onUpdateTemplate({ backgroundImage: publicUrl });
-      toast.success('Gambar latar berjaya dimuat naik!', { id: toastId });
+      toast.success('Background image uploaded successfully!', { id: toastId });
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('Gagal memuat naik gambar.', { id: toastId });
+      toast.error('Failed to upload image.', { id: toastId });
     }
     // clear input
     e.target.value = '';
@@ -195,9 +260,9 @@ export function CertificateEditorSidebar({
 
   return (
     <div className="w-64 shrink-0 bg-white border-r p-4 space-y-6 overflow-y-auto hidden md:block select-none h-full">
-      {/* Tambah Elemen Section */}
+      {/* Add Elements Section */}
       <div>
-        <Label className="text-xs text-gray-500 uppercase tracking-wider">Tambah Elemen</Label>
+        <Label className="text-xs text-gray-500 uppercase tracking-wider">Add Elements</Label>
         <div className="grid grid-cols-2 gap-2 mt-2">
           <Button
             variant="outline"
@@ -206,7 +271,7 @@ export function CertificateEditorSidebar({
             onClick={() => addElement('text')}
           >
             <Type className="h-5 w-5" />
-            <span className="text-xs">Teks</span>
+            <span className="text-xs">Text</span>
           </Button>
           <Button
             variant="outline"
@@ -215,7 +280,7 @@ export function CertificateEditorSidebar({
             onClick={() => imageInputRef.current?.click()}
           >
             <ImageIcon className="h-5 w-5" />
-            <span className="text-xs">Gambar</span>
+            <span className="text-xs">Image</span>
           </Button>
           <Button
             variant="outline"
@@ -231,7 +296,7 @@ export function CertificateEditorSidebar({
             }
           >
             <Square className="h-5 w-5" />
-            <span className="text-xs">Bentuk</span>
+            <span className="text-xs">Shape</span>
           </Button>
           <Button
             variant="outline"
@@ -247,7 +312,7 @@ export function CertificateEditorSidebar({
             }
           >
             <div className="h-0.5 w-6 bg-current" />
-            <span className="text-xs">Garisan</span>
+            <span className="text-xs">Line</span>
           </Button>
         </div>
       </div>
@@ -271,7 +336,7 @@ export function CertificateEditorSidebar({
             }
           >
             <UserCheck className="h-4 w-4" />
-            Nama Peserta
+            Participant Name
           </Button>
           <Button
             variant="outline"
@@ -287,7 +352,7 @@ export function CertificateEditorSidebar({
             }
           >
             <FileText className="h-4 w-4" />
-            Nama Program
+            Program Name
           </Button>
           <Button
             variant="outline"
@@ -303,7 +368,7 @@ export function CertificateEditorSidebar({
             }
           >
             <Fingerprint className="h-4 w-4" />
-            No. Kad Pengenalan
+            ID / IC Number
           </Button>
           <Button
             variant="outline"
@@ -320,7 +385,7 @@ export function CertificateEditorSidebar({
             }
           >
             <Hash className="h-4 w-4" />
-            Nombor Siri
+            Serial Number
           </Button>
           <Button
             variant="outline"
@@ -358,7 +423,7 @@ export function CertificateEditorSidebar({
             }
           >
             <Building2 className="h-4 w-4 text-blue-600" />
-            Organisasi / Sekolah
+            Organization / School
           </Button>
           <Button
             variant="outline"
@@ -375,7 +440,7 @@ export function CertificateEditorSidebar({
             }
           >
             <Briefcase className="h-4 w-4 text-purple-600" />
-            Peranan / Jawatan
+            Role / Position
           </Button>
           <Button
             variant="outline"
@@ -392,7 +457,7 @@ export function CertificateEditorSidebar({
             }
           >
             <GraduationCap className="h-4 w-4 text-emerald-600" />
-            Gred / Jam Latihan
+            Grade / Training Hours
           </Button>
           <Button
             variant="outline"
@@ -408,7 +473,7 @@ export function CertificateEditorSidebar({
             }
           >
             <Calendar className="h-4 w-4" />
-            Tarikh
+            Date
           </Button>
           <Button
             variant="outline"
@@ -425,14 +490,14 @@ export function CertificateEditorSidebar({
             }
           >
             <Calendar className="h-4 w-4" />
-            Tarikh Luput
+            Expiry Date
           </Button>
         </div>
       </div>
 
-      {/* Hiasan & Aset Sijil */}
+      {/* Badges & Seals */}
       <div>
-        <Label className="text-xs text-gray-500 uppercase tracking-wider">Hiasan & Cop Sijil</Label>
+        <Label className="text-xs text-gray-500 uppercase tracking-wider">Badges & Seals</Label>
         <div className="grid grid-cols-2 gap-2 mt-2">
           <Button
             variant="outline"
@@ -449,7 +514,7 @@ export function CertificateEditorSidebar({
             }
           >
             <Award className="h-5 w-5 text-amber-600" />
-            <span className="text-[11px]">Cop Emas</span>
+            <span className="text-[11px]">Gold Seal</span>
           </Button>
           <Button
             variant="outline"
@@ -466,7 +531,7 @@ export function CertificateEditorSidebar({
             }
           >
             <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-            <span className="text-[11px]">Lencana Lulus</span>
+            <span className="text-[11px]">Pass Badge</span>
           </Button>
           <Button
             variant="outline"
@@ -483,7 +548,7 @@ export function CertificateEditorSidebar({
             }
           >
             <ShieldCheck className="h-5 w-5 text-blue-700" />
-            <span className="text-[11px]">Perisai Pengesahan</span>
+            <span className="text-[11px]">Verified Shield</span>
           </Button>
           <Button
             variant="outline"
@@ -500,11 +565,11 @@ export function CertificateEditorSidebar({
             }
           >
             <Sparkles className="h-5 w-5 text-yellow-500" />
-            <span className="text-[11px]">Piala Anugerah</span>
+            <span className="text-[11px]">Award Trophy</span>
           </Button>
         </div>
 
-        {/* Preset Cepat */}
+        {/* Quick Presets */}
         <div className="space-y-2 mt-3">
           <Button
             variant="secondary"
@@ -513,7 +578,7 @@ export function CertificateEditorSidebar({
             onClick={handleAddClassicBorder}
           >
             <Maximize2 className="h-4 w-4 text-amber-600" />
-            Tambah Bingkai Sijil Emas
+            Add Classic Gold Border
           </Button>
           <Button
             variant="secondary"
@@ -522,26 +587,26 @@ export function CertificateEditorSidebar({
             onClick={handleAddDualSignatures}
           >
             <PenTool className="h-4 w-4 text-indigo-600" />
-            Preset Dwi-Tandatangan
+            Dual Signature Preset
           </Button>
         </div>
       </div>
 
-      {/* Latar Belakang Section */}
+      {/* Background Section */}
       <div>
-        <Label className="text-xs text-gray-500 uppercase tracking-wider">Latar Belakang</Label>
+        <Label className="text-xs text-gray-500 uppercase tracking-wider">Background</Label>
         <div className="mt-2 space-y-4">
           <div>
-            <Label className="text-sm">Warna Latar</Label>
+            <Label className="text-sm">Background Color</Label>
             <div className="flex items-center gap-2 mt-1">
               <input
                 type="color"
-                value={template.backgroundColor}
+                value={toValidHexColor(template.backgroundColor, '#ffffff')}
                 onChange={(e) => onUpdateTemplate({ backgroundColor: e.target.value })}
                 className="w-10 h-10 rounded cursor-pointer border shadow-sm"
               />
               <Input
-                value={template.backgroundColor}
+                value={template.backgroundColor || '#ffffff'}
                 onChange={(e) => onUpdateTemplate({ backgroundColor: e.target.value })}
                 className="flex-1 font-mono"
               />
@@ -549,7 +614,7 @@ export function CertificateEditorSidebar({
           </div>
 
           <div>
-            <Label className="text-sm">Gambar Latar</Label>
+            <Label className="text-sm">Background Image</Label>
             <label className="block mt-1">
               <input
                 type="file"
@@ -558,7 +623,7 @@ export function CertificateEditorSidebar({
                 className="w-full text-xs file:mr-2 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer border rounded-md"
               />
             </label>
-            <p className="text-xs text-gray-400 mt-1">PNG, JPG, WebP. Maks 10MB.</p>
+            <p className="text-xs text-gray-400 mt-1">PNG, JPG, WebP. Max 10MB.</p>
 
             {template.backgroundImage && (
               <div className="relative mt-2 group">

@@ -19,7 +19,7 @@ export const PAMPHLET_THEMES: Record<
 > = {
   dark: {
     name: 'Cinema Dark',
-    description: 'Latar gelap sinematik baldu yang menonjolkan warna helaian pamphlet',
+    description: 'Cinematic velvet dark background that highlights pamphlet page colors',
     bgClass: 'bg-gradient-to-b from-slate-950 via-slate-900 to-black text-slate-100',
     cardBg: 'bg-slate-900/90',
     textColor: 'text-slate-100',
@@ -29,7 +29,7 @@ export const PAMPHLET_THEMES: Record<
   },
   light: {
     name: 'Clean Studio',
-    description: 'Latar terang galeri moden yang kemas, cerah dan profesional',
+    description: 'Clean modern gallery light background that is bright, neat and professional',
     bgClass: 'bg-gradient-to-b from-slate-100 via-slate-50 to-zinc-200 text-slate-900',
     cardBg: 'bg-white',
     textColor: 'text-slate-900',
@@ -39,7 +39,7 @@ export const PAMPHLET_THEMES: Record<
   },
   paper: {
     name: 'Warm Ivory Paper',
-    description: 'Rona kertas buku fizikal klasik dengan sentuhan warna sepia lembut',
+    description: 'Classic physical book tone with gentle sepia warmth',
     bgClass: 'bg-gradient-to-b from-amber-50/80 via-stone-100 to-stone-200 text-stone-900',
     cardBg: 'bg-[#faf8f5]',
     textColor: 'text-stone-900',
@@ -49,7 +49,7 @@ export const PAMPHLET_THEMES: Record<
   },
   emerald: {
     name: 'Royal Emerald',
-    description: 'Palet hijau zamrud KlikForm yang anggun dan berwibawa',
+    description: 'Elegant and authoritative KlikForm royal emerald green palette',
     bgClass: 'bg-gradient-to-b from-emerald-950 via-slate-950 to-emerald-950 text-emerald-50',
     cardBg: 'bg-emerald-950/80',
     textColor: 'text-emerald-50',
@@ -59,4 +59,5 @@ export const PAMPHLET_THEMES: Record<
   },
 };
 
-export const DEFAULT_PAMPHLET_THEME: PamphletTheme = 'dark';
+export const DEFAULT_PAMPHLET_THEME: PamphletTheme = 'light';
+

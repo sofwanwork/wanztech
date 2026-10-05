@@ -179,7 +179,7 @@ export async function submitFormAction(
   const ip = forwarded ? forwarded.split(',')[0].trim() : 'unknown';
   const rl = await checkRateLimit(ip, RATE_LIMITS.formSubmission, 'form-submit');
   if (!rl.success) {
-    return { success: false, error: 'Terlalu banyak percubaan. Sila cuba lagi selepas 1 minit.' };
+    return { success: false, error: 'Too many attempts. Please try again after 1 minute.' };
   }
 
   // --- Anti-Bot: Honeypot Check ---
@@ -198,7 +198,7 @@ export async function submitFormAction(
 
   // --- Active Status Check ---
   if (form.isActive === false) {
-    return { success: false, error: 'Borang telah ditutup oleh penganjur.' };
+    return { success: false, error: 'This form has been closed by the organizer.' };
   }
 
   // --- PDPA Consent Enforcement ---
@@ -212,7 +212,7 @@ export async function submitFormAction(
     if (!isPdpaSubmissionAllowed(form.pdpaSettings, consent)) {
       return {
         success: false,
-        error: 'Persetujuan PDPA diperlukan untuk menghantar borang ini.',
+        error: 'PDPA consent is required to submit this form.',
       };
     }
   }
@@ -241,7 +241,7 @@ export async function submitFormAction(
       return {
         success: false,
         error:
-          'Kod QR ini telah luput atau tidak sah. Sila imbas kod QR langsung yang sedang dipaparkan di skrin dewan.',
+          'This QR code has expired or is invalid. Please scan the live QR code currently displayed on the event screen.',
       };
     }
   }
@@ -637,7 +637,7 @@ export async function submitFormAction(
     if (insertResult === 'error') {
       return {
         success: false,
-        error: 'Gagal menyimpan jawapan anda. Sila cuba sebentar lagi.',
+        error: 'Failed to save your response. Please try again in a moment.',
       };
     }
   }

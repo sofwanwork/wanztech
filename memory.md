@@ -1720,3 +1720,488 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - **Ujian & Kualiti**:
     - 326 / 326 ujian vitest lulus (termasuk 3 ujian baharu untuk `computeSpread` di `tests/pamphlet.test.ts`).
     - 0 ralat TypeScript (`tsc --noEmit`), 0 ralat / 0 amaran ESLint.
+
+- **2026-10-03 (Pembaikan Ralat Hydration Mismatch FlipbookView `/p/[slug]`)**:
+  - **Punca Masalah**:
+    - Ralat konsol pelayar `A tree hydrated but some attributes of the server rendered HTML didn't match the client properties`.
+    - Di `FlipbookView` (`components/pamphlet/viewer/flipbook-view.tsx`), `containerDimensions` diinisialisasi dalam `useState` menggunakan `typeof window !== 'undefined' ? window.innerWidth : 1024` dan `window.innerHeight : 768`.
+    - Pada pelayan (SSR), ketiadaan `window` menyebabkan dimensi rujukan 1024x768 digunakan menghasilkan inline style `height: 658px; width: 930px`.
+    - Pada klien semasa hydration pas pertama, `window` sudah wujud menyebabkan React merender dengan resolusi skrin sebenar klien (cth: `height: 801px; width: 1133px`). Percanggahan atribut inline style ini mencetuskan ralat hydration mismatch.
+    - Di `components/pamphlet/viewer/index.tsx`, `isTwoPageSpread` turut menilai `typeof window !== 'undefined' && window.innerWidth >= 880` secara langsung dalam JSX yang mengubah teks butang dan format nombor halaman toolbar antara pelayan dan klien.
+  - **Penyelesaian Dilaksanakan**:
+    - `flipbook-view.tsx`: Mengunci nilai permulaan `containerDimensions` kepada `{ width: 1024, height: 768 }` secara deterministik pada pelayan dan klien. Dimensi sebenar dikemas kini sepenuhnya selepas mount menerusi `useEffect`, `updateSize()`, dan `ResizeObserver`.
+    - `index.tsx`: Menggantikan percabangan `typeof window` dengan state `isWideScreen` (lalai `true`) yang diselaraskan dalam `useEffect`.
+    - Menambah `suppressHydrationWarning` pada kontena pentas dan buku sebagai benteng pertahanan tambahan.
+  - **Ujian & Kualiti**:
+    - 326 / 326 ujian vitest lulus merentas 37 suite ujian.
+    - 0 ralat TypeScript (`tsc --noEmit`), 0 ralat / 0 amaran ESLint.
+
+- **2026-10-03 (Penyelarasan Label Butang Toolbar & Penghapusan Ruang Putih Bingkai Landskap `FlipbookView`)**:
+  - **Latar Belakang & Punca Isu**:
+    1. *Kekeliruan Butang ("sepatutnya 1 halaman bukan 2 halaman")*:
+       - Pada bar navigasi pemapar (`components/pamphlet/viewer/toolbar.tsx`), label butang sebelum ini memaparkan tindakan sasaran seterusnya (*action target*) dan bukannya status aktif semasa (*current status*).
+       - Apabila pembaca sedang melihat Mod 1 Halaman, butang memaparkan `[ 📖 2 Halaman ]` (bermaksud klik untuk ke mod 2 halaman). Pengguna mentafsirkan lencana ini sebagai penunjuk status dan menyangka pembaca tersilap mengaktifkan mod 2 halaman.
+    2. *Ruang Putih Atas/Bawah Bingkai Landskap ("kenapa ada putih ya dekat atas frame landscape tu")*:
+       - `FlipbookView` mengunci nisbah aspek dokumen landskap secara tegar kepada format A4 (1.414 : 1).
+       - Risalah atau poster grafik pengguna (cth: "PANDUAN MUDAH URUS EMAS & SURAT AR-RAHNU") direka bentuk dalam nisbah 16:9 ($1.778 : 1$) yang jauh lebih lebar daripada A4.
+       - Apabila imej 1.778 diletakkan di dalam kontena 1.414 dengan latar belakang putih (`bg-white`) dan `object-contain`, kontena menjadi terlalu tinggi (~115px lebih tinggi), menyebabkan jalur putih kosong (letterboxing) selebar ~58px kelihatan jelas di bahagian atas dan bawah bingkai dokumen.
+  - **Penyelesaian Dilaksanakan**:
+    1. *Penyelarasan Label & Ikon Butang Toolbar*:
+       - Apabila sedang memaparkan 1 Halaman (`!isTwoPageSpread`): memaparkan `[ 📄 1 Halaman ]` dengan tooltip `"Sedang dipaparkan dalam 1 Halaman (Klik untuk tukar ke 2 Halaman)"`.
+       - Apabila sedang memaparkan 2 Halaman (`isTwoPageSpread`): memaparkan `[ 📖 2 Halaman ]` dengan tooltip `"Sedang dipaparkan dalam 2 Halaman (Klik untuk tukar ke 1 Halaman)"`.
+    2. *Pengesanan Nisbah Aspek Dinamik Dokumen*:
+       - Menambah pengesanan saiz semula jadi imej (`img.naturalWidth / img.naturalHeight`) menerusi `onLoad` ke dalam state `detectedRatios`.
+       - Pengiraan dimensi pentas buku (`bookWidth` & `bookHeight`) kini mengutamakan nisbah sebenar imej:
+         `pageRatio = detectedRatio || page.aspectRatio || (isLandscape ? 1.414 : 0.707)`.
+       - Kontena buku melaraskan ketinggian dan kelebaran tepat mengikut saiz imej 16:9, menghapuskan sepenuhnya jurang putih letterbox atas dan bawah.
+       - Penyelarasan turut diaplikasikan ke atas `SliderView` dan `VerticalView`.
+  - **Ujian & Kualiti**:
+    - 326 / 326 ujian vitest lulus merentas 37 suite ujian.
+    - 0 ralat TypeScript (`tsc --noEmit`), 0 ralat / 0 amaran ESLint.
+
+- **2026-10-03 (Pembaikan Saiz Edge-to-Edge: Rapatkan Gambar ke Sisi Skrin / Hapuskan Gap Kiri & Kanan `FlipbookView`)**:
+  - **Latar Belakang & Punca Isu ("ada yg tak sambung rapat gambar tu")**:
+    - Pengguna memuat naik tangkap layar telefon (`media_1790958536125.jpg`) yang menunjukkan risalah landskap 16:9 ("SAMBUNGAN RAHNU") mempunyai ruang kosong/jurang ~51px di sebelah kiri dan kanan, menyebabkan gambar tidak mencecah tepi skrin.
+    - Punca utama:
+      (1) Elemen pentas buku mempunyai padding `p-2 sm:p-4 md:p-6` yang menolak gambar ke dalam;
+      (2) Formula kelebaran menolak 24px secara manual dan mengenakan had `availW * 0.94` yang memotong 6% kelebaran secara buatan;
+      (3) Inline style `maxWidth: '96vw'` memaksa jurang minimum 2vw di kedua-dua belah skrin;
+      (4) Ketinggian `availH` menolak 110px daripada kawasan `main` (yang sebenarnya sudah mengecualikan header), mengecilkan ketinggian dan secara langsung mengecilkan kelebaran gambar berkadar ($W = H \times 1.778$).
+  - **Penyelesaian Dilaksanakan**:
+    - `flipbook-view.tsx`:
+      (1) Dalam mod 1 Halaman, formula kelebaran menggunakan 100% lebar kontena (`singleAvailW = containerDimensions.width`) tanpa pemotongan tiruan `0.94` atau penolakan 24px;
+      (2) Ketinggian `singleAvailH` dilaraskan secara anjal (`containerDimensions.height - 44` untuk landskap);
+      (3) Sekiranya kelebaran dokumen hampir memenuhi skrin (< 64px) dan ketinggian masih muat, gambar dilebarkan terus ke 100% lebar skrin (`targetW = singleAvailW`);
+      (4) Padding kontena pentas ditukar kepada `p-0` untuk mod landskap 1 halaman;
+      (5) Had kelebaran kontena ditukar daripada `maxWidth: '96vw'` kepada `maxWidth: '100%'`;
+      (6) Apabila gambar mencecah sempadan tepi skrin (`bookWidth >= containerDimensions.width - 4`), kelas kontena bertukar secara automatik kepada `rounded-none`, dan bayangan tulang belakang (`spine crease shadow`) di sebelah kiri disembunyikan untuk helaian landskap rata;
+      (7) `SliderView` (`slider-view.tsx`) diselaraskan dengan `p-0 sm:p-3` dan `max-w-full`.
+  - **Ujian & Kualiti**:
+    - 326 / 326 ujian vitest lulus merentas 37 suite ujian.
+    - 0 ralat TypeScript (`tsc --noEmit`), 0 ralat / 0 amaran ESLint.
+
+- **2026-10-03 (Pembaikan Isu Kelipan Saiz Semasa Muat Semula Halaman / Penghapusan FOUC Layout Snap `FlipbookView`)**:
+  - **Latar Belakang & Punca Isu ("kenapa bila refresh dia macam ni dulu" `media_1790960033460.png`)**:
+    - Pengguna bertanya mengapa semasa menekan muat semula (refresh) pada pelayar, paparan risalah pada mulanya kelihatan bersaiz kecil ($666 \times 374\text{px}$) dengan bucu bulat dan jurang margin kiri-kanan sebelum mengembang ke saiz penuh.
+    - Punca berpunca daripada kitaran hayat reka letak tak segerak (asynchronous lifecycle):
+      (1) Semasa SSR dan mount awal di klien, `containerDimensions` dimulakan dengan saiz rujukan deterministik 1024x768 bagi mencegah ketidaksepadanan hydration;
+      (2) State `detectedRatios` bermula kosong `{}` dan perlu menunggu acara `onLoad` imej atau ukuran `ResizeObserver` sebenar;
+      (3) Pada saat awal pemuatan, komponen memaparkan dokumen pada nilai permulaan tersebut (atau formula terdahulu sebelum hot-reload disegerakkan), menghasilkan kelipan visual (layout shift / FOUC) apabila saiz sebenar diselaraskan beberapa milisaat kemudian.
+  - **Penyelesaian Dilaksanakan**:
+    - Memperkenalkan state `isMounted` (lalai `false`) pada `FlipbookView`.
+    - Kontena pentas disembunyikan secara bersih (`opacity-0 pointer-events-none`) semasa pas pertama.
+    - Di dalam `useEffect`, `updateSize()` membaca dimensi tepat DOM secara serta-merta, dan sebarang imej yang telah selesai dimuat turun / sedia ada dalam cache pelayar (`img.complete && img.naturalWidth > 0`) diimbas untuk mengaktifkan nisbah aspek sebenar tanpa menunggu `onLoad`.
+    - `setIsMounted(true)` diaktifkan bersama transisi `transition-opacity duration-200` (`opacity-100`).
+    - Hasilnya, dokumen memudar masuk (*fade in*) dengan lancar pada saiz penuh yang tepat dari detik pertama tanpa sebarang gegaran atau lompatan saiz.
+  - **Ujian & Kualiti**:
+    - 326 / 326 ujian vitest lulus merentas 37 suite ujian.
+    - 0 ralat TypeScript (`tsc --noEmit`), 0 ralat / 0 amaran ESLint.
+
+- **2026-10-03 (Penukaran Tema Lalai E-Pamphlet kepada Clean Studio / Light)**:
+  - **Latar Belakang & Permintaan Pengguna**:
+    - Pengguna meminta untuk menggunakan tema "Clean Studio" sebagai tema lalai ("kalau tema tu boleh tak guna clean studio utk default").
+    - Tema Clean Studio (`light`) membawakan latar belakang studio galeri moden yang cerah, bersih dan profesional (`bg-gradient-to-b from-slate-100 via-slate-50 to-zinc-200 text-slate-900`) serta toolbar putih jernih separa lutsinar (`bg-white/85 backdrop-blur-md border-slate-200 text-slate-800`), menggantikan suasana gelap pekat (Cinema Dark / Royal Emerald).
+  - **Penyelesaian Dilaksanakan**:
+    - `lib/pamphlets/themes.ts`: Menukar pemalar teras `DEFAULT_PAMPHLET_THEME` daripada `'dark'` kepada `'light'` (Clean Studio).
+    - `lib/storage/pamphlets.ts`: Mengemas kini `mapPamphletFromRow` dan `createPamphlet` untuk menggunakan `DEFAULT_PAMPHLET_THEME` (`'light'`) sebagai fallback berpusat.
+    - `app/(dashboard)/pamphlets/client.tsx`: Menyelaraskan `CreatePamphletDialog` supaya menetapkan tema lalai baharu secara automatik kepada `DEFAULT_PAMPHLET_THEME` (`'light'`).
+    - `components/pamphlet/viewer/index.tsx`, `toolbar.tsx`, `thumbnails-strip.tsx`: Menyelaraskan fallback pemapar kepada `DEFAULT_PAMPHLET_THEME` (`'light'`).
+    - Pangkalan Data Supabase: Mengemas kini rekod pamphlet sedia ada pengguna untuk slug `test` (`/p/test`) terus daripada `theme: 'emerald'` kepada `theme: 'light'` (Clean Studio).
+  - **Ujian & Kualiti**:
+    - 327 / 327 ujian vitest lulus merentas 37 suite ujian (termasuk ujian unit baharu untuk `DEFAULT_PAMPHLET_THEME === 'light'` di `tests/pamphlet.test.ts`).
+    - 0 ralat TypeScript (`tsc --noEmit`), 0 ralat / 0 amaran ESLint.
+
+- **2026-10-03 (Penyelarasan Saiz Lalai Bersahaja: Zoom Out Sikit & Elak Pertindihan Toolbar Bawah)**:
+  - **Latar Belakang & Permintaan Pengguna ("zoom sgt la pulak default, zoom out sikit" `media_1790961742536.png`)**:
+    - Pengguna memaklumkan bahawa saiz paparan 1 halaman pada skrin komputer/laptop kelihatan terlalu besar secara lalai (*oversized/zoomed-in*), sehingga melekat rapat ke tepi skrin dan bahagian bawah dokumen (seperti teks item 10 dan lukisan watak) ditutupi oleh palang navigasi bawah terapung (`absolute bottom-4`).
+    - Puncanya berpunca daripada pemaksaan kelebaran 100% dan penolakan ketinggian yang tidak mencukupi (hanya 44px) yang melonjakkan ketinggian dokumen sehingga menyentuh zon toolbar.
+  - **Penyelesaian Dilaksanakan**:
+    - `flipbook-view.tsx`:
+- **2026-10-03 (Penghapusan Kesan Pulse / Kelipan Bayang Pada Animasi 3D Flipbook)**:
+  - **Latar Belakang & Punca Isu ("kenapa setiap kali 3d flip ni keluar macam pulse" `media_1790962096804.png`)**:
+    - Pengguna bertanya mengapa semasa selakan helaian 3D flipbook dijalankan, terdapat kesan denyutan atau kelipan hitam (*pulse*) yang timbul setiap kali muka surat beralih.
+    - Punca berpunca daripada gabungan 4 lapisan bayangan tiruan yang berlebihan:
+      (1) Halaman tapak statik mempunyai animasi keyframe `animate={{ opacity: [0, 0, 0.25, 0] }}` dengan `times: [0, 0.4, 0.85, 1]` di mana bayangan gelap melonjak naik sehingga 25% kelegapan di tengah-tengah selakan sebelum jatuh mendadak, menghasilkan gelombang denyutan (*black pulse*) merentasi dokumen;
+      (2) Halaman tapak bertentangan mempunyai `initial={{ opacity: 0.3 }} animate={{ opacity: 0 }}` dan `bg-black/30` pada mod 1 halaman yang serta-merta melompat ke 30% kegelapan pada milisaat pertama klik (menghasilkan kilatan hitam / *strobe flash*);
+      (3) Helaian berputar (`turningLeaf`) mempunyai pencahayaan yang terlalu gelap (`black/30` pada 0.35 - 0.40) menghasilkan tompokan hitam legam;
+      (4) Bayangan luar bucu helaian `shadow-2xl` (50px blur) terpotong dalam ruang 3D dan tiba-tiba hilang apabila helaian dinyah-lekap pada milisaat ke-520.
+  - **Penyelesaian Dilaksanakan**:
+    - `flipbook-view.tsx`:
+      (1) Membuang kesemua lapisan bayang tiruan `[0, 0, 0.25, 0]` dan lonjakan awal `0.3 / 0.35` daripada halaman tapak statik (kiri, kanan, dan single page) agar halaman latar kekal bersih dan stabil;
+      (2) Melembutkan pencahayaan helaian berputar kepada kelegapan maksimum 0.15 dengan gradien halus `via-black/5 to-black/15` untuk simulasi pencahayaan kertas semulajadi;
+      (3) Menggantikan `shadow-2xl` dengan `shadow-lg` pada helaian berputar untuk peralihan tanpa lompatan bayang;
+      (4) Selakan 3D kini berputar dengan lancar, realistik (*buttery smooth*), tanpa sebarang kilatan atau denyutan bayang.
+  - **Ujian & Kualiti**:
+    - 327 / 327 ujian vitest lulus merentas 37 suite ujian.
+    - 0 ralat TypeScript (`tsc --noEmit`), 0 ralat / 0 amaran ESLint.
+
+- **2026-10-03 (Penghapusan Mutlak Isu Pulse / Pop & Naik Taraf Animasi 3D Flipbook)**:
+  - **Latar Belakang & Punca Isu Lanjutan ("masih lagi sama" berikutan "keluar macam pulse")**:
+    - Pengguna memaklumkan bahawa kesan "pulse" masih dirasai. Siasatan audit mendalam mendapati 5 punca teknikal saling bertindih:
+      (1) **Impuls Bunyi White Noise (`playPageTurnSound`)**: Fungsi audio Web Audio API dipanggil secara **tanpa syarat** pada setiap selakan dalam `flipbook-view.tsx` (mengabaikan `soundEnabled === false`), menghasilkan bunyi letusan audio 80ms (*audio click/pop*) yang didengar sebagai denyutan elektrik;
+      (2) **Animasi 1 Halaman Meluncur Sisi & Menghilang**: Dokumen 2-muka surat (seperti `/p/test`) beroperasi dalam mod 1 halaman secara lalai. Animasi selakan lama meluncurkan helaian secara mendatar ke `x: '-105%'` sambil melesapkan `opacity: 0`, manakala imej tapak di bawah melompat serta-merta ke Halaman 2 di t=0, menghasilkan sentakan / kelipan visual;
+      (3) **Penggelembungan Perspektif 3D ("Keluar")**: Nilai `perspective: 2500px` (dan `2000px`) menyebabkan helaian selebar 500px mengembang 25% mendekati mata pengguna pada sudut 90 darjah, kelihatan seperti tersembul keluar;
+      (4) **Denyutan Bayangan Hitam**: Lapisan `<motion.div>` yang menganimasikan kelegapan gradien hitam 0 -> 0.15 -> 0 mencetuskan gelombang denyutan warna hitam merentasi permukaan helaian;
+      (5) **Ketidakstabilan Nisbah Aspek**: Pengiraan saiz berdasarkan `currentPage` menyebabkan perbezaan ukuran piksel antara muka surat yang mencetuskan animasi saiz CSS 520ms sewaktu mendarat.
+  - **Penyelesaian Dilaksanakan**:
+    - `flipbook-view.tsx` & `index.tsx`:
+      (1) Menambah prop `soundEnabled` dan menyekat kesemua 4 panggilan `playPageTurnSound()` dengan `if (soundEnabled)` (lalai senyap);
+      (2) Mengunci `documentRatio` utama supaya kelebaran dan ketinggian buku kekal 100% stabil tanpa sebarang getaran dimensi;
+      (3) Meningkatkan nilai `perspective` kepada `5000px` untuk kesan 3D isometrik yang tenang dan rata tanpa penggelembungan;
+      (4) Membuang kesemua lapisan tindanan gradien hitam animasi agar warna dokumen kekal terang dan tulen;
+      (5) Membina semula selakan 1 halaman kepada **Putaran Kad 3D Dwi-Muka Sejati (*True 3D Double-Sided Card Flip*)**: tapak bawah kekal memaparkan helaian semasa, kad selakan berputar 180 darjah pada paksi tengah (`transformOrigin: 'center center'`, `transformStyle: 'preserve-3d'`), muka hadapan memaparkan helaian semasa (`rotateY: 0deg`), dan muka belakang memaparkan helaian sasaran (`rotateY: 180deg`), membolehkan helaian berpaling secara fizikal dan mendarat dengan lancar tanpa sebarang lompatan atau kelipan.
+  - **Ujian & Kualiti**:
+    - 327 / 327 ujian vitest lulus merentas 37 suite ujian.
+    - 0 ralat TypeScript (`tsc --noEmit`), 0 ralat / 0 amaran ESLint.
+
+- **2026-10-03 (Penghapusan Garis di Tengah Semasa Animasi 3D Flipbook)**:
+  - **Latar Belakang & Punca Isu ("kenapa ya bila 3d flip setiap helaian garis akan muncul di tengah")**:
+    - Pengguna bertanya mengapa semasa selakan helaian 3D dijalankan, terdapat satu garisan tegak yang muncul tepat di tengah-tengah dokumen pada setiap helaian ("setiap helaian garis akan muncul di tengah").
+    - Siasatan mendapati dua punca geometri dan penggayaan CSS:
+      (1) **Mod Satu Halaman (Single-Page Mode - Dokumen 2-Muka Surat / Telefon)**:
+          - Kad 3D dwi-muka berputar pada paksi tengah (`transformOrigin: 'center center'`).
+          - Pada sudut 90 darjah (`rotateY: -90deg`), satah 2D menguncup menjadi ketebalan sifar (*edge-on view*) tepat di garisan menegak tengah skrin (`x = 50%`).
+          - Sempadan kad (`border-black/15`) dan sisi piksel pada paksi tengah ini secara harfiah dilihat oleh mata sebagai garisan tegak tajam yang memotong dokumen pada setiap selakan.
+      (2) **Mod Dwi-Halaman (Two-Page Spread Mode)**:
+          - Elemen pembahagi tulang buku tiruan `w-2 z-40 bg-gradient-to-r from-black/50...` diaktifkan secara tiba-tiba (`opacity-100`) semasa `isFlipping === true`.
+          - Sempadan dalaman `border-r` dan `border-l` serta bayangan `shadow-inner` pada halaman kiri dan kanan bergabung membentuk jalur sempadan hitam tebal di tengah.
+          - Bayangan lipatan tulang kasar `w-10 from-black/40` memotong helaian landskap di tengah.
+  - **Penyelesaian Dilaksanakan**:
+    - `components/pamphlet/viewer/flipbook-view.tsx`:
+      (1) **Selakan 1 Halaman Berengsel Tepi Tulang (*Spine-Hinged Flip*)**: Menukar paksi putaran kepada tepi tulang buku: `transformOrigin: 'left center'`. Apabila beralih ke *Next*, helaian berayun dari kanan ke tulang kiri (`rotateY: 0 -> -85deg`, `opacity: [1, 1, 0]`) sambil halaman sasaran telah siap sedia di bawah tapak. Apabila beralih ke *Prev*, helaian berayun turun dari tulang kiri ke kanan (`rotateY: -85 -> 0deg`, `opacity: [0, 1, 1]`). Tiada satah yang pernah berserenjang di tengah skrin, menghapuskan sepenuhnya artifak garisan tengah;
+      (2) **Pembersihan Dwi-Halaman**: Membuang sepenuhnya jalur tulang `w-2 z-40`, mengasingkan sempadan luar daripada dalam (`border-r-0` dan `border-l-0`), membuang `shadow-inner` daripada kedua-dua tapak halaman, membuang `border-r`/`border-l` daripada placeholder kulit, dan menyekat bayangan lipatan tulang kasar bagi dokumen landskap (`!isLandscape`).
+  - **Ujian & Kualiti**:
+    - 327 / 327 ujian vitest lulus merentas 37 suite ujian.
+    - 0 ralat TypeScript (`tsc --noEmit`), 0 ralat / 0 amaran ESLint.
+
+## System Improvements (2026-10-03 — Pembaikan Butang Togol 1 Halaman vs 2 Halaman Pamphlet)
+- **Punca Isu Klik Kali Pertama Tiada Tindak Balas**:
+  - Pengguna melaporkan butang togol halaman di toolbar bawah ("1 Halaman") apabila ditekan satu kali tidak berlaku apa-apa dan hanya bertukar kepada 2 halaman selepas klik kali kedua.
+  - Siasatan mendapati:
+    (1) State `pageSpreadMode` bermula dengan `'auto'`.
+    (2) Pada dokumen 2 muka surat (`totalPages === 2`), mod `'auto'` memaparkan 1 halaman secara berpusat (`isTwoPageSpread = false`), maka toolbar memaparkan butang `[ 📄 1 Halaman ]`.
+    (3) Logik togol asal: `setPageSpreadMode((prev) => (prev === 'single' ? 'double' : 'single'))`.
+    (4) Apabila `prev` adalah `'auto'`, syarat `prev === 'single'` mengembalikan `false`, lalu menetapkan `pageSpreadMode = 'single'`.
+    (5) Kerana mod `'single'` dan mod awal `'auto'` menghasilkan paparan yang sama (`isTwoPageSpread = false`), klik pertama langsung tidak mengubah paparan visual (klik mati). Hanya pada klik kedua (apabila `prev === 'single'`), ia bertukar ke `'double'`.
+- **Penyelesaian Kejuruteraan**:
+  - `components/pamphlet/viewer/index.tsx`:
+    - Mengira `isCurrentlyDouble` di dalam `setPageSpreadMode((prev) => ...)`: jika sedang memaparkan 1 halaman (walaupun `prev` ialah `'auto'`), klik pertama serta-merta bertukar kepada `'double'`. Jika sedang memaparkan 2 halaman, klik bertukar kepada `'single'`.
+    - Mengintegrasikan `isTwoPageSpread` secara memoized dan bersih ke dalam prop `PamphletToolbar`.
+  - `components/pamphlet/viewer/toolbar.tsx`:
+    - Menambah semakan pertahanan `totalPages >= 2` agar togol spread hanya dipaparkan jika risalah mempunyai sekurang-kurangnya 2 muka surat.
+- **Ujian & Kualiti**:
+  - Ditambah ujian unit khusus togol 1-klik di `tests/pamphlet.test.ts`.
+  - 330 / 330 ujian vitest lulus merentas 37 suite ujian.
+  - 0 ralat TypeScript (`tsc --noEmit`), 0 ralat / 0 amaran ESLint.
+
+## System Improvements (2026-10-04 — Penyelarasan Saiz Touch Slider & Skrol Menegak Pamphlet)
+- **Penyelarasan Saiz Touch Slider (`SliderView`)**:
+  - `components/pamphlet/viewer/slider-view.tsx` dinaik taraf menggunakan `ResizeObserver` dan algoritma dimensi pintar yang sama persis dengan `3D Flipbook`:
+    - Had ketinggian dokumen landskap: maksimum 560px (potret 700px).
+    - Kelegaan bawah: 108px (desktop) dan 88px (mudah alih) supaya bar navigasi terapung (`bottom-4`) tidak sesekali bertindih dengan teks bahagian bawah dokumen.
+    - Saiz kekal stabil dan konsisten semasa menukar antara mod 3D Flipbook dan Touch Slider tanpa melompat saiz atau kelihatan terlalu "zoom".
+    - Pengesanan nisbah aspek dinamik imej (`detectedRatios` pada `img.onLoad`).
+- **Penyelarasan Saiz Skrol Menegak (`VerticalView`)**:
+  - `components/pamphlet/viewer/vertical-view.tsx` dihadkan kelebarannya secara santai kepada `max-w-[min(90vw,780px)]` (landskap) dan `max-w-[min(88vw,540px)]` (potret) berbanding `max-w-4xl` (896px) yang terlalu gergasi.
+  - Ditambah padding bawah `pb-28 sm:pb-32` agar helaian terakhir boleh dibaca sepenuhnya tanpa terlindung di sebalik toolbar bawah.
+- **Klarifikasi Diagnostik Konsol Pelayar**:
+  - Mesej amaran `The resource ... was preloaded using link preload...` dan `Slow execution detected: 118ms` disahkan sebagai amaran prapemuatan aset CSS dalam mod pembangunan Next.js (`localhost:3000`), bukannya ralat sistem sebenar (konsol menunjukkan 0 ralat).
+- **Ujian & Kualiti**:
+  - 330 / 330 ujian vitest lulus merentas 37 suite ujian.
+  - 0 ralat TypeScript (`tsc --noEmit`), 0 ralat / 0 amaran ESLint.
+
+## System Improvements (2026-10-04 — Penukaran Keseluruhan Antaramuka Sistem ke Bahasa Inggeris / Malay to English Global Standardization)
+- **Objektif**: Memenuhi permintaan pengguna ("yg mana ada bahasa melayu, tukarkan semua ke bahasa inggeris"), menukar kesemua teks antaramuka pengguna (UI), mesej ralat, modal dialog, tooltip, metadata, preset templat, dan mesej ralat pelayan/storan yang masih dalam Bahasa Melayu kepada Bahasa Inggeris secara profesional, rapi, dan konsisten merentas seluruh platform KlikForm.
+- **Komponen & Modul yang Ditukar**:
+  1. **E-Pamphlet & 3D Flipbook**:
+     - `components/pamphlet/viewer/toolbar.tsx`: Headers, butang navigasi, pemilih mod paparan ("3D Flipbook", "Touch Slider", "Vertical Scroll"), menu perkongsian ("Share Pamphlet", "Copy Link", "Share via WhatsApp"), togol muka surat ("1 Page", "2 Pages"), kawalan zum, tooltip, dan toasts ("Link copied to clipboard").
+     - `components/pamphlet/viewer/flipbook-view.tsx`, `slider-view.tsx`, `vertical-view.tsx`, `thumbnails-strip.tsx`, `index.tsx`: Label mod zum/pan, butang selakan (Next/Previous Page), siluet penghujung buku (Cover / End of Book), teks alternatif imej (Page X of Y), jalur thumbnail, dan keadaan kosong ("No pages added yet").
+     - `app/(dashboard)/pamphlets/page.tsx`, `client.tsx`: Metadata, kad statistik, keadaan kosong, dialog padam risalah ("Delete E-Pamphlet"), modal QR ("Pamphlet QR Code", "Scan to open digital pamphlet"), banner migrasi pangkalan data.
+     - `app/(dashboard)/pamphlet-builder/[id]/page.tsx`, `client.tsx`: Metadata, tab studio (Pages, Event Info, Theme), pemuat naik imej & PDF ("Upload Pages", "Drag & drop your files here"), senarai susunan helaian, borang maklumat acara, pemilih tema visual, butang tindakan (Save, Preview).
+     - `lib/pamphlets/themes.ts`, `lib/pamphlets/utils.ts`: Keterangan tema, tajuk sampel lalai ("Excellence Awards Program Book", "Digital Innovation Conference Program"), tajuk muka surat sampel, label butang tindakan ("Event Location", "Event Schedule", "Official Website").
+  2. **Sistem Kehadiran (Smart Attendance) & Semakan Sijil Awam**:
+     - `lib/forms/attendance.ts`: Format teks durasi kehadiran ("X Hours Y Minutes", "X Minutes", "X Seconds") dan mesej kelayakan e-Sijil.
+     - `actions/certificates.ts`: Mesej ralat rate limit, carian borang, semakan Google Sheet, pengesahan tarikh, dan kelayakan kehadiran.
+     - `app/(public)/form/[id]/client.tsx`: Toasts daftar keluar, amaran anti-penipuan QR berputar ("Anti-Fraud Security", "Please rescan the latest live QR code from the screen"), kad kejayaan daftar masuk & keluar, modal input PIN pengesahan, dialog amaran daftar keluar awal ("Early Check-Out Warning"), status butang serahan ("Submitting...", "Submit").
+     - `app/(public)/present/[id]/page.tsx`, `client.tsx`: Metadata, skrin projektor langsung QR berputar ("Live Attendance Check-In"), locale jam (`en-US`), ralat token tamat tempoh, arahan imbasan, togol PIN pentadbir.
+     - `app/(public)/check/[formId]/client.tsx`: Lencana syarat jam minimum kehadiran dan kad perincian kekurangan masa kehadiran ("Attendance Requirement Not Met").
+     - `app/(public)/edit/[token]/page.tsx`: Metadata dan paparan mesej ralat pautan tidak sah / telah luput / telah digunakan.
+  3. **Modul E-Sijil & Builder**:
+     - `lib/certificates/presets.ts`: Kesemua 6 templat sijil pra-bina (Classic, Minimalist, Elegant, Modern, Corporate, Golden Border) ditukar tajuk, penerangan, dan teks elemen kanvas (Certificate of Achievement, Leadership Training Program, This is proudly presented to, etc.).
+     - `components/certificates/new-certificate-dialog.tsx`: Penerangan kategori, tajuk dialog ("Create New Certificate"), tab (Presets / Custom Studio), toasts, dan butang tindakan.
+     - `components/certificates/delete-certificate-button.tsx`: Tajuk dialog ("Delete Certificate?"), penerangan, butang ("Cancel", "Yes, Delete").
+     - `components/certificates/certificate-template-card.tsx`: Format tarikh (`en-US`), tooltip butang jana pukal ("Bulk generate certificates (CSV to ZIP)").
+     - `components/certificate-qr-card.tsx`: Nama fail muat turun (`certificate-qr-code.png`), toasts, status butang ("Downloading...", "Open").
+     - `components/certificates/builder/properties.tsx`: Keadaan kosong ("Select an element to edit properties"), koordinat posisi & saiz, butang pusatkan ke kanvas (Center Horizontally, Center Vertically), penjajaran & pengagihan pelbagai elemen, warna & ketebalan ikon, info URL pengesahan automatik, sifat teks & fon, pengumpulan fon Google, butang gaya teks.
+     - `components/certificates/builder/sidebar.tsx`: Toasts muat naik latar belakang, tab Tambah Elemen (Text, Image, Shape, Line), butang medan ruang letak dinamik (Participant Name, Program Name, ID / IC Number, Serial Number, Organization / School, Role / Position, Grade / Training Hours, Date, Expiry Date), lencana & mohor (Gold Seal, Pass Badge, Verified Shield, Award Trophy), pratetap pantas (Add Classic Gold Border, Dual Signature Preset), label warna & imej latar.
+     - `components/certificates/builder/toolbar.tsx`: Tooltip kawalan (Back, Sidebar, Undo, Redo, Orientation, Show Grid, Snap to Grid, Print Margin), status butang simpan & eksport (Exporting... PNG, Generating... PDF, Saving... Save).
+     - `app/(dashboard)/certificates/builder/[id]/client.tsx`: Pemegang penskalaan Canva, `PLACEHOLDER_LABELS` kanvas, toasts penjajaran & pengagihan, toasts simpan templat, nama sandaran eksport (`certificate.png`, `certificate.pdf`), toasts muat turun.
+     - `app/(dashboard)/certificates/builder/[id]/preview/page.tsx`: Label ruang letak olok-olok (Johnathan Doe, Leadership Training Program, en-US dates, Global Leadership Academy, etc.).
+     - `components/certificate-template.tsx`: Format tarikh dipiawaikan ke `en-US`.
+  4. **Banner Langganan, Server Actions & Mesej Ralat Storan**:
+     - `components/dashboard/subscription-banner.tsx`: Amaran langganan Pro tamat tempoh, kiraan hari tangguh (*grace days*), notis akaun terhad, butang tindakan ("Renew Now", "Renew and Unlock").
+     - `app/(dashboard)/bio-builder/[id]/client.tsx`: Toasts ralat muat naik avatar, kejayaan, dan buang avatar.
+     - `lib/storage/pamphlets.ts`: `PAMPHLET_TABLE_MISSING_MESSAGE` dan kesemua mesej `throw new Error(...)` ditukar ke Bahasa Inggeris.
+     - `lib/storage/bio-links.ts`: Pengesahan nama pengguna, had kuota tier, konflik nama pengguna sedia ada, mesej ralat CRUD halaman bio & pautan.
+     - `lib/storage/subscription.ts`: Mesej had kuota borang, had penyerahan bulanan, had templat sijil, had kod QR.
+     - `lib/storage/short-links.ts`: Pengesahan URL dan mesej had pautan pendek.
+     - `actions/forms.ts`: Mesej ralat rate limit, borang tidak aktif, persetujuan PDPA, kod QR berputar tamat tempoh, dan kegagalan simpanan.
+     - `actions/attendance.ts`: Ralat semakan status, pengesahan check-out, ralat PIN, ralat QR berputar, dan ralat kemas kini baris.
+     - `actions/certificate-template.ts`: Mesej had tier, nama templat lalai ("New Certificate"), ralat ID, ralat pangkalan data.
+     - `actions/pamphlets.ts`: Mesej ralat tindakan cipta, kemas kini, dan padam.
+     - `actions/bio-links.ts`: Mesej ralat tindakan cipta, kemas kini, padam, dan susun semula pautan bio.
+     - `actions/edit-response.ts`: Mesej rate limit, pautan luput/digunakan/tidak sah, borang tidak dijumpai, dan ralat penyegerakan Google Sheet.
+     - `actions/response-summary.ts`: Mesej ketiadaan Google Sheet, URL tidak sah, ketiadaan konfigurasi, dan ralat bacaan.
+     - `actions/webhooks.ts`: Mesej pengesahan skema Zod (URL, Secret) dan mesej ralat tindakan CRUD webhook.
+     - `components/forms/certificate-category-card.tsx`: Contoh dropdown kategori ("Committee / Organizer / Participant").
+     - `lib/forms/conditions.ts`: Label pengendali logik syarat (equals, does not equal, contains, does not contain, is empty, is not empty, greater than, less than).
+     - `app/builder/[id]/client.tsx`: Mesej tamat tempoh sijil dan penerangan jam minimum kehadiran.
+     - `app/(dashboard)/responses/[id]/analytics/response-charts.tsx`: Toasts ralat muat ringkasan jawapan.
+  5. **Metadata SEO & JSON-LD**:
+     - `app/layout.tsx`: Keterangan aplikasi dalam JSON-LD `@graph` Schema.org Application.
+     - `app/page.tsx`: Metadata tajuk ("KlikForm - Next-Gen Online Forms & Automated E-Certificates") dan deskripsi.
+     - `app/(public)/p/[slug]/page.tsx`: Metadata laluan awam risalah digital ("Program Book Not Found", "Digital Program Book", "View the official digital program book for...").
+  6. **Penyelarasan Ujian Vitest**:
+     - `tests/attendance.test.ts` & `tests/certificate-attendance-gating.test.ts`: Penyelarasan format durasi masa dan mesej kelayakan kehadiran.
+     - `tests/pamphlet-storage.test.ts`: Penyelarasan mesej ralat storan risalah.
+     - `tests/bio-storage.test.ts`: Penyelarasan mesej ralat panjang nama pengguna dan had kuota tier percuma.
+     - `tests/pamphlet.test.ts`: Penyelarasan slug sampel risalah bahasa Inggeris.
+     - `tests/attendance-actions.test.ts`: Penyelarasan format durasi ("Hour") dan ralat rekod kehadiran ("Check-in record not found").
+- **Pemeliharaan Keserasian Spreadsheet Tempatan**:
+  - Kolum pemetaan fail luaran seperti `lib/certificates/headers.ts` (`isIcHeader`), `actions/certificates.ts` (carian lajur `tarikh`, `no ic`, `kad pengenalan`), dan `lib/forms/attendance.ts` sengaja dikekalkan bagi memastikan fail Excel/Google Sheet pengguna sedia ada diproses dengan lancar tanpa ralat.
+- **Pengesahan & Kualiti Menyeluruh**:
+  - `npm run typecheck`: 0 ralat TypeScript (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat, 0 amaran ESLint.
+  - `npm test`: 330 / 330 ujian lulus (100%) merentas kesemua 37 suite ujian.
+
+## System Improvements (2026-10-04 — Penetapan Tema "Clean Studio" Sebagai Tema Lalai Preview E-Pamphlet)
+- **Konteks & Permintaan Pengguna**: Pengguna memohon agar pratonton e-pamphlet / buku program menggunakan tema "Clean Studio" (latar belakang cerah, moden dan kemas) secara lalai menggantikan "Royal Emerald" (`emerald`).
+- **Penyelesaian Dilaksanakan**:
+  1. `lib/pamphlets/utils.ts`:
+     - `getSamplePamphlet()`: Menukar `theme: 'emerald'` kepada `theme: 'light'` ("Clean Studio").
+     - `getSampleLandscapePamphlet()`: Menukar `theme: 'dark'` kepada `theme: 'light'` ("Clean Studio").
+  2. `components/pamphlet/viewer/index.tsx`:
+     - Menambah penyegerakan reaktif `useEffect` bagi `pamphlet.theme` supaya pemapar (*viewer*) serta-merta mengemas kini tema latar apabila `pamphlet.theme` bertukar atau disetkan.
+  3. `lib/storage/pamphlets.ts`:
+     - Menyelaraskan teks DDL SQL dalam `PAMPHLET_TABLE_MISSING_MESSAGE` kepada `theme text not null default 'light'`.
+  4. `tests/pamphlet.test.ts`:
+     - Mengemas kini asersi ujian tema sampel kepada `expect(sample.theme).toBe('light')`.
+- **Ujian & Kualiti**:
+  - `npm test`: 330 / 330 ujian vitest lulus (37 test suites).
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat, 0 amaran ESLint.
+
+## System Improvements (2026-10-04 — Pembersihan Menyeluruh Emoji Antaramuka untuk Estetika Reka Bentuk Minimalis)
+- **Permintaan Pengguna**: "ada emoji, kalau boleh buang emoji sbb sy suka minimalist" (merujuk kepada lencana orientasi buku `💻 Landscape (Horizontal)` / `📱 Portrait (Vertical)` dan sebarang emoji dalam antaramuka).
+- **Tindakan Pembersihan & Piawaian Minimalis**:
+  1. `app/(dashboard)/pamphlet-builder/[id]/client.tsx`:
+     - Membuang emoji `💻` dan `📱` pada pill penunjuk status orientasi buku: ditukar kepada `Landscape (Horizontal)` / `Portrait (Vertical)`.
+  2. `app/(public)/edit/[token]/page.tsx`:
+     - Menggantikan emoji `⛔` dengan bekas ikon SVG monokromatik Lucide `<AlertCircle className="w-6 h-6 text-rose-600" />` di dalam kontena bulat lembut `rounded-full bg-rose-50`.
+  3. `app/(public)/form/[id]/client.tsx`:
+     - Menggantikan emoji `🚫` dengan ikon Lucide `<ShieldAlert className="h-6 w-6 text-red-600" />`.
+     - Menggantikan emoji `🔒` dengan ikon Lucide `<Lock className="h-6 w-6 text-slate-600" />`.
+     - Menggantikan emoji `📌` dengan ikon Lucide `<Info className="h-4 w-4 text-amber-700 shrink-0 mt-0.5" />`.
+     - Menggantikan emoji `⏳` dengan ikon Lucide `<Clock className="h-4 w-4 text-amber-700 shrink-0 mt-0.5" />`.
+  4. `components/dashboard/stats.tsx`:
+     - Membuang emoji parti `🎉` pada penunjuk kuota borang: ditukar kepada teks bersih `Unlimited forms`.
+  5. `app/(dashboard)/forms/page.tsx`:
+     - Menggantikan emoji amaran `⚠️` dengan ikon Lucide `<AlertCircle className="w-4 h-4 text-red-600 shrink-0" />`.
+  6. `components/forms/certificate-category-card.tsx`, `edit-link-card.tsx`, `respondent-notification-card.tsx`:
+     - Menggantikan emoji `⚠️` dengan ikon Lucide `<AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />`.
+  7. `components/landing/landing-hero.tsx` & `landing-footer.tsx`:
+     - Menggantikan emoji `💬` dengan ikon Lucide `<MessageCircle className="h-3.5 w-3.5 text-emerald-600" />`.
+     - Menggantikan emoji `❤️` dengan ikon Lucide `<Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />`.
+## System Improvements (2026-10-04 — Pengoptimuman Antaramuka Pemapar E-Pamphlet untuk Peranti Mudah Alih & Simulator Telefon)
+- **Permintaan Pengguna**: "view dekat phone ni kurang cantik sikit" bersama tangkapan skrin yang menunjukkan risalah landskap A4 dalam simulator telefon dengan ruang kosong luas di bawah dan toolbar desktop yang padat.
+- **Punca Masalah Visual**:
+  1. Toolbar bawah memuatkan kawalan desktop (`[ 1 Page ]` toggle, zoom stepper `- 100% +`), menjadikannya terlalu lebar dan sesak (~360px) di dalam skrin telefon (390px-400px).
+  2. Simulator telefon pada desktop tidak menghantar prop `forceMobile` ke `PamphletToolbar`, menyebabkan semakan CSS/JS lebar skrin menyangka ia berada di desktop, lantas memaparkan teks label ("Flipbook"), pemilih tema, dan suis bunyi pada bar atas (header) yang memotong tajuk buku program kepada `IG...`.
+  3. Dokumen landskap pada skrin telefon menegak meninggalkan ruang menegak yang terasa janggal tanpa panduan interaksi atau perimbangan komposisi.
+- **Penyelesaian & Naik Taraf Seni Bina**:
+  1. `components/pamphlet/viewer/toolbar.tsx`:
+     - Menghubungkan `isMobileLayout = forceMobile || !isDesktop`.
+     - Bar bawah (`footer`) diringkaskan kepada *floating pill* minimalis: `[ < ]   [ ⊞ 1 / 2 ]   [ > ]` dengan `rounded-full` dan saiz padat (~148px) yang mudah dicapai oleh ibu jari (*thumb zone*).
+     - Menyembunyikan kawalan zoom stepper (`- 100% +`) dan toggle spread (`1 Page`) pada mod telefon (pengguna telefon menggunakan *pinch-to-zoom* atau *double-tap*).
+     - Pada bar atas (`header`): menyembunyikan pemilih tema dan suis bunyi pada telefon, dan menukar butang mod paparan kepada ikon 32x32 tanpa label teks. Ruang tajuk diperluaskan (`flex-1 min-w-0`) supaya nama dokumen (contohnya `AMARAN CUACA - MONSUN`) dipaparkan sepenuhnya tanpa terpotong.
+  2. `components/pamphlet/viewer/index.tsx`:
+     - Memajukan `forceMobile={forceMobile}` ke `<PamphletToolbar>` dan `<SliderView>`.
+  3. `components/pamphlet/viewer/flipbook-view.tsx` & `slider-view.tsx`:
+     - Memperluas kelebaran dokumen landskap pada mod mudah alih daripada `width - 24` ke `width - 8` untuk memaksimumkan penggunaan skrin telefon dan menjadikan teks lebih tajam serta mudah dibaca.
+     - Menambah petunjuk visual minimalis monokromatik di ruang bawah flyer landskap: `<Smartphone className="h-3.5 w-3.5 rotate-90" /> Rotate phone for full-width • Double-tap to zoom` (hanya dipaparkan apabila `zoom <= 1.0` untuk keseimbangan visual yang elegan dan berorientasikan pengguna).
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm test`: 330 / 330 ujian unit lulus (37 suites).
+
+## System Improvements (2026-10-04 — Penghapusan Kesan Denyutan "Pulse Effect" Pada Animasi Selakan Helaian 3D Flipbook)
+- **Konteks & Laporan Pengguna**: "kenapa di dekstop view dan mobile view bila sy tekan flip dia macam ada pulse effect"
+- **Analisis Punca Masalah**:
+  1. *Unjuran Perspektif 3D Membengkak ke Kamera*: Dokumen 2 muka surat (seperti risalah depan-belakang) secara lalai menggunakan mod Single Page pada desktop dan mobile. Animasi lama memutarkan helaian tunggal `rotateY: 0 -> -85deg` dengan `transformOrigin: 'left center'`. Ini menolak bucu kanan ke ruang Z positif mendekati kamera, menyebabkan imej membesar secara optik sebanyak ~20% (kesan bengkak/denyut) sebelum hilang.
+  2. *Kelipan `src` Imej Tapak*: Elemen `<img>` tapak menggunakan ternari `isFlipping ? targetPage : currentPage`. Apabila animasi selesai (`isFlipping = false`) sebelum state `currentPage` dikemas kini oleh komponen induk, imej tapak seketika berbalik ke muka surat asal selama satu bingkai mikro (mencetuskan kilatan kelipan `Halaman 2 -> Halaman 1 -> Halaman 2`).
+  3. *Tindanan Bayang Lenyap Mendadak*: Animasi `opacity: [1, 1, 0]` melarutkan helaian selakan secara tiba-tiba di tengah putaran.
+  4. *Kitaran Semula `ResizeObserver`*: Hook `useEffect` bagi `ResizeObserver` bergantung kepada `[currentPage]`, menyebabkan observer dibongkar dan dipasang semula pada setiap selakan, lantas mengimbas DOM dan mencetuskan kiraan semula saiz/nisbah kontena tepat ketika animasi selesai.
+- **Penyelesaian Dilaksanakan**:
+  1. `components/pamphlet/viewer/flipbook-view.tsx`:
+     - **Penyegerakan `displayedPage`**: Memperkenalkan state `displayedPage` yang diselaraskan dengan `nextPage` sebaik sahaja selakan bermula. Imej tapak dikunci kepada muka surat sasaran tanpa sebarang kelipan `src`.
+     - **Seni Bina Selakan 3D Berasingan Mengikut Mod**:
+       - *Mod 2 Halaman (Two-Page Spread)*: Kekal menggunakan selakan 180° merentasi tulang tengah (`left: 50%`) yang mendarat rapi di halaman sebelah kiri (berfungsi sempurna dan disahkan lancar oleh pengguna).
+       - *Mod 1 Halaman (Single Page & Mobile)*: Menggantikan putaran engsel luar yang terkeluar daripada skrin dengan **Simulasi Kelengkungan Kertas 3D Sejati (*3D Paper Curl & Peel*)**:
+         - Bucu helaian terangkat dalam perspektif 3D dengan putaran `rotateY: -25deg` dan kecondongan pepenjuru organik `rotateZ: -3deg` berpaksi pada `right center`.
+         - Jalur bayangan kertas 3D tebal dwi-lapisan (`shadow-[-16px_0_36px_rgba(0,0,0,0.32),-6px_0_12px_rgba(0,0,0,0.2)]`) mengekori lipatan selakan dan jatuh ke atas muka surat baharu di bawah.
+         - Kilauan silinder 3D (*cylindrical highlight sheen* `from-white/60 via-black/10 to-transparent`) membiaskan cahaya di sepanjang permatang lengkungan kertas.
+         - Helaian menyapu licin dari kanan ke kiri (`x: 0 -> -102%`) dan bergulung kemas ke dalam tulang kiri, menyingkap halaman baharu di bawahnya tanpa sebarang pembengkakan kamera, tanpa terpelanting keluar skrin, dan sifar garisan tengah.
+     - **Kunci `ResizeObserver` ke Mount-Only**: Mengubah dependencies array observer kepada `[]` supaya dimensi kontena kekal teguh dan sifar gangguan saiz sewaktu helaian bertukar.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat, 0 amaran ESLint.
+  - `npm test`: 330 / 330 ujian unit lulus (37 test suites).
+
+## System Improvements (2026-10-05 — Penghapusan Glitch Selepas Animasi 3D Flip)
+- **Punca Glitch "Lepas 3D Flip"**:
+  1. *Lonjakan Transformasi `targetShiftX`*: Menetapkan `targetSpreadRef.current = null` secara segerak di dalam `onFlipAnimationComplete` menyebabkan `targetShiftX` fallback kepada `activeSpread` (spread lama) sebelum render baharu berlaku, mencetuskan lonjakan sekejap pada koordinat paksi X kontena yang dipacu oleh peralihan CSS `transition: transform 520ms`.
+  2. *Kelipan Dekod Imej Tapak (`img.src` swap)*: Penyah-lekapan (*unmount*) helaian selakan berlaku serentak pada millisecond yang sama elemen `<img>` tapak diarahkan menukar `src`. Pelayar memerlukan 1 bingkai mikro untuk mendekod bitmap baharu, menyebabkan kelipan putih/halaman lama.
+  3. *Bayangan Helaian Tertanggal Mengejut (`drop-shadow-xl` pop)*: Helaian berputar mengekalkan bayangan jatuh penuh sehingga saat mendarat pada 180° / 0°, lalu bayangan hilang secara mengejut sebaik sahaja helaian dinyah-lekap.
+  4. *Ketidakpadanan Warna Sempadan*: Sempadan helaian berputar menggunakan `border-black/10` manakala halaman tapak menggunakan `border-black/15`, mencetuskan lonjakan warna garis luar pada saat akhir selakan.
+  5. *Pepijat Selakan Undur Mod 1 Halaman*: Pada selakan `PREV`, `setDisplayedPage` tidak dikemas kini, menyebabkan imej tapak tidak memaparkan halaman sasaran di bawah helaian selakan.
+  6. *Bunyi Selakan Berulang Dua Kali*: Panggilan `onPageChange` di penghujung selakan mencetuskan `playPageTurnSound` kali kedua dalam `PamphletViewer`.
+- **Penyelesaian Dilaksanakan**:
+  1. `components/pamphlet/viewer/flipbook-view.tsx`:
+     - **Pengekalan `targetSpreadRef` Melalui `requestAnimationFrame`**: Menangguhkan pembersihan `targetSpreadRef.current = null` ke frame seterusnya selepas state dikomit, memastikan `targetShiftX` tidak sesekali melonjak ke spread lama.
+     - **Pra-Pemaparan Imej Sasaran Pada Halaman Tapak (*Pre-mounted Destination Images*)**: Memasang imej muka surat sasaran di dalam lapisan asas sejak detik awal selakan (t=0) agar pelayar telah siap mendekod bitmap tersebut sebelum helaian mendarat.
+     - **Nyah-Lekap Helaian Tanpa Kelipan (*Seamless Handoff*)**: Menangguhkan pembuangan `turningLeaf` sebanyak 1 frame menerusi `requestAnimationFrame` agar halaman tapak telah sedia terpapar 100% sebelum helaian diangkat.
+     - **Animasi Pelarutan Bayangan Dinamik (*Drop-Shadow Dissolve*)**: Menggunakan keyframe penapis `filter: ['drop-shadow(0px...)', 'drop-shadow(±8px 12px 24px...)', 'drop-shadow(0px...)']` dengan `times: [0, 0.48, 1]` supaya bayangan kembali ke 0 secara semula jadi apabila helaian mendarat rata.
+     - **Penyelarasan Sempadan**: Menyelaraskan kesemua sempadan helaian selakan kepada `border-black/15` setara dengan halaman tapak dan membuang `transition-opacity duration-300` yang melambatkan pemaparan.
+     - **Sokongan Penuh Selakan Undur 1 Halaman**: Menambah prapemuatan imej sasaran, animasi pudar masuk `opacity: [0, 1, 1]`, dan bayangan berarah kanan (`shadow-[16px...]`).
+  2. `components/pamphlet/viewer/index.tsx`:
+     - Menghalang bunyi selakan berulang dua kali dengan menyalurkan `playSound = false` pada panggilan `onPageChange` dari `FlipbookView`.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat, 0 amaran ESLint.
+  - `npm test`: 330 / 330 ujian unit lulus (37 test suites).
+
+## System Improvements (2026-10-05 — Penyelarasan Segerak Transisi Imej dengan Animasi 3D Flip 1-Page & 2-Pages)
+- **Konteks & Laporan Pengguna**: "dari segi 3d flip macam okay utk 1 page dan 2 pages, cuma utk trasition gambar tu macam tak sync bila 3d flip"
+- **Analisis Punca Ketidaksegerakan Transisi Imej**:
+  1. *Lengkungan Easing Front-Loaded*: Easing lama `cubic-bezier(0.25, 1, 0.5, 1)` menyebabkan putaran 3D melepasi 90° (titik peralihan hadapan ke belakang) dalam hanya ~75ms pertama (15% tempoh animasi). Muka hadapan bertukar ke muka belakang hampir serta-merta, manakala helaian mengambil baki 445ms melayang perlahan ke bawah. Pengguna merasakan gambar bertukar terlalu pantas dan tidak selari dengan selakan.
+  2. *Ketaksimetrian Gerakan Mod 1 Halaman*: Pada selakan NEXT, helaian mengupas muka surat semasa ke kiri; tetapi pada PREV, helaian muka surat sebelum terbang masuk dari luar skrin manakala imej tapak bertukar secara tidak seragam.
+  3. *Pertindihan Tag `<img>` Pendua di Lapisan Tapak*: Tag `<img>` pre-mount sekunder yang diletakkan di dalam kontena tapak menyebabkan gangguan ketelusan, ghosting dan double-decode sewaktu selakan.
+  4. *Z-Fighting Permukaan Coplanar*: Permukaan muka hadapan (`rotateY: 0deg`) dan muka belakang (`rotateY: 180deg`) berkongsi kedalaman $Z=0$, menyebabkan pelayar kadangkala menembus atau memotong imej belakang sebelum sudut 90°.
+- **Penyelesaian Dilaksanakan**:
+  1. `components/pamphlet/viewer/flipbook-view.tsx`:
+     - **Penyelarasan Lengkungan Easing Simetri `[0.45, 0.05, 0.55, 0.95]`**: Menyelaraskan lengkungan putaran 3D, bayangan jatuh (`filter: times [0, 0.5, 1]`), dan pergerakan anjakan kontena (`targetShiftX`) kepada lengkungan simetri. Titik serenjang 90° dicapai tepat pada 50% masa selakan (260ms), menghasilkan keseimbangan sempurna antara paparan muka hadapan dan muka belakang.
+     - **Pemisahan Kedalaman Mikro `translateZ(1px)`**: Menambah `translateZ(1px)` pada permukaan muka hadapan dan muka belakang untuk menghapuskan fenomena Z-fighting dan memastikan imej belakang hanya muncul tepat apabila melepasi sudut 90°.
+     - **Penyelarasan Menyeluruh Mod 1 Halaman (Symmetrical Pure Peel)**:
+       - Pada NEXT: Muka surat semasa dikupas ke kiri (`x: 0% -> -105%`, `rotateY: -25deg`, `transformOrigin: 'right center'`), menyingkap `nextPage` di tapak.
+       - Pada PREV: Muka surat semasa dikupas ke kanan (`x: 0% -> 105%`, `rotateY: 25deg`, `transformOrigin: 'left center'`), menyingkap `prevPage` di tapak.
+       - Imej destinasi diletakkan di lapisan tapak dari detik awal $t=0$, menjadikan penyingkapan imej 100% selari dengan helaian yang dikupas.
+     - **Prapemuatan Imej di Latar Belakang (Non-DOM Cache Warming)**: Menggunakan `new Image().src = url` dalam `useEffect` untuk memuat turun imej bersebelahan (`currentPage ± 1, 2`) terus ke dalam cache memori pelayar tanpa sebarang tag `<img>` pendua di dalam DOM.
+     - **Pembersihan Tag `<img>` Bertindih**: Membuang kesemua tag `<img>` bertindih sekunder dari Halaman Tapak Kiri, Kanan, dan Helaian Tunggal.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm test`: 330 / 330 ujian unit lulus (37 test suites).
+
+## System Improvements (2026-10-05 — Penyelarasan Mutlak Transisi Imej 2 Halaman / Two-Page Spread Image Transition Perfection)
+- **Konteks & Laporan Pengguna**: "utk 1 page dh okay, utk 2 pages ni macam tak okay sikit, bila 3d flip gambar tak berapa nk sync"
+- **Analisis Punca Masalah 2-Page Spread**:
+  1. *Runtuhan Konteks 3D Akibat Penapis CSS (`filter` flattening bug)*: Penggunaan `filter: drop-shadow(...)` pada kontena `<motion.div>` yang mempunyai `transformStyle: 'preserve-3d'` melanggar spesifikasi W3C Transforms. Penapis memampatkan ruang 3D menjadi satah bitmap 2D rata, mematikan fungsi `backface-visibility: hidden` dan memecahkan susunan kedalaman Z.
+  2. *Lengkungan Easing Terlalu Curam*: Lengkungan terdahulu `[0.45, 0.05, 0.55, 0.95]` memiliki kecerunan 9.0 di tengah putaran, melompat dari 9° ke 171° dalam hanya 50ms (seperti sentapan tajam), menyebabkan mata manusia tidak dapat mengikuti transisi muka hadapan ke belakang.
+  3. *Had Prapemuatan Imej Tidak Sepadan*: Prapemuatan asal hanya meliputi `currentPage ± 2`. Dalam mod 2 halaman di mana setiap selakan melangkau 2 muka surat, muka surat kedua bagi spread sasaran (`currentPage + 3`) tidak diprapemuat, mencetuskan kelipan muat turun rangkaian semasa selakan.
+  4. *Fallback Nullish Tersilap*: `targetSpreadRef.current?.leftPage ?? activeSpread.leftPage` menggunakan operator `??` yang tersilap fallback kepada halaman lama apabila `leftPage` bernilai `null` (semasa menutup buku ke Cover), menyebabkan halaman lama masih terpapar di atas meja sewaktu helaian diangkat.
+  5. *Pembalikan Geometri Muka Belakang*: Muka belakang yang diputarkan 180° tersilap menggunakan bucu lengkung dan sempadan di sisi tulang buku, serta bayangan lipatan tulang di sisi luar.
+  6. *Lonjakan Bayang Statik*: `shadow-[-16px...]` kekal pada intensiti penuh dan terpadam mengejut apabila helaian mendarat rata pada 180° / 0°.
+- **Penyelesaian Dilaksanakan**:
+  1. `components/pamphlet/viewer/flipbook-view.tsx`:
+     - **Pengekalan Konteks 3D Tulen (*Pure preserve-3d*)**: Membuang sebarang `filter` dari `<motion.div>` berputar. Konteks 3D kekal 100% tulen tanpa runtuhan satah.
+     - **Prapemuatan Menyeluruh (*Deep Spread Preload*)**: Prapemuat kesemua halaman bagi risalah $\le 16$ halaman atau 5 halaman ke hadapan/ke belakang bagi risalah besar terus ke dalam cache memori pelayar.
+     - **Lengkungan Fizik Klasik `[0.42, 0, 0.58, 1]` & Tempoh 540ms**: Menggantikan lengkungan sentap dengan keluk *ease-in-out* fizikal yang licin dan seimbang. Menyelaras peralihan CSS anjakan kontena (`transform 540ms cubic-bezier(0.42, 0, 0.58, 1)`) agar kedua-duanya bergerak seirama.
+     - **Penyelarasan Geometri Sempadan & Bucu Lengkung Muka Belakang**:
+       - Selakan NEXT: Muka belakang menggunakan `rounded-l-2xl border-l` dan bayangan tulang di `right-0 bg-gradient-to-l`.
+       - Selakan PREV: Muka belakang menggunakan `rounded-r-2xl border-r` dan bayangan tulang di `left-0 bg-gradient-to-r`.
+     - **Bayang Jatuh Dinamik Melarut ke 0 (*Dynamic Box-Shadow Dissolve*)**: Menggunakan animasi `boxShadow` pada Framer Motion yang membesar dari 0px ke 28px semasa helaian terangkat, dan melarut licin kembali ke 0px tepat semasa helaian mendarat rata pada 180° / 0°. Sifar lonjakan bayang terpadam.
+     - **Perlindungan Halaman Tapak Kulit Buku (`isLeftBaseHidden` & `isRightBaseHidden`)**: Menghalang paparan helaian pendua atau kelipan siluet semasa menutup buku ke Cover atau Back Cover.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm test`: 330 / 330 ujian unit lulus (37 test suites).
+
+## System Improvements (2026-10-05 — Pembaikan Ralat Kunci Pendua Preset Dwi-Tandatangan E-Sijil / Dual Signature Duplicate Key Fix)
+- **Konteks & Laporan Pengguna**: "dual signature preset ni problem dekat e cert builder" dengan ralat berulang di konsol:
+  `Encountered two children with the same key, el-1791171837395. Keys should be unique so that components maintain their identity across updates.`
+- **Punca Masalah**:
+  1. *Penjanaan ID Berasaskan Milisaat Mentah (`Date.now()`)*: `features/certificates/hooks/use-element-actions.ts` menjana ID elemen menggunakan rentetan `el-${Date.now()}`. Dalam gelung segerak pantas, `handleAddDualSignatures` memanggil `addElement` 4 kali dalam milisaat yang sama, menyebabkan kesemua 4 elemen (2 garisan + 2 teks jawatan) berkongsi kunci `id` yang serupa (`el-1791171837395`). Ini merosakkan penjejakan kunci komponen React, rekonsiliasi DOM, pemilihan elemen, dan penyeretan (*drag*).
+  2. *Transaksi Undo/History Pecah*: Memanggil `addElement` 4 kali berturut-turut menghasilkan 4 kemas kini `setTemplate` dan 4 komit sejarah `commitToHistory` berasingan, memaksa pengguna menekan `Ctrl+Z` sebanyak 4 kali untuk membatalkan satu preset.
+  3. *Limpahan Sempadan Potret*: Koordinat x statik (`x: 853`) melimpah keluar daripada sempadan kanvas mod potret (lebar 794px).
+  4. *Templat Legasi Rosak*: Templat yang disimpan sebelum ini mempunyai elemen dengan ID pendua tersimpan dalam pangkalan data.
+- **Penyelesaian Dilaksanakan**:
+  1. `features/certificates/hooks/use-element-actions.ts`:
+     - **Penjana ID Bebas Kolisi (`generateElementId`)**: Menggabungkan awalan, timestamp, counter sesi atomik tempatan modulo 1,000,000, dan rentetan rawak Base-36 (`${prefix}-${Date.now()}-${elementCounter}-${rand}`) yang menjamin sifar perlanggaran walaupun ribuan elemen dicipta serentak.
+     - **Penambahan Kelompok Atomik (`addElements`)**: Membolehkan berbilang elemen dimasukkan ke kanvas secara atomik dalam satu panggilan `setTemplate` dan satu rekod `commitToHistory` (1 undo step).
+     - **Penyelarasan `duplicateElement`**: Mengemas kini duplikasi elemen kanvas menggunakan `generateElementId`.
+  2. `components/certificates/builder/sidebar.tsx`:
+     - Menghubungkan `addElements` dan mengemas kini `handleAddDualSignatures` dan `handleAddClassicBorder` untuk kemas kini atomik.
+     - **Geometri Adaptif Orientasi**: Mengira kedudukan penandatangan secara nisbah perkadaran (`w * 0.28` dan `w * 0.72` untuk potret; `w * 0.25` dan `w * 0.75` untuk landskap) dengan garisan pada `h - 180px` dan teks pada `lineY + 25px`.
+     - **Piawaian Bahasa Inggeris**: Menyelaraskan teks jawatan lalai (`CHAIRMAN / ADVISOR`, `DIRECTOR / PRINCIPAL`) dan toast (`Dual signatures added!`).
+  3. `app/(dashboard)/certificates/builder/[id]/client.tsx`:
+     - **Sanitasi Kunci Legasi (`sanitizedInitialTemplate`)**: Mengesan dan memperbetulkan ID pendua daripada templat pangkalan data legasi secara automatik semasa mount.
+     - Memajukan `addElements` kepada `<CertificateEditorSidebar>`.
+  4. `tests/certificate-element-actions.test.ts`:
+     - Menambah 5 ujian unit: penjanaan ID unik, sifar perlanggaran merentas 10,000 panggilan serentak, penambahan elemen tunggal, penambahan atomik kelompok `addElements` (1 commit), dan duplikasi ID unik.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm test`: 335 / 335 ujian unit lulus (100%) merentas kesemua 38 suite ujian.
+
+## System Improvements (2026-10-05 — Penghapusan Amaran Konsol Pelayar: Format Warna CSS Tidak Sah / HTML5 Color Input Sanitization)
+- **Konteks & Laporan Pengguna**: Muncul amaran berulang puluhan kali di konsol pelayar DevTools:
+  `The specified value "transparent" does not conform to the required format. The value must be a valid CSS color.`
+- **Punca Masalah**:
+  1. *Spesifikasi W3C HTML5 `<input type="color">`*: Elemen pemilih warna natif pelayar hanya menerima rentetan heksadesimal 7-aksara berhuruf kecil `#rrggbb` (cth: `#ffffff`).
+  2. *Preset Bingkai Sijil Bernilai `'transparent'`*: Preset bingkai sijil (seperti Classic Gold Border) menetapkan `fill: 'transparent'` dengan garisan luar emas. Apabila elemen bentuk ini dipilih atau dirender semula dalam `components/certificates/builder/properties.tsx`, ungkapan `value={selectedElement.fill || '#e5e7eb'}` menilai kepada `'transparent'` kerana `'transparent'` adalah rentetan truthy.
+  3. *Re-render Berulang Semasa Interaksi Tetikus*: Pada setiap interaksi tetikus (hover, drag, resize, atau render semula React), pelayar menolak nilai `"transparent"` dan mencetak amaran ke konsol pelayar puluhan kali (cth: 38 kali berturut-turut).
+- **Penyelesaian Dilaksanakan**:
+  1. `lib/utils/index.ts`:
+     - **Utiliti Sanitasi Warna Sejagat (`toValidHexColor`)**: Menapis sebarang nilai bukan hex (seperti `'transparent'`, `'none'`, `'inherit'`, `'initial'`, `""`, `null`) dan mengembalikan fallback yang sah (`#000000` atau `#ffffff`). Menyokong penukaran 3-digit hex kepada 6-digit (`#fff` -> `#ffffff`), pemotongan alpha 8-digit (`#ffffff80` -> `#ffffff`), dan format hex tanpa simbol pagar (`ffffff` -> `#ffffff`).
+  2. `components/certificates/builder/properties.tsx`:
+     - Menapis kesemua pemilih `<input type="color">` (`stroke`, `color`, `textStroke`, `fill`) menggunakan `toValidHexColor`.
+     - **Kawalan Isian Lutsinar ("No Fill")**: Menambah kotak semak khusus `No Fill` untuk bentuk geometri (`rectangle` dan `circle`) yang menguruskan `fill: 'transparent'` secara kemas tanpa membebankan input pemilih warna.
+     - **Kawalan Sempadan Bentuk Lengkap**: Menambah pemilih warna sempadan (`stroke`) dan pelaras ketebalan sempadan (`strokeWidth` 0-20px) bagi membolehkan pengguna menyunting bingkai sijil (seperti Classic Gold Border) secara terus di sidebar.
+  3. `components/certificates/builder/sidebar.tsx`, `app/builder/[id]/client.tsx`, dan `components/forms/qr-customizer/index.tsx`:
+     - Menyelaraskan kesemua pemilih `<input type="color">` merentas keseluruhan aplikasi dengan `toValidHexColor`.
+  4. `tests/valid-hex-color.test.ts`:
+     - Menambah 7 ujian unit yang mengesahkan sanitasi warna: penolakan 'transparent' dan kata kunci CSS, pengendalian nilai null/kosong, penolakan format bukan-hex/rgb, pengekalan 6-digit hex huruf kecil, pembesaran 3-digit hex, pemotongan alpha 8-digit, dan penukaran bare hex tanpa pagar.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm test`: 342 / 342 ujian unit lulus (100%) merentas kesemua 39 suite ujian.
+
+## System Improvements (2026-10-05 — Penghapusan Ralat Hidrasi Radix Dialog: New Certificate Dialog Hydration Mismatch Fix)
+- **Konteks & Laporan Pengguna**: Muncul ralat hidrasi React pada `/certificates/builder`:
+  `Uncaught Error: Hydration failed because the server rendered HTML didn't match the client.`
+  dengan perbezaan pokok DOM pada:
+  `<CertificateBuilderPage>` -> `<NewCertificateDialog>` -> `<DialogTrigger asChild>` -> `<button aria-controls="radix-_R_...">`
+- **Punca Masalah**:
+  1. *Perbezaan ID `useId()` Antara SSR dan Hidrasi Klien*: `CertificateBuilderPage` merupakan Server Component tak segerak (async Server Component). Komponen klien `<NewCertificateDialog>` membalut elemen `<Button>` menggunakan `<DialogTrigger asChild>`.
+  2. Komponen Radix UI `@radix-ui/react-dialog` menjana ID unik secara dinamik menggunakan hook `useId()` untuk atribut aksesibiliti `aria-controls`. Dalam Next.js App Router dengan penstriman RSC, penjanaan ID di persekitaran pelayan berbeza daripada hidrasi klien (`radix-_R_155esnebneitmlb_`), menyebabkan React 19 membuang pokok DOM pelayan dan membina semula di klien.
+  3. Prop `suppressHydrationWarning` pada tahap trigger tidak menyekat ralat kerana percanggahan berlaku pada struktur klon elemen `SlotClone`.
+- **Penyelesaian Dilaksanakan**:
+  1. `components/certificates/new-certificate-dialog.tsx`:
+     - **Pengawal Hidrasi Pintar (`mounted` Guard)**: Menambah state `mounted` dengan `useEffect`.
+     - Sebelum komponen dipasang (`!mounted`), kembalikan `<>{children}</>` secara langsung. HTML pelayan dan pokok DOM hidrasi klien kini sepadan 100% tanpa sebarang atribut sintetik Radix `aria-controls`.
+     - Sejurus selepas hidrasi selesai, `useEffect` memicu `setMounted(true)`, mengaktifkan modal `<Dialog>` dan `<DialogTrigger asChild>` di sisi klien secara lancar tanpa sebarang kelipan atau lonjakan DOM.
+  2. `components/pricing-modal.tsx`:
+     - Melaksanakan corak `mounted` guard yang sama pada `<PricingModal>` untuk menghapuskan potensi ralat hidrasi serupa apabila had sijil tercapai (`allowed === false`).
+  3. `components/certificates/delete-certificate-button.tsx`:
+     - Menambah `mounted` guard pada butang padam templat sijil (`<AlertDialogTrigger asChild>`) bagi memastikan kad templat dalam grid sentiasa hidrasi dengan bersih.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm test`: 342 / 342 ujian unit lulus (100%) merentas kesemua 39 suite ujian.
+
+
+
+
+
+
+

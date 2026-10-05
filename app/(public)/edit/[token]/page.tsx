@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { getEditToken } from '@/lib/storage/edit-tokens';
 import { getFormById } from '@/lib/storage/forms';
 import { PublicFormClient } from '../../form/[id]/client';
+import { AlertCircle } from 'lucide-react';
 import type { Metadata } from 'next';
 
 interface PageProps {
@@ -11,7 +12,7 @@ interface PageProps {
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Sunting Jawapan',
+  title: 'Edit Response',
   robots: { index: false, follow: false },
 };
 
@@ -23,16 +24,18 @@ export default async function EditResponsePage({ params }: PageProps) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-sm border p-8 text-center space-y-3">
-          <div className="text-5xl">⛔</div>
+          <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+            <AlertCircle className="w-6 h-6" />
+          </div>
           <h1 className="text-xl font-semibold text-gray-900">
-            Pautan tidak sah
+            Invalid Link
           </h1>
           <p className="text-sm text-gray-600">
             {lookup.reason === 'expired' &&
-              'Pautan ini telah luput. Sila hubungi penganjur untuk pautan baru.'}
+              'This link has expired. Please contact the organizer for a new link.'}
             {lookup.reason === 'used' &&
-              'Pautan ini telah digunakan. Setiap pautan hanya boleh digunakan sekali.'}
-            {lookup.reason === 'not_found' && 'Pautan ini tidak wujud atau telah dipadam.'}
+              'This link has already been used. Each link can only be used once.'}
+            {lookup.reason === 'not_found' && 'This link does not exist or has been deleted.'}
           </p>
         </div>
       </div>

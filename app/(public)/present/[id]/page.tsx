@@ -13,13 +13,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!form) {
     return {
-      title: 'Skrin Kehadiran Tidak Dijumpai',
+      title: 'Attendance Screen Not Found',
     };
   }
 
-  const title = (form.title || 'Skrin Kehadiran').replace(/\r?\n/g, ' ').trim();
+  const title = (form.title || 'Attendance Screen').replace(/\r?\n/g, ' ').trim();
   return {
-    title: `Projektor Kehadiran — ${title}`,
+    title: `Attendance Projector — ${title}`,
     robots: { index: false, follow: false },
   };
 }

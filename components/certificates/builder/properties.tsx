@@ -32,6 +32,7 @@ import {
   AlignVerticalDistributeCenter,
 } from 'lucide-react';
 import { CertificateElement } from '@/lib/types';
+import { toValidHexColor } from '@/lib/utils';
 
 interface CertificateEditorPropertiesProps {
   selectedElement?: CertificateElement | null;
@@ -82,7 +83,7 @@ export function CertificateEditorProperties({
   if (!selectedElement) {
     return (
       <div className="w-72 xl:w-80 bg-white border-l p-4 flex items-center justify-center text-gray-500 text-sm hidden lg:flex select-none text-center">
-        Pilih elemen pada sijil untuk mengubah tetapan
+        Select an element on the certificate to customize settings
       </div>
     );
   }
@@ -162,7 +163,7 @@ export function CertificateEditorProperties({
 
         {/* Position & Size */}
         <div>
-          <Label className="text-xs mb-2 block text-gray-500 uppercase">Posisi & Saiz</Label>
+          <Label className="text-xs mb-2 block text-gray-500 uppercase">Position & Size</Label>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label className="text-[10px] text-gray-500">X</Label>
@@ -209,7 +210,7 @@ export function CertificateEditorProperties({
 
         {/* Center to Canvas */}
         <div>
-          <Label className="text-xs mb-2 block text-gray-500 uppercase">Pusat ke Kanvas</Label>
+          <Label className="text-xs mb-2 block text-gray-500 uppercase">Center to Canvas</Label>
           <div className="grid grid-cols-2 gap-2">
             <Button
               variant="outline"
@@ -220,10 +221,10 @@ export function CertificateEditorProperties({
                   x: Math.round((templateWidth || 1123) / 2),
                 })
               }
-              title="Pusatkan elemen secara mendatar di tengah kanvas"
+              title="Center element horizontally on canvas"
             >
               <AlignCenterHorizontal className="h-3.5 w-3.5 text-primary" />
-              Tengah X
+              Center X
             </Button>
             <Button
               variant="outline"
@@ -234,10 +235,10 @@ export function CertificateEditorProperties({
                   y: Math.round((templateHeight || 794) / 2),
                 })
               }
-              title="Pusatkan elemen secara menegak di tengah kanvas"
+              title="Center element vertically on canvas"
             >
               <AlignCenterVertical className="h-3.5 w-3.5 text-primary" />
-              Tengah Y
+              Center Y
             </Button>
           </div>
         </div>
@@ -246,7 +247,7 @@ export function CertificateEditorProperties({
         {hasMultiSelection && (
           <div className="p-3 bg-slate-50 border rounded-lg space-y-2">
             <Label className="text-xs font-semibold text-slate-700 uppercase block">
-              Jajaran Berbilang Elemen
+              Multi-Element Alignment
             </Label>
             <div className="grid grid-cols-3 gap-1">
               <Button
@@ -254,54 +255,54 @@ export function CertificateEditorProperties({
                 size="sm"
                 className="h-8 text-xs px-1"
                 onClick={() => onAlignElements?.('left')}
-                title="Ratakan ke Kiri"
+                title="Align Left"
               >
-                Kiri
+                Left
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 className="h-8 text-xs px-1"
                 onClick={() => onAlignElements?.('center')}
-                title="Ratakan ke Pusat Mendatar"
+                title="Align Horizontal Center"
               >
-                Pusat
+                Center
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 className="h-8 text-xs px-1"
                 onClick={() => onAlignElements?.('right')}
-                title="Ratakan ke Kanan"
+                title="Align Right"
               >
-                Kanan
+                Right
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 className="h-8 text-xs px-1"
                 onClick={() => onAlignElements?.('top')}
-                title="Ratakan ke Atas"
+                title="Align Top"
               >
-                Atas
+                Top
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 className="h-8 text-xs px-1"
                 onClick={() => onAlignElements?.('middle')}
-                title="Ratakan ke Tengah Menegak"
+                title="Align Middle"
               >
-                Tengah
+                Middle
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 className="h-8 text-xs px-1"
                 onClick={() => onAlignElements?.('bottom')}
-                title="Ratakan ke Bawah"
+                title="Align Bottom"
               >
-                Bawah
+                Bottom
               </Button>
             </div>
             <div className="grid grid-cols-2 gap-2 pt-2 border-t">
@@ -310,20 +311,20 @@ export function CertificateEditorProperties({
                 size="sm"
                 className="h-7 text-[11px] gap-1 px-1"
                 onClick={() => onDistributeElements?.('horizontal')}
-                title="Ratakan jarak mendatar antara elemen"
+                title="Distribute horizontally"
               >
                 <AlignHorizontalDistributeCenter className="h-3 w-3" />
-                Sama Jarak X
+                Distribute X
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 className="h-7 text-[11px] gap-1 px-1"
                 onClick={() => onDistributeElements?.('vertical')}
-                title="Ratakan jarak menegak antara elemen"
+                title="Distribute vertically"
               >
                 <AlignVerticalDistributeCenter className="h-3 w-3" />
-                Sama Jarak Y
+                Distribute Y
               </Button>
             </div>
           </div>
@@ -499,7 +500,7 @@ export function CertificateEditorProperties({
           <div className="space-y-4">
             <Label className="text-xs font-semibold text-gray-500 uppercase">Icon Properties</Label>
             <div>
-              <Label className="text-xs mb-2 block">Pilih Icon</Label>
+              <Label className="text-xs mb-2 block">Select Icon</Label>
               <div className="grid grid-cols-5 gap-2 p-2 border rounded-md bg-gray-50/50">
                 {Object.keys(ICON_MAP).map((iconName) => {
                   const IconComp = ICON_MAP[iconName];
@@ -519,11 +520,11 @@ export function CertificateEditorProperties({
               </div>
             </div>
             <div>
-              <Label className="text-sm">Warna Icon</Label>
+              <Label className="text-sm">Icon Color</Label>
               <div className="flex items-center gap-2 mt-1">
                 <input
                   type="color"
-                  value={selectedElement.stroke || '#000000'}
+                  value={toValidHexColor(selectedElement.stroke, '#000000')}
                   onChange={(e) => updateElement(selectedElement.id, { stroke: e.target.value })}
                   className="w-8 h-8 rounded cursor-pointer border"
                 />
@@ -536,7 +537,7 @@ export function CertificateEditorProperties({
             </div>
             <div>
               <div className="flex items-center justify-between mb-1">
-                <Label className="text-sm">Ketebalan</Label>
+                <Label className="text-sm">Stroke Width</Label>
                 <span className="text-xs text-gray-500">{selectedElement.strokeWidth ?? 2}px</span>
               </div>
               <input
@@ -560,18 +561,17 @@ export function CertificateEditorProperties({
               QR Code Settings
             </Label>
             <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
-              <p className="text-sm text-blue-800 font-medium">URL Pengesahan Auto</p>
+              <p className="text-sm text-blue-800 font-medium">Auto Verification URL</p>
               <p className="text-xs text-blue-600 mt-1">
-                QR Code ini akan menjana link pengesahan sijil secara automatik berdasarkan maklumat
-                penerima sijil.
+                This QR Code will automatically generate a certificate verification link based on recipient details.
               </p>
             </div>
             <div>
-              <Label className="text-sm">Warna QR</Label>
+              <Label className="text-sm">QR Color</Label>
               <div className="flex items-center gap-2 mt-1">
                 <input
                   type="color"
-                  value={selectedElement.color || '#000000'}
+                  value={toValidHexColor(selectedElement.color, '#000000')}
                   onChange={(e) => updateElement(selectedElement.id, { color: e.target.value })}
                   className="w-8 h-8 rounded cursor-pointer border"
                 />
@@ -589,7 +589,7 @@ export function CertificateEditorProperties({
           <div className="space-y-4">
             {selectedElement.type === 'text' && (
               <div>
-                <Label className="text-sm">Teks</Label>
+                <Label className="text-sm">Text</Label>
                 <Textarea
                   rows={2}
                   value={selectedElement.content || ''}
@@ -599,7 +599,7 @@ export function CertificateEditorProperties({
               </div>
             )}
             <div>
-              <Label className="text-sm">Saiz Font</Label>
+              <Label className="text-sm">Font Size</Label>
               <Input
                 type="number"
                 value={Number(selectedElement.fontSize) || 16}
@@ -728,28 +728,28 @@ export function CertificateEditorProperties({
                     Merriweather
                   </option>
                 </optgroup>
-                <optgroup label="Google Fonts - Kaligrafi & Sijil">
+                <optgroup label="Google Fonts - Calligraphy & Certificate">
                   <option value="Great Vibes, cursive" style={{ fontFamily: 'Great Vibes' }}>
-                    Great Vibes (Emas Klasik)
+                    Great Vibes (Classic Gold)
                   </option>
                   <option value="Alex Brush, cursive" style={{ fontFamily: 'Alex Brush' }}>
-                    Alex Brush (Kaligrafi Halus)
+                    Alex Brush (Fine Calligraphy)
                   </option>
                   <option value="Pinyon Script, cursive" style={{ fontFamily: 'Pinyon Script' }}>
-                    Pinyon Script (Diraja Formal)
+                    Pinyon Script (Formal Royal)
                   </option>
                   <option value="Dancing Script, cursive" style={{ fontFamily: 'Dancing Script' }}>
-                    Dancing Script (Kasual Elegan)
+                    Dancing Script (Casual Elegant)
                   </option>
                 </optgroup>
               </select>
             </div>
             <div>
-              <Label className="text-sm">Warna</Label>
+              <Label className="text-sm">Color</Label>
               <div className="flex items-center gap-2 mt-1">
                 <input
                   type="color"
-                  value={selectedElement.color || '#000000'}
+                  value={toValidHexColor(selectedElement.color, '#000000')}
                   onChange={(e) => updateElement(selectedElement.id, { color: e.target.value })}
                   className="w-10 h-10 rounded cursor-pointer"
                 />
@@ -761,7 +761,7 @@ export function CertificateEditorProperties({
               </div>
             </div>
             <div>
-              <Label className="text-sm">Penjajaran</Label>
+              <Label className="text-sm">Alignment</Label>
               <div className="flex gap-1 mt-1">
                 <Button
                   variant={selectedElement.textAlign === 'left' ? 'default' : 'outline'}
@@ -790,7 +790,7 @@ export function CertificateEditorProperties({
               </div>
             </div>
             <div>
-              <Label className="text-sm">Gaya</Label>
+              <Label className="text-sm">Style</Label>
               <div className="flex gap-1 mt-1">
                 <Button
                   variant={selectedElement.fontWeight === 'bold' ? 'default' : 'outline'}
@@ -872,7 +872,7 @@ export function CertificateEditorProperties({
               <div className="flex items-center gap-2 mt-1">
                 <input
                   type="color"
-                  value={selectedElement.textStroke || '#000000'}
+                  value={toValidHexColor(selectedElement.textStroke, '#000000')}
                   onChange={(e) =>
                     updateElement(selectedElement.id, { textStroke: e.target.value })
                   }
@@ -896,25 +896,115 @@ export function CertificateEditorProperties({
         )}
 
         {selectedElement.type === 'shape' && (
-          <div className="space-y-3">
-            <div>
-              <Label className="text-sm">
-                {selectedElement.shapeType === 'line' ? 'Line Color' : 'Fill Color'}
-              </Label>
-              <div className="flex items-center gap-2 mt-1">
-                <input
-                  type="color"
-                  value={selectedElement.fill || '#e5e7eb'}
-                  onChange={(e) => updateElement(selectedElement.id, { fill: e.target.value })}
-                  className="w-10 h-10 rounded cursor-pointer"
-                />
-                <Input
-                  value={selectedElement.fill || '#e5e7eb'}
-                  onChange={(e) => updateElement(selectedElement.id, { fill: e.target.value })}
-                  className="flex-1"
-                />
+          <div className="space-y-4">
+            {selectedElement.shapeType === 'line' ? (
+              <div>
+                <Label className="text-sm">Line Color</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <input
+                    type="color"
+                    value={toValidHexColor(selectedElement.fill, '#475569')}
+                    onChange={(e) => updateElement(selectedElement.id, { fill: e.target.value })}
+                    className="w-10 h-10 rounded cursor-pointer"
+                  />
+                  <Input
+                    value={selectedElement.fill || '#475569'}
+                    onChange={(e) => updateElement(selectedElement.id, { fill: e.target.value })}
+                    className="flex-1 font-mono text-xs"
+                  />
+                </div>
               </div>
-            </div>
+            ) : (
+              <>
+                {/* Shape Fill Color & Transparent Toggle */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <Label className="text-sm">Fill Color</Label>
+                    <label className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={selectedElement.fill === 'transparent'}
+                        onChange={(e) =>
+                          updateElement(selectedElement.id, {
+                            fill: e.target.checked ? 'transparent' : '#e5e7eb',
+                          })
+                        }
+                        className="rounded text-primary focus:ring-primary h-3.5 w-3.5"
+                      />
+                      <span>No Fill</span>
+                    </label>
+                  </div>
+                  {selectedElement.fill !== 'transparent' ? (
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        type="color"
+                        value={toValidHexColor(selectedElement.fill, '#e5e7eb')}
+                        onChange={(e) =>
+                          updateElement(selectedElement.id, { fill: e.target.value })
+                        }
+                        className="w-10 h-10 rounded cursor-pointer"
+                      />
+                      <Input
+                        value={selectedElement.fill || '#e5e7eb'}
+                        onChange={(e) =>
+                          updateElement(selectedElement.id, { fill: e.target.value })
+                        }
+                        className="flex-1 font-mono text-xs"
+                      />
+                    </div>
+                  ) : (
+                    <div className="py-2 px-3 bg-slate-50 border rounded text-xs text-slate-500 italic mt-1">
+                      Transparent (No background fill)
+                    </div>
+                  )}
+                </div>
+
+                {/* Shape Border / Stroke Color */}
+                <div>
+                  <Label className="text-sm">Border Color</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <input
+                      type="color"
+                      value={toValidHexColor(selectedElement.stroke, '#d97706')}
+                      onChange={(e) =>
+                        updateElement(selectedElement.id, { stroke: e.target.value })
+                      }
+                      className="w-10 h-10 rounded cursor-pointer"
+                    />
+                    <Input
+                      value={selectedElement.stroke || '#d97706'}
+                      onChange={(e) =>
+                        updateElement(selectedElement.id, { stroke: e.target.value })
+                      }
+                      className="flex-1 font-mono text-xs"
+                    />
+                  </div>
+                </div>
+
+                {/* Shape Border Width */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <Label className="text-sm">Border Width</Label>
+                    <span className="text-xs text-gray-500">
+                      {selectedElement.strokeWidth ?? 0}px
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="20"
+                    step="1"
+                    value={selectedElement.strokeWidth ?? 0}
+                    onChange={(e) =>
+                      updateElement(selectedElement.id, {
+                        strokeWidth: parseInt(e.target.value) || 0,
+                      })
+                    }
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                  />
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>

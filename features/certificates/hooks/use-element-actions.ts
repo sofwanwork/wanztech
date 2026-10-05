@@ -2,6 +2,14 @@ import { useCallback } from 'react';
 import { CertificateElement, CertificateTemplate } from '@/lib/types';
 import { toast } from 'sonner';
 
+let elementCounter = 0;
+
+export function generateElementId(prefix = 'el'): string {
+  elementCounter = (elementCounter + 1) % 1000000;
+  const rand = Math.random().toString(36).substring(2, 8);
+  return `${prefix}-${Date.now()}-${elementCounter}-${rand}`;
+}
+
 export function useElementActions(
   template: CertificateTemplate,
   setTemplate: (
@@ -9,6 +17,31 @@ export function useElementActions(
   ) => void,
   commitToHistory: (t: CertificateTemplate) => void
 ) {
+  // Helper to construct a default element with guaranteed unique ID
+  const createDefaultElement = (
+    type: CertificateElement['type'],
+    extra?: Partial<CertificateElement>
+  ): CertificateElement => {
+    const newId = generateElementId(type);
+    return {
+      id: newId,
+      type,
+      x: 421,
+      y: 300,
+      width: type === 'shape' || type === 'icon' ? 60 : type === 'qr' ? 100 : 200,
+      height:
+        type === 'image' || type === 'qr' ? 100 : type === 'shape' || type === 'icon' ? 60 : 40,
+      content: type === 'text' ? 'New Text' : undefined,
+      iconName: type === 'icon' ? 'Star' : undefined,
+      qrData: type === 'qr' ? '{VERIFY_URL}' : undefined,
+      fontSize: 16,
+      fontFamily: 'sans-serif',
+      color: '#1a1a2e',
+      textAlign: 'center',
+      ...extra,
+    };
+  };
+
   // Update single element properties
   const updateElement = useCallback(
     (id: string, updates: Partial<CertificateElement>) => {
@@ -23,24 +56,7 @@ export function useElementActions(
   // Add new element to canvas
   const addElement = useCallback(
     (type: CertificateElement['type'], extra?: Partial<CertificateElement>) => {
-      const newId = `el-${Date.now()}`;
-      const defaultElement: CertificateElement = {
-        id: newId,
-        type,
-        x: 421,
-        y: 300,
-        width: type === 'shape' || type === 'icon' ? 60 : type === 'qr' ? 100 : 200,
-        height:
-          type === 'image' || type === 'qr' ? 100 : type === 'shape' || type === 'icon' ? 60 : 40,
-        content: type === 'text' ? 'Teks Baru' : undefined,
-        iconName: type === 'icon' ? 'Star' : undefined,
-        qrData: type === 'qr' ? '{VERIFY_URL}' : undefined,
-        fontSize: 16,
-        fontFamily: 'sans-serif',
-        color: '#1a1a2e',
-        textAlign: 'center',
-        ...extra,
-      };
+      const defaultElement = createDefaultElement(type, extra);
 
       setTemplate((prev) => {
         const newTemplate = {
@@ -51,7 +67,33 @@ export function useElementActions(
         return newTemplate;
       });
 
-      return newId; // Return ID so caller can select it
+      return defaultElement.id; // Return ID so caller can select it
+    },
+    [setTemplate, commitToHistory]
+  );
+
+  // Add multiple elements to canvas atomically in a single history entry
+  const addElements = useCallback(
+    (
+      elementsToAdd: Array<{
+        type: CertificateElement['type'];
+        extra?: Partial<CertificateElement>;
+      }>
+    ) => {
+      const createdElements = elementsToAdd.map(({ type, extra }) =>
+        createDefaultElement(type, extra)
+      );
+
+      setTemplate((prev) => {
+        const newTemplate = {
+          ...prev,
+          elements: [...prev.elements, ...createdElements],
+        };
+        commitToHistory(newTemplate);
+        return newTemplate;
+      });
+
+      return createdElements.map((el) => el.id);
     },
     [setTemplate, commitToHistory]
   );
@@ -81,7 +123,7 @@ export function useElementActions(
 
         const newElement: CertificateElement = {
           ...el,
-          id: `${el.type}-${Date.now()}`,
+          id: generateElementId(el.type),
           x: el.x + 20,
           y: el.y + 20,
         };
@@ -173,6 +215,7 @@ export function useElementActions(
 
   return {
     addElement,
+    addElements,
     updateElement,
     deleteElement,
     duplicateElement,

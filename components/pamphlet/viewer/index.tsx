@@ -6,7 +6,7 @@ import {
   PamphletDisplayMode,
   PamphletTheme,
 } from '@/lib/types/pamphlets';
-import { PAMPHLET_THEMES } from '@/lib/pamphlets/themes';
+import { PAMPHLET_THEMES, DEFAULT_PAMPHLET_THEME } from '@/lib/pamphlets/themes';
 import { playPageTurnSound, getPamphletOrientation } from '@/lib/pamphlets/utils';
 import { PamphletToolbar } from './toolbar';
 import { ThumbnailsStrip } from './thumbnails-strip';
@@ -33,9 +33,10 @@ export function PamphletViewer({
     pamphlet.displayMode || 'flipbook'
   );
   const [theme, setTheme] = React.useState<PamphletTheme>(
-    pamphlet.theme || 'dark'
+    pamphlet.theme || DEFAULT_PAMPHLET_THEME
   );
   const [pageSpreadMode, setPageSpreadMode] = React.useState<'auto' | 'single' | 'double'>('auto');
+  const [isWideScreen, setIsWideScreen] = React.useState(true);
   const [zoom, setZoom] = React.useState(1);
   const [soundEnabled, setSoundEnabled] = React.useState(false);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
@@ -43,8 +44,19 @@ export function PamphletViewer({
   const containerRef = React.useRef<HTMLDivElement>(null);
   const flipbookRef = React.useRef<FlipbookViewRef>(null);
 
-  const handleToggleSpreadMode = React.useCallback(() => {
-    setPageSpreadMode((prev) => (prev === 'single' ? 'double' : 'single'));
+  // Sync theme when pamphlet prop updates (e.g. live preview in builder)
+  React.useEffect(() => {
+    setTheme(pamphlet.theme || DEFAULT_PAMPHLET_THEME);
+  }, [pamphlet.theme]);
+
+  // Sync widescreen status deterministically after hydration
+  React.useEffect(() => {
+    const checkWideScreen = () => {
+      setIsWideScreen(window.innerWidth >= 880);
+    };
+    checkWideScreen();
+    window.addEventListener('resize', checkWideScreen);
+    return () => window.removeEventListener('resize', checkWideScreen);
   }, []);
 
   const pages = React.useMemo(() => {
@@ -57,6 +69,26 @@ export function PamphletViewer({
 
   const totalPages = pages.length;
 
+  const isTwoPageSpread = React.useMemo(() => {
+    return (
+      !forceMobile &&
+      totalPages >= 2 &&
+      pageSpreadMode !== 'single' &&
+      (pageSpreadMode === 'double' || (totalPages > 2 && isWideScreen))
+    );
+  }, [forceMobile, totalPages, pageSpreadMode, isWideScreen]);
+
+  const handleToggleSpreadMode = React.useCallback(() => {
+    setPageSpreadMode((prev) => {
+      const isCurrentlyDouble =
+        !forceMobile &&
+        totalPages >= 2 &&
+        prev !== 'single' &&
+        (prev === 'double' || (totalPages > 2 && isWideScreen));
+      return isCurrentlyDouble ? 'single' : 'double';
+    });
+  }, [forceMobile, totalPages, isWideScreen]);
+
   // Track view once on mount if not in builder/preview mode
   React.useEffect(() => {
     if (!previewMode && pamphlet.id) {
@@ -66,10 +98,10 @@ export function PamphletViewer({
 
   // Handle page change with optional sound
   const handlePageChange = React.useCallback(
-    (nextPage: number) => {
+    (nextPage: number, playSound: boolean = true) => {
       if (nextPage === currentPage || nextPage < 1 || nextPage > totalPages) return;
       setCurrentPage(nextPage);
-      if (soundEnabled) {
+      if (soundEnabled && playSound) {
         playPageTurnSound();
       }
     },
@@ -171,7 +203,7 @@ export function PamphletViewer({
     showThumbnails,
   ]);
 
-  const themeObj = PAMPHLET_THEMES[theme] || PAMPHLET_THEMES.dark;
+  const themeObj = PAMPHLET_THEMES[theme] || PAMPHLET_THEMES[DEFAULT_PAMPHLET_THEME];
 
   return (
     <div
@@ -194,13 +226,8 @@ export function PamphletViewer({
         isFullscreen={isFullscreen}
         showThumbnails={showThumbnails}
         pageSpreadMode={pageSpreadMode}
-        isTwoPageSpread={
-          !forceMobile &&
-          totalPages >= 2 &&
-          pageSpreadMode !== 'single' &&
-          (pageSpreadMode === 'double' ||
-            (totalPages > 2 && typeof window !== 'undefined' && window.innerWidth >= 880))
-        }
+        isTwoPageSpread={isTwoPageSpread}
+        forceMobile={forceMobile}
         onPageChange={handlePageChange}
         onNextPage={handleNextPage}
         onPrevPage={handlePrevPage}
@@ -222,9 +249,9 @@ export function PamphletViewer({
             <div className="h-16 w-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-4 shadow-lg">
               <BookOpen className="h-8 w-8" />
             </div>
-            <h2 className="text-xl font-bold mb-2">Tiada Muka Surat Ditemui</h2>
+            <h2 className="text-xl font-bold mb-2">No Pages Found</h2>
             <p className="text-sm opacity-70">
-              E-pamphlet ini belum mempunyai sebarang helaian muka surat yang dimuat naik oleh penganjur.
+              This e-pamphlet does not have any pages uploaded yet.
             </p>
           </div>
         ) : (
@@ -240,8 +267,9 @@ export function PamphletViewer({
                 forceMobile={forceMobile}
                 onPrevPage={handlePrevPage}
                 onNextPage={handleNextPage}
-                onPageChange={handlePageChange}
+                onPageChange={(page) => handlePageChange(page, false)}
                 onZoomChange={setZoom}
+                soundEnabled={soundEnabled}
               />
             )}
 
@@ -251,6 +279,7 @@ export function PamphletViewer({
                 currentPage={currentPage}
                 zoom={zoom}
                 orientation={orientation}
+                forceMobile={forceMobile}
                 onPrevPage={() => handlePageChange(Math.max(1, currentPage - 1))}
                 onNextPage={() =>
                   handlePageChange(Math.min(totalPages, currentPage + 1))

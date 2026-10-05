@@ -18,6 +18,21 @@ export function VerticalView({
   onPageVisible,
 }: VerticalViewProps) {
   const pageRefs = React.useRef<(HTMLDivElement | null)[]>([]);
+  const [detectedRatios, setDetectedRatios] = React.useState<Record<number, number>>({});
+
+  const handleImageLoad = React.useCallback(
+    (pageNum: number, e: React.SyntheticEvent<HTMLImageElement>) => {
+      const img = e.currentTarget;
+      if (img.naturalWidth && img.naturalHeight && img.naturalHeight > 0) {
+        const ratio = +(img.naturalWidth / img.naturalHeight).toFixed(3);
+        setDetectedRatios((prev) => {
+          if (prev[pageNum] === ratio) return prev;
+          return { ...prev, [pageNum]: ratio };
+        });
+      }
+    },
+    []
+  );
 
   React.useEffect(() => {
     const observer = new IntersectionObserver(
@@ -50,43 +65,50 @@ export function VerticalView({
   const isLandscape = orientation === 'landscape' || pages[0]?.orientation === 'landscape';
 
   return (
-    <div className="w-full h-full overflow-y-auto px-4 py-8 flex flex-col items-center gap-6 scrollbar-thin">
+    <div className="w-full h-full overflow-y-auto px-4 pt-6 pb-28 sm:pb-32 flex flex-col items-center gap-6 scrollbar-thin">
       <div
         className={cn(
           'flex flex-col items-center gap-8 w-full transition-transform duration-200',
-          isLandscape ? 'max-w-4xl' : 'max-w-2xl'
+          isLandscape ? 'max-w-[min(90vw,780px)]' : 'max-w-[min(88vw,540px)]'
         )}
         style={{
           transform: `scale(${zoom})`,
           transformOrigin: 'top center',
         }}
       >
-        {pages.map((page, idx) => (
-          <div
-            key={page.id}
-            data-page-number={page.pageNumber}
-            ref={(el) => {
-              pageRefs.current[idx] = el;
-            }}
-            className={cn(
-              'relative w-full rounded-2xl overflow-hidden shadow-2xl border border-black/15 bg-white shrink-0',
-              isLandscape ? 'aspect-[1.414/1]' : 'aspect-[1/1.414]'
-            )}
-          >
-            {/* Page Number Watermark */}
-            <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-xs text-white text-[11px] font-medium px-2 py-0.5 rounded-full z-10">
-              {page.pageNumber} / {pages.length}
-            </div>
+        {pages.map((page, idx) => {
+          const itemRatio =
+            detectedRatios[page.pageNumber] ||
+            page.aspectRatio ||
+            pages[0]?.aspectRatio ||
+            (isLandscape ? 1.414 : 0.707);
 
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={page.imageUrl}
-              alt={page.title || `Halaman ${page.pageNumber}`}
-              className="w-full h-full object-contain pointer-events-none"
-              loading="lazy"
-            />
-          </div>
-        ))}
+          return (
+            <div
+              key={page.id}
+              data-page-number={page.pageNumber}
+              ref={(el) => {
+                pageRefs.current[idx] = el;
+              }}
+              className="relative w-full rounded-2xl overflow-hidden shadow-2xl border border-black/15 bg-white shrink-0"
+              style={{ aspectRatio: `${itemRatio} / 1` }}
+            >
+              {/* Page Number Watermark */}
+              <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-xs text-white text-[11px] font-medium px-2 py-0.5 rounded-full z-10">
+                {page.pageNumber} / {pages.length}
+              </div>
+
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={page.imageUrl}
+                alt={page.title || `Page ${page.pageNumber}`}
+                onLoad={(e) => handleImageLoad(page.pageNumber, e)}
+                className="w-full h-full object-contain pointer-events-none"
+                loading="lazy"
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );

@@ -138,7 +138,7 @@ export async function createCertificateTemplateAction(formData: FormData) {
 
     // Check limits
     if (limits.maxCertificates !== -1 && currentCount >= limits.maxCertificates) {
-      const message = `Anda telah mencapai had ${limits.maxCertificates} sijil untuk plan Free. Upgrade ke Pro untuk sijil tanpa had!`;
+      const message = `You have reached the limit of ${limits.maxCertificates} certificates for the Free plan. Upgrade to Pro for unlimited certificates!`;
       return { error: message };
     }
 
@@ -151,7 +151,7 @@ export async function createCertificateTemplateAction(formData: FormData) {
       .from('certificate_templates')
       .insert({
         user_id: user.id,
-        name: preset ? preset.name : 'Sijil Baru',
+        name: preset ? preset.name : 'New Certificate',
         category: preset ? preset.category : category,
         elements: preset ? preset.elements : DEFAULT_ELEMENTS,
         background_color: preset ? preset.backgroundColor : '#ffffff',
@@ -165,7 +165,7 @@ export async function createCertificateTemplateAction(formData: FormData) {
 
     if (error || !data) {
       console.error('Error creating certificate template:', error);
-      return { error: `Gagal membina sijil baharu: ${error?.message || 'Tiada data ID'}` };
+      return { error: `Failed to create new certificate: ${error?.message || 'No ID returned'}` };
     }
 
     return { success: true, id: data.id };
@@ -175,7 +175,7 @@ export async function createCertificateTemplateAction(formData: FormData) {
       throw error;
     }
     console.error('Action error:', error);
-    return { error: 'Gagal menyambung ke pangkalan data.' };
+    return { error: 'Failed to connect to the database.' };
   }
 }
 

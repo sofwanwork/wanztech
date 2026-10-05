@@ -32,14 +32,14 @@ export async function generateMetadata(
 
   if (!pamphlet) {
     return {
-      title: 'Buku Program Tidak Ditemui | KlikForm',
+      title: 'Program Book Not Found | KlikForm',
     };
   }
 
-  const title = `${pamphlet.title} | Buku Program Digital`;
+  const title = `${pamphlet.title} | Digital Program Book`;
   const description =
     pamphlet.description ||
-    `Lihat buku program digital rasmi untuk ${pamphlet.title}`;
+    `View the official digital program book for ${pamphlet.title}`;
 
   return {
     title,

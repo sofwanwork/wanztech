@@ -247,7 +247,7 @@ export function CertificateCheckClient({
             <div className="mt-3">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-semibold border border-emerald-200/80 shadow-2xs">
                 <Clock className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Syarat Kehadiran: Minimum {minHoursRequired} Jam</span>
+                <span>Attendance Requirement: Minimum {minHoursRequired} Hours</span>
               </span>
             </div>
           ) : null}
@@ -437,10 +437,10 @@ export function CertificateCheckClient({
                   <div>
                     <h3 className="text-lg font-bold text-amber-950 mb-1.5">
                       {result.attendanceDetails.status === 'not_checked_out'
-                        ? 'Belum Selesai Check-Out'
+                        ? 'Check-Out Incomplete'
                         : result.attendanceDetails.status === 'no_record'
-                        ? 'Tiada Rekod Kehadiran'
-                        : 'Syarat Jam Kehadiran Belum Mencukupi'}
+                        ? 'No Attendance Record'
+                        : 'Attendance Hours Requirement Not Met'}
                     </h3>
                     <p className="text-xs text-amber-900/90 max-w-md mx-auto leading-relaxed">
                       {result.error}
@@ -449,25 +449,25 @@ export function CertificateCheckClient({
 
                   <div className="bg-white/90 p-4 rounded-xl border border-amber-200 text-left text-xs space-y-2 max-w-sm mx-auto shadow-2xs">
                     <div className="flex justify-between items-center py-1 border-b border-amber-100">
-                      <span className="text-muted-foreground">Syarat Minimum Program:</span>
-                      <span className="font-bold text-slate-900">{result.attendanceDetails.requiredHours} Jam</span>
+                      <span className="text-muted-foreground">Minimum Requirement:</span>
+                      <span className="font-bold text-slate-900">{result.attendanceDetails.requiredHours} Hours</span>
                     </div>
                     {result.attendanceDetails.status === 'insufficient_hours' && (
                       <>
                         <div className="flex justify-between items-center py-1 border-b border-amber-100">
-                          <span className="text-muted-foreground">Jumlah Masa Hadir Anda:</span>
+                          <span className="text-muted-foreground">Your Total Attendance:</span>
                           <span className="font-bold text-amber-800">{result.attendanceDetails.attendedFormatted}</span>
                         </div>
                         <div className="flex justify-between items-center py-1">
-                          <span className="text-muted-foreground">Baki Kekurangan Masa:</span>
-                          <span className="font-bold text-rose-600">Kurang {result.attendanceDetails.shortfallText}</span>
+                          <span className="text-muted-foreground">Shortfall:</span>
+                          <span className="font-bold text-rose-600">Short by {result.attendanceDetails.shortfallText}</span>
                         </div>
                       </>
                     )}
                   </div>
 
                   <p className="text-[11px] text-amber-800/80 italic">
-                    Sila hubungi urusetia program jika anda mempunyai kebenaran atau pelepasan khas penganjur.
+                    Please contact the event secretariat if you have special permission or an exemption from the organizer.
                   </p>
                 </CardContent>
               </Card>

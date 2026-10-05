@@ -29,7 +29,7 @@ export function CertificateTemplate({
   const uppercaseName = name.toUpperCase();
 
   const formattedDate = date
-    ? new Date(date).toLocaleDateString('ms-MY', {
+    ? new Date(date).toLocaleDateString('en-US', {
         day: 'numeric',
         month: 'long',
         year: 'numeric',

@@ -105,7 +105,7 @@ export function DashboardStats({ subscription, usage, totalForms, subscriptionSt
               <p className="text-xs text-gray-400">{totalFormsRemaining} remaining</p>
             </div>
           )}
-          {isUnlimited && <p className="text-xs text-green-600 font-medium">Unlimited forms 🎉</p>}
+          {isUnlimited && <p className="text-xs text-green-600 font-medium">Unlimited forms</p>}
         </CardContent>
       </Card>
 

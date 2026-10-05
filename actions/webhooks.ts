@@ -13,15 +13,15 @@ import { dispatchWebhook } from '@/lib/webhooks/dispatch';
 
 const urlSchema = z
   .string()
-  .url('URL tidak sah')
+  .url('Invalid URL')
   .refine((u) => u.startsWith('https://') || u.startsWith('http://'), {
-    message: 'URL mesti bermula dengan http:// atau https://',
+    message: 'URL must start with http:// or https://',
   });
 
 const createSchema = z.object({
   formId: z.string().uuid(),
   url: urlSchema,
-  secret: z.string().min(8, 'Secret mesti sekurang-kurangnya 8 aksara'),
+  secret: z.string().min(8, 'Secret must be at least 8 characters'),
   events: z.array(z.enum(['submission'])).min(1),
   enabled: z.boolean().default(true),
 });
@@ -52,11 +52,11 @@ export async function createWebhookAction(input: {
     return { success: true, webhook };
   } catch (err) {
     if (err instanceof z.ZodError) {
-      return { success: false, error: err.issues[0]?.message ?? 'Input tidak sah' };
+      return { success: false, error: err.issues[0]?.message ?? 'Invalid input' };
     }
     return {
       success: false,
-      error: err instanceof Error ? err.message : 'Gagal mencipta webhook',
+      error: err instanceof Error ? err.message : 'Failed to create webhook',
     };
   }
 }
@@ -75,11 +75,11 @@ export async function updateWebhookAction(input: {
     return { success: true, webhook };
   } catch (err) {
     if (err instanceof z.ZodError) {
-      return { success: false, error: err.issues[0]?.message ?? 'Input tidak sah' };
+      return { success: false, error: err.issues[0]?.message ?? 'Invalid input' };
     }
     return {
       success: false,
-      error: err instanceof Error ? err.message : 'Gagal mengemas kini webhook',
+      error: err instanceof Error ? err.message : 'Failed to update webhook',
     };
   }
 }
@@ -93,7 +93,7 @@ export async function deleteWebhookAction(
   } catch (err) {
     return {
       success: false,
-      error: err instanceof Error ? err.message : 'Gagal memadam webhook',
+      error: err instanceof Error ? err.message : 'Failed to delete webhook',
     };
   }
 }
@@ -118,7 +118,7 @@ export async function testWebhookAction(input: {
     const all = await listWebhooksForDispatch(input.formId, user.id, 'submission');
     const target = all.find((w) => w.id === input.webhookId);
     if (!target) {
-      return { ok: false, status: null, error: 'Webhook tidak dijumpai' };
+      return { ok: false, status: null, error: 'Webhook not found' };
     }
 
     const result = await dispatchWebhook({
@@ -141,7 +141,7 @@ export async function testWebhookAction(input: {
     return {
       ok: false,
       status: null,
-      error: err instanceof Error ? err.message : 'Test gagal',
+      error: err instanceof Error ? err.message : 'Test failed',
     };
   }
 }

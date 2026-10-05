@@ -4,7 +4,7 @@ import React from 'react';
 import { X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PamphletPageItem, PamphletTheme, PamphletOrientation } from '@/lib/types/pamphlets';
-import { PAMPHLET_THEMES } from '@/lib/pamphlets/themes';
+import { PAMPHLET_THEMES, DEFAULT_PAMPHLET_THEME } from '@/lib/pamphlets/themes';
 import { cn } from '@/lib/utils';
 
 interface ThumbnailsStripProps {
@@ -28,13 +28,13 @@ export function ThumbnailsStrip({
 }: ThumbnailsStripProps) {
   if (!isOpen) return null;
 
-  const themeObj = PAMPHLET_THEMES[theme] || PAMPHLET_THEMES.dark;
+  const themeObj = PAMPHLET_THEMES[theme] || PAMPHLET_THEMES[DEFAULT_PAMPHLET_THEME];
 
   const isLandscape = orientation === 'landscape' || pages[0]?.orientation === 'landscape';
 
   return (
     <aside
-      aria-label="Thumbnails Muka Surat"
+      aria-label="Page Thumbnails"
       className={cn(
         'fixed bottom-20 left-1/2 -translate-x-1/2 z-40 w-[94vw] max-w-4xl max-h-56 rounded-2xl border shadow-2xl backdrop-blur-2xl p-3 sm:p-4 flex flex-col gap-2 transition-all animate-in fade-in zoom-in-95 duration-200',
         themeObj.toolbarBg
@@ -44,10 +44,10 @@ export function ThumbnailsStrip({
       <div className="flex items-center justify-between border-b pb-2 border-current/15">
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold uppercase tracking-wider">
-            Senarai Halaman ({pages.length})
+            Page List ({pages.length})
           </span>
           <span className="text-[11px] opacity-60">
-            • Klik untuk terus lompat ke muka surat
+            • Click to jump to page
           </span>
         </div>
         <Button
@@ -55,7 +55,7 @@ export function ThumbnailsStrip({
           size="icon"
           onClick={onClose}
           className="h-6 w-6 rounded-md hover:bg-current/15"
-          title="Tutup"
+          title="Close"
         >
           <X className="h-3.5 w-3.5" />
         </Button>
@@ -89,7 +89,7 @@ export function ThumbnailsStrip({
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={page.imageUrl}
-                  alt={page.title || `Halaman ${page.pageNumber}`}
+                  alt={page.title || `Page ${page.pageNumber}`}
                   className="w-full h-full object-cover"
                   loading="lazy"
                 />
@@ -113,9 +113,9 @@ export function ThumbnailsStrip({
                   'text-[10px] max-w-[80px] sm:max-w-[96px] truncate font-medium text-center',
                   isActive ? 'text-primary font-bold' : 'opacity-70 group-hover:opacity-100'
                 )}
-                title={page.title || `Halaman ${page.pageNumber}`}
+                title={page.title || `Page ${page.pageNumber}`}
               >
-                {page.title || `M/S ${page.pageNumber}`}
+                {page.title || `Page ${page.pageNumber}`}
               </span>
             </button>
           );

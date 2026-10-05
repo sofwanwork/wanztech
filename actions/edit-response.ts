@@ -58,23 +58,23 @@ export async function submitEditedResponseAction(
   const ip = headersList.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
   const rl = await checkRateLimit(ip, RATE_LIMITS.formSubmission, 'edit-response');
   if (!rl.success) {
-    return { success: false, error: 'Terlalu banyak percubaan. Sila cuba lagi.' };
+    return { success: false, error: 'Too many attempts. Please try again.' };
   }
 
   const lookup = await getEditToken(token);
   if (!lookup.valid) {
     if (lookup.reason === 'expired') {
-      return { success: false, error: 'Pautan ini telah luput.' };
+      return { success: false, error: 'This link has expired.' };
     }
     if (lookup.reason === 'used') {
-      return { success: false, error: 'Pautan ini telah digunakan.' };
+      return { success: false, error: 'This link has already been used.' };
     }
-    return { success: false, error: 'Pautan tidak sah.' };
+    return { success: false, error: 'Invalid link.' };
   }
   const tokenRow = lookup.row;
 
   const form = await getFormById(tokenRow.formId);
-  if (!form) return { success: false, error: 'Form tidak dijumpai.' };
+  if (!form) return { success: false, error: 'Form not found.' };
 
   // Materialize input
   const inputData: Record<string, unknown> = {};
@@ -134,17 +134,17 @@ export async function submitEditedResponseAction(
   dbData._submission_id = tokenRow.submissionId;
 
   if (!form.googleSheetUrl) {
-    return { success: false, error: 'Form ini tidak disambung ke Google Sheet.' };
+    return { success: false, error: 'This form is not connected to a Google Sheet.' };
   }
 
   const settings = await getSettingsByFormId(form.id);
   if (!settings) {
-    return { success: false, error: 'Konfigurasi tidak dijumpai.' };
+    return { success: false, error: 'Configuration not found.' };
   }
 
   const match = form.googleSheetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
   if (!match || !match[1]) {
-    return { success: false, error: 'Google Sheet URL tidak sah.' };
+    return { success: false, error: 'Invalid Google Sheet URL.' };
   }
   const sheetId = match[1];
   const pk = settings.googlePrivateKey ? formatPrivateKey(settings.googlePrivateKey) : undefined;
@@ -173,7 +173,7 @@ export async function submitEditedResponseAction(
   );
 
   if (!result.success) {
-    return { success: false, error: result.error ?? 'Gagal mengemas kini Google Sheet.' };
+    return { success: false, error: result.error ?? 'Failed to update Google Sheet.' };
   }
 
   // Mark token used (single-use semantics).

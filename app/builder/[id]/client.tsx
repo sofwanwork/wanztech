@@ -55,7 +55,7 @@ import {
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { QRCodeSVG } from 'qrcode.react';
-import { getProxiedImageUrl, cn } from '@/lib/utils';
+import { getProxiedImageUrl, cn, toValidHexColor } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -877,7 +877,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                       <input
                         id="primary-color-picker"
                         type="color"
-                        value={form.theme?.primaryColor || '#000000'}
+                        value={toValidHexColor(form.theme?.primaryColor, '#000000')}
                         onChange={(e) =>
                           setForm((f) => ({
                             ...f,
@@ -914,7 +914,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                       <input
                         id="background-color-picker"
                         type="color"
-                        value={form.theme?.backgroundColor || '#ffffff'}
+                        value={toValidHexColor(form.theme?.backgroundColor, '#ffffff')}
                         onChange={(e) =>
                           setForm((f) => ({
                             ...f,
@@ -1136,7 +1136,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                       <Label htmlFor="ecert-expired-msg">Custom Expiration Message</Label>
                       <Textarea
                         id="ecert-expired-msg"
-                        placeholder="Pautan sijil ini telah luput. Sila hubungi penganjur. / This certificate link has expired."
+                        placeholder="This certificate link has expired. Please contact the organizer."
                         value={form.eCertificateExpiredMessage || ''}
                         onChange={(e) =>
                           setForm((f) => ({ ...f, eCertificateExpiredMessage: e.target.value }))
@@ -1705,7 +1705,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                             }}
                           />
                           <p className="text-[11px] text-muted-foreground">
-                            Peserta wajib mencapai jumlah jam ini melalui Check-In &amp; Check-Out sebelum dibenarkan menebus e-Sijil. Amaran automatik akan dipaparkan jika mereka cuba daftar keluar lebih awal.
+                            Participants must achieve this minimum duration through Check-In &amp; Check-Out before being eligible to claim their e-Certificate. An automatic warning will appear if they attempt to check out early.
                           </p>
                         </div>
                       </div>

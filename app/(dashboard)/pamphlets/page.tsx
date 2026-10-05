@@ -11,9 +11,9 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'E-Pamphlet & Buku Program Digital | KlikForm',
+  title: 'E-Pamphlet & Digital Program Books | KlikForm',
   description:
-    'Cipta dan edarkan buku program digital / brochure majlis dengan paparan 3D Flipbook interaktif dan Kod QR.',
+    'Create and share digital program books / event brochures with interactive 3D Flipbook and QR codes.',
 };
 
 export default async function PamphletsDashboard() {
@@ -43,14 +43,14 @@ export default async function PamphletsDashboard() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-              E-Pamphlet & Buku Program
+              E-Pamphlets & Program Books
             </h1>
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
-              <Sparkles className="w-3 h-3" /> Baru
+              <Sparkles className="w-3 h-3" /> New
             </span>
           </div>
           <p className="text-muted-foreground mt-1 text-sm md:text-base">
-            Bina buku program digital majlis yang elegan dengan kesan 3D Flipbook, modul sentuhan, dan Kod QR sedia cetak.
+            Build elegant digital event program books with 3D Flipbook effects, touch slider, and print-ready QR codes.
           </p>
         </div>
 
@@ -58,7 +58,7 @@ export default async function PamphletsDashboard() {
           <Button asChild variant="outline" size="default" className="gap-2">
             <Link href="/p/demo" target="_blank">
               <ExternalLink className="w-4 h-4 text-primary" />
-              <span>Lihat Demo Langsung</span>
+              <span>View Live Demo</span>
             </Link>
           </Button>
           <CreatePamphletDialog />
@@ -75,39 +75,39 @@ export default async function PamphletsDashboard() {
         <Card className="rounded-2xl border-gray-200/80 shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-600">
-              Jumlah Buku Program
+              Total Program Books
             </CardTitle>
             <BookOpen className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-900">{totalPamphlets}</div>
-            <p className="text-xs text-muted-foreground mt-1">E-pamphlet dicipta</p>
+            <p className="text-xs text-muted-foreground mt-1">E-pamphlets created</p>
           </CardContent>
         </Card>
 
         <Card className="rounded-2xl border-gray-200/80 shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-600">
-              Jumlah Tontonan Hadirin
+              Total Attendee Views
             </CardTitle>
             <Eye className="h-4 w-4 text-sky-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-900">{totalViews}</div>
-            <p className="text-xs text-muted-foreground mt-1">Imbasan & bacaan digital</p>
+            <p className="text-xs text-muted-foreground mt-1">Digital scans & reads</p>
           </CardContent>
         </Card>
 
         <Card className="rounded-2xl border-gray-200/80 shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-600">
-              Jumlah Muka Surat
+              Total Pages
             </CardTitle>
             <Layers className="h-4 w-4 text-emerald-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-900">{totalPages}</div>
-            <p className="text-xs text-muted-foreground mt-1">Helaian aktif dipaparkan</p>
+            <p className="text-xs text-muted-foreground mt-1">Active pages displayed</p>
           </CardContent>
         </Card>
       </div>
@@ -120,18 +120,18 @@ export default async function PamphletsDashboard() {
           </div>
           <div className="max-w-md mx-auto space-y-1.5">
             <h3 className="text-lg font-bold text-gray-900">
-              Cipta Buku Program Digital Pertama Anda
+              Create Your First Digital Program Book
             </h3>
             <p className="text-sm text-gray-500">
-              Muat naik helaian brochure acara anda (PNG/JPG atau PDF), susun atur tentatif majlis, dan kongsi dengan kod QR yang anggun kepada hadirin.
+              Upload your event brochure pages (PNG/JPG or PDF), organize the program lineup, and share with an elegant QR code to your audience.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-            <CreatePamphletDialog buttonText="Mula Cipta E-Pamphlet" size="lg" />
+            <CreatePamphletDialog buttonText="Create E-Pamphlet" size="lg" />
             <Button asChild variant="outline" size="lg">
               <Link href="/p/demo" target="_blank" className="gap-2">
                 <ExternalLink className="w-4 h-4" />
-                <span>Uji Pandu Contoh Buku Program</span>
+                <span>Preview Sample Program Book</span>
               </Link>
             </Button>
           </div>
@@ -139,8 +139,8 @@ export default async function PamphletsDashboard() {
       ) : (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Senarai E-Pamphlet Anda</h2>
-            <span className="text-xs text-gray-500">{pamphlets.length} rekod</span>
+            <h2 className="text-lg font-semibold text-gray-900">Your E-Pamphlets</h2>
+            <span className="text-xs text-gray-500">{pamphlets.length} {pamphlets.length === 1 ? 'record' : 'records'}</span>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

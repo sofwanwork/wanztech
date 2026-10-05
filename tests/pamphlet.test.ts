@@ -6,7 +6,7 @@ import {
   getSampleLandscapePamphlet,
   getPamphletOrientation,
 } from '@/lib/pamphlets/utils';
-import { PAMPHLET_THEMES } from '@/lib/pamphlets/themes';
+import { PAMPHLET_THEMES, DEFAULT_PAMPHLET_THEME } from '@/lib/pamphlets/themes';
 import { mapPamphletFromRow } from '@/lib/storage/pamphlets';
 import { PamphletTheme, PamphletPageItem } from '@/lib/types/pamphlets';
 import { computeSpread } from '@/components/pamphlet/viewer/flipbook-view';
@@ -53,23 +53,29 @@ describe('E-Pamphlet — Themes & Aesthetics', () => {
       expect(theme.toolbarBg).toBeTruthy();
     }
   });
+
+  it('sets Clean Studio (light) as the system-wide default theme', () => {
+    expect(DEFAULT_PAMPHLET_THEME).toBe('light');
+    expect(PAMPHLET_THEMES[DEFAULT_PAMPHLET_THEME].name).toBe('Clean Studio');
+  });
 });
 
 describe('E-Pamphlet — Sample Template & DB Mapping', () => {
   it('generates a rich sample pamphlet', () => {
     const sample = getSamplePamphlet();
-    expect(sample.slug).toBe('buku-program-anugerah-cemerlang');
+    expect(sample.slug).toBe('excellence-awards-program-book');
     expect(sample.pages.length).toBe(6);
     expect(sample.actionButtons.length).toBeGreaterThan(0);
     expect(sample.displayMode).toBe('flipbook');
-    expect(sample.theme).toBe('emerald');
+    expect(sample.theme).toBe('light');
     expect(sample.orientation).toBe('portrait');
   });
 
   it('generates a rich landscape sample pamphlet', () => {
     const sample = getSampleLandscapePamphlet();
-    expect(sample.slug).toBe('buku-program-persidangan-inovasi');
+    expect(sample.slug).toBe('digital-innovation-conference-program');
     expect(sample.pages.length).toBe(6);
+    expect(sample.theme).toBe('light');
     expect(sample.orientation).toBe('landscape');
     expect(sample.pages[0].orientation).toBe('landscape');
   });
@@ -105,6 +111,7 @@ describe('E-Pamphlet — Sample Template & DB Mapping', () => {
     expect(mapped.isActive).toBe(true);
     expect(mapped.views).toBe(0);
     expect(mapped.orientation).toBe('portrait');
+    expect(mapped.theme).toBe('light');
   });
 });
 
@@ -160,4 +167,88 @@ describe('E-Pamphlet — 3D Flipbook computeSpread Logic', () => {
     expect(backCoverSpread.rightPage).toBeNull();
   });
 });
+
+describe('E-Pamphlet — 1-Click Page Spread Mode Toggle Logic', () => {
+  function getIsTwoPageSpread(
+    mode: 'auto' | 'single' | 'double',
+    totalPages: number,
+    isWideScreen: boolean,
+    forceMobile = false
+  ): boolean {
+    return (
+      !forceMobile &&
+      totalPages >= 2 &&
+      mode !== 'single' &&
+      (mode === 'double' || (totalPages > 2 && isWideScreen))
+    );
+  }
+
+  function toggleSpreadMode(
+    prev: 'auto' | 'single' | 'double',
+    totalPages: number,
+    isWideScreen: boolean,
+    forceMobile = false
+  ): 'single' | 'double' {
+    const isCurrentlyDouble = getIsTwoPageSpread(prev, totalPages, isWideScreen, forceMobile);
+    return isCurrentlyDouble ? 'single' : 'double';
+  }
+
+  it('switches a 2-page document from 1-page to 2-page on the very FIRST click', () => {
+    const totalPages = 2;
+    const isWideScreen = true;
+
+    // Initial state: 'auto' defaults to 1 page for 2-page documents
+    let mode: 'auto' | 'single' | 'double' = 'auto';
+    expect(getIsTwoPageSpread(mode, totalPages, isWideScreen)).toBe(false);
+
+    // First click: MUST immediately switch to 'double' (2 pages)
+    mode = toggleSpreadMode(mode, totalPages, isWideScreen);
+    expect(mode).toBe('double');
+    expect(getIsTwoPageSpread(mode, totalPages, isWideScreen)).toBe(true);
+
+    // Second click: switches back to 'single' (1 page)
+    mode = toggleSpreadMode(mode, totalPages, isWideScreen);
+    expect(mode).toBe('single');
+    expect(getIsTwoPageSpread(mode, totalPages, isWideScreen)).toBe(false);
+
+    // Third click: switches back to 'double' (2 pages)
+    mode = toggleSpreadMode(mode, totalPages, isWideScreen);
+    expect(mode).toBe('double');
+    expect(getIsTwoPageSpread(mode, totalPages, isWideScreen)).toBe(true);
+  });
+
+  it('switches a multi-page document on desktop from 2-page to 1-page on the very FIRST click', () => {
+    const totalPages = 6;
+    const isWideScreen = true;
+
+    // Initial state: 'auto' defaults to 2-page spread on desktop
+    let mode: 'auto' | 'single' | 'double' = 'auto';
+    expect(getIsTwoPageSpread(mode, totalPages, isWideScreen)).toBe(true);
+
+    // First click: MUST immediately switch to 'single' (1 page)
+    mode = toggleSpreadMode(mode, totalPages, isWideScreen);
+    expect(mode).toBe('single');
+    expect(getIsTwoPageSpread(mode, totalPages, isWideScreen)).toBe(false);
+
+    // Second click: switches back to 'double' (2 pages)
+    mode = toggleSpreadMode(mode, totalPages, isWideScreen);
+    expect(mode).toBe('double');
+    expect(getIsTwoPageSpread(mode, totalPages, isWideScreen)).toBe(true);
+  });
+
+  it('switches a multi-page document on mobile from 1-page to 2-page on the very FIRST click', () => {
+    const totalPages = 6;
+    const isWideScreen = false;
+
+    // Initial state: 'auto' on narrow screen defaults to 1 page
+    let mode: 'auto' | 'single' | 'double' = 'auto';
+    expect(getIsTwoPageSpread(mode, totalPages, isWideScreen)).toBe(false);
+
+    // First click: MUST immediately switch to 'double' (2 pages)
+    mode = toggleSpreadMode(mode, totalPages, isWideScreen);
+    expect(mode).toBe('double');
+    expect(getIsTwoPageSpread(mode, totalPages, isWideScreen)).toBe(true);
+  });
+});
+
 
