@@ -2227,7 +2227,15 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
 - **Pengesahan & Kualiti**:
   - `npm run typecheck`: 0 ralat TypeScript.
   - `npm run lint`: 0 ralat / 0 amaran ESLint.
-  - `npm test`: 345 / 345 ujian unit lulus (100%) merentas kesemua 39 suite ujian.
+## Production Deployment (2026-10-05 — Touch Slider Blank Screen Fix & Auto Slider Feature)
+- **Tarikh**: 2026-10-05
+- **Commit Git**: `0cff2e7` (`feat: fix touch slider blank screen on swipe and add auto slider feature`)
+- **Penyegerakan GitHub**: Berjaya ditolak ke `origin/master` (`4a0808d..0cff2e7`).
+- **Kaedah**: Vercel CLI (`npx vercel --prod --yes`)
+- **Status Binaan**: Selesai dalam ~2 minit, kompilasi 58 laluan (36 statik ○, 22 dinamik ƒ).
+- **ID Deployment**: `dpl_ASg3D4ChsQqceGcLTs9QNWQJ1KMK`
+- **URL Pengeluaran**: `https://www.klikform.com`
+- **URL Deployment Vercel**: `https://klikform-626q4ihrp-sofwan-jailanis-projects.vercel.app`
 
 
 
