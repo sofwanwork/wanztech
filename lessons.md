@@ -287,3 +287,10 @@
       Ini menjamin varian gerakan kiri dan kanan (`100%` vs `-100%`) dikira dengan tepat pada kitaran render pertama tanpa sebarang pertembungan arah.
   (4) **Prapemuatan Imej di Latar Belakang (`new Image().src`)**:
       Prapemuat kesemua imej slaid semasa pemapar dimuatkan untuk mengelakkan kotak putih kosong akibat kelewatan muat turun imej apabila pengguna meleret pantas.
+
+- **Elakkan Meletakkan Lencana/Tera Air Nombor Di Atas Kanvas Dokumen (Document Canvas Cleanliness & Unobstructed Reading)**:
+  Apabila membina pemapar risalah, e-buku, atau dokumen menegak (*vertical continuous scroll viewer*):
+  (1) **Pertindihan Elemen Tera Air dengan Kandungan Dokumen**:
+      Meletakkan lencana nombor halaman terapung di dalam kotak imej (cth: `absolute top-3 right-3`) akan menutupi logo (seperti logo rasmi jabatan, sekolah, agensi), teks tajuk, tarikh, atau butiran penting di bucu atas risalah. Pada paparan mudah alih (skrin sempit), penskalaan teks dokumen menjadi lebih kecil dan lencana nombor akan menutup peratusan ruang tajuk yang lebih besar, mencacatkan pembacaan pengguna.
+  (2) **Prinsip Kebersihan Kanvas & Penumpuan Navigasi Bawah**:
+      Kanvas dokumen pengguna mesti kekal 100% bersih tanpa sebarang elemen terapung tiruan di atasnya. Nombor halaman aktif hendaklah diuruskan secara eksklusif oleh bar alat navigasi terapung di bahagian bawah skrin (`PamphletToolbar`), disegerakkan secara lancar melalui `IntersectionObserver`. Pendekatan ini memelihara reka bentuk asal dokumen pengguna di samping menyediakan kawalan navigasi yang konsisten di semua peranti.

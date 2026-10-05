@@ -229,6 +229,22 @@
 3. **Prapemuatan Imej Menyeluruh (`new Image().src`)**: Kesemua imej slaid diprapemuat ke dalam cache memori pelayar sebaik sahaja komponen dipasang. Ini menghapuskan sebarang kelipan kotak putih kosong semasa pengguna meluncur pantas ke mana-mana halaman.
 4. **Kawalan Auto-Slider Dwi-Akses (Dual Surface Controls)**: Pengguna boleh mengaktifkan tayangan slaid automatik sama ada melalui butang pil terapung atas pentas (dengan status Play/Pause & lampu denyutan hijau emerald) ataupun melalui bar navigasi bawah pemapar (toolbar), memberikan fleksibiliti maksimum pada kedua-dua peranti mudah alih dan komputer meja.
 
+---
+
+# Pembuangan Nombor Halaman Bertindih pada Skrol Menegak (Vertical Scroll Page Number Overlay Removal) ✅ SELESAI
+- [x] 1. Kenal pasti punca teknikal nombor halaman menutup tulisan/logo dokumen:
+  - 1.1 Komponen `VerticalView` (`components/pamphlet/viewer/vertical-view.tsx`) meletakkan elemen tera air (*watermark badge*) `absolute top-3 right-3 bg-black/50` di dalam bekas kad imej bagi setiap muka surat.
+  - 1.2 Pada paparan telefon (dan skrin desktop), risalah atau buku program yang mempunyai logo (seperti MET Malaysia), teks tajuk, atau maklumat penting di sudut atas kanan terhalang secara terus oleh lencana nombor ini.
+  - 1.3 Bar navigasi bawah pemapar (`PamphletToolbar`) telah sedia memaparkan nombor halaman semasa secara dinamik (`⊞ 1 / 6`) berasaskan `IntersectionObserver`, menjadikan lencana di atas imej lewah (*redundant*) dan merosakkan kebolehbacaan dokumen.
+- [x] 2. Buang elemen lencana nombor bertindih daripada `components/pamphlet/viewer/vertical-view.tsx`.
+- [x] 3. Tambah atribut `select-none` dan `draggable={false}` pada elemen `<img>` agar serasi dengan mod pemapar lain.
+- [x] 4. Jalankan pengesahan kualiti:
+  - 4.1 `npm run typecheck` (0 ralat TypeScript).
+  - 4.2 `npm run lint` (0 ralat / 0 amaran ESLint).
+  - 4.3 `npm test` (345/345 ujian unit lulus merentas 39 suite).
+- [x] 5. Kemas kini `lessons.md`, `memory.md`, dan `task.md`.
+
+
 
 
 

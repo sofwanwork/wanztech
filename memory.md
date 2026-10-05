@@ -2237,6 +2237,21 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
 - **URL Pengeluaran**: `https://www.klikform.com`
 - **URL Deployment Vercel**: `https://klikform-626q4ihrp-sofwan-jailanis-projects.vercel.app`
 
+## System Improvements (2026-10-05 — Pembuangan Lencana Nombor Bertindih pada Skrol Menegak Pamphlet)
+- **Konteks & Laporan Pengguna**: "utk vertical scroll ni ada nombor dekat situ, kalau dekat mobile view jadi tak nampak tulisan sbb overlay dgn nombor" (beserta tangkapan skrin risalah Jabatan Meteorologi Malaysia dengan bulatan merah di lencana `1/6` yang menindih logo MET Malaysia di bucu atas kanan).
+- **Punca Masalah**:
+  - `components/pamphlet/viewer/vertical-view.tsx` meletakkan watermark `absolute top-3 right-3 bg-black/50 text-[11px]` di dalam setiap kad muka surat.
+  - Lencana ini menutup logo, tajuk, dan teks yang lazimnya diletakkan di bahagian atas dokumen, terutamanya pada paparan telefon di mana skala dokumen lebih kecil.
+  - Lencana ini juga lewah (*redundant*) kerana bar navigasi bawah (`PamphletToolbar`) telah sedia memaparkan nombor halaman semasa secara langsung (`⊞ 1 / 6`) berasaskan `IntersectionObserver`.
+- **Penyelesaian**:
+  - Membuang lencana nombor terapung bertindih daripada `components/pamphlet/viewer/vertical-view.tsx`.
+  - Menambah `select-none` dan `draggable={false}` pada elemen `<img>` untuk mengelakkan heretan imej tidak sengaja semasa menatal.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm test`: 345 / 345 ujian unit lulus (100%) merentas kesemua 39 suite ujian.
+
+
 
 
 

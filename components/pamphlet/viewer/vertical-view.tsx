@@ -93,18 +93,14 @@ export function VerticalView({
               className="relative w-full rounded-2xl overflow-hidden shadow-2xl border border-black/15 bg-white shrink-0"
               style={{ aspectRatio: `${itemRatio} / 1` }}
             >
-              {/* Page Number Watermark */}
-              <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-xs text-white text-[11px] font-medium px-2 py-0.5 rounded-full z-10">
-                {page.pageNumber} / {pages.length}
-              </div>
-
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={page.imageUrl}
                 alt={page.title || `Page ${page.pageNumber}`}
                 onLoad={(e) => handleImageLoad(page.pageNumber, e)}
-                className="w-full h-full object-contain pointer-events-none"
+                className="w-full h-full object-contain pointer-events-none select-none"
                 loading="lazy"
+                draggable={false}
               />
             </div>
           );
