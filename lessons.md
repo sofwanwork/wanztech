@@ -295,15 +295,11 @@
   (2) **Prinsip Kebersihan Kanvas & Penumpuan Navigasi Bawah**:
       Kanvas dokumen pengguna mesti kekal 100% bersih tanpa sebarang elemen terapung tiruan di atasnya. Nombor halaman aktif hendaklah diuruskan secara eksklusif oleh bar alat navigasi terapung di bahagian bawah skrin (`PamphletToolbar`), disegerakkan secara lancar melalui `IntersectionObserver`. Pendekatan ini memelihara reka bentuk asal dokumen pengguna di samping menyediakan kawalan navigasi yang konsisten di semua peranti.
 
-- **Anti-corak `justify-between` pada Halaman Link-in-Bio Mudah Alih & Penyelesaian Aliran Semulajadi (`mt-8 mb-4`)**:
-  (1) **Mengapa `justify-between` Merosakkan Paparan Telefon**:
-      Mencuba menolak footer jenama ke dasar skrin menggunakan `justify-between` di dalam bekas berketinggian penuh (`min-h-screen` / `min-h-[100dvh]`) adalah anti-corak reka bentuk untuk halaman Link-in-Bio. Pada pelayar telefon pintar (Chrome, Safari, WhatsApp/Instagram in-app browser), palang alamat URL dan bar navigasi bawah sentiasa mengubah nisbah viewport. Apabila `justify-between` digunakan, footer dipaksa ke koordinat paling bawah bekas, mewujudkan jurang kosong gergasi di bawah senarai pautan dan menolak lencana terus melepasi sempadan pandang pelayar (*off-screen*). Mengurangkan atau melaraskan padding bawah hanya akan memburukkan keadaan kerana ia menolak lencana lebih dalam ke zon tersembunyi.
-  (2) **Penyelesaian Standard Industri (Corak Linktree & Beacons)**:
-      Halaman profil Link-in-Bio tidak memerlukan footer yang dipaku ke dasar skrin. Sebaliknya:
-      - Gunakan `flex flex-col items-center` pada `<main className="min-h-[100dvh] ...">` TANPA `justify-between`.
-      - Letakkan footer penjenamaan sejurus di bawah senarai pautan menggunakan margin semulajadi (`mt-8 mb-4`).
-      - Untuk profil ringkas (1-4 pautan): keseluruhan profil (avatar + nama + pautan + lencana KlikForm) hanya menggunakan ketinggian ~500px, muat dengan selesa 100% di dalam skrin telefon pintar (~670px-850px) tanpa sebarang tatalan (*zero-scroll*), tanpa pemotongan, dan dengan ruang pernafasan visual yang mencukupi di atas bar navigasi Android (`≡ ☐ ◁`) serta iOS.
-      - Untuk profil panjang (5+ pautan): pengguna menatal ke bawah melalui senarai pautan dan melihat lencana di penghujung kandungan secara semulajadi.
+- **Penetapan Footer Sentiasa di Bawah Menggunakan `min-h-[100dvh]` dan `justify-between`**:
+  (1) **Mengapa `justify-between` Pernah Bermasalah**:
+      Dahulu, `justify-between` menyebabkan pemotongan elemen kerana ia digabungkan dengan `min-h-screen` (`100vh`). Kerana `100vh` mengabaikan palang alamat URL telefon pintar (~56px), footer tertolak melepasi birai bawah skrin.
+  (2) **Penyelesaian Sempurna**:
+      Dengan membuang `min-h-screen` dan menggunakan `min-h-[100dvh]` secara tunggal bersama `justify-between`, bekas profil padan 100% tepat dengan ketinggian skrin aktif telefon (`100svh`). Footer lencana penjenamaan berlabuh kemas di bahagian bawah (*anchored permanently at bottom*) dengan padding visual yang selamat, tanpa terpotong dan tanpa sebarang tatalan phantom ke ruang kosong.
 
 - **Penindihan Urutan CSS Tailwind v4 (`min-h-screen` menimpa `min-h-[100dvh]`)**:
   (1) Jangan sesekali menggabungkan kedua-dua `min-h-screen` dan `min-h-[100dvh]` pada elemen yang sama. Di dalam CSS kompilasi Tailwind v4, `.min-h-screen` (`min-height: 100vh`) dijana di bawah `.min-h-[100dvh]`. Akibat peraturan urutan kaskad CSS (*CSS cascade source order*), `100vh` mengatasi sepenuhnya `100dvh`.

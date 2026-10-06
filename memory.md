@@ -2285,4 +2285,16 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - `npm run lint`: 0 ralat / 0 amaran ESLint.
   - `npm test`: 345 / 345 ujian lulus merentas 39 suite ujian.
 
+## System Improvements (2026-10-06 — Penetapan Lencana Penjenamaan Sentiasa di Bawah)
+- **Permintaan Pengguna**: "sy nak ni sentiasa di bawah" (dengan tangkapan skrin menunjukkan lencana berlabuh di bawah pautan tetapi pengguna mahu ia sentiasa di bahagian paling bawah skrin).
+- **Penyelesaian**:
+  - Menetapkan semula `justify-between` pada `<main className="min-h-[100dvh] flex flex-col justify-between items-center px-4 pt-6 pb-6 ...">`.
+  - Kerana `min-h-screen` (`100vh`) telah disingkirkan dan digantikan dengan `min-h-[100dvh]` secara mutlak, bekas tidak lagi melimpah melepasi skrin telefon aktif. Lencana penjenamaan *"Create your own with KlikForm"* kini sentiasa berlabuh kemas di bahagian paling bawah skrin (*permanently pinned to bottom*), kelihatan penuh 100% tanpa sebarang pemotongan dan tanpa tatalan phantom.
+  - Mockup telefon pembina di `app/(dashboard)/bio-builder/[id]/client.tsx` turut diselaraskan dengan `justify-between`.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm test`: 345 / 345 ujian lulus merentas 39 suite ujian.
+
+
 

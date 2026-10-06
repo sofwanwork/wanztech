@@ -52,7 +52,7 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
 
   return (
     <main
-      className={`min-h-[100dvh] ${theme.bg} flex flex-col items-center px-4 pt-6 pb-8 relative selection:bg-emerald-500 selection:text-white w-full overflow-x-hidden`}
+      className={`min-h-[100dvh] ${theme.bg} flex flex-col justify-between items-center px-4 pt-6 pb-6 relative selection:bg-emerald-500 selection:text-white w-full overflow-x-hidden`}
     >
       {/* Background Pattern Overlay */}
       {page.themeConfig?.pattern && page.themeConfig.pattern !== 'none' && (
@@ -193,12 +193,12 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
       </div>
 
       {/* Footer Branding */}
-      <footer className="mt-8 mb-4 text-center relative z-10 shrink-0">
+      <footer className="pt-6 pb-2 text-center relative z-10 shrink-0">
         <a
           href="https://www.klikform.com"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/25 hover:bg-black/35 text-white/80 hover:text-white backdrop-blur-md text-xs font-medium border border-white/10 transition-all hover:scale-105 shadow-sm"
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/25 hover:bg-black/35 text-white/80 hover:text-white backdrop-blur-md text-xs font-medium border border-white/10 transition-all hover:scale-105 shadow-sm"
         >
           <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
           <span>

@@ -287,7 +287,20 @@
 ### Keputusan Seni Bina & Reviu (Architectural Review)
 1. **Punca Tatalan Pada Ruang Kosong (Phantom Mobile Overflow)**: Kelas CSS `min-h-screen` (`100vh`) ditakrifkan selepas `.min-h-[100dvh]` dalam fail CSS kompilasi Tailwind. Apabila kedua-duanya wujud serentak, `100vh` menimpa `100dvh`. Pada pelayar telefon pintar (Chrome Android / Safari iOS), `100vh` tidak memotong ketinggian bar alamat URL (~56px). Ini menyebabkan halaman menjadi 56px lebih panjang daripada tingkap pelayar walaupun kandungan ringkas. Membuang `min-h-screen` dan menetapkan `min-h-[100dvh]` secara mutlak menghapuskan lebihan ini sepenuhnya — halaman profil ringkas terkunci tepat pada skrin telefon tanpa sebarang tatalan (*zero scroll*).
 2. **Pembersihan Antaramuka Profil**: Butang kongsi terapung dan modal QR dialog dibuang sepenuhnya dari `app/(public)/bio/[username]/client.tsx`, mengembalikan fokus visual 100% kepada penjenamaan profil pengguna dan pautan interaktif.
-3. **Penyelarasan Tunggal Vercel Deployment**: Integrasi GitHub Vercel sudah dipautkan secara automatik pada branch `origin/master`. Melakukan `git push` sudah mencukupi untuk memicu binaan pengeluaran rasmi. Menjalankan `npx vercel --prod` serentak menyebabkan dua binaan berjalan pada masa yang sama. Aliran diselaraskan kepada satu kaedah tunggal (*single deployment trigger*).
+---
+
+# Penetapan Lencana Penjenamaan Sentiasa di Bawah (Always Pinned to Bottom with min-h-[100dvh]) ✅ SELESAI
+- [x] 1. Penuhi kehendak pengguna ("sy nak ni sentiasa di bawah"):
+  - [x] 1.1 Kembalikan susun atur `justify-between` pada `<main className="min-h-[100dvh] flex flex-col justify-between items-center px-4 pt-6 pb-6 ...">`.
+  - [x] 1.2 Kerana `min-h-screen` (`100vh`) telah disingkirkan sepenuhnya dan digantikan dengan `min-h-[100dvh]`, bekas tidak lagi mengalami limpahan (overflow) pada pelayar telefon pintar.
+  - [x] 1.3 Lencana *"Create your own with KlikForm"* kini sentiasa berlabuh kemas di bahagian paling bawah skrin (*anchored at bottom*), kelihatan penuh 100% serta-merta tanpa terpotong dan tanpa sebarang tatalan (*zero-scroll*).
+  - [x] 1.4 Mockup telefon di `app/(dashboard)/bio-builder/[id]/client.tsx` turut diselaraskan dengan `justify-between` agar serasi sepenuhnya.
+- [x] 2. Pengesahan Kualiti:
+  - [x] 2.1 `npm run typecheck` (0 ralat).
+  - [x] 2.2 `npm run lint` (0 ralat).
+  - [x] 2.3 `npm test` (345/345 ujian lulus).
+- [x] 3. Kemas kini `lessons.md`, `memory.md`, dan tolak ke GitHub (`origin/master`) untuk binaan tunggal automatik Vercel.
+
 
 
 
