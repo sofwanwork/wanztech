@@ -2271,13 +2271,18 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - `npm run lint`: 0 ralat / 0 amaran ESLint.
   - `npm test`: 345 / 345 ujian lulus merentas 39 suite ujian.
 
-## Production Deployment (2026-10-06 — Mobile Bio Natural Footer Flow)
-- **Tarikh**: 2026-10-06
-- **Commit Git**: `208ade2` (`fix: place bio footer naturally below links to guarantee default mobile visibility`)
-- **Penyegerakan GitHub**: Berjaya ditolak ke `origin/master` (`705ee6a..208ade2`).
-- **Kaedah**: Vercel CLI (`npx vercel --prod --yes`)
-- **Status Binaan**: Selesai dalam ~2 minit, kompilasi 58 laluan (36 statik ○, 22 dinamik ƒ).
-- **ID Deployment**: `dpl_BPMTxqx22Ye5P8HskkVfUoNRuPbh`
-- **URL Pengeluaran**: `https://www.klikform.com`
-- **URL Deployment Vercel**: `https://klikform-gueedtllc-sofwan-jailanis-projects.vercel.app`
+## System Improvements (2026-10-06 — Penghapusan Tatalan Phantom Mudah Alih & Pembuangan Butang Kongsi Bio)
+- **Laporan Pengguna**: "kenapa boleh scroll ya sedangkan ada byk ruang kosong dekat bawah, pastu button share dekat atas belah kanan tu buang, pastu bila update ke vercel jadi update dua kali sepatutnya skali je".
+- **Punca Tatalan Pada Ruang Kosong**:
+  - `min-h-screen` (`min-height: 100vh`) dalam CSS Tailwind v4 mengatasi `min-h-[100dvh]` kerana urutan generasi kaskad CSS.
+  - Pada telefon pintar (Chrome/Safari), unit `100vh` mengabaikan palang alamat URL (~56px), memaksa bekas menjadi lebih tinggi daripada skrin sebenar. Ini membolehkan pengguna menatal ke bawah walaupun ruang bawah kosong.
+- **Penyelesaian**:
+  - Membuang `min-h-screen` sepenuhnya dan menggunakan `min-h-[100dvh]` secara mutlak pada `<main>` di `app/(public)/bio/[username]/client.tsx`. Halaman profil ringkas kini terkunci kemas mengikut ketinggian skrin aktif tanpa sebarang lebihan tatalan (*zero phantom scroll*).
+  - Membuang butang kongsi terapung (`<Share2 />`) dan modal dialog QR perkongsian dari antaramuka bio awam bagi membersihkan pandangan visual.
+  - Menyelaraskan deployment Vercel kepada satu trigger tunggal melalui GitHub push (`git push origin master`) tanpa mencetuskan binaan CLI bertindih.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm test`: 345 / 345 ujian lulus merentas 39 suite ujian.
+
 

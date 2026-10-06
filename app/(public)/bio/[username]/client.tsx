@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { QRCodeSVG } from 'qrcode.react';
 import {
   BioPageWithLinks,
   BioLink,
@@ -15,17 +14,7 @@ import {
   getBioPatternStyle,
 } from '@/lib/bio-links/themes';
 import { trackBioClickAction } from '@/actions/bio-links';
-import { Button } from '@/components/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Share2,
-  Copy,
   Sparkles,
   ExternalLink,
   MessageCircle,
@@ -39,7 +28,6 @@ import {
   Globe,
   Linkedin,
   FileText,
-  Download,
 } from 'lucide-react';
 
 interface PublicBioClientProps {
@@ -47,10 +35,7 @@ interface PublicBioClientProps {
 }
 
 export function PublicBioClient({ page }: PublicBioClientProps) {
-  const [shareOpen, setShareOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [imgError, setImgError] = useState(false);
-  const qrRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
     setImgError(false);
@@ -65,43 +50,9 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
     trackBioClickAction(link.id).catch(() => {});
   };
 
-  const handleCopy = () => {
-    if (typeof window !== 'undefined') {
-      navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  const downloadQR = () => {
-    const svg = qrRef.current;
-    if (!svg) return;
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
-    img.onload = () => {
-      canvas.width = 600;
-      canvas.height = 600;
-      if (ctx) {
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, 600, 600);
-        const pngFile = canvas.toDataURL('image/png');
-        const downloadLink = document.createElement('a');
-        downloadLink.download = `klikbio-${page.username}-qr.png`;
-        downloadLink.href = pngFile;
-        downloadLink.click();
-      }
-    };
-    img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
-  };
-
-  const currentUrl = typeof window !== 'undefined' ? window.location.href : `https://www.klikform.com/bio/${page.username}`;
-
   return (
     <main
-      className={`min-h-screen ${theme.bg} flex flex-col items-center px-4 pt-6 pb-8 relative selection:bg-emerald-500 selection:text-white`}
+      className={`min-h-[100dvh] ${theme.bg} flex flex-col items-center px-4 pt-6 pb-8 relative selection:bg-emerald-500 selection:text-white w-full overflow-x-hidden`}
     >
       {/* Background Pattern Overlay */}
       {page.themeConfig?.pattern && page.themeConfig.pattern !== 'none' && (
@@ -110,19 +61,6 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
           style={getBioPatternStyle(page.themeConfig.pattern, theme)}
         />
       )}
-
-      {/* Floating Share Button */}
-      <div className="absolute top-4 right-4 z-10">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setShareOpen(true)}
-          className="h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border border-white/20 shadow-md"
-          title="Share this page"
-        >
-          <Share2 className="h-4 w-4" />
-        </Button>
-      </div>
 
       {/* Main Container */}
       <div className="w-full max-w-md mx-auto flex flex-col items-center space-y-6 pt-2 sm:pt-4 relative z-10">
@@ -268,51 +206,6 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
           </span>
         </a>
       </footer>
-
-      {/* Share Modal Dialog */}
-      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
-        <DialogContent className="sm:max-w-sm text-center">
-          <DialogHeader>
-            <DialogTitle className="text-center text-lg">Share @{page.username}</DialogTitle>
-            <DialogDescription className="text-center text-xs">
-              Scan this QR code or copy link to share this profile.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-gray-200 shadow-sm my-2">
-            <QRCodeSVG
-              ref={qrRef}
-              value={currentUrl}
-              size={180}
-              level="H"
-              includeMargin={true}
-            />
-            <p className="font-mono text-xs text-gray-500 mt-2 truncate max-w-full">
-              {currentUrl}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 w-full pt-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCopy}
-              className="w-full gap-1.5 text-xs shadow-xs"
-            >
-              <Copy className="h-3.5 w-3.5" />
-              {copied ? 'Link Copied!' : 'Copy Link'}
-            </Button>
-            <Button
-              size="sm"
-              onClick={downloadQR}
-              className="w-full gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
-            >
-              <Download className="h-3.5 w-3.5" />
-              Save QR
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </main>
   );
 }

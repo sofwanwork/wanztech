@@ -265,8 +265,30 @@
 
 ### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
 1. **Penukaran `min-h-screen` kepada `min-h-screen min-h-[100dvh]`**: Pada pelayar mudah alih (khususnya Google Chrome dan Safari di Android/iOS), unit CSS `100vh` diterjemahkan sebagai *Large Viewport Height* (LVH) — iaitu ketinggian skrin apabila palang alamat URL (*address bar*) dan bar navigasi ditutup. Apabila pengguna mula-mula membuka halaman bio, palang URL masih terbuka sepenuhnya, menjadikan viewport sebenar sekitar 56px-80px lebih pendek daripada `100vh`. Menggunakan `justify-between` pada bekas `min-h-screen` menolak footer ke koordinat $Y$ di luar skrin yang boleh dilihat. Menggabungkan `min-h-[100dvh]` memastikan ketinggian awal padan tepat dengan *Small Viewport Height* (`100svh`), membolehkan profil dengan pautan ringkas muat 100% pada satu skrin tanpa sebarang tatalan (*zero-scroll fit*).
-2. **Padding Ruang Selamat Bersandarkan Peranti (`pb-[max(1.5rem,env(safe-area-inset-bottom))]`)**: Menyelaraskan padding bawah dengan formula `max()` memastikan lencana sentiasa mempunyai ruang pernafasan visual sekurang-kurangnya 24px pada peranti Android dengan bar 3-butang navigasi fizikal/maya (`≡ ☐ ◁`) serta mengelakkan pertembungan dengan bar leret (*home indicator bar*) pada peranti iOS terkini.
-3. **Pencegahan Pemampatan Lencana (`shrink-0`)**: Menetapkan `shrink-0` pada elemen `<footer>` menjamin lencana KlikForm tidak dimampatkan secara menegak oleh enjin susun atur flexbox sekiranya senarai pautan pengguna bertambah.
+---
+
+# Penghapusan Tatalan Phantom Mudah Alih & Pembuangan Butang Kongsi Bio (Zero Mobile Phantom Scroll & Remove Share Button) ✅ SELESAI
+- [x] 1. Kenal pasti & selesaikan punca halaman boleh diskrol walaupun banyak ruang kosong di bawah:
+  - [x] 1.1 `min-h-screen` (`min-height: 100vh`) dalam CSS Tailwind v4 mengatasi `min-h-[100dvh]`. Pada pelayar mudah alih, `100vh` tidak tolak bar URL (~56px lebih panjang), memaksa pelayar mencipta tatalan ke bawah walaupun kandungan muat sepenuhnya.
+  - [x] 1.2 Buang `min-h-screen` sepenuhnya dan gunakan `min-h-[100dvh]` secara mutlak bagi memastikan bekas halaman mengikut ketinggian sebenar pelayar mudah alih (`100svh`), menghapuskan tatalan phantom secara 100%.
+- [x] 2. Buang butang kongsi (Share button) di sudut atas kanan dan komponen modal berkaitan:
+  - [x] 2.1 Buang `<div className="absolute top-4 right-4 z-10"><Button ...><Share2 /></Button></div>`.
+  - [x] 2.2 Buang modal dialog perkongsian dan bersihkan kod / import yang tidak lagi digunakan (`shareOpen`, `copied`, `qrRef`, `downloadQR`, `handleCopy`, `QRCodeSVG`, `Dialog...`).
+- [x] 3. Selaraskan aliran kemas kini Vercel:
+  - [x] 3.1 GitHub repository telah dipautkan (*git-connected*) secara langsung dengan Vercel. Tolak (*push*) ke `origin/master` sahaja secara automatik mencetuskan satu deployment pengeluaran tanpa perlu menjalankan CLI `npx vercel --prod` serentak (mengelakkan binaan berganda dua kali).
+- [x] 4. Jalankan pengesahan kualiti:
+  - [x] 4.1 `npm run typecheck` (0 ralat).
+  - [x] 4.2 `npm run lint` (0 ralat).
+  - [x] 4.3 `npm test` (345/345 ujian lulus).
+- [x] 5. Kemas kini `lessons.md`, `memory.md`, dan `task.md`.
+
+---
+
+### Keputusan Seni Bina & Reviu (Architectural Review)
+1. **Punca Tatalan Pada Ruang Kosong (Phantom Mobile Overflow)**: Kelas CSS `min-h-screen` (`100vh`) ditakrifkan selepas `.min-h-[100dvh]` dalam fail CSS kompilasi Tailwind. Apabila kedua-duanya wujud serentak, `100vh` menimpa `100dvh`. Pada pelayar telefon pintar (Chrome Android / Safari iOS), `100vh` tidak memotong ketinggian bar alamat URL (~56px). Ini menyebabkan halaman menjadi 56px lebih panjang daripada tingkap pelayar walaupun kandungan ringkas. Membuang `min-h-screen` dan menetapkan `min-h-[100dvh]` secara mutlak menghapuskan lebihan ini sepenuhnya — halaman profil ringkas terkunci tepat pada skrin telefon tanpa sebarang tatalan (*zero scroll*).
+2. **Pembersihan Antaramuka Profil**: Butang kongsi terapung dan modal QR dialog dibuang sepenuhnya dari `app/(public)/bio/[username]/client.tsx`, mengembalikan fokus visual 100% kepada penjenamaan profil pengguna dan pautan interaktif.
+3. **Penyelarasan Tunggal Vercel Deployment**: Integrasi GitHub Vercel sudah dipautkan secara automatik pada branch `origin/master`. Melakukan `git push` sudah mencukupi untuk memicu binaan pengeluaran rasmi. Menjalankan `npx vercel --prod` serentak menyebabkan dua binaan berjalan pada masa yang sama. Aliran diselaraskan kepada satu kaedah tunggal (*single deployment trigger*).
+
 
 
 
