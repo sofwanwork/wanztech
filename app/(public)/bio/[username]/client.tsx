@@ -101,7 +101,7 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
 
   return (
     <main
-      className={`min-h-screen ${theme.bg} flex flex-col justify-between items-center px-4 py-8 relative selection:bg-emerald-500 selection:text-white`}
+      className={`min-h-screen min-h-[100dvh] ${theme.bg} flex flex-col justify-between items-center px-4 pt-4 sm:pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] relative selection:bg-emerald-500 selection:text-white`}
     >
       {/* Background Pattern Overlay */}
       {page.themeConfig?.pattern && page.themeConfig.pattern !== 'none' && (
@@ -125,7 +125,7 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
       </div>
 
       {/* Main Container */}
-      <div className="w-full max-w-md mx-auto flex flex-col items-center space-y-6 pt-4 relative z-10">
+      <div className="w-full max-w-md mx-auto flex flex-col items-center space-y-6 pt-2 sm:pt-4 relative z-10">
         {/* Profile Avatar */}
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
@@ -255,7 +255,7 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
       </div>
 
       {/* Footer Branding */}
-      <footer className="pt-12 pb-4 text-center relative z-10">
+      <footer className="pt-6 sm:pt-8 pb-1 text-center relative z-10 shrink-0">
         <a
           href="https://www.klikform.com"
           target="_blank"

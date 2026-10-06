@@ -244,6 +244,30 @@
   - 4.3 `npm test` (345/345 ujian unit lulus merentas 39 suite).
 - [x] 5. Kemas kini `lessons.md`, `memory.md`, dan `task.md`.
 
+---
+
+# Pembaikan Pemotongan Lencana Bawah Halaman Bio Mudah Alih (Mobile Bio Footer Clipping Fix) ✅ SELESAI
+- [x] 1. Kenal pasti punca teknikal lencana "Create your own with KlikForm" terpotong di bahagian bawah skrin telefon pintar:
+  - [x] 1.1 `min-h-screen` (`100vh`) dalam pelayar telefon pintar (Chrome/Safari) mengira ketinggian mengikut Large Viewport Height (LVH) yang tidak mengambil kira palang alamat URL dan navigasi yang sedang terbuka (~56px lebih panjang daripada skrin sebenar).
+  - [x] 1.2 `flex flex-col justify-between` menolak elemen `<footer>` ke dasar bekas `100vh`, menyebabkan lencana terkeluar sebanyak ~56px melepasi birai bawah skrin dan terpotong separuh.
+  - [x] 1.3 Pengguna terpaksa menatal ke bawah (*scroll down*) semata-mata untuk melihat lencana penuh walaupun halaman hanya mempunyai 3 pautan (sepatutnya muat penuh tanpa sebarang skrol).
+- [x] 2. Kemas kini susun atur responsif `PublicBioClient` (`app/(public)/bio/[username]/client.tsx`):
+  - [x] 2.1 Tukar `min-h-screen` kepada `min-h-screen min-h-[100dvh]` supaya ketinggian awal padan tepat dengan Dynamic/Small Viewport Height (`100dvh`/`100svh`).
+  - [x] 2.2 Laraskan padding `<main>` kepada `px-4 pt-4 sm:pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]` bagi menyokong ruang selamat (*safe-area-inset*) pada Android dan iOS.
+  - [x] 2.3 Kemas kini padding bekas profil `pt-2 sm:pt-4` dan ruang footer `pt-6 sm:pt-8 pb-1 shrink-0` untuk mengelakkan penindihan padding lewah.
+- [x] 3. Jalankan pengesahan kualiti:
+  - [x] 3.1 `npm run typecheck` (0 ralat TypeScript).
+  - [x] 3.2 `npm run lint` (0 ralat ESLint).
+  - [x] 3.3 `npm test` (345/345 ujian lulus merentas 39 suite).
+- [x] 4. Kemas kini `lessons.md`, `memory.md`, dan `task.md`.
+
+---
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Penukaran `min-h-screen` kepada `min-h-screen min-h-[100dvh]`**: Pada pelayar mudah alih (khususnya Google Chrome dan Safari di Android/iOS), unit CSS `100vh` diterjemahkan sebagai *Large Viewport Height* (LVH) — iaitu ketinggian skrin apabila palang alamat URL (*address bar*) dan bar navigasi ditutup. Apabila pengguna mula-mula membuka halaman bio, palang URL masih terbuka sepenuhnya, menjadikan viewport sebenar sekitar 56px-80px lebih pendek daripada `100vh`. Menggunakan `justify-between` pada bekas `min-h-screen` menolak footer ke koordinat $Y$ di luar skrin yang boleh dilihat. Menggabungkan `min-h-[100dvh]` memastikan ketinggian awal padan tepat dengan *Small Viewport Height* (`100svh`), membolehkan profil dengan pautan ringkas muat 100% pada satu skrin tanpa sebarang tatalan (*zero-scroll fit*).
+2. **Padding Ruang Selamat Bersandarkan Peranti (`pb-[max(1.5rem,env(safe-area-inset-bottom))]`)**: Menyelaraskan padding bawah dengan formula `max()` memastikan lencana sentiasa mempunyai ruang pernafasan visual sekurang-kurangnya 24px pada peranti Android dengan bar 3-butang navigasi fizikal/maya (`≡ ☐ ◁`) serta mengelakkan pertembungan dengan bar leret (*home indicator bar*) pada peranti iOS terkini.
+3. **Pencegahan Pemampatan Lencana (`shrink-0`)**: Menetapkan `shrink-0` pada elemen `<footer>` menjamin lencana KlikForm tidak dimampatkan secara menegak oleh enjin susun atur flexbox sekiranya senarai pautan pengguna bertambah.
+
 
 
 

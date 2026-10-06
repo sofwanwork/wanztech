@@ -2257,14 +2257,18 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
 - **Status Binaan**: Selesai dalam ~2 minit, kompilasi 58 laluan (36 statik ○, 22 dinamik ƒ).
 - **ID Deployment**: `dpl_9gvmhNqSb8HALHTixodXHj6kVWSi`
 - **URL Pengeluaran**: `https://www.klikform.com`
-- **URL Deployment Vercel**: `https://klikform-gpvearvf6-sofwan-jailanis-projects.vercel.app`
-
-
-
-
-
-
-
-
-
-
+## System Improvements (2026-10-06 — Pembaikan Pemotongan Lencana Bawah Halaman Bio Mudah Alih)
+- **Konteks & Laporan Pengguna**: "nampak tak, ni default, bila scroll ke bawha baru nampak" (dengan tangkapan skrin telefon pintar di `/bio/igem` menunjukkan lencana "Create your own with KlikForm" terpotong separuh di birai bawah skrin).
+- **Punca Masalah**:
+  - `app/(public)/bio/[username]/client.tsx` menggunakan `min-h-screen` (`min-height: 100vh;`) bersama `flex flex-col justify-between`.
+  - Pada pelayar telefon pintar (Chrome/Safari), unit `100vh` mengira *Large Viewport Height* (LVH) yang tidak mengambil kira palang alamat URL dan navigasi yang sedang terbuka (~56px lebih panjang daripada ruang skrin aktif).
+  - Susun atur `justify-between` menolak footer ke paras dasar 100vh, iaitu ~56px di luar bahagian bawah skrin. Lencana terkeluar dan terpotong separuh, memaksa pengguna menatal ke bawah walaupun halaman hanya mempunyai 3 pautan ringkas yang sepatutnya muat penuh tanpa skrol (*zero scroll*).
+- **Penyelesaian**:
+  - Menggabungkan `min-h-screen min-h-[100dvh]` pada elemen `<main>` supaya ketinggian awal terikat tepat kepada *Dynamic/Small Viewport Height* (`100dvh`/`100svh`).
+  - Mengemaskini padding bawah `<main>` menggunakan formula ruang selamat: `pb-[max(1.5rem,env(safe-area-inset-bottom))]` untuk menjamin ruang pernafasan visual sekurang-kurangnya 24px di atas bar navigasi 3-butang Android (`≡ ☐ ◁`) dan bar sentuh iOS.
+  - Mengoptimumkan padding atas `<main>` (`pt-4 sm:pt-6`) dan bekas profil (`pt-2 sm:pt-4`) untuk membuang penindihan jarak lewah.
+  - Menetapkan `shrink-0` serta melaraskan `pt-6 sm:pt-8 pb-1` pada elemen `<footer>` untuk menjamin lencana KlikForm tidak dimampatkan atau dipotong.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm test`: 345 / 345 ujian lulus merentas 39 suite ujian.
