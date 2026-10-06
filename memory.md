@@ -2272,3 +2272,14 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - `npm run typecheck`: 0 ralat TypeScript.
   - `npm run lint`: 0 ralat / 0 amaran ESLint.
   - `npm test`: 345 / 345 ujian lulus merentas 39 suite ujian.
+
+## Production Deployment (2026-10-06 — Mobile Bio Footer Clipping Fix)
+- **Tarikh**: 2026-10-06
+- **Commit Git**: `4057d87` (`fix: prevent mobile bio badge clipping with dvh and safe area padding`)
+- **Penyegerakan GitHub**: Berjaya ditolak ke `origin/master` (`45423f9..4057d87`).
+- **Kaedah**: Vercel CLI (`npx vercel --prod --yes`)
+- **Status Binaan**: Selesai dalam ~2 minit, kompilasi 58 laluan (36 statik ○, 22 dinamik ƒ).
+- **ID Deployment**: `dpl_EZvEiu3ADCe2LYjtwdBSSqEXTV2p`
+- **URL Pengeluaran**: `https://www.klikform.com`
+- **URL Deployment Vercel**: `https://klikform-cadnhxi6a-sofwan-jailanis-projects.vercel.app`
+
