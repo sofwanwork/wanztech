@@ -1457,7 +1457,7 @@ function MobileMockupView({
 
       {/* Screen Area */}
       <div
-        className={`w-full h-full rounded-[38px] ${theme.bg} overflow-y-auto px-4 py-8 flex flex-col justify-between items-center text-center relative custom-scrollbar`}
+        className={`w-full h-full rounded-[38px] ${theme.bg} overflow-y-auto px-4 py-6 flex flex-col items-center text-center relative custom-scrollbar`}
       >
         {/* Background Pattern */}
         {page.themeConfig?.pattern && page.themeConfig.pattern !== 'none' && (
@@ -1555,7 +1555,7 @@ function MobileMockupView({
         </div>
 
         {/* Footer Brand */}
-        <div className="pt-6 pb-2 relative z-10 shrink-0">
+        <div className="mt-6 mb-2 relative z-10 shrink-0">
           <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/20 text-white/75 backdrop-blur-md text-[10px]">
             <Sparkles className="h-3 w-3 text-emerald-400" />
             <span>Powered by <strong>KlikForm</strong></span>
