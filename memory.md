@@ -2534,6 +2534,22 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
 - **URL Pengeluaran**: `https://www.klikform.com`
 - **URL Binaan Vercel**: `https://klikform-on6csccyy-sofwan-jailanis-projects.vercel.app`
 
+## System Improvements (2026-10-08 — Card Top Spacing & Flush Accent Bar Fix)
+- **Konteks & Laporan Pengguna**: "atas tu macam ada lopong" dengan tangkapan skrin menunjukkan jurang/lopong ruang putih yang besar di atas dan di bawah bar hijau pada kad *You Are Checked In* (Active Attendance Pass).
+- **Punca Masalah**:
+  - Komponen shadcn `Card` di `components/ui/card.tsx` mempunyai padding lalai `py-6` (24px) dan `gap-6` (24px).
+  - Apabila `<div className="h-2 bg-gradient-to-r ...">` diletakkan di dalam `Card` tanpa `p-0 gap-0`, ia ditolak ke bawah sebanyak 24px oleh padding atas kad, menghasilkan jalur putih kosong di atas bar hijau.
+  - Tambahan pula, `gap-6` (24px) bersama `CardHeader` `pt-8` (32px) mewujudkan 56px ruang kosong di antara bar hijau dan ikon jam.
+- **Tindakan Pembaikan**:
+  1. *Active Attendance Pass (`client.tsx`)*: Menetapkan `p-0 gap-0` pada `Card`, menjadikan bar gradien melekat 100% rapat ke birai atas kad mengikut lengkungan bucu `rounded-3xl overflow-hidden`.
+  2. *CardHeader & Ikon*: Menyelaraskan padding pengepala kepada `pt-6 pb-4` dan saiz kontena ikon jam kepada `w-13 h-13` yang seimbang, menghapuskan lopong kosong.
+  3. *Kad Check-Out & Kad Selesai Hadir*: Menyelaraskan penetapan `p-0 gap-0` yang sama pada kad Check-Out (`line 1287`) dan kad Selesai Hadir (`line 1476`) bagi memastikan konsistensi antaramuka.
+- **Pengesahan**:
+  - `npm run typecheck`: 0 ralat.
+  - `npm run lint`: 0 ralat.
+  - `npm test`: 357 / 357 lulus merentas 39 fail ujian.
+
+
 
 
 

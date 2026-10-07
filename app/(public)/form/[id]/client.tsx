@@ -805,11 +805,11 @@ export function PublicFormClient({
           className="min-h-screen flex items-center justify-center p-4 transition-colors duration-500 font-sans"
           style={{ backgroundColor: backgroundColor || '#f9fafb' }}
         >
-          <Card className="w-full max-w-md text-center shadow-xl bg-white border border-emerald-200/80 rounded-3xl overflow-hidden">
-            <div className="h-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600" />
-            <CardHeader className="bg-gradient-to-b from-emerald-50/70 to-transparent pt-8 pb-4 px-6">
-              <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm">
-                <Clock className="h-7 w-7" />
+          <Card className="w-full max-w-md text-center shadow-xl bg-white border border-emerald-200/80 rounded-3xl overflow-hidden p-0 gap-0">
+            <div className="h-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 w-full shrink-0" />
+            <CardHeader className="bg-gradient-to-b from-emerald-50/70 via-emerald-50/20 to-transparent pt-6 pb-4 px-6">
+              <div className="w-13 h-13 mx-auto mb-3 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm">
+                <Clock className="h-6 w-6" />
               </div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 mx-auto mb-2">
                 <span className="relative flex h-2 w-2">
@@ -829,7 +829,7 @@ export function PublicFormClient({
                 )}
               </CardDescription>
             </CardHeader>
-            <CardContent className="px-6 pb-6 space-y-4">
+            <CardContent className="px-6 pb-6 pt-0 space-y-4">
               <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 text-left text-xs space-y-2">
                 <div className="flex justify-between items-center text-emerald-950">
                   <span className="text-emerald-700 font-medium">Check-In Time:</span>
@@ -1284,9 +1284,9 @@ export function PublicFormClient({
 
           {/* Smart Attendance Check-Out Card */}
           {attendanceSummary?.status === 'checked_in' && (
-            <Card className="border border-emerald-200/80 shadow-xl shadow-emerald-950/5 bg-white rounded-3xl overflow-hidden animate-in fade-in slide-in-from-top-3 duration-300">
-              <div className="h-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600" />
-              <CardHeader className="bg-gradient-to-b from-emerald-50/70 via-emerald-50/20 to-transparent pt-6 pb-4 px-5 sm:px-6">
+            <Card className="border border-emerald-200/80 shadow-xl shadow-emerald-950/5 bg-white rounded-3xl overflow-hidden p-0 gap-0 animate-in fade-in slide-in-from-top-3 duration-300">
+              <div className="h-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 w-full shrink-0" />
+              <CardHeader className="bg-gradient-to-b from-emerald-50/70 via-emerald-50/20 to-transparent pt-5 pb-4 px-5 sm:px-6">
                 <div className="flex items-center justify-between gap-3">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100/90 text-emerald-800 border border-emerald-200/70 shadow-2xs">
                     <span className="relative flex h-2 w-2">
@@ -1473,9 +1473,9 @@ export function PublicFormClient({
 
           {/* Smart Attendance Already Completed Card */}
           {attendanceSummary?.status === 'completed' && (
-            <Card className="border border-indigo-100 shadow-xl shadow-indigo-950/5 bg-white rounded-3xl overflow-hidden animate-in fade-in slide-in-from-top-3 duration-300">
-              <div className="h-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
-              <CardHeader className="bg-gradient-to-b from-blue-50/70 via-indigo-50/20 to-transparent pt-8 pb-5 px-5 sm:px-6 text-center">
+            <Card className="border border-indigo-100 shadow-xl shadow-indigo-950/5 bg-white rounded-3xl overflow-hidden p-0 gap-0 animate-in fade-in slide-in-from-top-3 duration-300">
+              <div className="h-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 w-full shrink-0" />
+              <CardHeader className="bg-gradient-to-b from-blue-50/70 via-indigo-50/20 to-transparent pt-6 pb-5 px-5 sm:px-6 text-center">
                 <div className="relative mx-auto w-14 h-14 mb-3.5">
                   <div className="absolute inset-0 rounded-2xl bg-blue-400 animate-ping opacity-20" />
                   <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/25">

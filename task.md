@@ -565,6 +565,34 @@
 - **Deployment URL**: `https://klikform-on6csccyy-sofwan-jailanis-projects.vercel.app`
 - **Domain Pengeluaran**: `https://www.klikform.com`
 
+---
+
+# Penghapusan Lopong Ruang Atas Kad Kehadiran (Card Top Spacing & Flush Accent Bar Fix) ✅ SELESAI
+- [x] 1. Kenal pasti & baiki punca lopong ruang putih di atas dan di bawah bar aksen warna pada kad kehadiran:
+  - [x] 1.1 Pada Active Attendance Pass (`client.tsx` baris 808): tambah `p-0 gap-0` pada `Card` agar bar aksen gradien melekat kemas di birai atas (*flush top*) mengikut lengkungan `rounded-3xl overflow-hidden`.
+  - [x] 1.2 Laraskan `CardHeader` (`pt-6 pb-4` dan ruang ikon) bagi menghapuskan jurang ruang kosong yang berlebihan di atas ikon jam.
+  - [x] 1.3 Selaraskan penetapan `p-0 gap-0` yang sama pada kad Check-Out (`client.tsx` baris 1287) dan kad Selesai Hadir (`client.tsx` baris 1476) bagi mengelakkan isu lopong berulang.
+- [x] 2. Jaminan Kualiti:
+  - [x] 2.1 Sahkan `npm run typecheck` (0 ralat TypeScript).
+  - [x] 2.2 Sahkan `npm run lint` (0 ralat ESLint).
+  - [x] 2.3 Sahkan `npm test` (357/357 ujian unit lulus).
+- [ ] 3. Pelancaran Vercel & Dokumentasi:
+  - [ ] 3.1 Tolak ke GitHub (`origin/master`) untuk penyelarasan automatik Vercel.
+  - [x] 3.2 Kemas kini `task.md`, `memory.md`, dan `lessons.md`.
+
+---
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Punca Lopong Putih / Jurang Atas (*Card Default Padding Collision*)**:
+   - Komponen asas shadcn `Card` di `components/ui/card.tsx` mempunyai kelas lalai `py-6 gap-6` (`padding-top: 24px`, `padding-bottom: 24px`, dan `gap: 24px`).
+   - Apabila elemen bar warna `<div className="h-2 bg-gradient-to-r ...">` diletakkan sebagai anak pertama `Card`, ia ditolak ke bawah sebanyak 24px oleh `py-6`, menghasilkan jalur ruang putih di atas bar hijau.
+   - Selain itu, `gap-6` menambah jarak kosong 24px di bawah bar hijau sebelum `CardHeader`, dan `CardHeader` menambah lagi 32px (`pt-8`). Jumlah ruang kosong di bawah bar hijau mencecah 56px.
+2. **Penyelesaian Melekat Kemas (*Flush Top Accent Bar Pattern*)**:
+   - Dengan menetapkan `p-0 gap-0` pada `Card`, bar aksen melekat 100% rapat ke birai atas kad dan dipotong secara bersih mengikut bucu lengkung `rounded-3xl overflow-hidden`.
+   - `CardHeader` diselaraskan ke `pt-6 pb-4` dengan latar belakang gradien halus dari birai atas hingga ke bawah, menghapuskan terus lopong kosong dan memberikan nisbah visual yang seimbang dan estetik.
+
+
+
 
 
 
