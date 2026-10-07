@@ -2512,4 +2512,20 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   5. *URL Query Sanitization*: Membersihkan parameter token dari bar alamat pelayar selepas penyerahan berjaya bagi menghalang muat semula token lama.
 
 
+## System Improvements (2026-10-08 — Restoration of "Submit another response" Button)
+- **Konteks & Laporan Pengguna**: "tick show submit another response tapi kenapa tak keluar ya" dengan tangkapan skrin Form Builder menunjukkan suis togol *Show "Submit another response" button* diaktifkan (ON).
+- **Punca Masalah**:
+  - Pada komit terdahulu `eea4805`, butang telah disekat secara tegar di `app/(public)/form/[id]/client.tsx` (baris 980) dengan syarat:
+    `!(form.attendanceSettings?.enabled && form.attendanceSettings?.rotatingQr?.enabled) && !checkInResult?.isCheckIn && !checkOutResult`
+  - Sekatan sampingan ini menimpa (*overrode*) pilihan penganjur di Form Builder, mengakibatkan butang hilang sepenuhnya walaupun penganjur mengaktifkannya.
+- **Tindakan Pembaikan**:
+  1. *Keutamaan Penuh Tetapan Penganjur*: Memulihkan paparan butang berasaskan `(form.allowMultipleSubmissions ?? true)`. Jika penganjur mengaktifkannya di Form Builder, butang sentiasa dipaparkan.
+  2. *Tetapan Semula Bersih Dalam Memori (`handleResetForAnotherResponse`)*: Menggantikan panggilan `window.location.reload()` dengan fungsi pembersihan React state: mengosongkan `formData`, `submitted`, `checkInResult`, `checkOutResult`, `attendanceSummary`, serta membersihkan `localStorage` sesi peserta dan `sessionStorage` kunci idempotensi. Ini membolehkan pendaftaran seterusnya dibuat serta-merta tanpa muat semula halaman pelayar.
+- **Pengesahan**:
+  - `npm run typecheck`: 0 ralat.
+  - `npm run lint`: 0 ralat.
+  - `npm test`: 357 / 357 lulus merentas 39 fail ujian.
+
+
+
 

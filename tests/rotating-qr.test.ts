@@ -199,42 +199,23 @@ describe('Rotating QR Code — Generation and Verification', () => {
     expect(res.reason).toBe('expired');
   });
 
-  it('correctly decides whether "Submit another response" should be hidden', () => {
+  it('correctly respects organizer allowMultipleSubmissions setting on thank-you screen', () => {
     const shouldShowSubmitAnother = (opts: {
       allowMultipleSubmissions?: boolean;
-      isCheckIn?: boolean;
-      isCheckOut?: boolean;
-      isRotatingQr?: boolean;
     }) => {
       const {
         allowMultipleSubmissions = true,
-        isCheckIn = false,
-        isCheckOut = false,
-        isRotatingQr = false,
       } = opts;
 
-      return (
-        allowMultipleSubmissions &&
-        !isCheckIn &&
-        !isCheckOut &&
-        !isRotatingQr
-      );
+      return allowMultipleSubmissions ?? true;
     };
 
-    // Standard survey form: allows multiple submissions
+    // Standard survey form: allows multiple submissions (default true)
     expect(shouldShowSubmitAnother({ allowMultipleSubmissions: true })).toBe(true);
+    expect(shouldShowSubmitAnother({})).toBe(true);
 
-    // Form where organizer explicitly disabled multiple submissions
+    // Form where organizer explicitly disabled multiple submissions in builder
     expect(shouldShowSubmitAnother({ allowMultipleSubmissions: false })).toBe(false);
-
-    // Participant just checked in for an event: must hide button
-    expect(shouldShowSubmitAnother({ isCheckIn: true })).toBe(false);
-
-    // Participant just checked out: must hide button
-    expect(shouldShowSubmitAnother({ isCheckOut: true })).toBe(false);
-
-    // Form has Live Rotating QR enabled: must hide button (requires fresh projector scan)
-    expect(shouldShowSubmitAnother({ isRotatingQr: true })).toBe(false);
   });
 });
 

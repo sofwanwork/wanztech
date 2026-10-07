@@ -529,6 +529,35 @@
 - **Deployment URL**: `https://klikform-499pgh06l-sofwan-jailanis-projects.vercel.app`
 - **Domain Pengeluaran**: `https://www.klikform.com`
 
+---
+
+# Pemulihan Butang "Submit another response" Berdasarkan Tetapan Form Builder & Tetapan Semula Bersih (Clean State Reset) ✅ SELESAI
+- [x] 1. Kenal pasti & baiki sekatan paparan butang "Submit another response" dalam `app/(public)/form/[id]/client.tsx`:
+  - [x] 1.1 Hormati tetapan `form.allowMultipleSubmissions` dari Form Builder (`(form.allowMultipleSubmissions ?? true)`) tanpa menyekatnya dengan syarat sampingan kehadiran atau rotating QR.
+  - [x] 1.2 Bina fungsi `handleResetForAnotherResponse` bagi membersihkan keadaan borang secara dalam memori (*clean state reset*): `submitted`, `checkInResult`, `checkOutResult`, `attendanceSummary`, `formData`, `pdpaConsent`, `currentPage`, dan kunci sesi tanpa menggunakan `window.location.reload()`.
+- [x] 2. Selaras ujian unit dalam `tests/rotating-qr.test.ts`:
+  - [x] 2.1 Kemas kini ujian pengesahan supaya butang patuh kepada tetapan `allowMultipleSubmissions` penganjur.
+- [x] 3. Jaminan Kualiti:
+  - [x] 3.1 Sahkan `npm run typecheck` (0 ralat TypeScript).
+  - [x] 3.2 Sahkan `npm run lint` (0 ralat ESLint).
+  - [x] 3.3 Sahkan `npm test` (357/357 ujian unit lulus).
+- [ ] 4. Pelancaran Vercel & Dokumentasi:
+  - [ ] 4.1 Tolak ke GitHub (`origin/master`) untuk binaan tunggal pengeluaran Vercel.
+  - [x] 4.2 Kemas kini `task.md`, `memory.md`, dan `lessons.md`.
+
+---
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Keutamaan Mutlak Tetapan Penganjur (*Organizer Preference Takes Precedence*)**:
+   - Togol Form Builder `Show "Submit another response" button` adalah kawalan rasmi yang dipilih oleh penganjur borang.
+   - Mengabaikan atau menyekat butang tersebut secara automatik berdasarkan mod kehadiran (`isCheckIn`, `checkOutResult`, `rotatingQr.enabled`) bercanggah dengan apa yang telah diaktifkan oleh pengguna di Form Builder.
+   - Dengan mengikat pemaparan butang strictly kepada `(form.allowMultipleSubmissions ?? true)`, penganjur mempunyai kawalan penuh sama ada mahu memaparkan butang tersebut atau tidak.
+2. **Tetapan Semula Keadaan Dalam Memori (*In-Memory State Reset*)**:
+   - Menggantikan `window.location.reload()` dengan `handleResetForAnotherResponse` membuang sebarang isu muat semula pelayar (seperti tersekat di skrin kunci token luput atau memuat semula fail aset).
+   - Pembersihan menyeluruh `formData`, `localStorage` sesi peserta, dan `sessionStorage` kunci idempotensi membolehkan borang sedia serta-merta untuk pendaftaran peserta seterusnya (contohnya pendaftaran berbilang peserta di kaunter/kiosk yang sama).
+
+
+
 
 
 

@@ -211,6 +211,30 @@ export function PublicFormClient({
     setAttendanceSummary(null);
   };
 
+  const handleResetForAnotherResponse = () => {
+    setSubmitted(false);
+    setCheckInResult(null);
+    setCheckOutResult(null);
+    setAttendanceSummary(null);
+    setShowEarlyWarning(false);
+    setCheckOutPin('');
+    setPdpaConsent(false);
+    setCurrentPage(0);
+    try {
+      sessionStorage.removeItem(`klikform-sub-key-${form.id}`);
+    } catch {}
+    try {
+      localStorage.removeItem(`klikform_att_id_${form.id}`);
+      localStorage.removeItem(`klikform_att_status_${form.id}`);
+      localStorage.removeItem(`klikform_att_name_${form.id}`);
+      localStorage.removeItem(`klikform_att_time_${form.id}`);
+    } catch {}
+    setFormData({});
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   useEffect(() => {
     if (!checkInOutEnabled || !identifierField) return;
     const rawVal = formData[identifierField.id];
@@ -977,17 +1001,16 @@ export function PublicFormClient({
                 Share on WhatsApp
               </Button>
             )}
-            {(form.allowMultipleSubmissions ?? true) &&
-              !checkInResult?.isCheckIn &&
-              !checkOutResult &&
-              !(form.attendanceSettings?.enabled && form.attendanceSettings?.rotatingQr?.enabled) && (
-                <Button
-                  variant="outline"
-                  onClick={() => window.location.reload()}
-                  className="w-full sm:w-auto border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-colors"
-                >
-                  Submit another response
-                </Button>
+            {(form.allowMultipleSubmissions ?? true) && (
+              <Button
+                variant="outline"
+                type="button"
+                onClick={handleResetForAnotherResponse}
+                className="w-full sm:w-auto border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-colors flex items-center justify-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>Submit another response</span>
+              </Button>
             )}
             {checkInResult?.isCheckIn && (
               <div className="w-full text-center space-y-2 pt-2">
