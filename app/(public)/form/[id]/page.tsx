@@ -1,6 +1,7 @@
 import { getFormByIdOrShortCode } from '@/lib/storage/forms';
 import { notFound } from 'next/navigation';
 import { PublicFormClient } from './client';
+import { verifyRotatingQrToken } from '@/lib/forms/rotating-qr';
 import type { Metadata } from 'next';
 
 interface PageProps {
@@ -62,6 +63,24 @@ export default async function PublicFormPage({ params, searchParams }: PageProps
 
   if (!form) return notFound();
 
+  // Validate Live Rotating QR token if enabled
+  const rotatingConfig = form.attendanceSettings?.rotatingQr;
+  let rotatingQrVerification: { valid: boolean; reason?: string } | undefined = undefined;
+
+  if (form.attendanceSettings?.enabled && rotatingConfig?.enabled) {
+    const res = verifyRotatingQrToken({
+      formId: form.id,
+      windowIndex: typeof sParams.rq_w === 'string' ? sParams.rq_w : undefined,
+      signature: typeof sParams.rq_sig === 'string' ? sParams.rq_sig : undefined,
+      customSecret: rotatingConfig.secret,
+      intervalSeconds: rotatingConfig.intervalSeconds,
+    });
+    rotatingQrVerification = {
+      valid: res.valid,
+      reason: res.reason,
+    };
+  }
+
   // Sanitize form data to avoid leaking sensitive fields to client
   const sanitizedForm = {
     ...form,
@@ -76,6 +95,8 @@ export default async function PublicFormPage({ params, searchParams }: PageProps
         rq_w: typeof sParams.rq_w === 'string' ? sParams.rq_w : undefined,
         rq_sig: typeof sParams.rq_sig === 'string' ? sParams.rq_sig : undefined,
       }}
+      rotatingQrVerification={rotatingQrVerification}
     />
   );
 }
+

@@ -2480,3 +2480,21 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   5. *Attendance Check-Out Sync Hardening*: Perlindungan carian tetapan Google Sheets awam dengan `createAdminClient()`, padanan fleksibel nama kolum Google Sheet, dan tetingkap ihsan 2-tingkap (60–90 saat) pada token putaran QR bagi mengelakkan kegagalan penyelarasan data check-out peserta.
   6. *PresenterClient Clean Effects*: Penghapusan amaran konsol React `setState in render` dengan pengasingan pemasa undur dan Server Action `fetchToken()`.
 
+## System Improvements (2026-10-08 — Rotating QR Page-Load Gate & Re-entry Prevention)
+- **Konteks & Laporan Pengguna**: "kenapa lepas check in, atau tekan submit another response boleh masuk balik ya form, sedangkan guna live rotating qr"
+- **Punca Masalah**:
+  1. *Butang "Submit another response" Reload URL Lama*: Pada skrin Thank You, butang dipaparkan secara lalai dan memanggil `window.location.reload()`, menyebabkan pelayar membuka semula URL yang mengandungi token rotating QR lama.
+  2. *Ketiadaan Penguncian di Peringkat Muat Halaman (Page-Load)*: `verifyRotatingQrToken` sebelum ini hanya dipanggil semasa `submitFormAction` (POST). Halaman `GET /form/[id]` tidak memeriksa kesahihan token, membolehkan sesiapa sahaja melihat soalan borang walaupun token sudah luput atau pautan dibuka terus tanpa kod QR.
+  3. *Kekeliruan Aliran Kehadiran*: Selepas Check-In, peserta seharusnya kekal dalam sesi menunggu Check-Out, bukannya menghantar respons kedua.
+- **Tindakan Pembaikan**:
+  1. *Server-Side Page-Load Gate (`page.tsx` & `s/[code]/page.tsx`)*: Menjalankan `verifyRotatingQrToken` sewaktu memproses permintaan halaman. Jika token tiada/luput dan Live Rotating QR aktif:
+     - Jika peserta telah berstatus `checked_in`, memaparkan **Pas Kehadiran Aktif** (*Currently Present*) lengkap dengan maklumat waktu masuk dan arahan Check-Out.
+     - Jika bukan, memaparkan **Skrin Kunci Anti-Fraud** (*Live QR Code Required / Expired*) yang menghalang pemaparan sebarang medan borang.
+  2. *Penyembunyian Butang "Submit another response"*: Disembunyikan secara automatik pada skrin kejayaan apabila `isCheckIn`, `checkOutResult`, atau borang mengaktifkan Live Rotating QR.
+  3. *Pembersihan URL*: Memadam parameter carian `_rq_w` dan `_rq_sig` dari bar alamat pelayar selepas penyerahan berjaya menggunakan `window.history.replaceState`.
+- **Pengesahan**:
+  - `npm run typecheck`: 0 ralat.
+  - `npm run lint`: 0 ralat.
+  - `npm test`: 357 / 357 ujian lulus merentas 39 suite (ditambah 3 ujian baharu).
+
+

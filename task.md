@@ -486,4 +486,41 @@
   - [x] 3.2 URL Pengeluaran: `https://www.klikform.com` (Deployment: `https://klikform-f47gjhvod-sofwan-jailanis-projects.vercel.app`).
   - [x] 3.3 Catatkan SHA commit `02ec23d` dan status pengeluaran dalam `task.md` dan `memory.md`.
 
+---
+
+# Penguncian Borang Live Rotating QR & Pencegahan Masuk Semula Lepas Check-In (Rotating QR Gate & Re-entry Prevention) ✅ SELESAI
+- [x] 1. Kenal pasti punca pengguna boleh masuk semula ke dalam borang:
+  - [x] 1.1 Butang "Submit another response" dipaparkan secara lalai pada skrin kejayaan, dan menekan butang tersebut menjalankan `window.location.reload()` dengan URL yang mengandungi token lama.
+  - [x] 1.2 Pengesahan token Rotating QR sebelum ini hanya berjalan sewaktu `submitFormAction` (POST), bukan sewaktu memuatkan halaman `/form/[id]` (GET). Oleh itu, borang dan soalan dipaparkan walaupun dibuka secara terus atau token telah luput.
+  - [x] 1.3 Selepas Check-In, peserta tidak sepatutnya mengisi borang sekali lagi, sebaliknya perlu menunggu waktu Check-Out.
+- [x] 2. Penguncian Halaman Muat Borang (Page-Load Anti-Fraud Gate):
+  - [x] 2.1 Semak kesahihan token `rq_w` dan `rq_sig` di `app/(public)/form/[id]/page.tsx` menggunakan `verifyRotatingQrToken`.
+  - [x] 2.2 Jika Live Rotating QR diaktifkan dan token tidak sah/tiada/luput:
+    - Jika peserta telah berstatus `checked_in` dalam sesi tempatan (`localStorage`), paparkan Kad Pas Kehadiran Aktif ("You are already checked in").
+    - Jika bukan, sekat pemaparan soalan dan paparkan Skrin Kunci Anti-Fraud ("Live QR Code Required / Expired — Sila imbas kod QR terkini di skrin projektor").
+- [x] 3. Sembunyikan Butang "Submit another response" & Pembersihan URL:
+  - [x] 3.1 Sembunyikan butang "Submit another response" pada skrin kejayaan jika `rotatingQr.enabled`, atau peserta baru selesai `checkInResult`, atau selesai `checkOutResult`.
+  - [x] 3.2 Bersihkan parameter carian `_rq_w` dan `_rq_sig` dari bar alamat pelayar selepas penghantaran berjaya menggunakan `window.history.replaceState`.
+  - [x] 3.3 Paparkan peringatan mesra kehadiran pada skrin Check-In berjaya tanpa pautan pendaftaran berulang yang mengelirukan.
+- [x] 4. Ujian Unit & Jaminan Kualiti:
+  - [x] 4.1 Tambah ujian unit untuk pengesahan gate dan penyekatan reload dalam `tests/rotating-qr.test.ts`.
+  - [x] 4.2 Sahkan `npm run typecheck` (0 ralat TypeScript).
+  - [x] 4.3 Sahkan `npm run lint` (0 ralat / 0 amaran ESLint).
+  - [x] 4.4 Sahkan `npm test` (357/357 ujian lulus merentas 39 suite).
+- [x] 5. Kemas kini `lessons.md`, `memory.md`, dan `task.md`.
+
+---
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Pengesahan Dua Peringkat (Two-Stage Anti-Fraud Enforcement)**:
+   - *Peringkat Muat Halaman (GET)*: Menilai kesahihan token berputar sebelum merender sebarang elemen borang. Pengguna yang membuka pautan terus tanpa mengimbas skrin projektor atau memuat semula pautan lama disekat dengan serta-merta tanpa didedahkan kepada soalan borang.
+   - *Peringkat Penyerahan (POST)*: Mengekalkan semakan integriti kriptografi dan tetingkap masa sewaktu penyerahan bagi menghalang cubaan memintas di peringkat API.
+2. **Pengalaman Pengguna Kehadiran (Active Attendance Pass Pattern)**:
+   - Selepas mendaftar masuk (Check-In), peserta tidak sepatutnya dilayan seperti pengisi borang kaji selidik biasa yang dibenarkan "hantar respon lain".
+   - Sekiranya peserta memuat semula halaman semasa acara berlangsung, sistem secara pintar mengenalpasti status `checked_in` dan memaparkan pas kehadiran aktif yang menenangkan pengguna bahawa kehadiran mereka telah sah direkodkan, di samping memberi panduan untuk mengimbas semula pada akhir acara bagi tujuan Check-Out.
+3. **Pembersihan Keadaan URL (*URL Query Sanitization*)**:
+   - Memadam parameter `?rq_w=...&rq_sig=...` daripada bar alamat pelayar melalui `window.history.replaceState` sebaik sahaja borang dihantar memastikan penyerahan tersebut tidak boleh dimainkan semula (*replay attack*) atau dicetuskan secara tidak sengaja melalui butang refresh pelayar.
+
+
+
 

@@ -26,7 +26,7 @@ import {
 import { cn, getProxiedImageUrl, sanitizeHtml } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useState, useEffect } from 'react';
-import { Loader2, CheckCircle2, List, Clock, ExternalLink, LogOut, Award, KeyRound, AlertTriangle, ShieldAlert, Lock, Info, UserCheck, UserPlus, Hourglass } from 'lucide-react';
+import { Loader2, CheckCircle2, List, Clock, ExternalLink, LogOut, Award, KeyRound, AlertTriangle, ShieldAlert, Lock, Info, UserCheck, UserPlus, Hourglass, QrCode, RefreshCw } from 'lucide-react';
 import { submitFormAction } from '@/actions/forms';
 import {
   checkAttendanceStatusAction,
@@ -66,6 +66,10 @@ interface PublicFormClientProps {
     rq_w?: string;
     rq_sig?: string;
   };
+  rotatingQrVerification?: {
+    valid: boolean;
+    reason?: string;
+  };
 }
 
 function formatRedirectUrl(url?: string) {
@@ -101,7 +105,13 @@ const formatInMalaysiaTime = (date: Date): string => {
   }
 };
 
-export function PublicFormClient({ form, editMode, initialValues, searchParams }: PublicFormClientProps) {
+export function PublicFormClient({
+  form,
+  editMode,
+  initialValues,
+  searchParams,
+  rotatingQrVerification,
+}: PublicFormClientProps) {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [checkOutPin, setCheckOutPin] = useState<string>('');
@@ -191,6 +201,9 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
   const handleResetForOtherParticipant = () => {
     try {
       localStorage.removeItem(`klikform_att_id_${form.id}`);
+      localStorage.removeItem(`klikform_att_status_${form.id}`);
+      localStorage.removeItem(`klikform_att_name_${form.id}`);
+      localStorage.removeItem(`klikform_att_time_${form.id}`);
     } catch {}
     if (identifierField) {
       setFormData((prev) => ({ ...prev, [identifierField.id]: '' }));
@@ -454,6 +467,12 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
 
       if (result.success) {
         setSubmitted(true);
+        // Clean rotating QR query parameters from the browser URL so refreshing does not reuse stale/consumed tokens
+        if (typeof window !== 'undefined' && window.history?.replaceState) {
+          try {
+            window.history.replaceState({}, '', window.location.pathname);
+          } catch {}
+        }
         if ('isCheckOut' in result && result.isCheckOut) {
           const checkOutPayload = result as {
             summary?: AttendanceSummary;
@@ -463,6 +482,9 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
           }
           try {
             localStorage.removeItem(`klikform_att_id_${form.id}`);
+            localStorage.removeItem(`klikform_att_status_${form.id}`);
+            localStorage.removeItem(`klikform_att_name_${form.id}`);
+            localStorage.removeItem(`klikform_att_time_${form.id}`);
           } catch {}
           toast.success('Check-out recorded successfully!');
         } else if ('isCheckIn' in result && result.isCheckIn) {
@@ -473,6 +495,13 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
           if (identifierField && formData[identifierField.id]) {
             try {
               localStorage.setItem(`klikform_att_id_${form.id}`, String(formData[identifierField.id]));
+              localStorage.setItem(`klikform_att_status_${form.id}`, 'checked_in');
+              if (checkInPayload.participantName) {
+                localStorage.setItem(`klikform_att_name_${form.id}`, checkInPayload.participantName);
+              }
+              if (checkInPayload.checkInTime) {
+                localStorage.setItem(`klikform_att_time_${form.id}`, checkInPayload.checkInTime);
+              }
             } catch {}
           }
           setCheckInResult({
@@ -738,6 +767,112 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
     );
   }
 
+  // Anti-Fraud Live Rotating QR Lock Screen (Page-load Gate)
+  const isRotatingQrEnabled = !editMode && !!(
+    form.attendanceSettings?.enabled && form.attendanceSettings?.rotatingQr?.enabled
+  );
+  const isRotatingTokenInvalid = isRotatingQrEnabled && rotatingQrVerification && !rotatingQrVerification.valid;
+
+  if (isRotatingTokenInvalid) {
+    // If participant is already checked in, show their active attendance pass instead of the lock screen
+    if (attendanceSummary?.status === 'checked_in') {
+      return (
+        <div
+          className="min-h-screen flex items-center justify-center p-4 transition-colors duration-500 font-sans"
+          style={{ backgroundColor: backgroundColor || '#f9fafb' }}
+        >
+          <Card className="w-full max-w-md text-center shadow-xl bg-white border border-emerald-200/80 rounded-3xl overflow-hidden">
+            <div className="h-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600" />
+            <CardHeader className="bg-gradient-to-b from-emerald-50/70 to-transparent pt-8 pb-4 px-6">
+              <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm">
+                <Clock className="h-7 w-7" />
+              </div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 mx-auto mb-2">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600" />
+                </span>
+                <span>Currently Present</span>
+              </div>
+              <CardTitle className="text-2xl font-bold text-gray-900">
+                You Are Checked In
+              </CardTitle>
+              <CardDescription className="text-gray-600 mt-2 text-xs sm:text-sm">
+                {attendanceSummary.participantName ? (
+                  <>Participant: <strong className="text-slate-800">{attendanceSummary.participantName}</strong></>
+                ) : (
+                  'Your check-in record is actively registered.'
+                )}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="px-6 pb-6 space-y-4">
+              <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 text-left text-xs space-y-2">
+                <div className="flex justify-between items-center text-emerald-950">
+                  <span className="text-emerald-700 font-medium">Check-In Time:</span>
+                  <strong className="font-semibold">{attendanceSummary.checkInTime}</strong>
+                </div>
+                <div className="flex justify-between items-center text-emerald-950">
+                  <span className="text-emerald-700 font-medium">Status:</span>
+                  <span className="font-semibold text-emerald-700">In Session</span>
+                </div>
+              </div>
+              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 text-left flex items-start gap-2.5">
+                <Info className="h-4 w-4 text-amber-700 shrink-0 mt-0.5" />
+                <p className="leading-relaxed">
+                  Please stay for the session. At the end of the event, scan the live QR code on the hall screen to <strong>Check-Out</strong> and claim your e-Certificate.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    // Otherwise (not checked in), display Anti-Fraud Lock Screen
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center p-4 transition-colors duration-500 font-sans"
+        style={{ backgroundColor: backgroundColor || '#f9fafb' }}
+      >
+        <Card className="w-full max-w-md text-center shadow-xl bg-white border border-slate-200 rounded-3xl overflow-hidden p-6 sm:p-8">
+          <div className="w-16 h-16 rounded-3xl bg-amber-500/10 border border-amber-500/20 text-amber-600 mx-auto flex items-center justify-center mb-5">
+            <ShieldAlert className="w-8 h-8" />
+          </div>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200 mb-3">
+            {rotatingQrVerification?.reason === 'expired'
+              ? 'Live QR Code Expired'
+              : 'Live QR Code Required'}
+          </div>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">
+            Scan Screen to Access Form
+          </h1>
+          <p className="text-slate-600 text-xs sm:text-sm mb-6 leading-relaxed">
+            {rotatingQrVerification?.reason === 'expired'
+              ? 'This QR code has expired because the event screen rotates new codes periodically. Please scan the current live QR code on the hall screen.'
+              : 'This form is protected by Live Anti-Fraud QR Code. You must scan the live QR code directly from the event hall screen to check in.'}
+          </p>
+          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs text-slate-600 text-left flex items-start gap-2.5 mb-6">
+            <QrCode className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
+            <p className="leading-relaxed">
+              Direct links, bookmarks, or saved screenshots are not permitted to ensure authentic on-site attendance.
+            </p>
+          </div>
+          <Button
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                window.location.reload();
+              }
+            }}
+            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl h-11 text-sm font-semibold shadow-sm"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Check Again
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
   if (submitted) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 transition-colors duration-500 font-sans submitted-container">
@@ -842,14 +977,49 @@ export function PublicFormClient({ form, editMode, initialValues, searchParams }
                 Share on WhatsApp
               </Button>
             )}
-            {(form.allowMultipleSubmissions ?? true) && (
-              <Button
-                variant="outline"
-                onClick={() => window.location.reload()}
-                className="w-full sm:w-auto border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-colors"
-              >
-                Submit another response
-              </Button>
+            {(form.allowMultipleSubmissions ?? true) &&
+              !checkInResult?.isCheckIn &&
+              !checkOutResult &&
+              !(form.attendanceSettings?.enabled && form.attendanceSettings?.rotatingQr?.enabled) && (
+                <Button
+                  variant="outline"
+                  onClick={() => window.location.reload()}
+                  className="w-full sm:w-auto border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-colors"
+                >
+                  Submit another response
+                </Button>
+            )}
+            {checkInResult?.isCheckIn && (
+              <div className="w-full text-center space-y-2 pt-2">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600" />
+                  </span>
+                  <span>Session Active • Ready for Event</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  You may safely close this browser tab. At the end of the event, scan the screen again to check out.
+                </p>
+              </div>
+            )}
+            {checkOutResult && (
+              <div className="w-full text-center space-y-2 pt-2">
+                {hasCertificate && (
+                  <Button
+                    asChild
+                    className="w-full sm:w-auto bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold shadow-md flex items-center justify-center gap-2 rounded-xl"
+                  >
+                    <Link href={`/check/${form.id}`}>
+                      <Award className="w-4 h-4 text-amber-100" />
+                      <span>Check &amp; Download e-Certificate</span>
+                    </Link>
+                  </Button>
+                )}
+                <p className="text-[11px] text-muted-foreground">
+                  Your event attendance has concluded. Thank you!
+                </p>
+              </div>
             )}
           </CardFooter>
         </Card>

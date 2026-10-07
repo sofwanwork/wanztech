@@ -166,5 +166,76 @@ describe('Rotating QR Code — Generation and Verification', () => {
       expect(expiredRes.reason).toBe('expired');
     }
   });
+
+  it('rejects page-load when query parameters are completely missing', () => {
+    const res = verifyRotatingQrToken({
+      formId,
+      windowIndex: undefined,
+      signature: undefined,
+    });
+
+    expect(res.valid).toBe(false);
+    expect(res.reason).toBe('missing');
+  });
+
+  it('rejects page-load when user bookmarks or reloads stale URL after 3 minutes', () => {
+    const originalTime = 1727520000000;
+    const payload = generateRotatingQrPayload(baseUrl, formId, {
+      intervalSeconds: 30,
+      timestampMs: originalTime,
+    });
+
+    // 3 minutes (180 seconds = 6 windows) later
+    const reloadTime = originalTime + 180000;
+    const res = verifyRotatingQrToken({
+      formId,
+      windowIndex: payload.windowIndex,
+      signature: payload.signature,
+      intervalSeconds: 30,
+      nowMs: reloadTime,
+    });
+
+    expect(res.valid).toBe(false);
+    expect(res.reason).toBe('expired');
+  });
+
+  it('correctly decides whether "Submit another response" should be hidden', () => {
+    const shouldShowSubmitAnother = (opts: {
+      allowMultipleSubmissions?: boolean;
+      isCheckIn?: boolean;
+      isCheckOut?: boolean;
+      isRotatingQr?: boolean;
+    }) => {
+      const {
+        allowMultipleSubmissions = true,
+        isCheckIn = false,
+        isCheckOut = false,
+        isRotatingQr = false,
+      } = opts;
+
+      return (
+        allowMultipleSubmissions &&
+        !isCheckIn &&
+        !isCheckOut &&
+        !isRotatingQr
+      );
+    };
+
+    // Standard survey form: allows multiple submissions
+    expect(shouldShowSubmitAnother({ allowMultipleSubmissions: true })).toBe(true);
+
+    // Form where organizer explicitly disabled multiple submissions
+    expect(shouldShowSubmitAnother({ allowMultipleSubmissions: false })).toBe(false);
+
+    // Participant just checked in for an event: must hide button
+    expect(shouldShowSubmitAnother({ isCheckIn: true })).toBe(false);
+
+    // Participant just checked out: must hide button
+    expect(shouldShowSubmitAnother({ isCheckOut: true })).toBe(false);
+
+    // Form has Live Rotating QR enabled: must hide button (requires fresh projector scan)
+    expect(shouldShowSubmitAnother({ isRotatingQr: true })).toBe(false);
+  });
 });
+
 

@@ -8,6 +8,7 @@ interface ShortLinkPageProps {
   params: Promise<{
     code: string;
   }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export async function generateMetadata({ params }: ShortLinkPageProps): Promise<Metadata> {
@@ -62,8 +63,9 @@ export async function generateMetadata({ params }: ShortLinkPageProps): Promise<
   };
 }
 
-export default async function ShortLinkPage({ params }: ShortLinkPageProps) {
+export default async function ShortLinkPage({ params, searchParams }: ShortLinkPageProps) {
   const { code } = await params;
+  const sParams = searchParams ? await searchParams : {};
 
   if (!code) notFound();
 
@@ -88,7 +90,36 @@ export default async function ShortLinkPage({ params }: ShortLinkPageProps) {
     notFound();
   }
 
+  // Validate Live Rotating QR token if enabled
+  const rotatingConfig = form.attendanceSettings?.rotatingQr;
+  let rotatingQrVerification: { valid: boolean; reason?: string } | undefined = undefined;
+
+  if (form.attendanceSettings?.enabled && rotatingConfig?.enabled) {
+    const { verifyRotatingQrToken } = await import('@/lib/forms/rotating-qr');
+    const res = verifyRotatingQrToken({
+      formId: form.id,
+      windowIndex: typeof sParams.rq_w === 'string' ? sParams.rq_w : undefined,
+      signature: typeof sParams.rq_sig === 'string' ? sParams.rq_sig : undefined,
+      customSecret: rotatingConfig.secret,
+      intervalSeconds: rotatingConfig.intervalSeconds,
+    });
+    rotatingQrVerification = {
+      valid: res.valid,
+      reason: res.reason,
+    };
+  }
+
   // Render the form directly instead of redirecting
   // This keeps the URL short in the browser
-  return <PublicFormClient form={form} />;
+  return (
+    <PublicFormClient
+      form={form}
+      searchParams={{
+        rq_w: typeof sParams.rq_w === 'string' ? sParams.rq_w : undefined,
+        rq_sig: typeof sParams.rq_sig === 'string' ? sParams.rq_sig : undefined,
+      }}
+      rotatingQrVerification={rotatingQrVerification}
+    />
+  );
 }
+
