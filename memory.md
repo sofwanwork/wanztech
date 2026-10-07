@@ -2296,5 +2296,30 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - `npm run lint`: 0 ralat / 0 amaran ESLint.
   - `npm test`: 345 / 345 ujian lulus merentas 39 suite ujian.
 
+## System Improvements (2026-10-07 — Penambahan Butang Reset Rekod Kehadiran / Clear Attendance Records)
+- **Konteks & Laporan Pengguna**: "sy dh kosongkan google sheet, tapi bila nk daftar balik keluar macam ni, kenapa ya" (dengan tangkapan skrin memaparkan kad "Your Attendance Has Been Fully Recorded" 16 minit pada borang pendaftaran). Pengguna mengosongkan baris di Google Sheet tetapi apabila mengimbas semula, sistem tetap menganggap peserta telah selesai hadir dan menyekat pendaftaran baharu.
+- **Punca Masalah (Root Cause)**:
+  - Ciri Smart Attendance (1-QR Check-In & Check-Out) KlikForm menguruskan logik kehadiran secara atomik di dalam jadual database Supabase `attendance_records` (dan salinan durasi di `form_responses`) serta cache peranti `localStorage` (`klikform_att_id_${form.id}`).
+  - Google Sheet bertindak sebagai salinan eksport spreadsheet luar penganjur sahaja. Apabila baris Sheet dikosongkan secara manual, rekod di dalam jadual Supabase `attendance_records` masih kekal dengan status `'completed'`.
+  - Apabila borang dibuka di telefon, semakan pantas status (`checkAttendanceStatusAction`) mendapati status `completed`, lalu secara automatik memaparkan kad penamatan kehadiran bagi menghalang penipuan / kemasukan bertindih.
+- **Penyelesaian Dilaksanakan**:
+  - **Lapisan Storan (`lib/storage/attendance.ts`)**:
+    - Dicipta fungsi `getAttendanceStatsForForm(formId, userId)` untuk mengira jumlah rekod semasa, bilangan checked-in, dan completed.
+    - Dicipta fungsi `clearAttendanceRecordsForForm(formId, userId)` untuk memadamkan kesemua rekod kehadiran (`attendance_records`) dan entri ujian tempatan (`form_responses`) bagi borang tersebut dengan semakan pemilikan yang ketat.
+  - **Tindakan Pelayan (`actions/attendance.ts`)**:
+    - `getAttendanceStatsAction(formId)`: Mengembalikan statistik rekod kepada pemilik borang yang disahkan (`createClient()` + `getUser()`).
+    - `clearAttendanceRecordsAction(formId)`: Melaksanakan pemadaman rekod kehadiran dengan semakan pemilikan borang, serta menyegarkan laluan cache (`revalidatePath`).
+  - **Antaramuka Form Builder (`app/builder/[id]/client.tsx`)**:
+    - Ditambah panel "Database Attendance Records" di dalam kad tetapan Smart Attendance (Check-In & Check-Out).
+    - Memaparkan lencana status masa-nyata bilangan rekod (cth. `3 records (1 in, 2 completed)`).
+    - Butang "Reset Records" dengan `AlertDialog` pengesahan amaran agar penganjur tidak memadam rekod sebenar secara tidak sengaja.
+  - **Antaramuka Responses Dashboard (`app/(dashboard)/responses/client.tsx`)**:
+    - Bagi mana-mana borang yang mengaktifkan Smart Attendance, disediakan butang pantas "Reset Attendance" di sebelah butang Google Sheet dan Analytics.
+    - Dilengkapi modal pengesahan `AlertDialog` dengan pengesahan nama borang untuk keselamatan operasi.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm test`: 353 / 353 ujian lulus merentas 39 suite ujian (+8 ujian baharu).
+
 
 

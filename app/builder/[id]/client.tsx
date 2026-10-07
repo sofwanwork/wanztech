@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useTransition, useRef } from 'react';
+import { useState, useEffect, useTransition, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Form, CertificateTemplate as CertificateTemplateType } from '@/lib/types';
+import { Form, CertificateTemplate as CertificateTemplateType, AttendanceStats } from '@/lib/types';
 import { updateFormAction, deleteFormAction } from '@/actions/forms';
+import { getAttendanceStatsAction, clearAttendanceRecordsAction } from '@/actions/attendance';
 import { FieldsEditor } from '@/components/forms/fields-editor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,6 +51,7 @@ import {
   KeyRound,
   Tv,
   Radio,
+  RotateCcw,
 } from 'lucide-react';
 
 import Link from 'next/link';
@@ -75,6 +77,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { QrCustomizer } from '@/components/forms/qr-customizer';
 import { WebhooksCard } from '@/components/forms/webhooks-card';
@@ -124,6 +127,47 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
 
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('saved');
   const isInitialRender = useRef(true);
+
+  // Smart Attendance Stats & Reset
+  const [attStats, setAttStats] = useState<AttendanceStats | null>(null);
+  const [resettingAttendance, setResettingAttendance] = useState(false);
+  const [showResetDialog, setShowResetDialog] = useState(false);
+
+  const fetchAttendanceStats = useCallback(async () => {
+    if (!form.attendanceSettings?.enabled || !form.attendanceSettings?.checkInOut?.enabled) return;
+    try {
+      const res = await getAttendanceStatsAction(form.id);
+      if (res.success && res.stats) {
+        setAttStats(res.stats);
+      }
+    } catch (e) {
+      console.warn('Failed to fetch attendance stats:', e);
+    }
+  }, [form.id, form.attendanceSettings?.enabled, form.attendanceSettings?.checkInOut?.enabled]);
+
+  useEffect(() => {
+    if (form.attendanceSettings?.checkInOut?.enabled) {
+      fetchAttendanceStats();
+    }
+  }, [form.attendanceSettings?.checkInOut?.enabled, fetchAttendanceStats]);
+
+  const handleResetAttendance = async () => {
+    setResettingAttendance(true);
+    try {
+      const res = await clearAttendanceRecordsAction(form.id);
+      if (res.success) {
+        toast.success(`Reset ${res.count ?? 0} attendance records successfully!`);
+        setShowResetDialog(false);
+        setAttStats({ total: 0, checkedIn: 0, completed: 0 });
+      } else {
+        toast.error(res.error || 'Failed to reset attendance records.');
+      }
+    } catch {
+      toast.error('An error occurred while resetting attendance records.');
+    } finally {
+      setResettingAttendance(false);
+    }
+  };
 
   const applyTemplate = (templateId: string) =>
     setForm((f) => ({ ...f, eCertificateTemplate: templateId }));
@@ -1707,6 +1751,85 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                           <p className="text-[11px] text-muted-foreground">
                             Participants must achieve this minimum duration through Check-In &amp; Check-Out before being eligible to claim their e-Certificate. An automatic warning will appear if they attempt to check out early.
                           </p>
+                        </div>
+
+                        {/* Attendance Records & Reset (Owner Controls) */}
+                        <div className="pt-3 border-t border-emerald-200/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-emerald-100">
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-1.5 font-semibold text-xs text-slate-800">
+                              <RotateCcw className="w-3.5 h-3.5 text-slate-600" />
+                              <span>Database Attendance Records</span>
+                              {attStats !== null && (
+                                <span className={cn(
+                                  "ml-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium border",
+                                  attStats.total > 0
+                                    ? "bg-amber-50 text-amber-800 border-amber-200"
+                                    : "bg-slate-50 text-slate-600 border-slate-200"
+                                )}>
+                                  {attStats.total} {attStats.total === 1 ? 'record' : 'records'}
+                                  {attStats.total > 0 && ` (${attStats.checkedIn} in, ${attStats.completed} completed)`}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-muted-foreground">
+                              Reset records to clear test submissions and allow participants to check in again.
+                            </p>
+                          </div>
+
+                          <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={resettingAttendance || (attStats !== null && attStats.total === 0)}
+                                className="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 shrink-0 h-8 font-medium gap-1.5"
+                              >
+                                {resettingAttendance ? (
+                                  <>
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    Resetting...
+                                  </>
+                                ) : (
+                                  <>
+                                    <RotateCcw className="w-3.5 h-3.5" />
+                                    Reset Records
+                                  </>
+                                )}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="max-w-md bg-white rounded-2xl p-6 border shadow-xl">
+                              <AlertDialogHeader className="text-left space-y-2">
+                                <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 mb-1">
+                                  <AlertTriangle className="w-6 h-6" />
+                                </div>
+                                <AlertDialogTitle className="text-base sm:text-lg font-bold text-slate-900">
+                                  Reset All Attendance Records?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription asChild>
+                                  <div className="text-slate-600 text-xs sm:text-sm leading-relaxed space-y-2">
+                                    <p>
+                                      This will permanently delete all check-in and check-out records for this form from the database ({attStats?.total ?? 0} total records).
+                                    </p>
+                                    <p className="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium">
+                                      Your Google Sheet rows will NOT be modified. Participants (including previous testers) will be able to scan and register freshly.
+                                    </p>
+                                  </div>
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter className="mt-4 flex flex-col-reverse sm:flex-row gap-2">
+                                <AlertDialogCancel className="w-full sm:w-auto rounded-xl">
+                                  Cancel
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={handleResetAttendance}
+                                  className="w-full sm:w-auto bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-semibold shadow-xs"
+                                >
+                                  Yes, Reset Records
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </div>
                     )}

@@ -301,16 +301,32 @@
   - [x] 2.3 `npm test` (345/345 ujian lulus).
 - [x] 3. Kemas kini `lessons.md`, `memory.md`, dan tolak ke GitHub (`origin/master`) untuk binaan tunggal automatik Vercel.
 
+---
 
+# Penambahan Butang Reset Rekod Kehadiran (Clear / Reset Attendance Records) ✅ SELESAI
+- [x] 1. Lapisan Storan (Database Storage):
+  - [x] 1.1 Tambah `clearAttendanceRecordsForForm(formId, userId)` dalam `lib/storage/attendance.ts` (padam rekod dalam `attendance_records` & `form_responses` bagi borang berkaitan).
+  - [x] 1.2 Tambah `getAttendanceStatsForForm(formId, userId)` dalam `lib/storage/attendance.ts` (kira jumlah rekod kehadiran, checked_in vs completed).
+- [x] 2. Lapisan Tindakan Pelayan (Server Actions):
+  - [x] 2.1 Tambah `clearAttendanceRecordsAction(formId)` dalam `actions/attendance.ts` dengan kawalan sekuriti pemilikan borang (`user.id === form.userId`).
+  - [x] 2.2 Tambah `getAttendanceStatsAction(formId)` dalam `actions/attendance.ts` untuk memaparkan statistik rekod kehadiran kepada pemilik borang.
+- [x] 3. Lapisan Antaramuka Pengguna (UI):
+  - [x] 3.1 Tambah panel "Attendance Records & Reset" di Form Builder (`app/builder/[id]/client.tsx`) di bawah kad Smart Attendance (Check-In & Check-Out):
+    - Paparkan bilangan rekod kehadiran sedia ada secara langsung (`X records (Y in, Z completed)`).
+    - Butang "Reset Records" dengan `AlertDialog` pengesahan amaran.
+    - Mengemas kini status rekod serta-merta tanpa perlu muat semula halaman.
+  - [x] 3.2 Tambah butang Reset Kehadiran di halaman Responses (`app/(dashboard)/responses/client.tsx`) bagi borang yang mengaktifkan Smart Attendance lengkap dengan `AlertDialog` pengesahan.
+- [x] 4. Ujian Unit & Kualiti (Testing & Quality Assurance):
+  - [x] 4.1 Tambah ujian unit untuk storan dan tindakan reset dalam `tests/attendance-storage.test.ts` & `tests/attendance-actions.test.ts`.
+  - [x] 4.2 Sahkan `npm run typecheck` (0 ralat TypeScript).
+  - [x] 4.3 Sahkan `npm run lint` (0 ralat ESLint).
+  - [x] 4.4 Sahkan `npm test` (353 / 353 ujian lulus merentas 39 suite).
+- [x] 5. Kemas kini dokumentasi:
+  - [x] 5.1 Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
 
+---
 
-
-
-
-
-
-
-
-
-
-
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Dwi-Akses Pengurusan Kehadiran (Form Builder & Responses Dashboard)**: Butang reset diletakkan di kedua-dua tempat strategik: di dalam Form Builder (`/builder/[id]`) di bawah tetapan Smart Attendance (tempat penganjur menguji syarat jam/PIN), dan di Responses Dashboard (`/responses`) di sebelah butang Google Sheet (tempat penganjur melihat data jawapan masuk).
+2. **Pembersihan Atomik Berkembar (`attendance_records` & `form_responses`)**: Fungsi `clearAttendanceRecordsForForm` membersihkan kedua-dua rekod keluar-masuk kehadiran dan salinan respons tempatan bagi borang tersebut, memastikan tiada entri ujian lapuk atau kunci idempotensi lama yang mengganggu pendaftaran baharu.
+3. **Perlindungan Data Google Sheet & Pengesahan Selamat (`AlertDialog`)**: Baris Google Sheet milik penganjur sengaja dipelihara tanpa disentuh (pengguna boleh simpan atau arkib data Sheet secara berasingan), manakala tindakan pemadaman di pangkalan data Supabase dilindungi oleh modal pengesahan `AlertDialog` dengan makluman yang jelas bagi mengelakkan salah tekan tidak sengaja.

@@ -3,10 +3,30 @@
 import { Form } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, FileSpreadsheet, Search, Plus, Loader2, BarChart3 } from 'lucide-react';
+import {
+    ExternalLink,
+    FileSpreadsheet,
+    Search,
+    Plus,
+    Loader2,
+    BarChart3,
+    RotateCcw,
+    AlertTriangle,
+} from 'lucide-react';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { useState, useTransition } from 'react';
 import { createSheetForFormAction } from '@/actions/sheets';
+import { clearAttendanceRecordsAction } from '@/actions/attendance';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -19,6 +39,8 @@ interface ResponsesClientProps {
 export function ResponsesClient({ forms, hasGoogleOAuth }: ResponsesClientProps) {
     const [query, setQuery] = useState('');
     const [creatingForForm, setCreatingForForm] = useState<string | null>(null);
+    const [resettingFormId, setResettingFormId] = useState<string | null>(null);
+    const [confirmResetForm, setConfirmResetForm] = useState<Form | null>(null);
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
 
@@ -40,6 +62,26 @@ export function ResponsesClient({ forms, hasGoogleOAuth }: ResponsesClientProps)
             }
             setCreatingForForm(null);
         });
+    }
+
+    async function handleConfirmResetAttendance() {
+        if (!confirmResetForm) return;
+        const formId = confirmResetForm.id;
+        setResettingFormId(formId);
+        try {
+            const res = await clearAttendanceRecordsAction(formId);
+            if (res.success) {
+                toast.success(`Reset ${res.count ?? 0} attendance records successfully!`);
+                setConfirmResetForm(null);
+                router.refresh();
+            } else {
+                toast.error(res.error || 'Failed to reset attendance records');
+            }
+        } catch {
+            toast.error('An error occurred while resetting attendance records.');
+        } finally {
+            setResettingFormId(null);
+        }
     }
 
     return (
@@ -91,16 +133,34 @@ export function ResponsesClient({ forms, hasGoogleOAuth }: ResponsesClientProps)
                                     <CardTitle className="text-base font-semibold text-gray-900 line-clamp-2 break-words whitespace-pre-line flex-1">
                                         {form.title}
                                     </CardTitle>
-                                    <Link href={`/responses/${form.id}/analytics`} className="shrink-0">
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="gap-1.5 h-8 text-gray-600 hover:text-gray-900"
-                                        >
-                                            <BarChart3 className="h-4 w-4" />
-                                            <span className="hidden sm:inline">Analytics</span>
-                                        </Button>
-                                    </Link>
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                        {form.attendanceSettings?.enabled && form.attendanceSettings?.checkInOut?.enabled && (
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => setConfirmResetForm(form)}
+                                                disabled={resettingFormId === form.id}
+                                                className="gap-1.5 h-8 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                                            >
+                                                {resettingFormId === form.id ? (
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                ) : (
+                                                    <RotateCcw className="h-4 w-4" />
+                                                )}
+                                                <span className="hidden sm:inline">Reset Attendance</span>
+                                            </Button>
+                                        )}
+                                        <Link href={`/responses/${form.id}/analytics`} className="shrink-0">
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="gap-1.5 h-8 text-gray-600 hover:text-gray-900"
+                                            >
+                                                <BarChart3 className="h-4 w-4" />
+                                                <span className="hidden sm:inline">Analytics</span>
+                                            </Button>
+                                        </Link>
+                                    </div>
                                 </div>
                             </CardHeader>
                             <CardContent className="px-5 pb-4">
@@ -155,6 +215,43 @@ export function ResponsesClient({ forms, hasGoogleOAuth }: ResponsesClientProps)
                     ))}
                 </div>
             )}
+
+            {/* Reset Attendance Confirmation Dialog */}
+            <AlertDialog open={!!confirmResetForm} onOpenChange={(open) => !open && setConfirmResetForm(null)}>
+                <AlertDialogContent className="max-w-md bg-white rounded-2xl p-6 border shadow-xl">
+                    <AlertDialogHeader className="text-left space-y-2">
+                        <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 mb-1">
+                            <AlertTriangle className="w-6 h-6" />
+                        </div>
+                        <AlertDialogTitle className="text-base sm:text-lg font-bold text-slate-900">
+                            Reset Attendance Records?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription asChild>
+                            <div className="text-slate-600 text-xs sm:text-sm leading-relaxed space-y-2">
+                                <p>
+                                    This will permanently delete all check-in and check-out attendance records for{' '}
+                                    <strong className="text-slate-900">{confirmResetForm?.title}</strong> from the database.
+                                </p>
+                                <p className="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium">
+                                    Your Google Sheet rows will NOT be modified. This enables participants (including previous testers) to register and check in freshly.
+                                </p>
+                            </div>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="mt-4 flex flex-col-reverse sm:flex-row gap-2">
+                        <AlertDialogCancel className="w-full sm:w-auto rounded-xl">
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleConfirmResetAttendance}
+                            disabled={!!resettingFormId}
+                            className="w-full sm:w-auto bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-semibold shadow-xs"
+                        >
+                            {resettingFormId ? 'Resetting...' : 'Yes, Reset Records'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

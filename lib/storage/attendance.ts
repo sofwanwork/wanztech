@@ -1,6 +1,6 @@
 import 'server-only';
 import { createAdminClient } from '@/utils/supabase/admin';
-import { AttendanceRecord, AttendanceStatus } from '@/lib/types';
+import { AttendanceRecord, AttendanceStatus, AttendanceStats } from '@/lib/types';
 
 interface DbRow {
   id: string;
@@ -187,5 +187,103 @@ export async function listAttendanceRecordsForForm(
   } catch (err) {
     console.error('[attendance-storage] listAttendanceRecords exception:', err);
     return [];
+  }
+}
+
+/**
+ * Get count and summary breakdown of attendance records for a form.
+ */
+export async function getAttendanceStatsForForm(
+  formId: string,
+  userId: string
+): Promise<AttendanceStats> {
+  if (!formId || !userId) return { total: 0, checkedIn: 0, completed: 0 };
+
+  try {
+    const admin = createAdminClient();
+    const { data, error } = await admin
+      .from('attendance_records')
+      .select('status')
+      .eq('form_id', formId)
+      .eq('user_id', userId);
+
+    if (error || !data) {
+      if (error) console.warn('[attendance-storage] getAttendanceStatsForForm error:', error);
+      return { total: 0, checkedIn: 0, completed: 0 };
+    }
+
+    let checkedIn = 0;
+    let completed = 0;
+    for (const row of data as Array<{ status: string }>) {
+      if (row.status === 'checked_in') checkedIn++;
+      else if (row.status === 'completed') completed++;
+    }
+
+    return {
+      total: data.length,
+      checkedIn,
+      completed,
+    };
+  } catch (err) {
+    console.error('[attendance-storage] getAttendanceStatsForForm exception:', err);
+    return { total: 0, checkedIn: 0, completed: 0 };
+  }
+}
+
+/**
+ * Clear/delete all attendance records for a form (owner only).
+ * Also cleans local form_responses records so test submissions can be re-run cleanly.
+ */
+export async function clearAttendanceRecordsForForm(
+  formId: string,
+  userId: string
+): Promise<{ success: boolean; count: number; error?: string }> {
+  if (!formId || !userId) {
+    return { success: false, count: 0, error: 'Form ID and User ID are required.' };
+  }
+
+  try {
+    const admin = createAdminClient();
+
+    // 1. Get count before deleting
+    const { count, error: countErr } = await admin
+      .from('attendance_records')
+      .select('*', { count: 'exact', head: true })
+      .eq('form_id', formId)
+      .eq('user_id', userId);
+
+    if (countErr) {
+      console.error('[attendance-storage] count before clear error:', countErr);
+      return { success: false, count: 0, error: countErr.message };
+    }
+
+    // 2. Delete attendance_records
+    const { error: delErr } = await admin
+      .from('attendance_records')
+      .delete()
+      .eq('form_id', formId)
+      .eq('user_id', userId);
+
+    if (delErr) {
+      console.error('[attendance-storage] delete attendance_records error:', delErr);
+      return { success: false, count: 0, error: delErr.message };
+    }
+
+    // 3. Also clear any local form_responses rows for this form so test records don't linger
+    try {
+      await admin
+        .from('form_responses')
+        .delete()
+        .eq('form_id', formId)
+        .eq('user_id', userId);
+    } catch (respErr) {
+      console.warn('[attendance-storage] clear form_responses warning:', respErr);
+    }
+
+    return { success: true, count: count ?? 0 };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Failed to clear attendance records.';
+    console.error('[attendance-storage] clearAttendanceRecordsForForm exception:', err);
+    return { success: false, count: 0, error: msg };
   }
 }

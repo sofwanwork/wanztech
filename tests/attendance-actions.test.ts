@@ -59,6 +59,21 @@ const mockAttendanceRecord = {
   createdAt: new Date(Date.now() - 3600000).toISOString(),
 };
 
+vi.mock('next/cache', () => ({
+  revalidatePath: vi.fn(),
+}));
+
+vi.mock('@/utils/supabase/server', () => ({
+  createClient: vi.fn().mockResolvedValue({
+    auth: {
+      getUser: vi.fn().mockResolvedValue({
+        data: { user: { id: 'user-123' } },
+        error: null,
+      }),
+    },
+  }),
+}));
+
 vi.mock('@/lib/storage/attendance', () => ({
   getAttendanceRecord: vi.fn().mockImplementation((formId: string, cleanId: string) => {
     if (formId === 'form-123' && cleanId === '950101145555') {
@@ -74,6 +89,8 @@ vi.mock('@/lib/storage/attendance', () => ({
       durationMinutes: input.durationMinutes,
     });
   }),
+  getAttendanceStatsForForm: vi.fn().mockResolvedValue({ total: 2, checkedIn: 1, completed: 1 }),
+  clearAttendanceRecordsForForm: vi.fn().mockResolvedValue({ success: true, count: 2 }),
 }));
 
 vi.mock('@/lib/api/google-sheets', () => ({
@@ -102,6 +119,8 @@ vi.mock('@/utils/supabase/admin', () => ({
 import {
   checkAttendanceStatusAction,
   submitAttendanceCheckOutAction,
+  getAttendanceStatsAction,
+  clearAttendanceRecordsAction,
 } from '@/actions/attendance';
 
 describe('Attendance Server Actions — checkAttendanceStatusAction', () => {
@@ -148,5 +167,35 @@ describe('Attendance Server Actions — submitAttendanceCheckOutAction', () => {
       '950101-14-5555',
       expect.objectContaining({ 'Status Kehadiran': 'Selesai (Completed)' })
     );
+  });
+});
+
+describe('Attendance Server Actions — getAttendanceStatsAction', () => {
+  it('returns attendance statistics for form owner', async () => {
+    const res = await getAttendanceStatsAction('form-123');
+    expect(res.success).toBe(true);
+    expect(res.stats?.total).toBe(2);
+    expect(res.stats?.checkedIn).toBe(1);
+    expect(res.stats?.completed).toBe(1);
+  });
+
+  it('fails if formId is missing', async () => {
+    const res = await getAttendanceStatsAction('');
+    expect(res.success).toBe(false);
+    expect(res.error).toBe('Form ID is required.');
+  });
+});
+
+describe('Attendance Server Actions — clearAttendanceRecordsAction', () => {
+  it('successfully clears attendance records for form owner', async () => {
+    const res = await clearAttendanceRecordsAction('form-123');
+    expect(res.success).toBe(true);
+    expect(res.count).toBe(2);
+  });
+
+  it('fails if formId is missing', async () => {
+    const res = await clearAttendanceRecordsAction('');
+    expect(res.success).toBe(false);
+    expect(res.error).toBe('Form ID is required.');
   });
 });

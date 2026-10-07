@@ -1,11 +1,14 @@
 'use server';
 
 import { headers as getNextHeaders } from 'next/headers';
+import { revalidatePath } from 'next/cache';
 import { getFormById } from '@/lib/storage/forms';
 import { getSettingsByFormId } from '@/lib/storage/settings';
 import {
   getAttendanceRecord,
   updateAttendanceCheckOut,
+  getAttendanceStatsForForm,
+  clearAttendanceRecordsForForm,
 } from '@/lib/storage/attendance';
 import {
   cleanIdentifier,
@@ -17,8 +20,9 @@ import {
 } from '@/lib/forms/attendance';
 import { updateSheetRow } from '@/lib/api/google-sheets';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
-import { AttendanceSummary } from '@/lib/types';
+import { AttendanceSummary, AttendanceStats } from '@/lib/types';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { createClient } from '@/utils/supabase/server';
 import {
   generateRotatingQrPayload,
   verifyRotatingQrToken,
@@ -417,5 +421,73 @@ export async function getRotatingQrLiveTokenAction(formId: string): Promise<{
     formTitle: form.title,
     intervalSeconds,
   };
+}
+
+/**
+ * Server action to get attendance statistics for a form (owner only).
+ */
+export async function getAttendanceStatsAction(formId: string): Promise<{
+  success: boolean;
+  stats?: AttendanceStats;
+  error?: string;
+}> {
+  if (!formId) {
+    return { success: false, error: 'Form ID is required.' };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Unauthorized.' };
+  }
+
+  const form = await getFormById(formId);
+  if (!form || form.userId !== user.id) {
+    return { success: false, error: 'Form not found or unauthorized.' };
+  }
+
+  const stats = await getAttendanceStatsForForm(formId, user.id);
+  return { success: true, stats };
+}
+
+/**
+ * Server action to clear all attendance records for a form (owner only).
+ * Resets both check-in/out records and local responses for fresh testing.
+ */
+export async function clearAttendanceRecordsAction(formId: string): Promise<{
+  success: boolean;
+  count?: number;
+  error?: string;
+}> {
+  if (!formId) {
+    return { success: false, error: 'Form ID is required.' };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Unauthorized.' };
+  }
+
+  const form = await getFormById(formId);
+  if (!form || form.userId !== user.id) {
+    return { success: false, error: 'Form not found or unauthorized.' };
+  }
+
+  const result = await clearAttendanceRecordsForForm(formId, user.id);
+  if (!result.success) {
+    return { success: false, error: result.error || 'Failed to clear attendance records.' };
+  }
+
+  revalidatePath(`/builder/${formId}`);
+  revalidatePath('/responses');
+
+  return { success: true, count: result.count };
 }
 

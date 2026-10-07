@@ -307,3 +307,6 @@
 
 - **Pencegahan Binaan Vercel Berganda (Single Deployment Source of Truth)**:
   Apabila repositori GitHub telah dihubungkan dengan Vercel Git Integration, sebarang `git push` ke cawangan produksi (`master`/`main`) secara automatik mencetuskan binaan pengeluaran di Vercel. Menjalankan `npx vercel --prod` sejurus selepas `git push` akan memulakan binaan kedua serentak. Cukup sekadar menolak ke Git untuk deployment rasmi, atau pilih satu saluran sahaja agar binaan tidak berlaku dua kali.
+
+- **Mocking Berbilang `.eq().eq()` Supabase dalam Ujian Unit & *Thenable Builder***:
+  Apabila menguji kod yang memanggil kaedah chaining berulang seperti `.select().eq('form_id', ...).eq('user_id', ...)` atau `.delete().eq().eq()`, jangan sesekali menetapkan `m.eq.mockResolvedValue(...)`. Ini menyebabkan panggilan `.eq` pertama mengembalikan objek Promise (bukannya builder), mengakibatkan panggilan `.eq` kedua gagal dengan `TypeError: ...eq(...).eq is not a function`. Sebaliknya, pastikan `m.eq` sentiasa mengembalikan `queryChain` builder, dan jadikan `queryChain` itu sendiri sebagai objek *thenable* (`then: (resolve) => resolve(currentResult)`). Pendekatan ini membolehkan rantaian panggilan berbilang `.eq()` berlaku secara lancar tanpa had, di samping membolehkan ujian mengawal nilai pulangan sebaik sahaja kenyataan `await` disempurnakan.

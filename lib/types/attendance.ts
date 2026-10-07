@@ -32,3 +32,9 @@ export interface AttendanceSummary {
   isEarlyCheckOut?: boolean;
   earlyCheckOutShortfallText?: string;
 }
+
+export interface AttendanceStats {
+  total: number;
+  checkedIn: number;
+  completed: number;
+}

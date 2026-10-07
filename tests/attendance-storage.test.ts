@@ -10,6 +10,7 @@ const m = vi.hoisted(() => ({
   maybeSingle: vi.fn(),
   single: vi.fn(),
   update: vi.fn(),
+  delete: vi.fn(),
 }));
 
 vi.mock('@/utils/supabase/admin', () => ({
@@ -21,26 +22,37 @@ import {
   createAttendanceRecord,
   updateAttendanceCheckOut,
   listAttendanceRecordsForForm,
+  getAttendanceStatsForForm,
+  clearAttendanceRecordsForForm,
 } from '@/lib/storage/attendance';
+
+let resolveResult: unknown = { data: null, error: null };
 
 beforeEach(() => {
   vi.clearAllMocks();
+  resolveResult = { data: null, error: null };
 
   const queryChain: Record<string, unknown> = {
     insert: m.insert,
     select: m.select,
     update: m.update,
+    delete: m.delete,
     eq: m.eq,
     order: m.order,
     limit: m.limit,
     maybeSingle: m.maybeSingle,
     single: m.single,
+    then: (resolve: (v: unknown) => void) => {
+      const val = typeof resolveResult === 'function' ? resolveResult() : resolveResult;
+      return resolve(val);
+    },
   };
 
   m.from.mockReturnValue(queryChain);
   m.select.mockReturnValue(queryChain);
   m.insert.mockReturnValue(queryChain);
   m.update.mockReturnValue(queryChain);
+  m.delete.mockReturnValue(queryChain);
   m.eq.mockReturnValue(queryChain);
   m.order.mockReturnValue(queryChain);
   m.limit.mockReturnValue(queryChain);
@@ -177,5 +189,47 @@ describe('Attendance Storage — listAttendanceRecordsForForm', () => {
     const records = await listAttendanceRecordsForForm('f1');
     expect(records).toHaveLength(1);
     expect(records[0].participantName).toBe('Ahmad');
+  });
+});
+
+describe('Attendance Storage — getAttendanceStatsForForm', () => {
+  it('returns zeroes if formId or userId missing', async () => {
+    expect(await getAttendanceStatsForForm('', 'u1')).toEqual({ total: 0, checkedIn: 0, completed: 0 });
+    expect(await getAttendanceStatsForForm('f1', '')).toEqual({ total: 0, checkedIn: 0, completed: 0 });
+  });
+
+  it('aggregates total, checkedIn, and completed counts', async () => {
+    const mockRows = [
+      { status: 'checked_in' },
+      { status: 'checked_in' },
+      { status: 'completed' },
+    ];
+    resolveResult = { data: mockRows, error: null };
+
+    const stats = await getAttendanceStatsForForm('f1', 'u1');
+    expect(stats.total).toBe(3);
+    expect(stats.checkedIn).toBe(2);
+    expect(stats.completed).toBe(1);
+  });
+});
+
+describe('Attendance Storage — clearAttendanceRecordsForForm', () => {
+  it('returns failure if formId or userId is missing', async () => {
+    const res = await clearAttendanceRecordsForForm('', 'u1');
+    expect(res.success).toBe(false);
+  });
+
+  it('deletes attendance_records and form_responses for the form', async () => {
+    const sequence = [
+      { count: 5, error: null }, // count query
+      { error: null }, // delete attendance_records
+      { error: null }, // delete form_responses
+    ];
+    resolveResult = () => sequence.shift() || { error: null };
+
+    const res = await clearAttendanceRecordsForForm('f1', 'u1');
+    expect(res.success).toBe(true);
+    expect(res.count).toBe(5);
+    expect(m.delete).toHaveBeenCalled();
   });
 });
