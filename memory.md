@@ -2497,4 +2497,19 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - `npm run lint`: 0 ralat.
   - `npm test`: 357 / 357 ujian lulus merentas 39 suite (ditambah 3 ujian baharu).
 
+## Production Deployment (2026-10-08 — Rotating QR Page-Load Gate & Re-entry Prevention)
+- **Komit Git**: `eea4805` (`fix(attendance): enforce rotating QR page-load gate and prevent re-entry after check-in`).
+- **Kaedah Pelancaran**: Tolak ke GitHub (`git push origin master`) dengan penyelarasan automatik Vercel (binaan tunggal).
+- **Status Vercel**: ● Ready (binaan siap dalam masa ~2 minit).
+- **Deployment ID**: `dpl_GjK13ecgmZNGUZsgBYUfTtxTmUem`.
+- **URL Pengeluaran**: `https://www.klikform.com`
+- **URL Binaan Vercel**: `https://klikform-499pgh06l-sofwan-jailanis-projects.vercel.app`
+- **Ciri Utama Dikeluarkan**:
+  1. *Server-Side Page-Load Gate*: Menyekat pemaparan soalan borang terus pada `GET /form/[id]` & `GET /s/[code]` jika token rotating QR tidak sah, luput, atau tiada.
+  2. *Anti-Fraud Lock Screen*: Memaparkan skrin kunci estetik yang mengarahkan peserta mengimbas skrin dewan secara langsung.
+  3. *Active Attendance Pass*: Mengenalpasti peserta yang telah mendaftar masuk dan memaparkan pas kehadiran aktif ("Currently Present") dengan arahan menunggu Check-Out.
+  4. *Penyembunyian Butang*: Butang "Submit another response" disembunyikan secara automatik untuk kehadiran (Check-In & Check-Out) dan mod Live Rotating QR.
+  5. *URL Query Sanitization*: Membersihkan parameter token dari bar alamat pelayar selepas penyerahan berjaya bagi menghalang muat semula token lama.
+
+
 

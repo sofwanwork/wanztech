@@ -521,6 +521,15 @@
 3. **Pembersihan Keadaan URL (*URL Query Sanitization*)**:
    - Memadam parameter `?rq_w=...&rq_sig=...` daripada bar alamat pelayar melalui `window.history.replaceState` sebaik sahaja borang dihantar memastikan penyerahan tersebut tidak boleh dimainkan semula (*replay attack*) atau dicetuskan secara tidak sengaja melalui butang refresh pelayar.
 
+---
+
+### Maklumat Pelancaran Pengeluaran Vercel
+- **Status**: ● Ready
+- **Komit Git**: `eea4805`
+- **Deployment URL**: `https://klikform-499pgh06l-sofwan-jailanis-projects.vercel.app`
+- **Domain Pengeluaran**: `https://www.klikform.com`
+
+
 
 
 
