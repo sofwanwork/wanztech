@@ -2526,6 +2526,15 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - `npm run lint`: 0 ralat.
   - `npm test`: 357 / 357 lulus merentas 39 fail ujian.
 
+## Production Deployment (2026-10-08 — Restoration of "Submit another response" Button)
+- **Komit Git**: `4086f35` (`fix(forms): restore submit another response button when toggled in builder with clean state reset`).
+- **Kaedah Pelancaran**: Tolak ke GitHub (`git push origin master`) dengan penyelarasan automatik Vercel (binaan tunggal).
+- **Status Vercel**: ● Ready (binaan siap dalam masa ~2 minit).
+- **Deployment ID**: `dpl_Wrf8TCFH9T2K9kzDeFnBFJ9bBx2i`.
+- **URL Pengeluaran**: `https://www.klikform.com`
+- **URL Binaan Vercel**: `https://klikform-on6csccyy-sofwan-jailanis-projects.vercel.app`
+
+
 
 
 

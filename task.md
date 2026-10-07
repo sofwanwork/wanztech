@@ -541,8 +541,8 @@
   - [x] 3.1 Sahkan `npm run typecheck` (0 ralat TypeScript).
   - [x] 3.2 Sahkan `npm run lint` (0 ralat ESLint).
   - [x] 3.3 Sahkan `npm test` (357/357 ujian unit lulus).
-- [ ] 4. Pelancaran Vercel & Dokumentasi:
-  - [ ] 4.1 Tolak ke GitHub (`origin/master`) untuk binaan tunggal pengeluaran Vercel.
+- [x] 4. Pelancaran Vercel & Dokumentasi:
+  - [x] 4.1 Tolak ke GitHub (`origin/master`) untuk binaan tunggal pengeluaran Vercel.
   - [x] 4.2 Kemas kini `task.md`, `memory.md`, dan `lessons.md`.
 
 ---
@@ -555,6 +555,16 @@
 2. **Tetapan Semula Keadaan Dalam Memori (*In-Memory State Reset*)**:
    - Menggantikan `window.location.reload()` dengan `handleResetForAnotherResponse` membuang sebarang isu muat semula pelayar (seperti tersekat di skrin kunci token luput atau memuat semula fail aset).
    - Pembersihan menyeluruh `formData`, `localStorage` sesi peserta, dan `sessionStorage` kunci idempotensi membolehkan borang sedia serta-merta untuk pendaftaran peserta seterusnya (contohnya pendaftaran berbilang peserta di kaunter/kiosk yang sama).
+
+---
+
+### Maklumat Pelancaran Pengeluaran Vercel
+- **Status**: ● Ready
+- **Komit Git**: `4086f35`
+- **Deployment ID**: `dpl_Wrf8TCFH9T2K9kzDeFnBFJ9bBx2i`
+- **Deployment URL**: `https://klikform-on6csccyy-sofwan-jailanis-projects.vercel.app`
+- **Domain Pengeluaran**: `https://www.klikform.com`
+
 
 
 
