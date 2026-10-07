@@ -2321,5 +2321,15 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - `npm run lint`: 0 ralat / 0 amaran ESLint.
   - `npm test`: 353 / 353 ujian lulus merentas 39 suite ujian (+8 ujian baharu).
 
+## Production Deployment (2026-10-07 — Reset Attendance Records Feature)
+- **Tarikh**: 2026-10-07
+- **Commit Git**: `c8354e0` (`feat: add reset attendance records button in form builder and responses dashboard`)
+- **Penyegerakan GitHub**: Berjaya ditolak ke `origin/master`.
+- **Status Binaan**: Selesai dalam ~2 minit, kompilasi 58 laluan (36 statik ○, 22 dinamik ƒ).
+- **ID Deployment**: `dpl_B6Evdv2Z5HTSjkJ6i8hNK9LPZxT3`
+- **URL Pengeluaran**: `https://www.klikform.com`
+- **URL Deployment Vercel**: `https://klikform-1kt6xyyb1-sofwan-jailanis-projects.vercel.app`
+
+
 
 
