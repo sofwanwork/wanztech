@@ -472,15 +472,18 @@
 
 ---
 
-# Pelancaran Pengeluaran Vercel (Production Deployment to Vercel) 🚀 DALAM PROSES
+# Pelancaran Pengeluaran Vercel (Production Deployment to Vercel) ✅ SELESAI
 - [x] 1. Semakan Kualiti Kod Tempatan (Local Quality Assurance):
   - [x] 1.1 `npm run typecheck` (0 ralat TypeScript).
   - [x] 1.2 `npm run lint` (0 ralat / 0 amaran ESLint).
   - [x] 1.3 `npm test` (354/354 ujian unit lulus merentas 39 suite).
-- [ ] 2. Komit Git & Tolak ke Cawangan Utama (`origin/master`):
-  - [ ] 2.1 Git stage semua fail yang diubah suai.
-  - [ ] 2.2 Komit dengan format Conventional Commit: `feat(attendance): modernize layout, fix dialog margins, add QR intervals, and harden checkout sync`.
-  - [ ] 2.3 Tolak (`git push origin master`) ke repositori GitHub untuk pelancaran tunggal automatik ke Vercel (tanpa pencetusan berganda CLI).
-- [ ] 3. Pengesahan & Kemas Kini Rekod Memori:
-  - [ ] 3.1 Catatkan SHA commit dan status pengeluaran dalam `task.md` dan `memory.md`.
+- [x] 2. Komit Git & Tolak ke Cawangan Utama (`origin/master`):
+  - [x] 2.1 Git stage semua 14 fail yang diubah suai.
+  - [x] 2.2 Komit dengan format Conventional Commit: `feat(attendance): modernize layout, fix dialog margins, add QR intervals, and harden checkout sync` (`02ec23d`).
+  - [x] 2.3 Tolak (`git push origin master`) ke repositori GitHub untuk pelancaran tunggal automatik ke Vercel (satu binaan sahaja, tanpa binaan berganda CLI).
+- [x] 3. Pengesahan & Kemas Kini Rekod:
+  - [x] 3.1 Binaan Vercel Pengeluaran: `dpl_At5DaetBiE794yo11WAr6YK7nVwN` (● Ready dalam masa ~55s).
+  - [x] 3.2 URL Pengeluaran: `https://www.klikform.com` (Deployment: `https://klikform-f47gjhvod-sofwan-jailanis-projects.vercel.app`).
+  - [x] 3.3 Catatkan SHA commit `02ec23d` dan status pengeluaran dalam `task.md` dan `memory.md`.
+
 

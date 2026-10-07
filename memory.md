@@ -2463,4 +2463,20 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - `npm run typecheck`: 0 ralat.
   - `npm run lint`: 0 ralat.
   - `npm test`: 354 / 354 ujian lulus merentas 39 suite.
-  - Status: Kekal dalam persekitaran tempatan (sifar push / deploy ke Vercel).
+  - Status: Selesai dan bersedia untuk pengeluaran.
+
+## Production Deployment (2026-10-08 — Modern Layout, Dialog Margins, QR Intervals & Check-Out Sync)
+- **Komit Git**: `02ec23d` (`feat(attendance): modernize layout, fix dialog margins, add QR intervals, and harden checkout sync`).
+- **Kaedah Pelancaran**: Tolak ke GitHub (`git push origin master`) dengan penyelarasan automatik Vercel (binaan tunggal, sifar binaan berganda CLI).
+- **Status Vercel**: ● Ready (binaan siap dalam masa ~55 saat).
+- **Deployment ID**: `dpl_At5DaetBiE794yo11WAr6YK7nVwN`.
+- **URL Pengeluaran**: `https://www.klikform.com`
+- **URL Binaan Vercel**: `https://klikform-f47gjhvod-sofwan-jailanis-projects.vercel.app`
+- **Pakej Pembaharuan Termasuk**:
+  1. *Mobile Modal Dialog Margins*: Perlindungan `w-[calc(100%-2rem)]` dan `sm:max-w-*` merentas `AlertDialog` dan `Dialog` untuk menghapuskan sentuhan birai pada skrin telefon.
+  2. *Attendance Card Layout Modernization*: Reka bentuk kad Check-Out moden dengan denyutan langsung (*pulse live badge*), tiket pas acara (*event pass pattern*), kad baki masa minimum beranimasi jam pasir, serta tiket resit kehadiran digital 3D. Bar kemajuan dan lencana terjawab disembunyikan semasa mod kehadiran aktif.
+  3. *Legacy Tablet/Android Presenter Screen Compatibility*: Sandaran warna `#020617` dan `#ffffff` eksplisit bagi mengelakkan penolakan `oklch()` Tailwind v4 pada Chrome < 111, menghapuskan masalah teks tajuk acara ghaib pada tablet lama.
+  4. *Customizable Live Rotating QR Interval*: Pilihan pratetap durasi (15s, 30s, 45s, 60s, 90s, 120s) serta input masa tersuai (10s–600s) di Form Builder dan penyegerakan paparan skrin projektor.
+  5. *Attendance Check-Out Sync Hardening*: Perlindungan carian tetapan Google Sheets awam dengan `createAdminClient()`, padanan fleksibel nama kolum Google Sheet, dan tetingkap ihsan 2-tingkap (60–90 saat) pada token putaran QR bagi mengelakkan kegagalan penyelarasan data check-out peserta.
+  6. *PresenterClient Clean Effects*: Penghapusan amaran konsol React `setState in render` dengan pengasingan pemasa undur dan Server Action `fetchToken()`.
+
