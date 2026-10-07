@@ -37,11 +37,10 @@ export async function getSettings(): Promise<Settings | undefined> {
 
 // Get settings by form ID (for public form submission - using admin client to bypass RLS)
 export async function getSettingsByFormId(formId: string): Promise<Settings | undefined> {
-  const supabase = await createClient();
+  const adminSupabase = createAdminClient();
 
-  // First, get the form to find the owner (user_id)
-  // Forms are public readable, so standard client is fine here.
-  const { data: formData, error: formError } = await supabase
+  // Get the form to find the owner (user_id) using Admin client to bypass RLS for public submissions
+  const { data: formData, error: formError } = await adminSupabase
     .from('forms')
     .select('user_id')
     .eq('id', formId)
@@ -51,7 +50,6 @@ export async function getSettingsByFormId(formId: string): Promise<Settings | un
 
   // Then get the settings for that user using Admin Client
   // Public users strictly cannot read settings table via RLS
-  const adminSupabase = createAdminClient();
   const { data, error } = await adminSupabase
     .from('settings')
     .select('*')

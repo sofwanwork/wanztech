@@ -127,4 +127,44 @@ describe('Rotating QR Code — Generation and Verification', () => {
     expect(result.valid).toBe(false);
     expect(result.reason).toBe('missing');
   });
+
+  it('supports custom interval durations (e.g. 60s, 120s)', () => {
+    const customIntervals = [15, 60, 90, 120];
+    const now = 1727520000000;
+
+    for (const customInt of customIntervals) {
+      const payload = generateRotatingQrPayload(baseUrl, formId, {
+        intervalSeconds: customInt,
+        timestampMs: now,
+      });
+
+      expect(payload.expiresInSeconds).toBeLessThanOrEqual(customInt);
+
+      // Verify token with same custom interval
+      const res = verifyRotatingQrToken({
+        formId,
+        windowIndex: payload.windowIndex,
+        signature: payload.signature,
+        intervalSeconds: customInt,
+        nowMs: now,
+      });
+
+      expect(res.valid).toBe(true);
+      expect(res.reason).toBe('valid');
+
+      // Reject when tested far beyond the custom window (3 windows later)
+      const futureExpired = now + customInt * 3 * 1000;
+      const expiredRes = verifyRotatingQrToken({
+        formId,
+        windowIndex: payload.windowIndex,
+        signature: payload.signature,
+        intervalSeconds: customInt,
+        nowMs: futureExpired,
+      });
+
+      expect(expiredRes.valid).toBe(false);
+      expect(expiredRes.reason).toBe('expired');
+    }
+  });
 });
+

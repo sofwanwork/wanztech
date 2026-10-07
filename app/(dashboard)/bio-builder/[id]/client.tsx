@@ -912,7 +912,7 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
 
       {/* Mobile Preview Modal (for smaller screens) */}
       <Dialog open={mobilePreviewOpen} onOpenChange={setMobilePreviewOpen}>
-        <DialogContent className="max-w-sm p-2 bg-transparent border-none shadow-none flex justify-center">
+        <DialogContent className="sm:max-w-sm p-2 bg-transparent border-none shadow-none flex justify-center">
           <MobileMockupView
             page={page}
             links={links}

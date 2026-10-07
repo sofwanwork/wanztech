@@ -147,8 +147,17 @@ export async function updateSheetRow(
 
     const rows = await sheet.getRows();
     const cleanMatch = matchValue.replace(/[\s\-_/]/g, '').toLowerCase();
+    const cleanColName = matchColumn.replace(/[\s\-_/]/g, '').toLowerCase();
+    const actualCol =
+      headers.find(
+        (h) =>
+          h === matchColumn ||
+          h.trim().toLowerCase() === matchColumn.trim().toLowerCase() ||
+          h.replace(/[\s\-_/]/g, '').toLowerCase() === cleanColName
+      ) || matchColumn;
+
     const target = rows.find((r) => {
-      const cellVal = String(r.get(matchColumn) ?? '');
+      const cellVal = String(r.get(actualCol) ?? r.get(matchColumn) ?? '');
       if (cellVal === matchValue) return true;
       if (cleanMatch && cellVal.replace(/[\s\-_/]/g, '').toLowerCase() === cleanMatch) {
         return true;

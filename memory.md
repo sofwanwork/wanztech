@@ -2330,6 +2330,137 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
 - **URL Pengeluaran**: `https://www.klikform.com`
 - **URL Deployment Vercel**: `https://klikform-1kt6xyyb1-sofwan-jailanis-projects.vercel.app`
 
+## System Improvements (2026-10-08 — Mobile View Modal Dialog Margin & Width Fix)
+- **Konteks & Laporan Pengguna**: "di mobile view kenapa pop up ni rapat sgt kiri dan kanan, betulkan dulu tanpa update ke vercel" (dengan tangkapan skrin telefon memaparkan pop-up amaran Check-Out Awal "Warning: Minimum Attendance Hours Not Met!" yang melekat ke birai kiri dan kanan skrin peranti tanpa sebarang margin).
+- **Punca Masalah (Root Cause)**:
+  - Komponen asas shadcn `AlertDialogContent` (`components/ui/alert-dialog.tsx`) dan `DialogContent` (`components/ui/dialog.tsx`) menggunakan kelas asas `w-full max-w-[calc(100%-2rem)]`.
+  - Apabila digunakan dalam `app/(public)/form/[id]/client.tsx`, ia disalurkan `className="max-w-md bg-white rounded-2xl p-6 border shadow-xl"`.
+  - Enjin utiliti Tailwind merge (`twMerge` dalam fungsi `cn()`) mengesan bahawa `max-w-[calc(100%-2rem)]` dan `max-w-md` tergolong dalam kumpulan sifat CSS yang sama (`max-width`) tanpa awalan breakpoint, lalu menggantikan `max-w-[calc(100%-2rem)]` dengan `max-w-md` (448px).
+  - Pada telefon pintar (kelebaran skrin ~360px - 412px, yang lebih kecil daripada 448px), `max-w-md` tidak mengehadkan kelebaran. Akibatnya, kelas `w-full` (`width: 100%`) meregangkan kotak pop-up ke 100% kelebaran skrin peranti, menyebabkan bucu kad melekat rapat ke birai telefon dengan 0 margin.
+- **Penyelesaian Dilaksanakan (Defense-in-Depth)**:
+  1. **Kukuhkan Komponen Asas UI (`components/ui/alert-dialog.tsx` & `components/ui/dialog.tsx`)**:
+     - Ditukar kelas asas daripada `w-full max-w-[calc(100%-2rem)]` kepada `w-[calc(100%-2rem)] sm:w-full max-w-[calc(100%-2rem)]`.
+     - Sifat `width: calc(100% - 2rem)` menjamin ruang rehat 16px (1rem) di sebelah kiri dan 16px di sebelah kanan pada paparan mudah alih, dan sifat `w-*` tidak akan disentuh atau dipadam oleh sebarang sifat `max-w-*` yang disalurkan pengguna. Pada paparan tablet/desktop (`sm:`), ia bertukar lancar kepada `sm:w-full`.
+  2. **Penyelarasan Penggunaan Modal Pengguna**:
+     - `app/(public)/form/[id]/client.tsx`: Modal amaran Check-Out awal dikemas kini daripada `max-w-md p-6` kepada `sm:max-w-md p-5 sm:p-6`.
+     - `app/builder/[id]/client.tsx`: Modal pengesahan reset rekod kehadiran dikemas kini kepada `sm:max-w-md p-5 sm:p-6`, dan modal penyesuaian kod QR dikemas kini kepada `sm:max-w-4xl`.
+     - `app/(dashboard)/responses/client.tsx`: Modal pengesahan reset rekod kehadiran dikemas kini kepada `sm:max-w-md p-5 sm:p-6`.
+     - `app/(dashboard)/bio-builder/[id]/client.tsx`: Modal pratetap paparan mudah alih dikemas kini kepada `sm:max-w-sm`.
+- **Status Deployment**:
+  - Dibaiki secara tempatan mengikut arahan ketat pengguna (*"betulkan dulu tanpa update ke vercel"*).
+  - Sifar tolak ke git / Vercel deployment dilakukan.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm test`: 353 / 353 ujian unit lulus merentas 39 suite ujian.
 
 
 
+
+
+
+
+## System Improvements (2026-10-08 — Attendance Card Layout Polish & Modernization)
+- **Konteks & Laporan Pengguna**: "cantikkan sikit layout ni" (dengan 2 tangkapan skrin telefon memaparkan kad Check-Out Confirmation dan kad Attendance Fully Recorded).
+- **Elemen yang Dipertingkatkan**:
+  1. **Pengasingan Konteks Borang (`isAttendanceCardShowing`)**:
+     - Sembunyikan bar kemajuan atas (`Progress`), pemasa undur (`Closes in`), dan lencana terapung bawah kanan (`X / Y Answered`) semasa mod kad kehadiran aktif. Ini menghapuskan gangguan widget terapung borang yang mengelirukan responden sewaktu mereka sudah pun selesai mendaftar.
+  2. **Reka Bentuk Baharu Kad Check-Out (`status === 'checked_in'`)**:
+     - Kontena kad moden: `rounded-3xl border-emerald-200/80 shadow-xl shadow-emerald-950/5` dengan bar aksen gradien zamrud lembut (`from-emerald-500 via-teal-500 to-emerald-600`).
+     - Pengepala status: lencana kehadiran langsung (*live pulsing indicator* `Currently Present`), nama peserta diserlahkan kemas, dan pautan "Not you?" di bucu atas kanan dibuang bagi mengelakkan pertembungan lewah dengan butang tukar di bawah.
+     - Tiket pas acara digital (*Event Pass*): kad maklumat Check-In Time dan ID / Identifier berkotak berkembar dengan ikon semantik `Clock` dan `UserCheck` serta teks kod mono.
+     - Kotak amaran baki masa: disatukan ke dalam kad jam pasir (*Hourglass card*) lembut dengan lencana baki masa yang jelas tanpa pengulangan teks antara kotak amaran dan butang terkunci.
+     - Butang tindakan: butang Check-Out bertukar ke gradien zamrud cergas dengan bayang halus dan butang tukar akaun dengan ikon `UserPlus` yang sopan di bahagian bawah.
+  3. **Reka Bentuk Baharu Kad Selesai Hadir (`status === 'completed'`)**:
+     - Pengepala anugerah: ikon cek bulat bertingkat 3D (`from-blue-600 to-indigo-600` dengan denyutan *ping glow* lembut).
+     - Tiket resit digital: kad maklumat dua lajur berkotak putih berkembar untuk masa masuk dan masa keluar, pemisah bertitik (*dashed divider*), dan lencana durasi penuh warna zamrud berkontras tinggi.
+     - Tindakan tuntutan: butang gelap premium dengan ikon `Award` keemasan untuk menyemak dan menuntut e-Sijil.
+- **Status Deployment**:
+  - Dibaiki secara tempatan mengikut arahan terdahulu (*"betulkan dulu tanpa update ke vercel"*). Sifar push atau deployment ke Vercel.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm test`: 353 / 353 ujian unit lulus merentas 39 suite ujian.
+
+
+## System Improvements (2026-10-08 — Presenter Screen Legacy Tablet Compatibility & HEX Fallback)
+- **Konteks & Laporan Pengguna**: "maksud sy design qr tu, kalau dekat phone sy lain, tapi di tablet atau phone lama lain" dengan 2 foto perbandingan (Phone moden berlatar gelap kemas dengan tajuk putih vs Tablet lama berlatar putih dengan tajuk ghaib).
+- **Punca Sebenar**:
+  1. Tailwind CSS v4 menjana warna lalai (`slate-950`, `slate-900`) menggunakan format `oklch(...)`.
+  2. Pelayar Chrome pada tablet lama (sebelum v111) tidak menyokong `oklch()` dan menolak sintaks CSS tersebut.
+  3. Ini menyebabkan latar belakang `<main>` jatuh balik ke warna putih (`#ffffff` dari `:root --background`).
+  4. Tajuk acara yang disetkan sebagai `text-white` bertukar menjadi teks putih di atas latar putih (ghaib sepenuhnya).
+  5. Kad QR putih kehilangan kontras, dan bar kemajuan hijau hilang gradiennya.
+  6. Dalam mod landskap tablet, `overflow-hidden` memotong bahagian footer bawah.
+- **Tindakan Pembaikan (`app/(public)/present/[id]/client.tsx`)**:
+  - Menambah sandaran warna HEX standard ke tahap teguh: `style={{ backgroundColor: '#020617', color: '#ffffff' }}` dan kelas `bg-[#020617]`.
+  - Memastikan tajuk acara dipaksa dengan `style={{ color: '#ffffff' }}` supaya tajuk sentiasa jelas timbul walaupun pada peranti tertua.
+  - Menambah sandaran HEX untuk trek bar kemajuan (`#1e293b`), isian bar kemajuan (`#10b981`), kad QR border (`#1e293b`), dan jam digital (`#0f172a`).
+  - Menukar pengurusan limpahan dari `overflow-hidden` tegar kepada `overflow-y-auto lg:overflow-hidden` bersama pelarasan padding supaya pada tablet landskap berketinggian rendah, tiada komponen yang terpotong.
+- **Pengesahan**:
+  - `npm run typecheck`: 0 ralat.
+  - `npm run lint`: 0 ralat.
+  - `npm test`: 353 / 353 lulus merentas 39 fail ujian.
+  - Semua perubahan kekal dalam storan tempatan (sifar commit / deploy ke Vercel).
+
+
+## System Improvements (2026-10-08 — Customizable Live Rotating QR Interval)
+- **Konteks & Laporan Pengguna**: "30 saat ni macam cepat sgt, boleh tak buat option utk set berapa masa yg nak" (bersama bulatan merah pada paparan pemasa undur "22s left").
+- **Ciri yang Dibina**:
+  1. **Kawalan Pilihan Masa di Form Builder (`app/builder/[id]/client.tsx`)**:
+     - Ditambah ke dalam kad tetapan **Live Rotating QR Code (Anti-Fraud Projector Mode)**.
+     - **6 Butang Pratetap Pantas**: `15s`, `30s (Std)`, `45s`, `60s (1m)`, `90s`, `120s (2m)` lengkap dengan penunjuk lencana terpilih.
+     - **Input Saat Tersuai**: Kotak input nombor berpagar (`min=10`, `max=600`) bagi membolehkan penganjur menetapkan sebarang durasi yang dimahukan.
+     - Penerangan jelas: Membantu penganjur memahami bahawa durasi yang lebih panjang (contohnya 60s atau 120s) memberikan masa yang lebih selesa untuk peserta beratur dan mengimbas di dewan besar.
+  2. **Paparan Skrin Projektor Awam (`app/(public)/present/[id]/client.tsx`)**:
+     - Teks maklumat sekuriti bawah kini memaparkan durasi sebenar secara dinamik: `This QR code updates every {intervalSec} seconds`.
+  3. **Pengesahan & Ujian**:
+     - Tambah ujian unit di `tests/rotating-qr.test.ts` untuk pengesahan selang masa pelbagai (`15s, 60s, 90s, 120s`).
+     - `npm run typecheck`: 0 ralat.
+     - `npm run lint`: 0 ralat.
+     - `npm test`: 354 / 354 lulus merentas 39 fail ujian.
+     - Semua perubahan kekal dalam storan tempatan (sifar push / deploy ke Vercel).
+
+
+## System Improvements (2026-10-08 — Attendance Check-Out Data Recording & Sync Hardening)
+- **Konteks & Laporan Pengguna**: "sy perasan ada yg tak masuk data bila check in dan out tapi cukup 6 jam".
+- **Analisis Punca Masalah**:
+  1. **Token Rotating QR Luput Terlalu Pantas Semasa Mengisi Check-Out**:
+     - Tempoh sah token sebelum ini terlalu ketat (hanya 1 tetingkap / 30s).
+     - Peserta mengimbas kod QR di pentas, telefon mengambil masa 15s untuk memuatkan web di rangkaian mudah alih, membaca kad pengesahan, dan memasukkan PIN pentas (mengambil 30–45s).
+     - Apabila butang "Check-Out Now" ditekan, pelayan menolak penyerahan dengan ralat `QR code has expired`. Akibatnya, Check-Out tidak direkodkan.
+  2. **RLS Cookie Failure pada `getSettingsByFormId`**:
+     - `getSettingsByFormId` menggunakan `createClient()` berasaskan kuki untuk menyemak `forms.user_id`. Bagi peserta awam (tiada kuki log masuk), kegagalan carian menyebabkan `settings` menjadi `undefined`.
+     - Ini menyebabkan penyelarasan Google Sheet (`updateSheetRow`) dilangkau secara senyap (*silently skipped*), meninggalkan kolum `Masa Keluar (Check-Out)` sebagai `-` walaupun peserta menekan check-out.
+  3. **Ketidakpadanan Pengepala Kolum Google Sheet**:
+     - Carian baris Google Sheet dalam `updateSheetRow` memerlukan padanan nama kolum yang tepat. Jika terdapat sedikit perbezaan huruf besar/kecil atau jarak (cth: `No. Kad Pengenalan `), carian gagal menemui baris sasaran.
+  4. **Tolakan Waktu Rehat (*Break Time Deduction*)**:
+     - Jika penganjur menetapkan tolak waktu rehat (contoh: 60 minit) dan peserta hadir genap 6 jam fizikal (360 minit), masa bersih dikira `360 - 60 = 300 minit (5 jam sahaja)`, menyebabkan syarat minimum 6 jam tidak dipenuhi untuk e-sijil.
+- **Tindakan Pembaikan**:
+  1. **Tetingkap Ihsan Rotating QR Ditingkatkan (`lib/forms/rotating-qr.ts`)**:
+     - Tambah tetingkap ihsan kepada 2 tetingkap (`wNum < currentWindow - 2`, memberikan penimbal 60–90 saat) supaya peserta tidak lagi ditolak sewaktu menaip PIN pentas.
+  2. **Pertahanan Menyeluruh `getSettingsByFormId` (`lib/storage/settings.ts`)**:
+     - Tukar carian `forms` kepada `createAdminClient()`. Menjamin tetapan Google Sheets penganjur sentiasa dapat dicapai tanpa gangguan RLS.
+  3. **Padanan Kolum Google Sheet Fleksibel (`lib/api/google-sheets.ts`)**:
+     - Tambah penyesuaian padanan kolum tidak peka huruf/ruang (`actualCol`) dalam `updateSheetRow`.
+- **Pengesahan & Ujian**:
+  - `npm run typecheck`: 0 ralat.
+  - `npm run lint`: 0 ralat.
+  - `npm test`: 354 / 354 lulus merentas 39 suite.
+  - Status: Kekal dalam persekitaran tempatan (sifar commit / deploy ke Vercel).
+
+
+## System Improvements (2026-10-08 — Fix Bad setState in PresenterClient Auto-Refresh)
+- **Konteks & Laporan Pengguna**: Log ralat konsol browser: `Cannot update a component (Router) while rendering a different component (PresenterClient)` berpunca dari baris 106 `fetchToken()` dipanggil di dalam `setSecondsRemaining((prev) => { fetchToken(); ... })`.
+- **Punca**:
+  - `setSecondsRemaining` dipanggil secara berkala oleh `setInterval`.
+  - Di dalam fungsi pengemas kini keadaan (`(prev) => ...`), fungsi `fetchToken()` dipanggil secara terus.
+  - `fetchToken()` mencetuskan Next.js Server Action (`getRotatingQrLiveTokenAction`) yang mengubah status `Router` semasa kitaran kemas kini keadaan komponen `PresenterClient`, melanggar peraturan asas React `setState in render`.
+- **Tindakan Pembaikan (`app/(public)/present/[id]/client.tsx`)**:
+  - Mengasingkan pemasa undur kepada pengemas kini keadaan tulen: `setSecondsRemaining((prev) => (prev > 0 ? prev - 1 : 0))`.
+  - Mengalihkan panggilan `fetchToken()` ke dalam `useEffect` berasingan yang bertindak balas secara bersih apabila `secondsRemaining === 0 && !isLoading`.
+- **Pengesahan**:
+  - `npm run typecheck`: 0 ralat.
+  - `npm run lint`: 0 ralat.
+  - `npm test`: 354 / 354 ujian lulus merentas 39 suite.
+  - Status: Kekal dalam persekitaran tempatan (sifar push / deploy ke Vercel).

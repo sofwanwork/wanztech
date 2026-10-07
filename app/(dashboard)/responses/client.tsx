@@ -218,7 +218,7 @@ export function ResponsesClient({ forms, hasGoogleOAuth }: ResponsesClientProps)
 
             {/* Reset Attendance Confirmation Dialog */}
             <AlertDialog open={!!confirmResetForm} onOpenChange={(open) => !open && setConfirmResetForm(null)}>
-                <AlertDialogContent className="max-w-md bg-white rounded-2xl p-6 border shadow-xl">
+                <AlertDialogContent className="sm:max-w-md bg-white rounded-2xl p-5 sm:p-6 border shadow-xl">
                     <AlertDialogHeader className="text-left space-y-2">
                         <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 mb-1">
                             <AlertTriangle className="w-6 h-6" />

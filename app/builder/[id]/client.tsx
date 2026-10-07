@@ -1798,7 +1798,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                                 )}
                               </Button>
                             </AlertDialogTrigger>
-                            <AlertDialogContent className="max-w-md bg-white rounded-2xl p-6 border shadow-xl">
+                            <AlertDialogContent className="sm:max-w-md bg-white rounded-2xl p-5 sm:p-6 border shadow-xl">
                               <AlertDialogHeader className="text-left space-y-2">
                                 <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 mb-1">
                                   <AlertTriangle className="w-6 h-6" />
@@ -1845,7 +1845,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                             </Label>
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            Display a full-screen live QR on the hall projector/TV that auto-refreshes every 30 seconds with signed tokens, stopping participants from scanning old photos from home.
+                            Display a full-screen live QR on the hall projector/TV that auto-refreshes with signed tokens, stopping participants from scanning old photos from home.
                           </p>
                         </div>
                         <Switch
@@ -1857,10 +1857,9 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                               attendanceSettings: {
                                 ...(f.attendanceSettings || { enabled: true }),
                                 rotatingQr: {
-                                  ...(f.attendanceSettings?.rotatingQr || {
-                                    intervalSeconds: 30,
-                                  }),
+                                  ...(f.attendanceSettings?.rotatingQr || {}),
                                   enabled: checked,
+                                  intervalSeconds: f.attendanceSettings?.rotatingQr?.intervalSeconds || 30,
                                 },
                               },
                             }))
@@ -1869,7 +1868,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                       </div>
 
                       {form.attendanceSettings?.rotatingQr?.enabled && (
-                        <div className="p-4 bg-slate-900 text-white rounded-xl space-y-3">
+                        <div className="p-4 bg-slate-900 text-white rounded-xl space-y-4">
                           <div className="flex items-start justify-between gap-3">
                             <div className="space-y-1">
                               <div className="flex items-center gap-2">
@@ -1877,11 +1876,11 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                                   ACTIVE
                                 </span>
                                 <span className="text-xs font-semibold text-slate-200">
-                                  Skrin Projektor Dewan
+                                  Hall Projector Screen
                                 </span>
                               </div>
                               <p className="text-xs text-slate-400 leading-relaxed">
-                                Buka paparan projektor ini pada laptop pentas atau projektor dewan. Kod QR akan berputar secara automatik.
+                                Open this live projector screen on a stage laptop or hall projector. The QR code will auto-rotate automatically.
                               </p>
                             </div>
                             <Button
@@ -1892,9 +1891,94 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                             >
                               <Link href={`/present/${form.id}`} target="_blank">
                                 <Tv className="w-3.5 h-3.5 mr-1.5" />
-                                Buka Skrin Projektor
+                                Open Projector Screen
                               </Link>
                             </Button>
+                          </div>
+
+                          {/* Rotation Interval Setting */}
+                          <div className="pt-3 border-t border-slate-800 space-y-2.5">
+                            <div className="flex items-center justify-between">
+                              <Label className="text-xs font-medium text-slate-300 flex items-center gap-1.5">
+                                <Clock className="w-3.5 h-3.5 text-emerald-400" />
+                                QR Rotation Interval (Duration)
+                              </Label>
+                              <span className="text-xs font-mono font-semibold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2.5 py-0.5 rounded-md">
+                                {form.attendanceSettings?.rotatingQr?.intervalSeconds || 30}s
+                              </span>
+                            </div>
+
+                            {/* Preset Interval Buttons */}
+                            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+                              {[
+                                { sec: 15, label: '15s' },
+                                { sec: 30, label: '30s (Std)' },
+                                { sec: 45, label: '45s' },
+                                { sec: 60, label: '60s (1m)' },
+                                { sec: 90, label: '90s' },
+                                { sec: 120, label: '120s (2m)' },
+                              ].map(({ sec, label }) => {
+                                const currentInterval =
+                                  form.attendanceSettings?.rotatingQr?.intervalSeconds || 30;
+                                const isSelected = currentInterval === sec;
+                                return (
+                                  <button
+                                    key={sec}
+                                    type="button"
+                                    onClick={() =>
+                                      setForm((f) => ({
+                                        ...f,
+                                        attendanceSettings: {
+                                          ...(f.attendanceSettings || { enabled: true }),
+                                          rotatingQr: {
+                                            ...(f.attendanceSettings?.rotatingQr || { enabled: true }),
+                                            intervalSeconds: sec,
+                                          },
+                                        },
+                                      }))
+                                    }
+                                    className={`px-2 py-1.5 rounded-lg text-xs transition-all text-center border font-medium ${
+                                      isSelected
+                                        ? 'bg-emerald-500/25 border-emerald-400 text-emerald-300 font-bold shadow-xs'
+                                        : 'bg-slate-800/80 border-slate-700/80 text-slate-300 hover:bg-slate-800 hover:border-slate-600'
+                                    }`}
+                                  >
+                                    {label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+
+                            {/* Custom Duration Input */}
+                            <div className="flex items-center justify-between pt-1">
+                              <span className="text-[11px] text-slate-400">Custom duration:</span>
+                              <div className="flex items-center gap-1.5">
+                                <Input
+                                  type="number"
+                                  min={10}
+                                  max={600}
+                                  value={form.attendanceSettings?.rotatingQr?.intervalSeconds || 30}
+                                  onChange={(e) => {
+                                    const val = Math.max(5, Math.min(600, parseInt(e.target.value) || 30));
+                                    setForm((f) => ({
+                                      ...f,
+                                      attendanceSettings: {
+                                        ...(f.attendanceSettings || { enabled: true }),
+                                        rotatingQr: {
+                                          ...(f.attendanceSettings?.rotatingQr || { enabled: true }),
+                                          intervalSeconds: val,
+                                        },
+                                      },
+                                    }));
+                                  }}
+                                  className="h-7 w-20 bg-slate-800 border-slate-700 text-white text-xs text-center font-mono rounded-md"
+                                />
+                                <span className="text-[11px] text-slate-400">seconds (10s – 600s)</span>
+                              </div>
+                            </div>
+                            <p className="text-[11px] text-slate-400 leading-normal">
+                              Controls how long each QR code stays on screen before rotating. Choose a longer duration (e.g. 60s or 120s) if participants need more time to line up and scan.
+                            </p>
                           </div>
                         </div>
                       )}
@@ -1970,7 +2054,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                         Customize QR
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle>Custom QR Generator</DialogTitle>
                         <DialogDescription>

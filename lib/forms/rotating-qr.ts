@@ -131,8 +131,10 @@ export function verifyRotatingQrToken(input: {
 
   // Window expiry check:
   // Allow current window (wNum === currentWindow)
-  // and previous window (wNum === currentWindow - 1) as grace period
-  if (wNum < currentWindow - 1) {
+  // and previous 2 windows as grace period (e.g. 60-90s for 30s intervals)
+  // to ensure participants who scan and take 1-2 minutes to fill PIN or submit aren't rejected.
+  const graceWindows = 2;
+  if (wNum < currentWindow - graceWindows) {
     return { valid: false, reason: 'expired' };
   }
 
