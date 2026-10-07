@@ -2549,6 +2549,15 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - `npm run lint`: 0 ralat.
   - `npm test`: 357 / 357 lulus merentas 39 fail ujian.
 
+## Production Deployment (2026-10-08 — Card Top Spacing & Flush Accent Bar Fix)
+- **Komit Git**: `f8f721e` (`fix(attendance): remove top padding gap on attendance cards for flush accent bar`).
+- **Kaedah Pelancaran**: Tolak ke GitHub (`git push origin master`) dengan penyelarasan automatik Vercel.
+- **Status Vercel**: ● Ready.
+- **Deployment ID**: `dpl_9jPSpbNvownsKvAZab4M5wkR9giM`.
+- **URL Pengeluaran**: `https://www.klikform.com` & `https://klikform.com`.
+- **URL Binaan Vercel**: `https://klikform-5jdedl62p-sofwan-jailanis-projects.vercel.app`.
+
+
 
 
 

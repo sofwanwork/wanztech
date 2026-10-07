@@ -576,8 +576,8 @@
   - [x] 2.1 Sahkan `npm run typecheck` (0 ralat TypeScript).
   - [x] 2.2 Sahkan `npm run lint` (0 ralat ESLint).
   - [x] 2.3 Sahkan `npm test` (357/357 ujian unit lulus).
-- [ ] 3. Pelancaran Vercel & Dokumentasi:
-  - [ ] 3.1 Tolak ke GitHub (`origin/master`) untuk penyelarasan automatik Vercel.
+- [x] 3. Pelancaran Vercel & Dokumentasi:
+  - [x] 3.1 Tolak ke GitHub (`origin/master`) untuk penyelarasan automatik Vercel.
   - [x] 3.2 Kemas kini `task.md`, `memory.md`, dan `lessons.md`.
 
 ---
@@ -590,6 +590,16 @@
 2. **Penyelesaian Melekat Kemas (*Flush Top Accent Bar Pattern*)**:
    - Dengan menetapkan `p-0 gap-0` pada `Card`, bar aksen melekat 100% rapat ke birai atas kad dan dipotong secara bersih mengikut bucu lengkung `rounded-3xl overflow-hidden`.
    - `CardHeader` diselaraskan ke `pt-6 pb-4` dengan latar belakang gradien halus dari birai atas hingga ke bawah, menghapuskan terus lopong kosong dan memberikan nisbah visual yang seimbang dan estetik.
+
+---
+
+### Maklumat Pelancaran Pengeluaran Vercel
+- **Status**: ● Ready
+- **Komit Git**: `f8f721e`
+- **Deployment ID**: `dpl_9jPSpbNvownsKvAZab4M5wkR9giM`
+- **Deployment URL**: `https://klikform-5jdedl62p-sofwan-jailanis-projects.vercel.app`
+- **Domain Pengeluaran**: `https://www.klikform.com` & `https://klikform.com`
+
 
 
 
