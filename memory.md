@@ -2873,5 +2873,17 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - `npm test`: 381 / 381 ujian unit lulus merentas 39 suite fail.
   - HTTP 200 OK disahkan pada dev server (`http://localhost:3002/bio/metmalaysia`).
 
+## Production Deployment (2026-10-14 — Bio Custom Handle, Button Colors, Background Patterns & Opacity Control)
+- **Komit Git**: `6736325` (`feat(bio): add custom handle casing, custom button colors, background patterns, and pattern opacity controls`).
+- **Kaedah Pelancaran**: Tolak ke GitHub (`git push origin master`) dengan penyelarasan automatik Vercel.
+- **Status Vercel**: ● Ready.
+- **Deployment ID**: `dpl_5rryC4RYdcCvTfSD2KGz6RJ7bPQc`.
+- **URL Pengeluaran**: `https://www.klikform.com` & `https://klikform.com`.
+- **URL Binaan Vercel**: `https://klikform-y9quyzoa8-sofwan-jailanis-projects.vercel.app`.
+- **Pengesahan HTTP**:
+  - `https://www.klikform.com`: HTTP 200 OK.
+  - `https://www.klikform.com/bio/metmalaysia`: HTTP 200 OK.
+
+
 
 
