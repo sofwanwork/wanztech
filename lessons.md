@@ -342,3 +342,102 @@
 
 - **Shadcn Card Default Padding Collision & Flush Top Accent Bars**:
   Komponen shadcn `Card` menyertakan kelas lalai `py-6 gap-6` (`flex flex-col gap-6 py-6`). Apabila meletakkan bar aksen warna (seperti `<div className="h-2 bg-gradient-to-r ...">`) di dalam `Card` dengan harapan ia melekat ke birai atas (*flush top*), sifat `py-6` akan menolak bar tersebut ke bawah sebanyak 24px, menghasilkan jalur putih kosong di atasnya. Selain itu, `gap-6` menambah jarak kosong 24px lagi di antara bar dan `CardHeader`. Sentiasa tetapkan `p-0 gap-0` secara eksplisit pada `Card` yang mempunyai bar aksen birai atas, pastikan bar aksen mempunyai `w-full shrink-0`, dan uruskan padding dalaman melalui `CardHeader` (`pt-6 pb-4`) serta `CardContent` (`px-6 pb-6 pt-0`) agar elemen melekat kemas mengikut `rounded-3xl overflow-hidden` tanpa sebarang lopong putih yang janggal.
+
+- **Penskalaan Rekaan Bio Links (Poster Acara, Jubin Huruf & Pautan Kenit)**:
+  (1) **Evolusi Tanpa Migrasi Melalui JSONB**: Menyalurkan konfigurasi rekaan baharu seperti `headerType: 'poster'`, `posterUrl`, dan `badgeStyle: 'tiles'` ke dalam lajur sedia ada `bio_pages.theme_config` (JSONB) membolehkan sistem menyokong poster promosi acara penuh tanpa memerlukan migrasi pangkalan data SQL atau risiko gangguan data pengguna sedia ada.
+  (2) **Skop Klien Supabase dalam Subkomponen Studio**: Apabila mengekstrak dialog modal (seperti `AddLinkDialog` dan `SortableBioLinkItem`) sebagai fungsi komponen berasingan di luar komponen utama `BioBuilderClient`, pastikan setiap subkomponen mengisytiharkan `const supabase = createClient()` secara setempat bagi sebarang muat naik fail/semakan sesi pengguna untuk mengelakkan ralat kompilasi TypeScript `Cannot find name 'supabase'`.
+  (3) **Pengawalan Kontras Butang Kaca Bertema Lembut (Frosted Glass Contrast Guard)**: Tema bertona cerah/pastel seperti *Sky Breeze* (gradien biru langit ke kelabu batu) memerlukan butang gaya kaca (`glass`) dan garisan luar (`outline`) menguatkuasakan teks gelap berkontras tinggi (`text-slate-950 font-semibold`) secara eksplisit di bawah fungsi `getBioButtonClass`. Ini mengelakkan teks putih terbina daripada menjadi kabur atau ghaib di atas latar belakang kaca berkabut.
+
+- **Bahaya `window.location` dalam JSX Komponen Klien Next.js (SSR ReferenceError `window is not defined`)**:
+  (1) Walaupun komponen ditanda dengan arahan `'use client'`, Next.js App Router masih tetap menjalankan komponen tersebut di pelayan (Node.js) untuk menjana markup HTML peringkat awal (*initial pre-rendering*).
+  (2) Meletakkan rujukan langsung kepada `window.location.href` atau `window.location.origin` di dalam blok JSX (contohnya atribut `href` pautan WhatsApp: `<a href={`https://wa.me/?text=...${window.location.href}`}>`) akan serta-merta mencetuskan `ReferenceError: window is not defined` di pelayan, meruntuhkan render dan mengembalikan ralat `HTTP 500 Internal Server Error` kepada pelawat.
+  (3) **Penyelesaian Standard**: Simpan URL di dalam state klien (`const [currentUrl, setCurrentUrl] = useState('')`), kemas kini di dalam `useEffect` (`useEffect(() => setCurrentUrl(window.location.href), [])`), dan sediakan nilai sandaran statik yang selamat (`const shareTargetUrl = currentUrl || fallbackUrl`). Ini menjamin SSR berjaya 100% tanpa ralat.
+
+- **Pengekodan Peratus URL Parameter Laluan Dinamik (`%40` vs `@`)**:
+  (1) Apabila pelawat membuka URL yang mengandungi aksara `@` (contohnya `/bio/@username`), pelayar web dan penghala Next.js boleh menghantar parameter tersebut sebagai `%40username`.
+  (2) Jika fungsi pembersih seperti `cleanBioUsername` terus menjalankan regex pembersihan `/[^a-z0-9_-]/g` tanpa menyahkod terlebih dahulu, simbol `%` akan dipadam dan meninggalkan angka `40` di hadapan nama pengguna (`'40username'`). Carian pangkalan data Supabase `.ilike('username', '40username')` akan gagal dan mencetuskan Next.js `notFound()` (404 Not Found).
+  (3) **Penyelesaian Standard**: Jalankan `decodeURIComponent` di dalam blok `try-catch` sebelum pembersihan regex, dan buang awalan `@` menggunakan `.replace(/^@+/, '')`. Ini menjamin bahawa kedua-dua `/bio/handle`, `/bio/@handle`, dan `/bio/%40handle` dinormalkan kepada `handle` yang tepat.
+
+- **Penyelarasan Port Dinamik Persekitaran Tempatan (Localhost Dynamic Port Resolution)**:
+  Apabila menjalankan pelbagai projek serentak di mesin pembangunan tempatan, port lalai 3000 mungkin diduduki oleh aplikasi lain (seperti `gorahnu`), menyebabkan Next.js beralih secara automatik ke port 3002. Jika pautan awam dijana menggunakan `process.env.NEXT_PUBLIC_APP_URL` yang ditetapkan secara tegar ke `http://localhost:3000`, kesemua pautan "View Public" dan "Copy Link" akan menghala ke aplikasi yang salah. Utamakan header permintaan (`headers().get('host')`) pada localhost atau gunakan `window.location.origin` pada komponen klien untuk resolusi port yang dinamik dan tepat.
+
+- **Teknik Reka Bentuk Estetika Persidangan Linktree (Organic Hero Mask Fade, Monofett Stencil & Balanced Pill Buttons)**:
+  (1) **Organic Hero Fade Mask**: Membina kesan hero banner flyer yang melarut lancar ke latar belakang tanpa garisan pemisah tajam dicapai menggunakan CSS mask:
+  `maskImage: 'linear-gradient(to bottom, black 55%, rgba(0, 0, 0, 0.75) 75%, transparent 100%)'` dan `-webkit-mask-image`. Ini membolehkan poster persidangan tajam di bahagian atas dan berbaur secara organik dengan warna palet `#49829c` di bahagian dasarnya.
+  (2) **Google Font Monofett untuk Handle Berkarakter Stensil**: Fon Google `Monofett` dimuatkan dengan pautan rel stylesheet `<link>` dan dipadankan dengan `font-['Monofett',monospace]` dalam warna putih bersih, menghasilkan replika tepat bagi gaya tipografi `@fik2026`.
+  (3) **Simetri Butang Pautan Berpusat (Centered Link Balancing)**: Apabila butang tindakan 3-titik (`w-8 h-8`) wujud di sebelah kanan setiap baris pautan, meletakkan tajuk pautan tanpa pengimbang di sebelah kiri akan menolak tajuk terkeluar dari tengah. Memasukkan *invisible spacer* `w-8 h-8 shrink-0 mr-2 invisible pointer-events-none aria-hidden` bagi pautan tanpa gambar thumbnail menjamin teks tajuk sentiasa 100% berpusat di tengah-tengah butang kapsul (*pill*).
+  (4) **Frosted Glass Pill dengan Teks Hitam Pekat**: Di atas latar belakang sederhana gelap `#49829c`, teks butang yang paling mudah dibaca dan premium ialah teks hitam pekat `text-slate-950 font-bold` yang diletakkan di atas lapisan kaca putih `bg-white/20 hover:bg-white/30 backdrop-blur-xl border border-white/40 shadow-sm`.
+
+- **Penyelarasan Hero Banner Penuh Birai & Penghapusan Bintik Kotor Corak Latar (Full-Bleed Hero & Background Pattern Suppression)**:
+  (1) **Pertembungan Corak Latar dengan Kecerunan Pudar (*Mask Fade vs Pattern Collision*)**: Apabila grafik hero menggunakan `maskImage: linear-gradient(to bottom, black 55%, transparent 100%)`, lapisan lutsinar akan menampakkan corak di bawahnya. Jika corak `dots` (polka dots) atau `grid` diaktifkan, bintik-bintik kelabu/hitam akan muncul di celah-celah awan pudar, menghasilkan artifak visual seperti habuk atau kotoran. Sentiasa sekat pemaparan corak latar (`!isHeroMode`) semasa mod hero aktif agar kecerunan poster melarut licin ke dalam warna latar belakang pepejal yang bersih.
+  (2) **Susun Atur Penuh Birai dengan Butang Bertindih (*True Full-Bleed with Floating Action Overlays*)**: Poster flyer persidangan moden mesti bermula tepat di birai atas skrin ($Y=0$) dan melebar penuh merentasi kelebaran skrin tanpa jurang ruang putih. Butang Sparkles dan Share tidak sepatutnya diletakkan di dalam bar kosong di atas flyer, sebaliknya diletakkan secara terapung terus di atas bucu atas flyer (`absolute top-4 left-4 / right-4 z-20`) dengan bekas kapsul kaca berkabut gelap (`bg-black/30 backdrop-blur-md border border-white/25 text-white`).
+  (3) **Penyelarasan Pratetap 1-Klik (*1-Click Harmonization Preset Pattern*)**: Apabila pengguna bebas memilih puluhan tetapan berasingan (tema warna, corak, bentuk butang, gaya lencana), gabungan yang tidak serasi (seperti poster langit biru di atas tema kelabu putih dengan butang petak borang) menyebabkan hasil kelihatan tidak menarik ("tak lawa"). Menyediakan butang pratetap 1-klik (seperti "Aplikasi Gaya FIK2026") membolehkan sistem menetapkan kesemua 5 pembolehubah secara serentak dalam nisbah estetik yang sempurna.
+
+- **`@dnd-kit` SSR Hydration Mismatch (`aria-describedby` Counter Divergence Fix)**:
+  Di dalam modul `@dnd-kit/core`, fungsi `useUniqueId("DndDescribedBy", id)` menjana atribut kebolehcapaian (`aria-describedby`) untuk elemen seretan (`useDraggable` / `useSortable`). Jika prop `id` tidak dibekalkan kepada `<DndContext>`, fungsi ini bergantung kepada pembilang modul JavaScript dalam memori (`let ids = {}; return prefix + '-' + ids[prefix]++`). Semasa SSR pelayan, pembilang bernilai `0` (`DndDescribedBy-0`), manakala di hidrasi klien pembilang telah meningkat akibat render terdahulu atau komponen lain (`DndDescribedBy-6`). Ini menyebabkan perlanggaran DOM hidrasi React. Penyelesaian mutlak: Wajib bekalkan prop `id` statik eksplisit kepada kedua-dua `<DndContext id="...">` dan `<SortableContext id="...">` (contohnya `id="bio-builder-links-dnd"`), serta letakkan `suppressHydrationWarning` pada elemen pemegang seretan (`drag handle button`). Apabila `id` dibekalkan, `@dnd-kit` memulangkan ID statik tersebut secara segerak di kedua-dua pelayan dan pelayar tanpa menyentuh pembilang memori.
+
+- **Penyingkiran Palang Skrol Pelayar Desktop dalam Simulator Mockup Telefon (*Hiding Desktop Native Scrollbar in Phone Frames*)**:
+  (1) **Punca Masalah**: Bekas skrin telefon di dalam studio pembina (seperti `MobileMockupView` di Bio Builder) mempunyai ketinggian tetap (cth. `660px`) dan menggunakan `overflow-y-auto`. Pada sistem operasi Windows dan pelayar desktop (Chrome, Edge, Firefox), enjin pelayar memaparkan palang skrol natif tebal (~17px lebar kelabu dengan butang anak panah atas/bawah) di bahagian kanan skrin telefon apabila senarai pautan panjang. Ini merosakkan ilusi telefon pintar fizikal dan menghimpit elemen UI seperti butang perkongsian.
+  (2) **Penyelesaian Dwirantai Merentas Pelayar (Cross-Browser Bulletproof Solution)**:
+  - Di `app/globals.css`:
+    ```css
+    .no-scrollbar::-webkit-scrollbar,
+    .custom-scrollbar::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
+    .no-scrollbar,
+    .custom-scrollbar {
+      -ms-overflow-style: none !important; /* IE dan Edge */
+      scrollbar-width: none !important; /* Firefox dan Chromium moden */
+    }
+    ```
+  - Pada elemen skrin mockup: Gabungkan kelas utiliti `no-scrollbar custom-scrollbar` bersama gaya sebaris defensif `style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}`.
+  - Pendekatan ini menyembunyikan palang skrol secara visual 100% pada semua pelayar desktop dan OS, sambil mengekalkan sepenuhnya fungsi tatalan roda tetikus (*mouse wheel*), trackpad, dan sentuhan.
+
+- **Kecerunan Pudar Hero Banner Organik Menerusi Lengkungan Scrim 12-Peringkat (*12-Stop Quintic Scrim Hero Fade*)**:
+  (1) **Punca Garisan Potong Keras**: Menggunakan kecerunan linear ringkas (seperti `linear-gradient(to bottom, black 55%, rgba(0,0,0,0.75) 75%, transparent 100%)`) menyebabkan kelegapan merudum secara mendadak daripada 75% kepada 0% dalam jarak 25% ketinggian yang sempit (~35px-45px pada imej landskap lebar). Ini menghasilkan garisan potong (*muddy horizontal boundary line*) yang kelihatan tidak semulajadi di atas latar belakang.
+  (2) **Penyelesaian Scrim Multi-Stop**:
+  - Gantikan dengan lengkungan polinomial quintic/smoothstep 12-peringkat (`getHeroFadeMask()`): mengekalkan 100% kelegapan di birai atas (0%-18%), melarut secara beransur-ansur dari 28% ke 86%, dan menghilang secara halus ke 0% menerusi mikro-peringkat `93% (0.07)`, `97.5% (0.01)`, dan `100% (0)`.
+  - Tetapkan ketinggian minimum / mutlak berkadar (`h-[240px] sm:h-[260px]` di telefon dan `h-[280px] sm:h-[340px]` di paparan awam) dengan `object-cover object-top` supaya imej landskap tidak termampat menjadi jalur kerdil dan mempunyai ruang menegak yang mencukupi untuk pudar secara mewah.
+  - Anjakkan lencana handle (`-mt-4` / `-mt-6 relative z-20`) agar terapung anggun di atas kabus pudar paling bawah persis susun atur Linktree rasmi.
+
+- **Pengekalan Format Huruf Handle Asal vs Transformasi Paksaan (*Preserve Natural Handle Casing vs Hardcoded toUpperCase*)**:
+  (1) **Punca Masalah**: Fungsi pembahagi abjad lencana (`formatHandleTiles`) dan pemapar teks stencil pada asalnya menggunakan `.toUpperCase()` secara tegar untuk meniru reka bentuk sampel Linktree `@FIK2026`. Walau bagaimanapun, fungsi pembersihan username URL (`cleanBioUsername`) menukar semua input pautan kepada huruf kecil (`.toLowerCase()`). Ini menyebabkan pengguna yang mendaftar nama jenama/agensi huruf kecil (seperti `metmalaysia`) terperangkap dengan lencana yang sentiasa memaparkan huruf besar tegar (`@[M][E][T][M][A][L][A][Y][S][I][A]`), tanpa keupayaan untuk memaparkannya dalam huruf kecil.
+  (2) **Penyelesaian Seni Bina Fleksibel**:
+  - Jadikan pengekalan huruf asal (`clean.split('')`) sebagai kelakuan lalai (*default behavior*) bagi menghormati apa yang ditaip atau format slug pautan.
+  - Bekalkan parameter pilihan `uppercase = false` pada `formatHandleTiles(username, uppercase)` dan sifat `handleUppercase?: boolean` pada `BioThemeConfig`.
+  - Sediakan suis togol (*Switch*) di tab Profile Bio Builder Studio supaya pengguna mempunyai kuasa penuh 100% untuk memilih sama ada mahu menukar lencana kepada HURUF BESAR atau membiarkannya dalam huruf kecil asal.
+
+- **Pemisahan Teks Paparan Handle vs Slug URL (*Decoupling Display Handle from Routing Slug*)**:
+  (1) **Punca Had URL Web**: Dalam reka bentuk seni bina web, pautan URL profil (`klikform.com/bio/[username]`) wajib dibersihkan kepada huruf kecil tulen (`[a-z0-9_-]`) untuk mengelakkan ralat 404 berkaitan sensitiviti huruf (*case-sensitivity collisions*). Walau bagaimanapun, jenama atau nama acara sering menggunakan huruf campuran (*CamelCase / PascalCase* seperti `MetMalaysia`, `WanTech`, atau `KlikForm_MY`). Jika elemen lencana paparan terikat secara langsung 100% kepada `page.username`, pengguna tidak mempunyai sebarang cara untuk memaparkan huruf campuran pada lencana.
+  (2) **Penyelesaian Lapisan Paparan Tersuai (`customHandle`)**:
+  - Simpan sifat pilihan `customHandle?: string` di dalam konfigurasi JSONB (`BioThemeConfig`).
+  - Cipta penyelesai berwibawa `getBioDisplayHandle(username, customHandle)` yang mengutamakan `customHandle` jika wujud (memelihara huruf campuran dengan tepat), dan membuat fallback kepada `username` secara anggun jika dibiarkan kosong.
+  - Sediakan medan input berdedikasi "Custom Handle Display" dengan butang reset pantas di tab Profile, membolehkan pengguna bebas menggabungkan huruf besar & kecil tanpa merosakkan URL slug profil mereka.
+
+- **Keseimbangan Simetri Menegak TabsList & TabsTrigger (*Pixel-Perfect Tabs Vertical Balance & Padding*)**:
+  (1) **Punca Ketidakseimbangan Visual Tab**:
+  - Komponen asas shadcn `TabsTrigger` (`components/ui/tabs.tsx`) sering menyertakan kelas pembatas `h-[calc(100%-1px)]`. Nilai tolak 1px ini menarik elemen trigger ke atas sebanyak 1 piksel dari garis dasar kontena, menghasilkan jurang bawah yang lebih tebal daripada jurang atas.
+  - Apabila kontena `TabsList` mengekalkan ketinggian lalai `h-9` (36px) dengan `p-1` (4px), ketinggian dalaman bagi trigger mengecut kepada hanya 28px. Apabila trigger memuatkan teks `text-sm` (ketinggian baris font 20px) bersama ikon 14px-16px, kandungan menyentuh birai atas secara paksa dan meninggalkan ruang baki yang tidak simetri di bahagian bawah.
+  (2) **Penyelesaian Ergonomik & Simetri Tepat**:
+  - Di `components/ui/tabs.tsx`, tukar `h-[calc(100%-1px)]` kepada `h-full` supaya trigger mengisi 100% ketinggian dalaman kontena secara sama rata.
+  - Untuk tab navigasi studio (seperti bar 4-tab Bio Builder), naikkan ketinggian kontena `TabsList` kepada `h-11` (44px) dengan padding simetri `p-1.5` (6px seragam di keempat-empat sisi).
+  - Pada `TabsTrigger`, gunakan `h-full rounded-lg text-xs md:text-sm font-medium gap-1.5 py-0 flex items-center justify-center`. Ini memastikan pil putih aktif terapung dengan margin tepat 6px dari semua sempadan kontena kelabu, dan teks/ikon berpusat secara geometri menegak.
+
+- **Penyesuaian Warna Butang Dinamik Berasaskan Inline Style vs Konflik Kelas Tailwind (*Dynamic Custom Button Colors & Specificity Hierarchy*)**:
+  (1) **Punca Konflik Penyesuaian Warna Dinamik**:
+  - Apabila butang diikat kepada kelas tema statik (seperti `bg-zinc-950 text-emerald-300 border-emerald-500/50` dalam tema Cyber Neon), pengguna tidak dapat menukar warna butang secara bebas kerana kod warna heksadesimal tersuai (cth: `#1e40af` atau `rgba(255,255,255,0.2)`) tidak wujud dalam kelas kompilasi Tailwind CSS pada waktu binaan (*build time*).
+  (2) **Penyelesaian Seni Bina Berganding (Inline Style + Class Inheritance)**:
+  - Gunakan fungsi utiliti sebaris `getBioButtonCustomStyle(themeConfig, isHighlight)` yang menjana atribut `style={{ backgroundColor, color, borderColor }}` terus ke elemen butang (`<motion.a>` dan `<div>`).
+  - Mengikut peraturan hierarki CSS, gaya sebaris (*inline styles*) mengatasi keutamaan kelas Tailwind tanpa memerlukan pengubah suai `!important` atau mutasi DOM yang rumit.
+  - Ikon SVG (seperti ikon 3-titik `<MoreVertical>` dan ikon pautan) yang mewarisi `currentColor` bertukar warna secara automatik mengikut warna teks yang dipilih.
+  - Gandingkan dengan fungsi sanitasi `toValidHexColor` pada pemilih `<input type="color">` bagi menghalang sebarang amaran konsol pelayar W3C.
+
+- **Elakkan Sekatan Ciri Penuh Secara Kasar & Gunakan Topeng Pudar Adaptif (*Avoid Hardcoded Feature Suppression & Use Adaptive Masking*)**:
+  (1) **Punca Kekeliruan Pengguna**:
+  - Apabila sesuatu mod reka bentuk (seperti `isHeroMode`) bertembung dengan ciri lain (seperti `Background Patterns`), menyekat pemaparan ciri tersebut secara tegar (`!isHeroMode`) menyebabkan pengguna yang memilih corak di panel tetapan berasa hairan ("kenapa takde background pattern") kerana tetapan yang dipilih tidak membawa sebarang kesan visual.
+  (2) **Penyelesaian Topeng Pudar Adaptif (*Adaptive Gradient Masking*)**:
+  - Sentiasa benarkan pilihan pengguna dipaparkan. Gunakan CSS `maskImage: 'linear-gradient(to bottom, transparent 0px, transparent 130px, black 230px)'` pada lapisan corak latar.
+  - Ini memastikan bahagian atas imej poster kekal bersih 100% tanpa sebarang bintik corak yang mencacatkan foto, sementara kawasan di bawah foto (di belakang nama pengguna, butang pautan, dan kaki halaman) memaparkan corak latar yang dipilih pengguna dengan anggun dan jelas.

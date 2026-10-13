@@ -2557,9 +2557,321 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
 - **URL Pengeluaran**: `https://www.klikform.com` & `https://klikform.com`.
 - **URL Binaan Vercel**: `https://klikform-5jdedl62p-sofwan-jailanis-projects.vercel.app`.
 
+## System Improvements (2026-10-13 — Event Poster Bio Links Style & Link Thumbnails)
+- **Konteks & Kehendak Pengguna**: "style jgk buat macam ni di Bio Links" bersama rujukan imej halaman Bio Links bertaraf profesional ("Forum Iklim Kebangsaan 2026") yang memaparkan poster grafik acara penuh di bahagian atas, jubin huruf handle (@[F][I][K][2][0][2][6]), lakaran kenit bulat bagi setiap pautan, dan palet gradien biru langit berbutang kaca berkabut (frosted glassmorphism).
+- **Ciri-Ciri Utama Yang Dilaksanakan**:
+  1. **Mod Pengepala Poster Acara (*Event Poster Header*)**:
+     - Ditambah `headerType: 'avatar' | 'poster' | 'banner'` dan `posterUrl?: string` ke dalam `BioThemeConfig` (JSONB `bio_pages.theme_config`).
+     - Pengguna boleh memilih mod pengepala "Classic Avatar" atau "Event Poster" di tab Profile Bio Builder.
+     - Muat naik imej poster berkualiti tinggi menggunakan `compressImage()` terus ke Supabase Storage bucket `qr_logos` dengan sokongan URL luar dan butang padam.
+     - Paparan awam (`/bio/[username]`) dan pratonton telefon di Bio Builder (`MobileMockupView`) memaparkan poster dengan bucu melengkung anggun (`rounded-3xl` / `rounded-2xl`), sempadan putih separa telus, dan bayangan 3D (`shadow-2xl`).
+  2. **Lencana Handle Huruf (*Letter Tiles Handle Badge*)**:
+     - Ditambah pilihan `badgeStyle: 'tiles' | 'pill' | 'none'` ke dalam `BioThemeConfig`.
+     - Fungsi pembantu `formatHandleTiles(username)` membahagikan handle kepada jubin huruf individu (`@[F][I][K]...`) dengan petak jubin putih berkontras tinggi (`bg-white/90 text-slate-800 font-bold`).
+  3. **Lakaran Kenit Imej Pautan (*Link Thumbnails & 3-Dots Action*)**:
+     - Menggunakan medan `bio_links.icon` untuk menyimpan URL imej lakaran kenit atau muat naik fail imej terus ke Supabase Storage `qr_logos`.
+     - Butang pautan memaparkan lakaran kenit bulat di sebelah kiri (`w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover border border-white/40`), tajuk berpusat di tengah, dan butang 3-titik di sebelah kanan yang membolehkan pengunjung menyalin pautan blok secara pantas.
+  4. **Tema Baharu "Sky Breeze" (*Sky Breeze Theme*)**:
+     - Gradien biru langit ke kelabu batu (`bg-gradient-to-b from-[#a0c7e2] via-[#6a9dbc] to-[#43657a]`).
+     - Diperkukuh dengan kawalan kontras tinggi: butang kaca (`glass`) dan garisan (`outline`) menguatkuasakan `text-slate-950 font-semibold` di bawah `getBioButtonClass` bagi menjamin kebolehbacaan sempurna.
+  5. **Bar Tindakan Atas (*Top Header Action Bar*)**:
+     - Bar atas mengandungi lencana Sparkles di kiri dan butang Share di kanan.
+     - Menyokong Web Share API natif di telefon pintar serta modal perkongsian dialog (salin pautan, kongsi ke WhatsApp, dan muat turun Kod QR) di komputer meja.
+- **Pengesahan & Jaminan Kualiti**:
+  - `tests/bio-links.test.ts`: Ujian tema 9 preset, ujian kontras teks gelap `sky`, dan ujian formatter `formatHandleTiles`.
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm test`: 361 / 361 ujian lulus merentas 39 suite ujian.
 
+## System Improvements (2026-10-13 — Bio Links Public Viewer & Port Resolution Bug Fix)
+- **Konteks & Laporan Pengguna**: "kenapa takleh nk view bio links"
+- **Punca Masalah Dikenal Pasti**:
+  1. *SSR ReferenceError `window is not defined` (HTTP 500)*:
+     - Di `app/(public)/bio/[username]/client.tsx` (baris 442), pautan WhatsApp di dalam modal Dialog mengakses `window.location.href` secara langsung di dalam blok JSX. Semasa Server-Side Rendering (SSR) oleh Next.js, objek global `window` tidak wujud, mencetuskan `ReferenceError: window is not defined` dan menghasilkan ralat 500 Internal Server Error untuk setiap cubaan membuka halaman bio.
+  2. *Kerosakan Pengekodan Peratus URL (HTTP 404)*:
+     - Apabila pengguna atau pelayar mengakses pautan berformat `@username` (cth: `/bio/@metmalaysia`), pelayar menghantar parameter sebagai `%40metmalaysia`.
+     - Fungsi `cleanBioUsername` di `lib/bio-links/themes.ts` menapis aksara menggunakan regex `/[^a-z0-9_-]/g` tanpa menyahkod terlebih dahulu, memotong simbol `%` dan menghasilkan `'40metmalaysia'`. Carian Supabase `.ilike('username', '40metmalaysia')` gagal menemui rekod dan mencetuskan Next.js `notFound()` (404).
+  3. *Konflik Port Tempatan (Port 3000 vs 3002)*:
+     - Di komputer pengguna, Port 3000 telah diduduki oleh aplikasi lain (`gorahnu`), menyebabkan dev server KlikForm secara automatik memilih Port 3002.
+     - Walau bagaimanapun, `.env.local` mengandungi nilai statik `NEXT_PUBLIC_APP_URL=http://localhost:3000`. Oleh itu, butang "View Public Bio" dan "Copy Link" menjana URL `http://localhost:3000/bio/...` yang menghala ke aplikasi gorahnu bukannya KlikForm.
+- **Tindakan Pembaikan**:
+  1. *SSR-Safe URL Resolution (`client.tsx`)*:
+     - Menyediakan nilai sandaran statik `fallbackUrl = https://www.klikform.com/bio/${page.username}` dan mengemas kini `currentUrl` di dalam `useEffect` selepas hidrasi pelayar. Menghapuskan terus sebarang akses langsung kepada `window.location.href` semasa proses SSR.
+  2. *Normalisasi Teguh `cleanBioUsername` (`themes.ts`)*:
+     - Menambah `decodeURIComponent` di dalam blok `try-catch` dan memotong sebarang awalan `@` secara eksplisit (`replace(/^@+/, '')`). Memastikan kedua-dua `/bio/handle`, `/bio/@handle`, dan `/bio/%40handle` dinormalkan dengan tepat kepada `handle`.
+  3. *Resolusi Port Dinamik Tempatan*:
+     - Mengemas kini `appUrl` di `app/(dashboard)/bio/page.tsx` dan `app/(dashboard)/bio-builder/[id]/page.tsx` untuk mengutamakan header `host` permintaan pada localhost (`isLocalHost ? proto://host : ...`).
+     - Menyegerakkan `resolvedAppUrl` di dalam komponen klien (`BioPageCard` & `BioBuilderClient`) menggunakan `window.location.origin` apabila di pelayar.
+- **Pengesahan & Jaminan Kualiti**:
+  - `curl -I http://localhost:3002/bio/metmalaysia`: 200 OK.
+  - `curl -I http://localhost:3002/bio/@metmalaysia`: 200 OK.
+  - `curl -I http://localhost:3002/bio/%40metmalaysia`: 200 OK.
+  - `curl -I http://localhost:3002/b/metmalaysia`: 307 -> 200 OK.
+  - `curl -I http://localhost:3002/b/@metmalaysia`: 307 -> 200 OK.
+  - `curl -I http://localhost:3002/bio/@bengkelinsan2026`: 200 OK.
+  - `npm test`: 361 / 361 ujian unit lulus merentas 39 suite ujian.
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
 
+## System Improvements (2026-10-13 — Linktree FIK2026 Aesthetic Match & Hero Banner Fade)
+- **Konteks & Kehendak Pengguna**: `https://linktr.ee/fik2026 sy nak style macam ni`
+- **Analisis Reka Bentuk Linktree FIK2026**:
+  - Palet warna latar belakang tepat `#49829c` (Nordic Slate-Ocean Blue) dipadankan dengan teks putih (`text-white`).
+  - Hero image flyer banner di bahagian atas skrin yang melarut/memudar ke bawah secara organik (*organic gradient mask*) terus ke latar belakang `#49829c`.
+  - Handle `@fik2026` menggunakan Google Font `Monofett` (huruf stensil monokrom moden).
+  - Butang kapsul bulat penuh (*pill* `rounded-full`) dengan frosted glassmorphism putih berkontras tinggi dan teks hitam pekat bold `text-slate-950 font-bold`.
+  - Susun atur pautan: thumbnail bulat kiri (atau invisible balance spacer jika tiada gambar) + tajuk berpusat tepat di tengah + butang 3-titik di kanan.
+- **Ciri-Ciri Utama Yang Dilaksanakan**:
+  1. **Mod Pengepala Hero Banner Pudar (`headerType: 'hero'`)**:
+     - Ditambah ke dalam `BioHeaderType` (`lib/types/bio-links.ts`): `'avatar' | 'poster' | 'hero' | 'banner'`.
+     - Menggunakan top-bleed flyer image dengan `mask-image: linear-gradient(to bottom, black 55%, rgba(0, 0, 0, 0.75) 75%, transparent 100%)` dan `-webkit-mask-image`.
+     - Poster memudar secara organik tanpa sempadan tajam ke dalam palet `#49829c`.
+  2. **Tipografi Stensil Monofett (`badgeStyle: 'stencil'`)**:
+     - Ditambah ke dalam `BioBadgeStyle` (`lib/types/bio-links.ts`): `'tiles' | 'pill' | 'stencil' | 'subtle' | 'none'`.
+     - Pautan Google Font `Monofett` (`family=Monofett&display=swap`) dimuatkan di pemapar awam (`page.tsx`) dan builder studio.
+     - Tipografi dipaparkan dengan `font-['Monofett',monospace] text-3xl sm:text-4xl tracking-wider text-white`.
+  3. **Palet Warna Tema Sky Breeze (`sky`) & Butang Kaca Berkontras Tinggi**:
+     - Latar belakang: `bg-[#49829c] bg-gradient-to-b from-[#558da7] via-[#49829c] to-[#3c6b80]`, `textColor: 'text-white'`, `bioColor: 'text-white/85'`, `previewColor: '#49829c'`.
+     - Fungsi `getBioButtonClass` menguatkuasakan kapsul bulat penuh `rounded-full` dengan lapisan kaca berkabut `bg-white/20 hover:bg-white/30 backdrop-blur-xl border border-white/40 shadow-sm` dan teks hitam pekat bold `text-slate-950 font-bold`.
+     - Butang sorotan (highlight): `bg-white hover:bg-white/95 text-slate-950 font-extrabold border-2 border-white shadow-md`.
+  4. **Simetri Pautan Berpusat (Centered Link Balancing)**:
+     - Butang pautan awam dan mockup studio kini mengimbangi butang 3-titik di kanan dengan *invisible balance spacer* `w-8 h-8 shrink-0 mr-2 invisible pointer-events-none aria-hidden` bagi pautan tanpa gambar thumbnail.
+     - Tajuk pautan kini sentiasa berpusat tepat 100% di tengah-tengah butang kapsul.
+  5. **Penyegerakan Penuh Studio Bio Builder (`MobileMockupView`)**:
+     - Ditambah pilihan "Hero Banner (Fade)" pada Header Display Style di tab Profile Bio Builder.
+     - Ditambah pilihan "Stencil (@FIK)" pada Handle Badge Style picker di tab Profile Bio Builder.
+     - `MobileMockupView` mengaplikasikan `maskImage` hero fade, font `Monofett`, dan simetri butang pautan secara langsung.
+- **Pengesahan & Jaminan Kualiti**:
+  - `npm test`: 361 / 361 ujian unit lulus merentas 39 suite ujian.
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `curl -I http://localhost:3002/bio/metmalaysia`: 200 OK.
+  - Status: Selesai dengan standard jurutera perisian kanan, sifar kod selekeh.
 
+## System Improvements (2026-10-13 — Full-Bleed Hero Banner, Pattern Suppression & 1-Click Event Preset)
+- **Konteks & Maklum Balas Pengguna**: "yg ni macam tak lawa la pulak"
+- **Punca Masalah Visual Terperinci**:
+  1. *Flyer Terperangkap Dalam Margin*: Poster hero diletakkan di dalam kontena dengan padding atas (`px-4 pt-4 sm:pt-6`), dan butang Sparkles/Share terapung di dalam ruang kosong di atas poster, memecahkan rupa poster persidangan.
+  2. *Pertembungan Corak Latar & Pudar Poster*: Pengguna mengaktifkan corak latar `dots` (polka dots) pada tema `minimal` (kelabu putih). Bahagian pudar awan di dasar poster melarut ke dalam bintik-bintik kelabu, menghasilkan kesan visual berhabuk/kotor (*dirty specks*).
+  3. *Jubin Abjad Handle Terlalu Besar*: Handle 11 huruf `@METMALAYSIA` menghasilkan 12 jubin petak yang melimpah dan memecah baris secara bersepah.
+  4. *Bentuk Butang Petak Borang*: Butang masih menggunakan `rounded-xl`/`rounded-md` dengan sempadan kelabu kaku berbanding butang kaca kapsul bulat penuh (*frosted glass pill* `rounded-full`).
+  5. *Tajuk Teks Lewah di Bawah Poster*: Poster flyer grafik sudah mengandungi tulisan tajuk acara, namun tajuk teks dipaparkan sekali lagi di bawah pudar poster dalam warna hitam kaku.
+- **Penyelesaian & Ciri Utama Yang Dilaksanakan**:
+  1. **Susun Atur Penuh Birai Sejati (*True Full-Bleed Edge-to-Edge*)**:
+     - Membuang padding atas pada `<main>` (`isHeroMode ? 'pt-0 px-4' : 'px-4 pt-4 sm:pt-6'`).
+     - Meluaskan kontena hero (`w-[calc(100%+2rem)] -mx-4`) supaya poster melekat rata di birai atas dan sisi peranti.
+     - Memindahkan butang Sparkles dan Share menjadi butang terapung terus di atas bucu flyer (`absolute top-4 left-4 / right-4 z-20`) dengan butang kapsul kaca berkabut gelap (`bg-black/30 hover:bg-black/45 backdrop-blur-md border border-white/25 text-white`).
+  2. **Penindasan Corak Latar Semasa Mod Hero (*Pattern Suppression*)**:
+     - Menyekat pemaparan sebarang corak latar (`dots`, `grid`, dsb.) apabila `isHeroMode` aktif supaya kecerunan poster melarut licin ke dalam warna latar belakang pepejal yang bersih.
+  3. **Kad Pratetap 1-Klik Gaya Persidangan FIK2026 (*1-Click Event Preset*)**:
+     - Ditambah kad interaktif di bahagian atas tab Theme dalam Bio Builder Studio.
+     - 1-Klik terus menetapkan kesemua 5 parameter secara harmoni: `theme: 'sky'`, `pattern: 'none'`, `buttonStyle: 'rounded-full'`, `headerType: 'hero'`, `badgeStyle: 'stencil'`, dan `hideTitleInHero: true`.
+  4. **Penskalaan Adaptif Jubin Abjad Handle**:
+     - Apabila `page.username.length > 7`, saiz jubin huruf diskalakan secara automatik kepada `w-6 h-6 sm:w-7 sm:h-7 text-[10px] sm:text-xs` supaya abjad kekal rapat dalam satu baris kemas tanpa melimpah.
+  5. **Togol Sembunyi Teks Tajuk di Bawah Poster (`hideTitleInHero`)**:
+     - Ditambah ke dalam `BioThemeConfig` dan suis togol di tab Profile Bio Builder supaya tajuk tidak berulang jika poster telah mempunyai reka bentuk tajuk sendiri.
+  6. **Penyegerakan Penuh Simulator Telefon Studio (`MobileMockupView`)**:
+     - Cermin reka bentuk hero penuh birai (`rounded-t-[38px]`), butang terapung atas poster, penindasan corak, dan jubin abjad adaptif di dalam telefon mockup.
+- **Pengesahan & Jaminan Kualiti**:
+  - `npm test`: 362 / 362 ujian unit lulus merentas 39 suite ujian.
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `curl -I http://localhost:3002/bio/metmalaysia`: 200 OK.
+
+## System Improvements (2026-10-13 — Phone Mockup Desktop Scrollbar Hiding)
+- **Konteks & Permintaan Pengguna**: "scroll tu boleh hide tak" (merujuk kepada palang skrol kelabu natif Windows yang terpapar di dalam skrin simulator telefon Bio Builder).
+- **Punca Masalah**:
+  - Bekas skrin telefon di dalam `MobileMockupView` (`app/(dashboard)/bio-builder/[id]/client.tsx`) mempunyai ketinggian tetap (`h-[660px]`) dan menggunakan `overflow-y-auto`.
+  - Pada sistem operasi desktop (terutamanya Windows Chrome/Edge/Firefox), apabila senarai butang pautan melebihi ketinggian skrin, pelayar menjana palang skrol natif tebal (~17px) kelabu dengan butang anak panah, merosakkan estetika realistik simulator telefon pintar.
+- **Penyelesaian**:
+  1. Menambah peraturan utiliti sejagat `.no-scrollbar` dan `.custom-scrollbar` dalam `app/globals.css`:
+     - `::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }`
+     - `-ms-overflow-style: none !important;` (IE & Edge)
+     - `scrollbar-width: none !important;` (Firefox & Chromium moden)
+  2. Mengemas kini bekas Screen Area dalam `MobileMockupView` (`app/(dashboard)/bio-builder/[id]/client.tsx`):
+     - Memasukkan kelas utiliti `no-scrollbar custom-scrollbar`.
+     - Menambah gaya sebaris defensif `style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}`.
+  3. Memastikan tatalan lancar (smooth scrolling) melalui roda tetikus (*mouse wheel*), pad sentuh (*trackpad*), dan gerak isyarat sentuhan kekal berfungsi 100% tanpa palang skrol kelihatan.
+- **Pengesahan**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / amaran ESLint.
+  - `npm test`: 362 / 362 ujian lulus merentas 39 suite fail.
+
+## System Improvements (2026-10-13 — FIK2026 1-Click Preset Banner Removal)
+- **Konteks & Permintaan Pengguna**: "yg tu tak nak" (merujuk kepada kad banner pratetap FIK2026 berwarna biru di bahagian atas tab Design).
+- **Tindakan**:
+  - Membuang kad banner pratetap 1-klik tersebut dari `app/(dashboard)/bio-builder/[id]/client.tsx` supaya tab Design terus memaparkan seksyen `Color Themes` dengan kemas dan bersih.
+  - Kesemua ciri reka bentuk (tema Sky Breeze, poster Hero Banner, lencana handle Stencil, dan gaya butang) kekal boleh diakses secara langsung melalui pemilih standard.
+- **Pengesahan**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / amaran ESLint.
+  - `npm test`: 362 / 362 ujian lulus merentas 39 suite fail.
+
+## System Improvements (2026-10-13 — Generalizing Example Labels from FIK to USER)
+- **Konteks & Permintaan Pengguna**: "guna nama lain instead of FIK" (merujuk kepada label `Linktree FIK2026 fade`, `Stencil (@FIK)`, dan `@[F][I][K]...` pada tetapan Header Display Style dan Handle Badge Style).
+- **Tindakan**:
+  1. Pada `Hero Banner (Fade)`: Menukar penerangan `Linktree FIK2026 fade` kepada `Full-bleed bottom fade`.
+  2. Pada pemilih `Handle Badge Style`:
+     - Menukar `Stencil (@FIK)` kepada `Stencil (@USER)`.
+     - Menukar subtitle `Letter Tiles` daripada `@[F][I][K]...` kepada `@[U][S][E][R]...`.
+  3. Memastikan semua label kelihatan neutral, profesional, dan sejagat bagi sebarang jenama atau pengguna (seperti `@metmalaysia`).
+- **Pengesahan**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / amaran ESLint.
+  - `npm test`: 362 / 362 ujian lulus merentas 39 suite fail.
+
+## System Improvements (2026-10-13 — Organic Hero Fade Scrim Perfection)
+- **Konteks & Permintaan Pengguna**: "fade tu nak cantikkan sikit" (merujuk kepada kecerunan pudar di bawah poster awan yang kelihatan bergaris tajam atau terpotong mengejut).
+- **Punca Masalah Visual**:
+  - Mask lama `linear-gradient(to bottom, black 55%, rgba(0,0,0,0.75) 75%, transparent 100%)` mengekalkan 75% kelegapan sehingga 75% ketinggian, lalu merudum daripada 75% ke 0% dalam baki 25% ketinggian (~35px-45px pada nisbah landskap 16:9), menghasilkan garisan sempadan kabur kelabu/gelap yang kasar.
+  - Imej banner menggunakan `h-auto max-h-[280px]` yang menyebabkan banner landskap lebar termampat kepada hanya ~140px-180px, mengecilkan zon peralihan menegak.
+- **Penyelesaian & Ciri Yang Dilaksanakan**:
+  1. **Lengkungan Scrim 12-Peringkat (`getHeroFadeMask`)**:
+     - Dicipta algoritma topeng CSS polinomial quintic/smoothstep 12-peringkat (`lib/bio-links/themes.ts`):
+       - `0%-18%`: 100% grafik tajuk/poster atas kekal tajam.
+       - `18%-48%`: Melarut beransur-ansur dari 0.98 ke 0.82.
+       - `48%-68%`: Peralihan nada pertengahan dari 0.68 ke 0.50.
+       - `68%-86%`: Pelarutan lembut dari 0.32 ke 0.18.
+       - `86%-100%`: Pemudaran mikro-peringkat `93% (0.07)`, `97.5% (0.01)` dan `100% (0)`.
+     - Tiada garisan potong yang ketara; poster melarut ke dalam latar belakang persis kabus pagi.
+  2. **Ketinggian Berkadar Berwibawa**:
+     - Mockup telefon: `h-[240px] sm:h-[260px] object-cover object-top`.
+     - Paparan awam: `h-[280px] sm:h-[340px] object-cover object-top`.
+  3. **Integrasi Lencana Handle Terapung**:
+     - Apabila tajuk teks disembunyikan (`hideTitleInHero`), lencana handle (`@METMALAYSIA`) dianjak naik secara halus (`-mt-4` pada mockup, `-mt-6 sm:-mt-8` pada paparan awam) agar terapung di atas zon kabus paling lembut poster persis Linktree rasmi.
+  4. **Pemilih Gaya Pudar ("Hero Fade Transition") di Studio Bio Builder**:
+     - Pilihan 3-butang di bawah Hero Banner Graphic: `Smooth Mist (Default)`, `Deep Fog`, `Subtle Edge`.
+- **Pengesahan**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / amaran ESLint.
+  - `npm test`: 366 / 366 ujian lulus merentas 39 suite fail (termasuk 4 ujian unit baharu untuk `getHeroFadeMask`).
+
+## Fleksibiliti Huruf Handle Badge Bio Links (Handle Badge Casing Alignment & Uppercase Toggle) (2026-10-13)
+- **Penyelesaian Isu Huruf Besar Terpaksa**:
+  - Menyelesaikan masalah di mana nama pengguna huruf kecil (seperti `metmalaysia`) dipaksa menjadi huruf besar tegar (`@[M][E][T][M][A][L][A][Y][S][I][A]` dan `@{username.toUpperCase()}`).
+  - `formatHandleTiles(username, uppercase = false)` di `lib/bio-links/themes.ts` kini mengekalkan huruf asal mengikut input secara lalai (`clean.split('')`).
+  - Menambah sifat `handleUppercase?: boolean` pada `BioThemeConfig` di `lib/types/bio-links.ts` (re-export dari `lib/types/index.ts`).
+  - Memasukkan suis togol (*Switch*) "Uppercase Handle Badge" di tab Profile Bio Builder Studio (`app/(dashboard)/bio-builder/[id]/client.tsx`) supaya pengguna boleh memilih sama ada mahu huruf kecil asal (`@metmalaysia`) atau huruf besar penuh (`@METMALAYSIA`).
+  - Selaraskan paparan awam (`app/(public)/bio/[username]/client.tsx`) dan simulator telefon (`MobileMockupView`) untuk menghormati `handleUppercase` merentas Letter Tiles, Stencil, dan Modern Pill.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / amaran ESLint.
+  - `npm test`: 367 / 367 ujian lulus merentas 39 suite fail.
+  - HTTP 200 OK disahkan pada dev server.
+
+## Paparan Handle Tersuai Huruf Campuran (Custom Mixed-Case Handle Display Badge) (2026-10-13)
+- **Pelaksanaan Pemisahan Teks Lencana daripada Slug URL**:
+  - Menjawab keperluan pengguna untuk menggabungkan huruf besar & huruf kecil (*CamelCase / PascalCase* seperti `MetMalaysia`, `WanTech`, `MyBrand_MY`) tanpa terikat kepada format URL slug yang sentiasa huruf kecil (`klikform.com/bio/metmalaysia`).
+  - Menambah sifat `customHandle?: string` pada `BioThemeConfig` di `lib/types/bio-links.ts` (re-export dari `lib/types/index.ts`).
+  - Cipta fungsi utiliti tulen `getBioDisplayHandle(username, customHandle)` di `lib/bio-links/themes.ts` untuk menyelesaikan teks paparan dengan fallback selamat kepada `username`.
+  - Tambah komponen input teks "Custom Handle Display (Mixed Case)" di tab Profile Bio Builder Studio (`app/(dashboard)/bio-builder/[id]/client.tsx`) lengkap dengan awalan `@`, had 30 aksara, dan butang "Reset to @{username}".
+  - Selaraskan paparan awam (`app/(public)/bio/[username]/client.tsx`) dan simulator telefon (`MobileMockupView`) untuk memaparkan teks campuran pada lencana Letter Tiles, Stencil, dan Modern Pill.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / amaran ESLint.
+  - `npm test`: 372 / 372 ujian lulus merentas 39 suite fail (termasuk 5 ujian unit baharu untuk `getBioDisplayHandle` dan jubin huruf campuran).
+  - HTTP 200 OK disahkan pada dev server.
+
+## Penyelarasan Keseimbangan Padding Tab Navigasi Bio Builder (Tabs Bar Vertical Symmetry & Height Balance Fix) (2026-10-13)
+- **Konteks & Maklum Balas Pengguna**: "macam tak balance padding atas dan bawah" bersama tangkapan skrin bar tab navigasi (`[ 🔗 Links ] [ ✨ Design ] [ 🪪 Profile ] [ 🔲 Share & QR ]`).
+- **Punca Masalah Visual**:
+  1. *Ketidakseimbangan Ketinggian TabsTrigger Radix*: Di `components/ui/tabs.tsx`, elemen `TabsTrigger` mempunyai kelas `h-[calc(100%-1px)]`. Nilai tolak 1 piksel ini menyebabkan pil aktif terapung 1px lebih tinggi daripada dasar kontena, menjadikan jarak bawah kelihatan lebih tebal berbanding jarak atas.
+  2. *Kekangan Ketinggian Kontena `h-9` (36px)*: Bar `TabsList` asal hanya mempunyai ketinggian lalai 36px dengan `p-1` (4px). Ruang dalaman bagi trigger mengecil ke 28px, menyebabkan teks font berjarak baris 20px (`text-sm` leading-5) dan ikon 14px menyentuh birai atas sementara birai bawah tertinggal lebihan ruang.
+- **Penyelesaian & Ciri Yang Dilaksanakan**:
+  1. **Pembetulan Asas `components/ui/tabs.tsx`**:
+     - Mengubah `h-[calc(100%-1px)]` kepada `h-full` supaya elemen trigger mengisi ketinggian dalaman secara simetri dan tepat.
+  2. **Peningkatan Ketinggian Ergonomik Moden (`h-11` / 44px)**:
+     - Di `app/(dashboard)/bio-builder/[id]/client.tsx`, `TabsList` dinaikkan kepada `h-11` (44px) yang memenuhi standard kebolehgunaan sentuhan (*touch-friendly*).
+     - Menetapkan padding kontena simetri `p-1.5` (6px seragam di atas, bawah, kiri, kanan).
+     - Menetapkan `h-full rounded-lg text-xs md:text-sm font-medium gap-1.5 py-0 flex items-center justify-center` pada setiap `TabsTrigger`.
+     - Pil putih aktif kini mempunyai margin tepat 6px dari semua sisi kontena kelabu, dengan teks dan ikon berpusat secara geometri.
+  3. **Penyelarasan Merentas Studio Pembina**:
+     - Di `app/(dashboard)/pamphlet-builder/[id]/client.tsx`, `TabsList` diselaraskan kepada `h-10` dengan `h-full py-0 flex items-center justify-center` pada trigger untuk mengekalkan keanggunan yang sama.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / amaran ESLint.
+  - `npm test`: 372 / 372 ujian unit lulus merentas 39 suite fail.
+  - HTTP 200 OK disahkan pada dev server.
+
+## Penyesuaian Warna Butang Bio Links & Palet Pratetap (Custom Bio Button Colors & Presets) (2026-10-14)
+- **Konteks & Maklum Balas Pengguna**: "boleh ke nk custom warna ni" bersama bulatan merah pada senarai butang pautan profil di simulator telefon (yang sebelum ini terikat kepada warna hijau neon lalai Cyber Neon).
+- **Penyelesaian & Ciri Dilaksanakan**:
+  1. **Lapisan Jenis Data & Storan JSONB**:
+     - Memperluas `BioThemeConfig` di `lib/types/bio-links.ts` (re-export di `lib/types/index.ts`) dengan:
+       - `buttonColor?: string;` (warna latar butang pautan)
+       - `buttonTextColor?: string;` (warna teks & ikon butang)
+       - `buttonBorderColor?: string;` (warna sempadan / garis luar butang)
+       - `highlightButtonColor?: string;` (warna latar butang sorotan)
+       - `highlightButtonTextColor?: string;` (warna teks butang sorotan)
+       - `buttonPreset?: string;` (ID pratetap pilihan pengguna)
+  2. **Enjin Penyelarasan Gaya Butang (`lib/bio-links/themes.ts`)**:
+     - Mentakrifkan 9 Palet Warna Pantas `BIO_BUTTON_PRESETS`:
+       - `Theme Default` (kembali ke warna tema asal)
+       - `Frosted Glass Pill` (kaca berkabut putih: `rgba(255,255,255,0.16)` bg, teks putih, sempadan `rgba(255,255,255,0.35)`)
+       - `Solid Crisp White` (putih kontras tinggi: `#ffffff` bg, teks slate `#0f172a`, sempadan `#e2e8f0`)
+       - `Ocean Sky Blue` (biru langit / MetMalaysia: `rgba(2,132,199,0.22)` bg, teks `#38bdf8`, sempadan `#38bdf8`)
+       - `Emerald Green` (hijau zamrud: `rgba(16,185,129,0.22)` bg, teks `#34d399`, sempadan `#10b981`)
+       - `Electric Neon Cyan` (sian neon cyberpunk: `rgba(6,182,212,0.22)` bg, teks `#22d3ee`, sempadan `#06b6d4`)
+       - `Luxury Amber Gold` (emas amber: `rgba(245,158,11,0.22)` bg, teks `#fbbf24`, sempadan `#f59e0b`)
+       - `Royal Purple` (ungu diraja: `rgba(168,85,247,0.22)` bg, teks `#c084fc`, sempadan `#a855f7`)
+       - `Stealth Charcoal` (arang gelap: `#18181b` bg, teks putih, sempadan `#3f3f46`)
+     - Membina fungsi utiliti tulen `getBioButtonCustomStyle(themeConfig, isHighlight)` yang mengira gaya sebaris (`React.CSSProperties`) bagi warna latar, warna teks, dan warna sempadan secara bebas konflik.
+  3. **Antaramuka Bio Builder Studio (`app/(dashboard)/bio-builder/[id]/client.tsx`)**:
+     - Ditambah kad baharu "Button Colors & Appearance / Warna Butang" dalam Tab 2 ("Design"):
+       - Grid 9 Palet Warna Pantas dengan pratonton warna butang secara visual.
+       - Seksyen Pemilih Warna Bebas (Fine-Tune Custom Colors) menggunakan pemilih warna `<input type="color">` dilindungi `toValidHexColor` dan medan teks hex:
+         - Button Background
+         - Text & Icon Color
+         - Border / Outline Color
+         - Highlighted Button Fill
+       - Butang "Reset" pantas untuk kembali ke warna asal tema pada bila-bila masa.
+  4. **Penyelarasan Merentas Simulator & Paparan Awam**:
+     - `MobileMockupView` di `client.tsx` dan `PublicBioClient` di `app/(public)/bio/[username]/client.tsx` menyalurkan `style={getBioButtonCustomStyle(page.themeConfig, isHighlight)}` ke elemen butang, memberikan respons visual masa nyata (*zero-lag preview*).
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / amaran ESLint.
+  - `npm test`: 377 / 377 ujian unit lulus merentas 39 suite fail (termasuk 5 ujian unit baharu untuk `getBioButtonCustomStyle` dan presets).
+
+## Pengaktifan Corak Latar Bersama Mod Hero (Hero Mode Background Pattern Seamless Fade-In) (2026-10-14)
+- **Konteks & Maklum Balas Pengguna**: "kenapa takde background pattens ya" bersama tangkapan skrin pemilih corak latar (Polka Dots terpilih hijau) dan simulator telefon (latar belakang pepejal tanpa sebarang corak).
+- **Punca Masalah**:
+  - Di kedua-dua `MobileMockupView` dan `PublicBioClient`, elemen corak latar disekat dengan syarat `!isHeroMode` (`{page.themeConfig?.pattern && page.themeConfig.pattern !== 'none' && !isHeroMode && ...}`).
+  - Apabila pengguna menggunakan mod Hero Banner (poster awan di bahagian atas), `isHeroMode` bernilai `true`. Ini menyebabkan keseluruhan lapisan corak (Polka Dots, Modern Grid, Waves, dll.) tidak dirender sama sekali ke dalam DOM.
+- **Penyelesaian Dilaksanakan**:
+  1. Menyingkirkan sekatan `!isHeroMode` supaya corak latar sentiasa dipaparkan apabila pengguna memilih sebarang corak (`pattern !== 'none'`).
+  2. Melaksanakan topeng pudar adaptif (*adaptive gradient mask*):
+     - Di `MobileMockupView`: `maskImage: 'linear-gradient(to bottom, transparent 0px, transparent 130px, black 230px)'`
+     - Di `PublicBioClient`: `maskImage: 'linear-gradient(to bottom, transparent 0px, transparent 160px, black 270px)'`
+  3. Bahagian atas grafik langit/poster kekal 100% bersih tanpa sebarang gangguan bintik corak, manakala di bawah zon peralihan poster (di belakang `@METMALAYSIA`, butang pautan, dan kaki halaman), corak latar (seperti Polka Dots) terpapar jelas, estetik, dan menawan.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / amaran ESLint.
+  - `npm test`: 377 / 377 ujian unit lulus merentas 39 suite fail.
+  - HTTP 200 OK disahkan pada dev server.
+
+## Pelarasan Kelegapan Corak Latar (Background Pattern Opacity Control) (2026-10-14)
+- **Konteks & Maklum Balas Pengguna**: "yg ni boleh adjust tak opacity" bersama tangkapan skrin kad Background Patterns di Bio Builder.
+- **Penyelesaian & Ciri Dilaksanakan**:
+  1. **Lapisan Jenis Data & Storan JSONB**:
+     - Menambah `patternOpacity?: number;` (peratusan 10 hingga 100) dalam antaramuka `BioThemeConfig` di `lib/types/bio-links.ts` (re-export di `lib/types/index.ts`).
+  2. **Enjin Penyelarasan Kelegapan (`lib/bio-links/themes.ts`)**:
+     - Membina fungsi utiliti tulen `getBioPatternOpacity(themeConfig?: BioThemeConfig): number`:
+       - Mengembalikan nilai lalai `1` (100% opacity) sekiranya `patternOpacity` belum ditakrifkan untuk mengekalkan keanggunan halaman sedia ada tanpa sebarang regresi.
+       - Mengehadkan nilai (*clamp*) antara `10` (0.1) hingga `100` (1.0) secara selamat untuk mengelakkan nilai ganjil atau negatif.
+  3. **Antaramuka Bio Builder Studio (`app/(dashboard)/bio-builder/[id]/client.tsx`)**:
+     - Dalam kad "Background Patterns / Corak Latar", apabila corak aktif dipilih (`currentPattern !== 'none'`), seksyen kawalan kelegapan dipaparkan secara reaktif:
+       - Header dengan label `Pattern Opacity / Kelegapan Corak`, lencana peratusan hidup (`${val}%`), dan butang Reset pantas kembali ke 100%.
+       - Gelangsar range input `<input type="range" min="10" max="100" step="5" ... />` dengan gaya Tailwind moden `accent-emerald-600`.
+       - 4 Butang Pratetap Pantas: `25% (Subtle)`, `50% (Soft)`, `75% (Clear)`, dan `100% (Bold)`.
+       - Maklum balas visual serta-merta (*zero-lag preview*) dengan simpanan latar automatik ke Supabase (`handleSavePage`).
+  4. **Penyelarasan Merentas Simulator Telefon & Halaman Awam**:
+     - `MobileMockupView` di `client.tsx` dan `PublicBioClient` di `app/(public)/bio/[username]/client.tsx` menyalurkan `opacity: getBioPatternOpacity(page.themeConfig)` bersama kelas transisi `transition-opacity duration-200`.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / amaran ESLint.
+  - `tests/bio-links.test.ts`: Ditambah 4 ujian unit baharu untuk `getBioPatternOpacity` (45/45 lulus).
+  - `npm test`: 381 / 381 ujian unit lulus merentas 39 suite fail.
+  - HTTP 200 OK disahkan pada dev server (`http://localhost:3002/bio/metmalaysia`).
 
 
 

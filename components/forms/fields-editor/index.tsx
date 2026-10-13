@@ -105,6 +105,7 @@ function SortableField({
           <div
             {...attributes}
             {...listeners}
+            suppressHydrationWarning
             className="cursor-move touch-none hover:bg-slate-200/60 p-1 rounded transition-colors"
           >
             <GripVertical className="h-4 w-4 text-slate-400 group-hover:text-slate-700" />
@@ -136,7 +137,7 @@ function SortableField({
     <div ref={setNodeRef} style={style} className="relative group">
       <Card>
         <CardHeader className="py-3 px-4 bg-muted/30 flex flex-row items-center gap-2">
-          <div {...attributes} {...listeners} className="cursor-move touch-none hover:bg-slate-200/60 p-1 -ml-1 rounded transition-colors" id={index === 0 ? "tour-drag-handle" : undefined}>
+          <div {...attributes} {...listeners} suppressHydrationWarning className="cursor-move touch-none hover:bg-slate-200/60 p-1 -ml-1 rounded transition-colors" id={index === 0 ? "tour-drag-handle" : undefined}>
             <GripVertical className="h-4 w-4 text-slate-400 group-hover:text-slate-700" />
           </div>
           <span className="text-sm font-medium">Question {index + 1}</span>
@@ -868,8 +869,8 @@ interface FieldsEditorProps {
 
   return (
     <div className="space-y-4">
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={fields.map((f) => f.id)} strategy={verticalListSortingStrategy}>
+      <DndContext id="form-fields-dnd-context" sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext id="form-fields-sortable-context" items={fields.map((f) => f.id)} strategy={verticalListSortingStrategy}>
           {fields.map((field, index) => (
             <SortableField
               key={field.id}

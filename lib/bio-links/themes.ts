@@ -1,5 +1,5 @@
 import type React from 'react';
-import { BioTheme, BioButtonStyle, BioSocialLinks, BioPattern } from '@/lib/types/bio-links';
+import { BioTheme, BioButtonStyle, BioSocialLinks, BioPattern, BioFadeStyle, BioThemeConfig } from '@/lib/types/bio-links';
 
 export interface ThemeDefinition {
   id: BioTheme;
@@ -120,6 +120,19 @@ export const BIO_THEMES: Record<BioTheme, ThemeDefinition> = {
     cardBg: 'bg-slate-900/60 border border-amber-500/20',
     previewColor: '#d97706',
   },
+  sky: {
+    id: 'sky',
+    name: 'Sky Breeze',
+    description: 'Forum-style Nordic ocean blue palette with frosted glass pill buttons',
+    bg: 'bg-[#49829c] bg-gradient-to-b from-[#558da7] via-[#49829c] to-[#3c6b80]',
+    textColor: 'text-white',
+    bioColor: 'text-white/85',
+    buttonClass: 'rounded-full bg-white/20 hover:bg-white/30 text-slate-950 font-bold border border-white/40 backdrop-blur-xl shadow-sm',
+    highlightButtonClass: 'rounded-full bg-white hover:bg-white/95 text-slate-950 font-extrabold border-2 border-white shadow-md',
+    avatarBorder: 'ring-4 ring-white/70 shadow-lg',
+    cardBg: 'bg-white/20 border border-white/40 backdrop-blur-xl',
+    previewColor: '#49829c',
+  },
 };
 
 export const BUTTON_STYLES: Record<BioButtonStyle, { name: string; class: string }> = {
@@ -130,6 +143,164 @@ export const BUTTON_STYLES: Record<BioButtonStyle, { name: string; class: string
   'shadow-lg': { name: 'Elevated Shadow', class: 'rounded-xl shadow-xl' },
   'glass': { name: 'Glassmorphism', class: 'rounded-2xl backdrop-blur-xl bg-white/40 border border-white/60 shadow-sm' },
 };
+
+export interface BioButtonPreset {
+  id: string;
+  name: string;
+  description: string;
+  buttonColor?: string;
+  buttonTextColor?: string;
+  buttonBorderColor?: string;
+  highlightButtonColor?: string;
+  highlightButtonTextColor?: string;
+  previewBg: string;
+  previewText: string;
+  previewBorder?: string;
+}
+
+export const BIO_BUTTON_PRESETS: BioButtonPreset[] = [
+  {
+    id: 'default',
+    name: 'Theme Default',
+    description: 'Follow the natural palette of your selected theme',
+    previewBg: 'bg-gradient-to-r from-emerald-600 to-teal-500',
+    previewText: 'text-white',
+  },
+  {
+    id: 'frosted-glass',
+    name: 'Frosted Glass Pill',
+    description: 'Translucent white glass with clean white text & subtle border',
+    buttonColor: 'rgba(255, 255, 255, 0.16)',
+    buttonTextColor: '#ffffff',
+    buttonBorderColor: 'rgba(255, 255, 255, 0.35)',
+    highlightButtonColor: '#ffffff',
+    highlightButtonTextColor: '#0f172a',
+    previewBg: 'bg-white/25 backdrop-blur-md',
+    previewText: 'text-white',
+    previewBorder: 'border-white/50',
+  },
+  {
+    id: 'pure-white',
+    name: 'Solid Crisp White',
+    description: 'Opaque high-contrast white with dark slate text',
+    buttonColor: '#ffffff',
+    buttonTextColor: '#0f172a',
+    buttonBorderColor: '#e2e8f0',
+    highlightButtonColor: '#0f172a',
+    highlightButtonTextColor: '#ffffff',
+    previewBg: 'bg-white',
+    previewText: 'text-slate-900',
+    previewBorder: 'border-slate-300',
+  },
+  {
+    id: 'ocean-sky',
+    name: 'Ocean Sky Blue',
+    description: 'Atmospheric Nordic cyan & blue style',
+    buttonColor: 'rgba(2, 132, 199, 0.22)',
+    buttonTextColor: '#38bdf8',
+    buttonBorderColor: 'rgba(56, 189, 248, 0.55)',
+    highlightButtonColor: '#0284c7',
+    highlightButtonTextColor: '#ffffff',
+    previewBg: 'bg-sky-500/30',
+    previewText: 'text-sky-300',
+    previewBorder: 'border-sky-400',
+  },
+  {
+    id: 'emerald-luxe',
+    name: 'Emerald Green',
+    description: 'Vibrant mint & emerald with clean border',
+    buttonColor: 'rgba(16, 185, 129, 0.22)',
+    buttonTextColor: '#34d399',
+    buttonBorderColor: 'rgba(16, 185, 129, 0.55)',
+    highlightButtonColor: '#10b981',
+    highlightButtonTextColor: '#042f2e',
+    previewBg: 'bg-emerald-500/30',
+    previewText: 'text-emerald-300',
+    previewBorder: 'border-emerald-400',
+  },
+  {
+    id: 'electric-cyan',
+    name: 'Electric Neon Cyan',
+    description: 'Cyberpunk bright cyan glow',
+    buttonColor: 'rgba(6, 182, 212, 0.22)',
+    buttonTextColor: '#22d3ee',
+    buttonBorderColor: 'rgba(6, 182, 212, 0.65)',
+    highlightButtonColor: '#06b6d4',
+    highlightButtonTextColor: '#083344',
+    previewBg: 'bg-cyan-500/30',
+    previewText: 'text-cyan-300',
+    previewBorder: 'border-cyan-400',
+  },
+  {
+    id: 'amber-gold',
+    name: 'Luxury Amber Gold',
+    description: 'Warm gold with rich amber borders',
+    buttonColor: 'rgba(245, 158, 11, 0.22)',
+    buttonTextColor: '#fbbf24',
+    buttonBorderColor: 'rgba(245, 158, 11, 0.55)',
+    highlightButtonColor: '#f59e0b',
+    highlightButtonTextColor: '#451a03',
+    previewBg: 'bg-amber-500/30',
+    previewText: 'text-amber-300',
+    previewBorder: 'border-amber-400',
+  },
+  {
+    id: 'royal-purple',
+    name: 'Royal Purple',
+    description: 'Majestic violet & purple accents',
+    buttonColor: 'rgba(168, 85, 247, 0.22)',
+    buttonTextColor: '#c084fc',
+    buttonBorderColor: 'rgba(168, 85, 247, 0.55)',
+    highlightButtonColor: '#a855f7',
+    highlightButtonTextColor: '#ffffff',
+    previewBg: 'bg-purple-500/30',
+    previewText: 'text-purple-300',
+    previewBorder: 'border-purple-400',
+  },
+  {
+    id: 'stealth-dark',
+    name: 'Stealth Charcoal',
+    description: 'Deep neutral zinc with clean border and white text',
+    buttonColor: '#18181b',
+    buttonTextColor: '#f4f4f5',
+    buttonBorderColor: '#3f3f46',
+    highlightButtonColor: '#ffffff',
+    highlightButtonTextColor: '#18181b',
+    previewBg: 'bg-zinc-900',
+    previewText: 'text-zinc-100',
+    previewBorder: 'border-zinc-700',
+  },
+];
+
+/**
+ * Resolves the handle display string.
+ * Uses `customHandle` if provided (allowing mixed case e.g. "MetMalaysia"),
+ * otherwise falls back to `username` (e.g. "metmalaysia").
+ * Leading '@' characters are stripped off.
+ */
+export function getBioDisplayHandle(username: string, customHandle?: string): string {
+  const trimmed = (customHandle || '').trim().replace(/^@+/, '');
+  if (trimmed) return trimmed;
+  return (username || '').trim().replace(/^@+/, '');
+}
+
+/**
+ * Splits a handle into letter tiles for the keycap/tile badge styling.
+ * Preserves the handle's natural case by default, with an optional uppercase transform.
+ * Example: "@metmalaysia" => { prefix: "@", tiles: ["m", "e", "t", "m", "a", "l", "a", "y", "s", "i", "a"] }
+ * Example (uppercase): "@metmalaysia" => { prefix: "@", tiles: ["M", "E", "T", ...] }
+ */
+export function formatHandleTiles(
+  username: string,
+  uppercase = false
+): { prefix: string; tiles: string[] } {
+  const clean = (username || '').replace(/^@/, '');
+  const transformed = uppercase ? clean.toUpperCase() : clean;
+  return {
+    prefix: '@',
+    tiles: transformed.split(''),
+  };
+}
 
 /**
  * Resolves the complete CSS class for bio link buttons based on theme, button shape/style, and highlight status.
@@ -146,6 +317,13 @@ export function getBioButtonClass(
 
   // 1. Glassmorphism button style
   if (buttonStyle === 'glass') {
+    if (themeDef.id === 'sky') {
+      if (isHighlight) {
+        return 'rounded-full backdrop-blur-xl bg-white hover:bg-white/95 text-slate-950 font-extrabold border-2 border-white shadow-md ring-2 ring-white/40';
+      }
+      return 'rounded-full backdrop-blur-xl bg-white/20 hover:bg-white/30 text-slate-950 font-bold border border-white/40 shadow-sm';
+    }
+
     if (isLight) {
       if (isHighlight) {
         return 'rounded-2xl backdrop-blur-xl bg-white/90 hover:bg-white text-slate-950 font-bold border-2 border-slate-900/30 shadow-md ring-2 ring-slate-900/10';
@@ -176,6 +354,12 @@ export function getBioButtonClass(
 
   // 2. Outline Border button style
   if (buttonStyle === 'outline') {
+    if (themeDef.id === 'sky') {
+      if (isHighlight) {
+        return 'rounded-full border-2 backdrop-blur-sm bg-white hover:bg-white/95 text-slate-950 font-extrabold border-white shadow-md';
+      }
+      return 'rounded-full border-2 backdrop-blur-sm bg-transparent hover:bg-white/15 text-white font-bold border-white/60 shadow-sm';
+    }
     if (isLight) {
       if (isHighlight) {
         return 'rounded-2xl border-2 backdrop-blur-sm bg-slate-900/10 hover:bg-slate-900/15 text-slate-950 font-bold border-slate-900 shadow-sm';
@@ -205,8 +389,49 @@ export function getBioButtonClass(
   }
 
   // 3. Standard button styles (Full Pill, Rounded XL, Subtle Round, Elevated Shadow)
+  if (themeDef.id === 'sky') {
+    if (isHighlight) {
+      return `${baseShape} bg-white hover:bg-white/95 text-slate-950 font-extrabold border-2 border-white shadow-md`;
+    }
+    return `${baseShape} backdrop-blur-xl bg-white/20 hover:bg-white/30 text-slate-950 font-bold border border-white/40 shadow-sm`;
+  }
+
   const themeClass = isHighlight ? themeDef.highlightButtonClass : themeDef.buttonClass;
   return `${baseShape} ${themeClass}`;
+}
+
+/**
+ * Resolves inline CSS styles for bio buttons if custom colors are configured in themeConfig.
+ * Inline CSS styles cleanly take precedence over theme classes without CSS conflicts.
+ */
+export function getBioButtonCustomStyle(
+  themeConfig?: BioThemeConfig,
+  isHighlight = false
+): React.CSSProperties {
+  if (!themeConfig) return {};
+
+  const style: React.CSSProperties = {};
+
+  if (isHighlight) {
+    if (themeConfig.highlightButtonColor) {
+      style.backgroundColor = themeConfig.highlightButtonColor;
+    }
+    if (themeConfig.highlightButtonTextColor) {
+      style.color = themeConfig.highlightButtonTextColor;
+    }
+  } else {
+    if (themeConfig.buttonColor) {
+      style.backgroundColor = themeConfig.buttonColor;
+    }
+    if (themeConfig.buttonTextColor) {
+      style.color = themeConfig.buttonTextColor;
+    }
+    if (themeConfig.buttonBorderColor) {
+      style.borderColor = themeConfig.buttonBorderColor;
+    }
+  }
+
+  return style;
 }
 
 /**
@@ -220,12 +445,21 @@ export function isValidBioUsername(username: string): boolean {
 }
 
 /**
- * Clean and format a user-provided username
+ * Clean and format a user-provided username.
+ * Safely decodes URL percent-encoding (e.g. "%40handle" from browser path params)
+ * and strips leading '@' symbols so handles are searched and stored cleanly.
  */
 export function cleanBioUsername(input: string): string {
-  return input
+  let decoded = input || '';
+  try {
+    decoded = decodeURIComponent(decoded);
+  } catch {
+    // ignore malformed URI sequence
+  }
+  return decoded
     .toLowerCase()
     .trim()
+    .replace(/^@+/, '')
     .replace(/\s+/g, '-')
     .replace(/[^a-z0-9_-]/g, '')
     .slice(0, 30);
@@ -397,3 +631,40 @@ export function getBioPatternStyle(
       return {};
   }
 }
+
+/**
+ * Generates an organic, velvety multi-stop cubic scrim fade mask for Hero Banner flyers.
+ * Uses a 12-stop smoothstep easing curve that seamlessly dissolves images into the background
+ * without harsh cutoff lines.
+ */
+export function getHeroFadeMask(style?: BioFadeStyle): string {
+  switch (style) {
+    case 'deep':
+      // Cinematic deep mist: starts earlier at 8%, long atmospheric dissolve
+      return 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 8%, rgba(0,0,0,0.96) 20%, rgba(0,0,0,0.88) 32%, rgba(0,0,0,0.76) 45%, rgba(0,0,0,0.60) 58%, rgba(0,0,0,0.42) 70%, rgba(0,0,0,0.25) 81%, rgba(0,0,0,0.12) 90%, rgba(0,0,0,0.03) 96.5%, rgba(0,0,0,0) 100%)';
+
+    case 'subtle':
+      // Lower fade: preserves top 38% sharp, gentle falloff on bottom 62%
+      return 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 38%, rgba(0,0,0,0.97) 50%, rgba(0,0,0,0.90) 60%, rgba(0,0,0,0.78) 70%, rgba(0,0,0,0.58) 80%, rgba(0,0,0,0.35) 88%, rgba(0,0,0,0.15) 94%, rgba(0,0,0,0.03) 98%, rgba(0,0,0,0) 100%)';
+
+    case 'smooth':
+    default:
+      // Balanced organic scrim (Default): starts at 18%, velvety quintic falloff
+      return 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 18%, rgba(0,0,0,0.98) 28%, rgba(0,0,0,0.92) 38%, rgba(0,0,0,0.82) 48%, rgba(0,0,0,0.68) 58%, rgba(0,0,0,0.50) 68%, rgba(0,0,0,0.32) 78%, rgba(0,0,0,0.18) 86%, rgba(0,0,0,0.07) 93%, rgba(0,0,0,0.01) 97.5%, rgba(0,0,0,0) 100%)';
+  }
+}
+
+/**
+ * Resolves the numeric CSS opacity (0.10 to 1.0) for background patterns.
+ * Defaults to 1 (100% opacity) when not explicitly configured,
+ * and safely clamps between 0.10 and 1.0.
+ */
+export function getBioPatternOpacity(themeConfig?: BioThemeConfig): number {
+  if (themeConfig?.patternOpacity !== undefined && typeof themeConfig.patternOpacity === 'number') {
+    const clamped = Math.min(100, Math.max(10, themeConfig.patternOpacity));
+    return clamped / 100;
+  }
+  return 1;
+}
+
+

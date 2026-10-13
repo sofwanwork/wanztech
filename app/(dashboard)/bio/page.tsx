@@ -12,11 +12,14 @@ export const metadata = {
 export default async function BioPagesDashboard() {
   const bioPages = await getBioPages();
 
-  // Get app URL for link previews
+  // Get app URL for link previews (prioritize host header on localhost so port 3002 is accurate)
   const headerList = await headers();
   const host = headerList.get('host') || 'localhost:3000';
-  const proto = headerList.get('x-forwarded-proto') || 'https';
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || `${proto}://${host}`;
+  const proto = headerList.get('x-forwarded-proto') || (host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https');
+  const isLocalHost = host.includes('localhost') || host.includes('127.0.0.1');
+  const appUrl = (isLocalHost || !process.env.NEXT_PUBLIC_APP_URL)
+    ? `${proto}://${host}`
+    : process.env.NEXT_PUBLIC_APP_URL;
 
   // Compute aggregate stats
   const totalPages = bioPages.length;

@@ -35,8 +35,23 @@ export default async function BioBuilderPage(props: BioBuilderPageProps) {
 
   const headerList = await headers();
   const host = headerList.get('host') || 'localhost:3000';
-  const proto = headerList.get('x-forwarded-proto') || 'https';
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || `${proto}://${host}`;
+  const proto = headerList.get('x-forwarded-proto') || (host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https');
+  const isLocalHost = host.includes('localhost') || host.includes('127.0.0.1');
+  const appUrl = (isLocalHost || !process.env.NEXT_PUBLIC_APP_URL)
+    ? `${proto}://${host}`
+    : process.env.NEXT_PUBLIC_APP_URL;
 
-  return <BioBuilderClient initialPage={page} forms={forms} appUrl={appUrl} />;
+  return (
+    <>
+      {/* Google Font Monofett for Linktree @fik2026 stencil typography preview */}
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+      <link
+        href="https://fonts.googleapis.com/css2?family=Monofett&display=swap"
+        rel="stylesheet"
+      />
+      <BioBuilderClient initialPage={page} forms={forms} appUrl={appUrl} />
+    </>
+  );
 }

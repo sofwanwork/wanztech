@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useTransition, useRef } from 'react';
+import React, { useState, useEffect, useTransition, useRef } from 'react';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 import {
@@ -29,16 +29,25 @@ import {
   BioSocialLinks,
   BioLinkType,
   BioPattern,
+  BioBadgeStyle,
+  BioFadeStyle,
 } from '@/lib/types/bio-links';
 import {
   BIO_THEMES,
   BUTTON_STYLES,
   BIO_PATTERNS,
+  BIO_BUTTON_PRESETS,
   cleanBioUsername,
   isValidBioUsername,
   getBioButtonClass,
+  getBioButtonCustomStyle,
   getBioPatternStyle,
+  getBioPatternOpacity,
+  formatHandleTiles,
+  getBioDisplayHandle,
+  getHeroFadeMask,
 } from '@/lib/bio-links/themes';
+import { toValidHexColor } from '@/lib/utils';
 import {
   updateBioPageAction,
   createBioLinkAction,
@@ -109,6 +118,11 @@ import {
   CheckCircle2,
   Upload,
   Loader2,
+  MoreVertical,
+  Image as ImageIcon,
+  Share2,
+  Palette,
+  RotateCcw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { createClient } from '@/utils/supabase/client';
@@ -134,10 +148,17 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
   const [savedStatus, setSavedStatus] = useState<'idle' | 'saving' | 'saved'>('saved');
   const [copied, setCopied] = useState(false);
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
+  const [resolvedAppUrl, setResolvedAppUrl] = useState(appUrl);
   const [, startTransition] = useTransition();
   const qrRef = useRef<SVGSVGElement>(null);
 
-  const publicUrl = `${appUrl}/bio/${page.username}`;
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setResolvedAppUrl(window.location.origin);
+    }
+  }, []);
+
+  const publicUrl = `${resolvedAppUrl}/bio/${page.username}`;
   const theme = BIO_THEMES[page.theme] || BIO_THEMES.emerald;
 
   // DnD Sensors setup
@@ -285,6 +306,96 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
     toast.success('Profile image removed.');
   };
 
+  const [isUploadingPoster, setIsUploadingPoster] = useState(false);
+  const [posterPreview, setPosterPreview] = useState<string | null>(null);
+  const [showPosterUrlInput, setShowPosterUrlInput] = useState(false);
+
+  const handlePosterUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const oldPosterUrl = page.themeConfig?.posterUrl;
+
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please upload an image file (PNG, JPG, WEBP).');
+        return;
+      }
+
+      try {
+        setIsUploadingPoster(true);
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          if (event.target?.result) {
+            setPosterPreview(event.target.result as string);
+          }
+        };
+        reader.readAsDataURL(file);
+
+        const compressedFile = await compressImage(file, 1);
+        const fileExt = file.name.split('.').pop() || 'png';
+        const fileName = `bio-poster-${uuidv4()}.${fileExt}`;
+
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        const dir = user ? user.id : 'public';
+        const filePath = `${dir}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('qr_logos')
+          .upload(filePath, compressedFile, {
+            cacheControl: '3600',
+            upsert: false,
+          });
+
+        if (uploadError) throw uploadError;
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from('qr_logos').getPublicUrl(filePath);
+
+        const updatedThemeConfig = {
+          ...page.themeConfig,
+          headerType: 'poster' as const,
+          posterUrl: publicUrl,
+          badgeStyle: page.themeConfig?.badgeStyle || ('tiles' as const),
+        };
+
+        setPage((p) => ({ ...p, themeConfig: updatedThemeConfig }));
+        setPosterPreview(publicUrl);
+        handleSavePage({ themeConfig: updatedThemeConfig });
+
+        toast.success('Event poster uploaded successfully!');
+
+        if (oldPosterUrl && oldPosterUrl.includes('/qr_logos/')) {
+          await deleteOldAvatar(oldPosterUrl);
+        }
+      } catch (error) {
+        console.error('Error uploading poster:', error);
+        toast.error('Failed to upload poster image.');
+      } finally {
+        setIsUploadingPoster(false);
+      }
+    }
+  };
+
+  const handleRemovePoster = async () => {
+    const oldPosterUrl = page.themeConfig?.posterUrl;
+    const updatedThemeConfig = {
+      ...page.themeConfig,
+      headerType: 'avatar' as const,
+      posterUrl: '',
+    };
+    setPage((p) => ({ ...p, themeConfig: updatedThemeConfig }));
+    setPosterPreview(null);
+    handleSavePage({ themeConfig: updatedThemeConfig });
+
+    if (oldPosterUrl && oldPosterUrl.includes('/qr_logos/')) {
+      await deleteOldAvatar(oldPosterUrl);
+    }
+    toast.success('Event poster removed.');
+  };
+
   const downloadQR = () => {
     const svg = qrRef.current;
     if (!svg) return;
@@ -381,20 +492,20 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
           {/* Left Column: Settings Tabs */}
           <div className="lg:col-span-7 space-y-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-4 w-full bg-gray-100 p-1 rounded-xl">
-                <TabsTrigger value="links" className="rounded-lg text-xs md:text-sm font-medium gap-1.5">
+              <TabsList className="grid grid-cols-4 w-full h-11 bg-gray-100 p-1.5 rounded-xl">
+                <TabsTrigger value="links" className="h-full rounded-lg text-xs md:text-sm font-medium gap-1.5 py-0 flex items-center justify-center">
                   <LinkIcon className="h-3.5 w-3.5" />
                   Links
                 </TabsTrigger>
-                <TabsTrigger value="theme" className="rounded-lg text-xs md:text-sm font-medium gap-1.5">
+                <TabsTrigger value="theme" className="h-full rounded-lg text-xs md:text-sm font-medium gap-1.5 py-0 flex items-center justify-center">
                   <Sparkles className="h-3.5 w-3.5" />
                   Design
                 </TabsTrigger>
-                <TabsTrigger value="profile" className="rounded-lg text-xs md:text-sm font-medium gap-1.5">
+                <TabsTrigger value="profile" className="h-full rounded-lg text-xs md:text-sm font-medium gap-1.5 py-0 flex items-center justify-center">
                   <Instagram className="h-3.5 w-3.5" />
                   Profile
                 </TabsTrigger>
-                <TabsTrigger value="share" className="rounded-lg text-xs md:text-sm font-medium gap-1.5">
+                <TabsTrigger value="share" className="h-full rounded-lg text-xs md:text-sm font-medium gap-1.5 py-0 flex items-center justify-center">
                   <QrCode className="h-3.5 w-3.5" />
                   Share & QR
                 </TabsTrigger>
@@ -434,11 +545,13 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                   </div>
                 ) : (
                   <DndContext
+                    id="bio-builder-links-dnd"
                     sensors={sensors}
                     collisionDetection={closestCenter}
                     onDragEnd={handleDragEnd}
                   >
                     <SortableContext
+                      id="bio-builder-links-sortable"
                       items={links.map((l) => l.id)}
                       strategy={verticalListSortingStrategy}
                     >
@@ -469,7 +582,7 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                 <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4 shadow-sm">
                   <div>
                     <h3 className="text-base font-semibold text-gray-900">Color Themes</h3>
-                    <p className="text-xs text-gray-500">Pick from 8 pre-crafted aesthetic color palettes.</p>
+                    <p className="text-xs text-gray-500">Pick from 9 pre-crafted aesthetic color palettes.</p>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -544,6 +657,310 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                   </div>
                 </div>
 
+                {/* Button Colors & Appearance */}
+                <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-5 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                        <Palette className="w-4 h-4 text-emerald-600" />
+                        Button Colors & Appearance / Warna Butang
+                      </h3>
+                      <p className="text-xs text-gray-500">
+                        Choose a quick button color palette or customize button fill, text, and border colors.
+                      </p>
+                    </div>
+                    {(page.themeConfig?.buttonColor ||
+                      page.themeConfig?.buttonTextColor ||
+                      page.themeConfig?.buttonBorderColor ||
+                      page.themeConfig?.highlightButtonColor ||
+                      (page.themeConfig?.buttonPreset && page.themeConfig?.buttonPreset !== 'default')) && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const updated = {
+                            ...page.themeConfig,
+                            buttonColor: undefined,
+                            buttonTextColor: undefined,
+                            buttonBorderColor: undefined,
+                            highlightButtonColor: undefined,
+                            highlightButtonTextColor: undefined,
+                            buttonPreset: 'default',
+                          };
+                          setPage((p) => ({ ...p, themeConfig: updated }));
+                          handleSavePage({ themeConfig: updated });
+                          toast.success('Reset to theme default button colors');
+                        }}
+                        className="text-xs text-gray-500 hover:text-gray-900 gap-1.5 h-8 px-2"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        Reset
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Quick Color Presets Grid */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-gray-700">
+                      Quick Color Palettes (Pratetap Warna Pantas)
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                      {BIO_BUTTON_PRESETS.map((preset) => {
+                        const isPresetActive =
+                          page.themeConfig?.buttonPreset === preset.id ||
+                          (!page.themeConfig?.buttonPreset &&
+                            preset.id === 'default' &&
+                            !page.themeConfig?.buttonColor);
+
+                        return (
+                          <button
+                            key={preset.id}
+                            type="button"
+                            onClick={() => {
+                              if (preset.id === 'default') {
+                                const updated = {
+                                  ...page.themeConfig,
+                                  buttonColor: undefined,
+                                  buttonTextColor: undefined,
+                                  buttonBorderColor: undefined,
+                                  highlightButtonColor: undefined,
+                                  highlightButtonTextColor: undefined,
+                                  buttonPreset: 'default',
+                                };
+                                setPage((p) => ({ ...p, themeConfig: updated }));
+                                handleSavePage({ themeConfig: updated });
+                              } else {
+                                const updated = {
+                                  ...page.themeConfig,
+                                  buttonColor: preset.buttonColor,
+                                  buttonTextColor: preset.buttonTextColor,
+                                  buttonBorderColor: preset.buttonBorderColor,
+                                  highlightButtonColor: preset.highlightButtonColor,
+                                  highlightButtonTextColor: preset.highlightButtonTextColor,
+                                  buttonPreset: preset.id,
+                                };
+                                setPage((p) => ({ ...p, themeConfig: updated }));
+                                handleSavePage({ themeConfig: updated });
+                              }
+                            }}
+                            className={`p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between ${
+                              isPresetActive
+                                ? 'border-emerald-600 bg-emerald-50/50 ring-2 ring-emerald-500/40 shadow-xs'
+                                : 'border-gray-200 hover:border-gray-300 bg-white'
+                            }`}
+                          >
+                            <div
+                              className={`h-9 w-full rounded-lg ${preset.previewBg} ${
+                                preset.previewBorder || 'border border-black/10'
+                              } flex items-center justify-center px-2 mb-1.5 shadow-xs`}
+                              style={
+                                preset.buttonColor
+                                  ? {
+                                      backgroundColor: preset.buttonColor,
+                                      color: preset.buttonTextColor,
+                                      borderColor: preset.buttonBorderColor,
+                                    }
+                                  : undefined
+                              }
+                            >
+                              <span
+                                className={`text-[11px] font-semibold truncate ${preset.previewText}`}
+                                style={preset.buttonTextColor ? { color: preset.buttonTextColor } : undefined}
+                              >
+                                Button Link
+                              </span>
+                            </div>
+                            <span className="font-semibold text-xs text-gray-900 truncate">
+                              {preset.name}
+                            </span>
+                            <span className="text-[10px] text-gray-500 truncate">
+                              {preset.description}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Fine-grained Custom Color Pickers */}
+                  <div className="pt-3 border-t border-gray-100 space-y-3">
+                    <label className="text-xs font-semibold text-gray-700">
+                      Fine-Tune Colors (Warna Butang Tersuai)
+                    </label>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Button Background */}
+                      <div className="p-3 rounded-xl border border-gray-200 bg-gray-50/50 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-gray-700">Button Background</span>
+                          <span className="text-[11px] font-mono text-gray-500 truncate max-w-[120px]">
+                            {page.themeConfig?.buttonColor || 'Theme Default'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={toValidHexColor(page.themeConfig?.buttonColor, '#ffffff')}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const updated = {
+                                ...page.themeConfig,
+                                buttonColor: val,
+                                buttonPreset: 'custom',
+                              };
+                              setPage((p) => ({ ...p, themeConfig: updated }));
+                            }}
+                            onBlur={() => handleSavePage({ themeConfig: page.themeConfig })}
+                            className="w-9 h-9 rounded-lg border border-gray-300 cursor-pointer p-0.5 bg-white shrink-0"
+                          />
+                          <Input
+                            placeholder="#ffffff or rgba(...)"
+                            value={page.themeConfig?.buttonColor || ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const updated = {
+                                ...page.themeConfig,
+                                buttonColor: val,
+                                buttonPreset: 'custom',
+                              };
+                              setPage((p) => ({ ...p, themeConfig: updated }));
+                            }}
+                            onBlur={() => handleSavePage({ themeConfig: page.themeConfig })}
+                            className="h-9 text-xs font-mono"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Button Text Color */}
+                      <div className="p-3 rounded-xl border border-gray-200 bg-gray-50/50 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-gray-700">Text & Icon Color</span>
+                          <span className="text-[11px] font-mono text-gray-500 truncate max-w-[120px]">
+                            {page.themeConfig?.buttonTextColor || 'Theme Default'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={toValidHexColor(page.themeConfig?.buttonTextColor, '#ffffff')}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const updated = {
+                                ...page.themeConfig,
+                                buttonTextColor: val,
+                                buttonPreset: 'custom',
+                              };
+                              setPage((p) => ({ ...p, themeConfig: updated }));
+                            }}
+                            onBlur={() => handleSavePage({ themeConfig: page.themeConfig })}
+                            className="w-9 h-9 rounded-lg border border-gray-300 cursor-pointer p-0.5 bg-white shrink-0"
+                          />
+                          <Input
+                            placeholder="#ffffff"
+                            value={page.themeConfig?.buttonTextColor || ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const updated = {
+                                ...page.themeConfig,
+                                buttonTextColor: val,
+                                buttonPreset: 'custom',
+                              };
+                              setPage((p) => ({ ...p, themeConfig: updated }));
+                            }}
+                            onBlur={() => handleSavePage({ themeConfig: page.themeConfig })}
+                            className="h-9 text-xs font-mono"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Button Border Color */}
+                      <div className="p-3 rounded-xl border border-gray-200 bg-gray-50/50 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-gray-700">Border / Outline Color</span>
+                          <span className="text-[11px] font-mono text-gray-500 truncate max-w-[120px]">
+                            {page.themeConfig?.buttonBorderColor || 'Theme Default'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={toValidHexColor(page.themeConfig?.buttonBorderColor, '#ffffff')}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const updated = {
+                                ...page.themeConfig,
+                                buttonBorderColor: val,
+                                buttonPreset: 'custom',
+                              };
+                              setPage((p) => ({ ...p, themeConfig: updated }));
+                            }}
+                            onBlur={() => handleSavePage({ themeConfig: page.themeConfig })}
+                            className="w-9 h-9 rounded-lg border border-gray-300 cursor-pointer p-0.5 bg-white shrink-0"
+                          />
+                          <Input
+                            placeholder="#ffffff or rgba(...)"
+                            value={page.themeConfig?.buttonBorderColor || ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const updated = {
+                                ...page.themeConfig,
+                                buttonBorderColor: val,
+                                buttonPreset: 'custom',
+                              };
+                              setPage((p) => ({ ...p, themeConfig: updated }));
+                            }}
+                            onBlur={() => handleSavePage({ themeConfig: page.themeConfig })}
+                            className="h-9 text-xs font-mono"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Highlighted Button Background */}
+                      <div className="p-3 rounded-xl border border-gray-200 bg-gray-50/50 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-gray-700">Highlighted Button Fill</span>
+                          <span className="text-[11px] font-mono text-gray-500 truncate max-w-[120px]">
+                            {page.themeConfig?.highlightButtonColor || 'Theme Default'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={toValidHexColor(page.themeConfig?.highlightButtonColor, '#10b981')}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const updated = {
+                                ...page.themeConfig,
+                                highlightButtonColor: val,
+                                buttonPreset: 'custom',
+                              };
+                              setPage((p) => ({ ...p, themeConfig: updated }));
+                            }}
+                            onBlur={() => handleSavePage({ themeConfig: page.themeConfig })}
+                            className="w-9 h-9 rounded-lg border border-gray-300 cursor-pointer p-0.5 bg-white shrink-0"
+                          />
+                          <Input
+                            placeholder="#10b981"
+                            value={page.themeConfig?.highlightButtonColor || ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const updated = {
+                                ...page.themeConfig,
+                                highlightButtonColor: val,
+                                buttonPreset: 'custom',
+                              };
+                              setPage((p) => ({ ...p, themeConfig: updated }));
+                            }}
+                            onBlur={() => handleSavePage({ themeConfig: page.themeConfig })}
+                            className="h-9 text-xs font-mono"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4 shadow-sm">
                   <div>
                     <h3 className="text-base font-semibold text-gray-900">Background Patterns / Corak Latar</h3>
@@ -598,6 +1015,107 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                       );
                     })}
                   </div>
+
+                  {/* Pattern Opacity Control (Visible when active pattern selected) */}
+                  {page.themeConfig?.pattern && page.themeConfig.pattern !== 'none' && (
+                    <div className="pt-4 border-t border-gray-100 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-gray-800">
+                              Pattern Opacity / Kelegapan Corak
+                            </span>
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold font-mono">
+                              {page.themeConfig?.patternOpacity ?? 100}%
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-gray-500">
+                            Adjust the visual transparency of the pattern texture over your background.
+                          </p>
+                        </div>
+                        {page.themeConfig?.patternOpacity !== undefined && page.themeConfig.patternOpacity !== 100 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = { ...page.themeConfig, patternOpacity: 100 };
+                              setPage((p) => ({ ...p, themeConfig: updated }));
+                              handleSavePage({ themeConfig: updated });
+                            }}
+                            className="text-[11px] text-gray-400 hover:text-gray-700 underline underline-offset-2 transition-colors shrink-0"
+                          >
+                            Reset (100%)
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Slider Input */}
+                      <div className="space-y-1.5 pt-1">
+                        <div className="flex items-center gap-3">
+                          <span className="text-[11px] font-medium text-gray-400 shrink-0">10%</span>
+                          <input
+                            type="range"
+                            min={10}
+                            max={100}
+                            step={5}
+                            value={page.themeConfig?.patternOpacity ?? 100}
+                            onChange={(e) => {
+                              const val = Number(e.target.value);
+                              setPage((p) => ({
+                                ...p,
+                                themeConfig: { ...p.themeConfig, patternOpacity: val },
+                              }));
+                            }}
+                            onMouseUp={(e) => {
+                              const val = Number((e.target as HTMLInputElement).value);
+                              handleSavePage({
+                                themeConfig: { ...page.themeConfig, patternOpacity: val },
+                              });
+                            }}
+                            onTouchEnd={(e) => {
+                              const val = Number((e.target as HTMLInputElement).value);
+                              handleSavePage({
+                                themeConfig: { ...page.themeConfig, patternOpacity: val },
+                              });
+                            }}
+                            className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                          />
+                          <span className="text-[11px] font-medium text-gray-400 shrink-0">100%</span>
+                        </div>
+                      </div>
+
+                      {/* Quick Presets */}
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        <span className="text-[11px] text-gray-400 mr-1">Presets:</span>
+                        {[
+                          { label: 'Subtle', val: 25 },
+                          { label: 'Soft', val: 50 },
+                          { label: 'Clear', val: 75 },
+                          { label: 'Bold', val: 100 },
+                        ].map((preset) => {
+                          const currentVal = page.themeConfig?.patternOpacity ?? 100;
+                          const isActive = currentVal === preset.val;
+                          return (
+                            <button
+                              key={preset.val}
+                              type="button"
+                              onClick={() => {
+                                const updated = { ...page.themeConfig, patternOpacity: preset.val };
+                                setPage((p) => ({ ...p, themeConfig: updated }));
+                                handleSavePage({ themeConfig: updated });
+                              }}
+                              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                                isActive
+                                  ? 'bg-emerald-600 text-white shadow-xs font-semibold'
+                                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200/60'
+                              }`}
+                            >
+                              {preset.val}% <span className="opacity-75 font-normal text-[10px]">({preset.label})</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </TabsContent>
 
@@ -653,103 +1171,489 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                       />
                     </div>
 
-                    <div className="space-y-2">
-                      <Label>Profile Picture / Avatar</Label>
-                      <div className="flex items-center gap-3.5 p-3 rounded-xl border border-gray-200 bg-gray-50/50">
-                        {/* Current avatar preview */}
-                        <div className="relative shrink-0">
-                          {avatarPreview || page.avatarUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={avatarPreview || page.avatarUrl}
-                              alt="Avatar preview"
-                              className="w-14 h-14 rounded-full object-cover border-2 border-emerald-500/30 shadow-sm bg-white"
-                            />
-                          ) : (
-                            <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 text-white font-bold text-lg flex items-center justify-center border-2 border-gray-200 shadow-sm">
-                              {(page.title || page.username).charAt(0).toUpperCase()}
+                    {/* Header Style Selector */}
+                    <div className="space-y-2 pt-1">
+                      <Label className="text-xs font-semibold text-gray-900">Header Display Style</Label>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleSavePage({
+                              themeConfig: {
+                                ...page.themeConfig,
+                                headerType: 'avatar',
+                              },
+                            })
+                          }
+                          className={`p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 ${
+                            (page.themeConfig?.headerType || 'avatar') === 'avatar'
+                              ? 'border-emerald-600 bg-emerald-50/60 ring-2 ring-emerald-500/40 shadow-sm'
+                              : 'border-gray-200 hover:border-gray-300 bg-white'
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                            {(page.title || page.username).charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <span className="font-semibold text-xs text-gray-900 block truncate">Classic Avatar</span>
+                            <span className="text-[10px] text-gray-500 block truncate">Circular profile photo</span>
+                          </div>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleSavePage({
+                              themeConfig: {
+                                ...page.themeConfig,
+                                headerType: 'hero',
+                                badgeStyle: page.themeConfig?.badgeStyle || 'stencil',
+                              },
+                            })
+                          }
+                          className={`p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 ${
+                            page.themeConfig?.headerType === 'hero'
+                              ? 'border-emerald-600 bg-emerald-50/60 ring-2 ring-emerald-500/40 shadow-sm'
+                              : 'border-gray-200 hover:border-gray-300 bg-white'
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 text-white flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5 shadow-xs">
+                            <Sparkles className="h-4 w-4 text-white" />
+                          </div>
+                          <div className="min-w-0">
+                            <span className="font-semibold text-xs text-gray-900 block truncate">Hero Banner (Fade)</span>
+                            <span className="text-[10px] text-gray-500 block truncate">Full-bleed bottom fade</span>
+                          </div>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleSavePage({
+                              themeConfig: {
+                                ...page.themeConfig,
+                                headerType: 'poster',
+                                badgeStyle: page.themeConfig?.badgeStyle || 'tiles',
+                              },
+                            })
+                          }
+                          className={`p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 ${
+                            page.themeConfig?.headerType === 'poster'
+                              ? 'border-emerald-600 bg-emerald-50/60 ring-2 ring-emerald-500/40 shadow-sm'
+                              : 'border-gray-200 hover:border-gray-300 bg-white'
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-sky-500 to-indigo-600 text-white flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5 shadow-xs">
+                            <ImageIcon className="h-4 w-4 text-white" />
+                          </div>
+                          <div className="min-w-0">
+                            <span className="font-semibold text-xs text-gray-900 block truncate">Event Poster</span>
+                            <span className="text-[10px] text-gray-500 block truncate">Framed flyer card</span>
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* EVENT POSTER OR HERO BANNER MODE */}
+                    {page.themeConfig?.headerType === 'poster' || page.themeConfig?.headerType === 'hero' ? (
+                      <div className="space-y-3 pt-1">
+                        <div className="space-y-2">
+                          <Label className="text-xs font-semibold text-gray-900">
+                            {page.themeConfig?.headerType === 'hero'
+                              ? 'Hero Banner Graphic (Top Bleed with Fade)'
+                              : 'Event Poster / Flyer Image'}
+                          </Label>
+                          <div className="p-3 rounded-xl border border-gray-200 bg-gray-50/50 space-y-3">
+                            {/* Poster preview */}
+                            <div className="relative rounded-lg overflow-hidden border border-gray-200 bg-white max-h-48 flex items-center justify-center">
+                              {posterPreview || page.themeConfig?.posterUrl ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={posterPreview || page.themeConfig?.posterUrl}
+                                  alt="Poster preview"
+                                  className="w-full h-auto max-h-48 object-contain"
+                                />
+                              ) : (
+                                <div className="py-8 text-center text-xs text-gray-400 flex flex-col items-center gap-1.5">
+                                  <ImageIcon className="h-8 w-8 text-gray-300" />
+                                  <span>No image uploaded yet. Upload an event flyer or banner.</span>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
 
-                        {/* Controls */}
-                        <div className="flex-1 min-w-0 space-y-1.5">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              id="avatar-upload"
-                              onChange={handleAvatarUpload}
-                              disabled={isUploadingAvatar}
-                            />
-                            <Button
-                              asChild
-                              variant="outline"
-                              size="sm"
-                              disabled={isUploadingAvatar}
-                              className="gap-1.5 cursor-pointer bg-white text-xs h-8"
-                            >
-                              <Label htmlFor="avatar-upload" className="cursor-pointer flex items-center gap-1.5">
-                                {isUploadingAvatar ? (
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-600" />
-                                ) : (
-                                  <Upload className="h-3.5 w-3.5 text-emerald-600" />
+                            {/* Poster controls */}
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  id="poster-upload"
+                                  onChange={handlePosterUpload}
+                                  disabled={isUploadingPoster}
+                                />
+                                <Button
+                                  asChild
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={isUploadingPoster}
+                                  className="gap-1.5 cursor-pointer bg-white text-xs h-8"
+                                >
+                                  <Label htmlFor="poster-upload" className="cursor-pointer flex items-center gap-1.5">
+                                    {isUploadingPoster ? (
+                                      <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-600" />
+                                    ) : (
+                                      <Upload className="h-3.5 w-3.5 text-emerald-600" />
+                                    )}
+                                    {isUploadingPoster
+                                      ? 'Uploading...'
+                                      : page.themeConfig?.posterUrl
+                                      ? 'Change Image'
+                                      : 'Upload Image'}
+                                  </Label>
+                                </Button>
+
+                                {(page.themeConfig?.posterUrl || posterPreview) && (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleRemovePoster}
+                                    disabled={isUploadingPoster}
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs h-8 px-2"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5 mr-1" />
+                                    Remove
+                                  </Button>
                                 )}
-                                {isUploadingAvatar
-                                  ? 'Uploading...'
-                                  : page.avatarUrl
-                                  ? 'Change Photo'
-                                  : 'Upload Photo'}
-                              </Label>
-                            </Button>
+                              </div>
 
-                            {(page.avatarUrl || avatarPreview) && (
-                              <Button
+                              <button
                                 type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={handleRemoveAvatar}
-                                disabled={isUploadingAvatar}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs h-8 px-2"
+                                onClick={() => setShowPosterUrlInput(!showPosterUrlInput)}
+                                className="text-emerald-600 hover:underline hover:text-emerald-700 font-medium text-[11px]"
                               >
-                                <Trash2 className="h-3.5 w-3.5 mr-1" />
-                                Remove
-                              </Button>
+                                {showPosterUrlInput ? 'Hide URL' : 'Paste URL instead'}
+                              </button>
+                            </div>
+
+                            {showPosterUrlInput && (
+                              <div className="space-y-1 pt-1">
+                                <Input
+                                  value={page.themeConfig?.posterUrl || ''}
+                                  onChange={(e) => {
+                                    const updatedConfig = {
+                                      ...page.themeConfig,
+                                      posterUrl: e.target.value,
+                                    };
+                                    setPage((p) => ({ ...p, themeConfig: updatedConfig }));
+                                    setPosterPreview(e.target.value);
+                                  }}
+                                  onBlur={() => handleSavePage({ themeConfig: page.themeConfig })}
+                                  placeholder="https://example.com/poster.jpg"
+                                  className="text-xs h-8"
+                                />
+                              </div>
                             )}
                           </div>
-                          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                            <span>PNG, JPG, WEBP (Auto-optimized)</span>
-                            <button
-                              type="button"
-                              onClick={() => setShowUrlInput(!showUrlInput)}
-                              className="text-emerald-600 hover:underline hover:text-emerald-700 font-medium ml-2"
-                            >
-                              {showUrlInput ? 'Hide URL' : 'Paste URL instead'}
-                            </button>
+                        </div>
+
+                        {/* Hero Fade Transition Picker (Only in Hero Mode) */}
+                        {page.themeConfig?.headerType === 'hero' && (
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold text-gray-900">Hero Fade Transition</Label>
+                            <div className="grid grid-cols-3 gap-2">
+                              {[
+                                { id: 'smooth', label: 'Smooth Mist', desc: 'Soft organic fade (Default)' },
+                                { id: 'deep', label: 'Deep Fog', desc: 'Long extended fade' },
+                                { id: 'subtle', label: 'Subtle Edge', desc: 'Preserves lower graphic' },
+                              ].map((fStyle) => {
+                                const isSelected = (page.themeConfig?.fadeStyle || 'smooth') === fStyle.id;
+                                return (
+                                  <button
+                                    key={fStyle.id}
+                                    type="button"
+                                    onClick={() =>
+                                      handleSavePage({
+                                        themeConfig: {
+                                          ...page.themeConfig,
+                                          fadeStyle: fStyle.id as BioFadeStyle,
+                                        },
+                                      })
+                                    }
+                                    className={`p-2 rounded-xl border text-center transition-all cursor-pointer ${
+                                      isSelected
+                                        ? 'border-emerald-600 bg-emerald-50 text-emerald-950 font-semibold ring-1 ring-emerald-500/30'
+                                        : 'border-gray-200 hover:border-gray-300 text-gray-700 bg-white'
+                                    }`}
+                                  >
+                                    <span className="text-xs block font-medium">{fStyle.label}</span>
+                                    <span className="text-[10px] text-gray-500 block truncate">{fStyle.desc}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Handle Badge Style Picker */}
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold text-gray-900">Handle Badge Style</Label>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            {[
+                              { id: 'stencil', label: 'Stencil (@USER)', desc: 'Monofett stencil' },
+                              { id: 'tiles', label: 'Letter Tiles', desc: '@[u][s][e][r]...' },
+                              { id: 'pill', label: 'Modern Pill', desc: '@username' },
+                              { id: 'none', label: 'Hidden', desc: 'No badge' },
+                            ].map((bStyle) => {
+                              const isSelected =
+                                (page.themeConfig?.badgeStyle ||
+                                  (page.themeConfig?.headerType === 'hero' ? 'stencil' : 'tiles')) === bStyle.id;
+                              return (
+                                <button
+                                  key={bStyle.id}
+                                  type="button"
+                                  onClick={() =>
+                                    handleSavePage({
+                                      themeConfig: {
+                                        ...page.themeConfig,
+                                        badgeStyle: bStyle.id as BioBadgeStyle,
+                                      },
+                                    })
+                                  }
+                                  className={`p-2 rounded-xl border text-center transition-all ${
+                                    isSelected
+                                      ? 'border-emerald-600 bg-emerald-50 text-emerald-950 font-semibold ring-1 ring-emerald-500/30'
+                                      : 'border-gray-200 hover:border-gray-300 text-gray-700 bg-white'
+                                  }`}
+                                >
+                                  <span className="text-xs block font-medium">{bStyle.label}</span>
+                                  <span className="text-[10px] text-gray-500 block truncate">{bStyle.desc}</span>
+                                </button>
+                              );
+                            })}
                           </div>
                         </div>
-                      </div>
 
-                      {showUrlInput && (
-                        <div className="space-y-1 pt-1">
-                          <Input
-                            id="edit-avatar"
-                            value={page.avatarUrl}
-                            onChange={(e) => {
-                              setPage((p) => ({ ...p, avatarUrl: e.target.value }));
-                              setAvatarPreview(e.target.value);
-                            }}
-                            onBlur={() => handleSavePage({ avatarUrl: page.avatarUrl })}
-                            placeholder="https://example.com/avatar.jpg"
-                            className="text-xs h-8"
-                          />
-                          <p className="text-[10px] text-muted-foreground">
-                            Make sure it is a direct public image link (.png, .jpg, .webp).
-                          </p>
+                        {/* Custom Handle Display (Mixed Case) */}
+                        {(page.themeConfig?.badgeStyle || (page.themeConfig?.headerType === 'hero' ? 'stencil' : 'tiles')) !== 'none' && (
+                          <div className="space-y-1.5 p-3 rounded-xl border border-gray-200 bg-gray-50/70">
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="custom-handle-text" className="text-xs font-semibold text-gray-900 cursor-pointer">
+                                Custom Handle Display (Mixed Case)
+                              </Label>
+                              {page.themeConfig?.customHandle && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setPage((p) => ({
+                                      ...p,
+                                      themeConfig: {
+                                        ...p.themeConfig,
+                                        customHandle: '',
+                                      },
+                                    }));
+                                    handleSavePage({
+                                      themeConfig: {
+                                        ...page.themeConfig,
+                                        customHandle: '',
+                                      },
+                                    });
+                                  }}
+                                  className="text-[11px] text-emerald-600 hover:text-emerald-700 hover:underline font-medium"
+                                >
+                                  Reset to @{page.username}
+                                </button>
+                              )}
+                            </div>
+                            <div className="flex rounded-md shadow-xs">
+                              <span className="inline-flex items-center px-2.5 rounded-l-md border border-r-0 border-gray-300 bg-gray-100 text-gray-500 font-mono text-xs select-none">
+                                @
+                              </span>
+                              <Input
+                                id="custom-handle-text"
+                                placeholder={page.username || 'MetMalaysia'}
+                                value={page.themeConfig?.customHandle || ''}
+                                onChange={(e) => {
+                                  const raw = e.target.value.replace(/^@+/, '');
+                                  setPage((p) => ({
+                                    ...p,
+                                    themeConfig: {
+                                      ...p.themeConfig,
+                                      customHandle: raw,
+                                    },
+                                  }));
+                                }}
+                                onBlur={() => {
+                                  handleSavePage({
+                                    themeConfig: {
+                                      ...page.themeConfig,
+                                      customHandle: page.themeConfig?.customHandle?.trim() || '',
+                                    },
+                                  });
+                                }}
+                                className="rounded-l-none font-mono text-xs bg-white h-9"
+                                maxLength={30}
+                              />
+                            </div>
+                            <p className="text-[11px] text-gray-500">
+                              Display custom casing (e.g. <span className="font-semibold text-gray-700">MetMalaysia</span>) on your handle badge without changing your URL link (<span className="font-mono text-gray-600">/bio/{page.username}</span>).
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Option to toggle uppercase handle transformation */}
+                        {(page.themeConfig?.badgeStyle || (page.themeConfig?.headerType === 'hero' ? 'stencil' : 'tiles')) !== 'none' && (
+                          <div className="flex items-center justify-between p-3 rounded-xl border border-gray-200 bg-gray-50/70">
+                            <div className="space-y-0.5 pr-2">
+                              <Label htmlFor="uppercase-handle-badge" className="text-xs font-semibold text-gray-900 cursor-pointer">
+                                Uppercase Handle Badge
+                              </Label>
+                              <p className="text-[11px] text-gray-500">
+                                Transform handle to ALL CAPS (@{(page.themeConfig?.customHandle || page.username || 'user').toUpperCase()}) instead of mixed/natural case.
+                              </p>
+                            </div>
+                            <Switch
+                              id="uppercase-handle-badge"
+                              checked={Boolean(page.themeConfig?.handleUppercase)}
+                              onCheckedChange={(checked) =>
+                                handleSavePage({
+                                  themeConfig: {
+                                    ...page.themeConfig,
+                                    handleUppercase: checked,
+                                  },
+                                })
+                              }
+                            />
+                          </div>
+                        )}
+
+                        {/* Option to hide redundant title text below flyer in Hero mode */}
+                        {page.themeConfig?.headerType === 'hero' && (
+                          <div className="flex items-center justify-between p-3 rounded-xl border border-gray-200 bg-gray-50/70">
+                            <div className="space-y-0.5 pr-2">
+                              <Label htmlFor="hide-hero-title" className="text-xs font-semibold text-gray-900 cursor-pointer">
+                                Hide Title Text Below Poster
+                              </Label>
+                              <p className="text-[11px] text-gray-500">
+                                Recommended if your flyer/poster already displays the event or account title.
+                              </p>
+                            </div>
+                            <Switch
+                              id="hide-hero-title"
+                              checked={page.themeConfig?.hideTitleInHero ?? false}
+                              onCheckedChange={(checked) =>
+                                handleSavePage({
+                                  themeConfig: {
+                                    ...page.themeConfig,
+                                    hideTitleInHero: checked,
+                                  },
+                                })
+                              }
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      /* CLASSIC AVATAR MODE */
+                      <div className="space-y-2">
+                        <Label>Profile Picture / Avatar</Label>
+                        <div className="flex items-center gap-3.5 p-3 rounded-xl border border-gray-200 bg-gray-50/50">
+                          {/* Current avatar preview */}
+                          <div className="relative shrink-0">
+                            {avatarPreview || page.avatarUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={avatarPreview || page.avatarUrl}
+                                alt="Avatar preview"
+                                className="w-14 h-14 rounded-full object-cover border-2 border-emerald-500/30 shadow-sm bg-white"
+                              />
+                            ) : (
+                              <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 text-white font-bold text-lg flex items-center justify-center border-2 border-gray-200 shadow-sm">
+                                {(page.title || page.username).charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Controls */}
+                          <div className="flex-1 min-w-0 space-y-1.5">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                id="avatar-upload"
+                                onChange={handleAvatarUpload}
+                                disabled={isUploadingAvatar}
+                              />
+                              <Button
+                                asChild
+                                variant="outline"
+                                size="sm"
+                                disabled={isUploadingAvatar}
+                                className="gap-1.5 cursor-pointer bg-white text-xs h-8"
+                              >
+                                <Label htmlFor="avatar-upload" className="cursor-pointer flex items-center gap-1.5">
+                                  {isUploadingAvatar ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-600" />
+                                  ) : (
+                                    <Upload className="h-3.5 w-3.5 text-emerald-600" />
+                                  )}
+                                  {isUploadingAvatar
+                                    ? 'Uploading...'
+                                    : page.avatarUrl
+                                    ? 'Change Photo'
+                                    : 'Upload Photo'}
+                                </Label>
+                              </Button>
+
+                              {(page.avatarUrl || avatarPreview) && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={handleRemoveAvatar}
+                                  disabled={isUploadingAvatar}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs h-8 px-2"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 mr-1" />
+                                  Remove
+                                </Button>
+                              )}
+                            </div>
+                            <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                              <span>PNG, JPG, WEBP (Auto-optimized)</span>
+                              <button
+                                type="button"
+                                onClick={() => setShowUrlInput(!showUrlInput)}
+                                className="text-emerald-600 hover:underline hover:text-emerald-700 font-medium ml-2"
+                              >
+                                {showUrlInput ? 'Hide URL' : 'Paste URL instead'}
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                      )}
-                    </div>
+
+                        {showUrlInput && (
+                          <div className="space-y-1 pt-1">
+                            <Input
+                              id="edit-avatar"
+                              value={page.avatarUrl}
+                              onChange={(e) => {
+                                setPage((p) => ({ ...p, avatarUrl: e.target.value }));
+                                setAvatarPreview(e.target.value);
+                              }}
+                              onBlur={() => handleSavePage({ avatarUrl: page.avatarUrl })}
+                              placeholder="https://example.com/avatar.jpg"
+                              className="text-xs h-8"
+                            />
+                            <p className="text-[10px] text-muted-foreground">
+                              Make sure it is a direct public image link (.png, .jpg, .webp).
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -954,9 +1858,13 @@ function SortableBioLinkItem({
   const [title, setTitle] = useState(link.title);
   const [url, setUrl] = useState(link.url);
   const [type, setType] = useState<BioLinkType>(link.type);
+  const [icon, setIcon] = useState(link.icon || '');
+  const [isUploadingThumb, setIsUploadingThumb] = useState(false);
+  const [showThumbUrl, setShowThumbUrl] = useState(false);
   const [highlight, setHighlight] = useState(link.highlight);
   const [isActive, setIsActive] = useState(link.isActive);
   const [isUpdating, startUpdate] = useTransition();
+  const supabase = createClient();
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -983,6 +1891,7 @@ function SortableBioLinkItem({
         title,
         url: finalUrl,
         type,
+        icon,
         highlight,
       });
       if (res.success && res.link) {
@@ -1027,16 +1936,24 @@ function SortableBioLinkItem({
         type="button"
         {...attributes}
         {...listeners}
+        suppressHydrationWarning
         className="text-gray-400 hover:text-gray-700 cursor-grab active:cursor-grabbing p-1 touch-none"
         title="Drag to reorder"
       >
         <GripVertical className="h-5 w-5" />
       </button>
 
-      {/* Type Icon */}
-      <div className="p-2 rounded-lg bg-gray-50 border border-gray-100 shrink-0">
-        {getIconForType()}
-      </div>
+      {/* Type Icon or Thumbnail Image */}
+      {link.icon ? (
+        <div className="w-9 h-9 rounded-full overflow-hidden border border-gray-200 shrink-0 bg-gray-50 flex items-center justify-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={link.icon} alt="" className="w-full h-full object-cover" />
+        </div>
+      ) : (
+        <div className="p-2 rounded-lg bg-gray-50 border border-gray-100 shrink-0">
+          {getIconForType()}
+        </div>
+      )}
 
       {/* Link Info */}
       <div className="flex-1 min-w-0">
@@ -1147,6 +2064,110 @@ function SortableBioLinkItem({
                   </div>
                 )}
 
+                {/* Thumbnail Picker */}
+                {type !== 'header' && (
+                  <div className="space-y-1.5 p-3 rounded-xl border border-gray-200 bg-gray-50/50">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-semibold text-gray-900">Thumbnail Image (Optional)</Label>
+                      <button
+                        type="button"
+                        onClick={() => setShowThumbUrl(!showThumbUrl)}
+                        className="text-emerald-600 hover:underline text-[11px] font-medium"
+                      >
+                        {showThumbUrl ? 'Hide URL' : 'Paste URL'}
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      {icon ? (
+                        <div className="relative shrink-0">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={icon}
+                            alt="Thumbnail"
+                            className="w-10 h-10 rounded-full object-cover border border-gray-300 shadow-xs bg-white"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-10 h-10 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 shrink-0">
+                          <ImageIcon className="h-4 w-4" />
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2 flex-1">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          id={`thumb-upload-${link.id}`}
+                          onChange={async (e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              const file = e.target.files[0];
+                              try {
+                                setIsUploadingThumb(true);
+                                const comp = await compressImage(file, 0.8);
+                                const ext = file.name.split('.').pop() || 'png';
+                                const fName = `link-thumb-${uuidv4()}.${ext}`;
+                                const { data: { user } } = await supabase.auth.getUser();
+                                const dir = user ? user.id : 'public';
+                                const filePath = `${dir}/${fName}`;
+                                const { error: upErr } = await supabase.storage
+                                  .from('qr_logos')
+                                  .upload(filePath, comp, { cacheControl: '3600', upsert: false });
+                                if (upErr) throw upErr;
+                                const { data: { publicUrl } } = supabase.storage.from('qr_logos').getPublicUrl(filePath);
+                                setIcon(publicUrl);
+                                toast.success('Thumbnail uploaded!');
+                              } catch {
+                                toast.error('Failed to upload thumbnail.');
+                              } finally {
+                                setIsUploadingThumb(false);
+                              }
+                            }
+                          }}
+                          disabled={isUploadingThumb}
+                        />
+                        <Button
+                          asChild
+                          variant="outline"
+                          size="sm"
+                          disabled={isUploadingThumb}
+                          className="h-8 text-xs bg-white cursor-pointer"
+                        >
+                          <Label htmlFor={`thumb-upload-${link.id}`} className="cursor-pointer flex items-center gap-1.5">
+                            {isUploadingThumb ? (
+                              <Loader2 className="h-3 w-3 animate-spin text-emerald-600" />
+                            ) : (
+                              <Upload className="h-3 w-3 text-emerald-600" />
+                            )}
+                            {icon ? 'Change' : 'Upload Thumbnail'}
+                          </Label>
+                        </Button>
+                        {icon && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setIcon('')}
+                            className="h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 px-2"
+                          >
+                            Remove
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+
+                    {showThumbUrl && (
+                      <Input
+                        value={icon}
+                        onChange={(e) => setIcon(e.target.value)}
+                        placeholder="https://example.com/thumbnail.png"
+                        className="text-xs h-8 mt-1"
+                      />
+                    )}
+                  </div>
+                )}
+
                 {type !== 'header' && (
                   <div className="flex items-center justify-between p-3 rounded-xl border bg-gray-50">
                     <div>
@@ -1227,11 +2248,15 @@ function AddLinkDialog({
   const [type, setType] = useState<BioLinkType>('link');
   const [title, setTitle] = useState('');
   const [url, setUrl] = useState('');
+  const [icon, setIcon] = useState('');
+  const [isUploadingThumb, setIsUploadingThumb] = useState(false);
+  const [showThumbUrl, setShowThumbUrl] = useState(false);
   const [selectedFormId, setSelectedFormId] = useState('');
   const [waPhone, setWaPhone] = useState('');
   const [waMessage, setWaMessage] = useState('');
   const [highlight, setHighlight] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const supabase = createClient();
 
   const handleFormSelect = (formId: string) => {
     setSelectedFormId(formId);
@@ -1260,6 +2285,7 @@ function AddLinkDialog({
         type,
         title: title.trim(),
         url: finalUrl,
+        icon,
         highlight,
       });
 
@@ -1268,6 +2294,7 @@ function AddLinkDialog({
         // Reset form
         setTitle('');
         setUrl('');
+        setIcon('');
         setWaPhone('');
         setWaMessage('');
         setSelectedFormId('');
@@ -1397,6 +2424,110 @@ function AddLinkDialog({
               </div>
             )}
 
+            {/* Thumbnail Picker */}
+            {type !== 'header' && (
+              <div className="space-y-1.5 p-3 rounded-xl border border-gray-200 bg-gray-50/50">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold text-gray-900">Thumbnail Image (Optional)</Label>
+                  <button
+                    type="button"
+                    onClick={() => setShowThumbUrl(!showThumbUrl)}
+                    className="text-emerald-600 hover:underline text-[11px] font-medium"
+                  >
+                    {showThumbUrl ? 'Hide URL' : 'Paste URL'}
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  {icon ? (
+                    <div className="relative shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={icon}
+                        alt="Thumbnail"
+                        className="w-10 h-10 rounded-full object-cover border border-gray-300 shadow-xs bg-white"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 shrink-0">
+                      <ImageIcon className="h-4 w-4" />
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2 flex-1">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      id="new-thumb-upload"
+                      onChange={async (e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          try {
+                            setIsUploadingThumb(true);
+                            const comp = await compressImage(file, 0.8);
+                            const ext = file.name.split('.').pop() || 'png';
+                            const fName = `link-thumb-${uuidv4()}.${ext}`;
+                            const { data: { user } } = await supabase.auth.getUser();
+                            const dir = user ? user.id : 'public';
+                            const filePath = `${dir}/${fName}`;
+                            const { error: upErr } = await supabase.storage
+                              .from('qr_logos')
+                              .upload(filePath, comp, { cacheControl: '3600', upsert: false });
+                            if (upErr) throw upErr;
+                            const { data: { publicUrl } } = supabase.storage.from('qr_logos').getPublicUrl(filePath);
+                            setIcon(publicUrl);
+                            toast.success('Thumbnail uploaded!');
+                          } catch {
+                            toast.error('Failed to upload thumbnail.');
+                          } finally {
+                            setIsUploadingThumb(false);
+                          }
+                        }
+                      }}
+                      disabled={isUploadingThumb}
+                    />
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="sm"
+                      disabled={isUploadingThumb}
+                      className="h-8 text-xs bg-white cursor-pointer"
+                    >
+                      <Label htmlFor="new-thumb-upload" className="cursor-pointer flex items-center gap-1.5">
+                        {isUploadingThumb ? (
+                          <Loader2 className="h-3 w-3 animate-spin text-emerald-600" />
+                        ) : (
+                          <Upload className="h-3 w-3 text-emerald-600" />
+                        )}
+                        {icon ? 'Change Photo' : 'Upload Thumbnail'}
+                      </Label>
+                    </Button>
+                    {icon && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIcon('')}
+                        className="h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 px-2"
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {showThumbUrl && (
+                  <Input
+                    value={icon}
+                    onChange={(e) => setIcon(e.target.value)}
+                    placeholder="https://example.com/thumbnail.png"
+                    className="text-xs h-8 mt-1"
+                  />
+                )}
+              </div>
+            )}
+
             {type !== 'header' && (
               <div className="flex items-center justify-between p-3 rounded-xl border bg-gray-50">
                 <div>
@@ -1443,10 +2574,26 @@ function MobileMockupView({
 }: MobileMockupViewProps) {
   const activeLinks = links.filter((l) => l.isActive);
   const [imgError, setImgError] = React.useState(false);
+  const [posterError, setPosterError] = React.useState(false);
 
   React.useEffect(() => {
     setImgError(false);
-  }, [page.avatarUrl]);
+    setPosterError(false);
+  }, [page.avatarUrl, page.themeConfig?.posterUrl]);
+
+  const isHeroMode =
+    page.themeConfig?.headerType === 'hero' &&
+    Boolean(page.themeConfig?.posterUrl) &&
+    !posterError;
+
+  const isPosterMode =
+    page.themeConfig?.headerType === 'poster' &&
+    Boolean(page.themeConfig?.posterUrl) &&
+    !posterError;
+
+  const badgeStyle = page.themeConfig?.badgeStyle || (isHeroMode ? 'stencil' : isPosterMode ? 'tiles' : 'none');
+  const displayHandle = getBioDisplayHandle(page.username, page.themeConfig?.customHandle);
+  const { tiles } = formatHandleTiles(displayHandle, page.themeConfig?.handleUppercase);
 
   return (
     <div className="w-[320px] sm:w-[350px] h-[660px] rounded-[48px] border-[10px] border-gray-900 bg-gray-900 shadow-2xl p-2.5 relative flex flex-col justify-between overflow-hidden">
@@ -1457,46 +2604,191 @@ function MobileMockupView({
 
       {/* Screen Area */}
       <div
-        className={`w-full h-full rounded-[38px] ${theme.bg} overflow-y-auto px-4 py-6 flex flex-col justify-between items-center text-center relative custom-scrollbar`}
+        style={{
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+        }}
+        className={`w-full h-full rounded-[38px] ${theme.bg} overflow-y-auto ${
+          isHeroMode ? 'pt-0 px-4' : 'px-4 py-5'
+        } pb-5 flex flex-col justify-between items-center text-center relative no-scrollbar custom-scrollbar`}
       >
-        {/* Background Pattern */}
+        {/* Background Pattern Overlay */}
         {page.themeConfig?.pattern && page.themeConfig.pattern !== 'none' && (
           <div
-            className="absolute inset-0 pointer-events-none rounded-[38px] min-h-full z-0"
-            style={getBioPatternStyle(page.themeConfig.pattern, theme)}
+            className="absolute inset-0 pointer-events-none rounded-[38px] min-h-full z-0 transition-opacity duration-200"
+            style={{
+              ...getBioPatternStyle(page.themeConfig.pattern, theme),
+              opacity: getBioPatternOpacity(page.themeConfig),
+              ...(isHeroMode
+                ? {
+                    maskImage: 'linear-gradient(to bottom, transparent 0px, transparent 130px, black 230px)',
+                    WebkitMaskImage: 'linear-gradient(to bottom, transparent 0px, transparent 130px, black 230px)',
+                  }
+                : {}),
+            }}
           />
         )}
 
-        <div className="w-full space-y-4 pt-4 relative z-10">
-          {/* Avatar Profile */}
-          <div className="relative inline-block">
-            {page.avatarUrl && !imgError ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={page.avatarUrl}
-                alt={page.title || page.username}
-                onError={() => setImgError(true)}
-                className={`w-20 h-20 rounded-full object-cover shadow-lg mx-auto ${theme.avatarBorder}`}
-              />
-            ) : (
-              <div
-                className={`w-20 h-20 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 text-white font-bold text-2xl flex items-center justify-center shadow-lg mx-auto ${theme.avatarBorder}`}
-              >
-                {(page.title || page.username).charAt(0).toUpperCase()}
+        <div className="w-full space-y-3 pt-0 relative z-10">
+          {/* HERO MODE: True Full-Bleed Edge-to-Edge with Overlay Action Buttons */}
+          {isHeroMode ? (
+            <div className="w-[calc(100%+2rem)] -mx-4 relative overflow-hidden select-none rounded-t-[38px]">
+              {/* Floating Action Overlay on top of Hero Graphic inside Mockup */}
+              <div className="absolute top-4 left-4 z-20">
+                <div className="w-7 h-7 rounded-full bg-black/30 hover:bg-black/45 backdrop-blur-md border border-white/25 text-white flex items-center justify-center shadow-xs select-none">
+                  <Sparkles className="h-3.5 w-3.5" />
+                </div>
               </div>
-            )}
-          </div>
+              <div className="absolute top-4 right-4 z-20">
+                <div className="w-7 h-7 rounded-full bg-black/30 hover:bg-black/45 backdrop-blur-md border border-white/25 text-white flex items-center justify-center shadow-xs select-none">
+                  <Share2 className="h-3.5 w-3.5" />
+                </div>
+              </div>
 
-          {/* Profile Title & Bio */}
-          <div className="space-y-1">
-            <h2 className={`font-bold text-base leading-tight ${theme.textColor}`}>
-              {page.title || page.username}
-            </h2>
-            {page.bio && (
-              <p className={`text-xs max-w-[240px] mx-auto leading-relaxed ${theme.bioColor}`}>
-                {page.bio}
-              </p>
-            )}
+              {/* Top-bleed flyer image */}
+              <div
+                className="w-full relative overflow-hidden"
+                style={{
+                  maskImage: getHeroFadeMask(page.themeConfig?.fadeStyle),
+                  WebkitMaskImage: getHeroFadeMask(page.themeConfig?.fadeStyle),
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={page.themeConfig?.posterUrl}
+                  alt={page.title || page.username}
+                  onError={() => setPosterError(true)}
+                  className="w-full h-[240px] sm:h-[260px] object-cover object-top pointer-events-none"
+                />
+              </div>
+
+              {/* Optional Title & Bio if not hidden */}
+              {!page.themeConfig?.hideTitleInHero && (page.title || page.bio) && (
+                <div className="space-y-1 px-3 -mt-2 relative z-10">
+                  {page.title && (
+                    <h2 className={`font-bold text-sm leading-tight ${theme.textColor}`}>
+                      {page.title}
+                    </h2>
+                  )}
+                  {page.bio && (
+                    <p className={`text-[11px] max-w-[230px] mx-auto leading-relaxed ${theme.bioColor} whitespace-pre-line`}>
+                      {page.bio}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* Standard Top Header Action Bar for Non-Hero Modes */}
+              <div className="w-full flex items-center justify-between px-1">
+                <div className="w-7 h-7 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white flex items-center justify-center shadow-xs select-none">
+                  <Sparkles className="h-3.5 w-3.5" />
+                </div>
+                <div className="w-7 h-7 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white flex items-center justify-center shadow-xs select-none">
+                  <Share2 className="h-3.5 w-3.5" />
+                </div>
+              </div>
+
+              {isPosterMode ? (
+                <div className="w-full flex flex-col items-center space-y-2.5">
+                  <div className="w-full rounded-2xl overflow-hidden shadow-xl border border-white/25 bg-white/10 relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={page.themeConfig?.posterUrl}
+                      alt={page.title || page.username}
+                      onError={() => setPosterError(true)}
+                      className="w-full h-auto object-cover max-h-[300px] rounded-2xl"
+                    />
+                  </div>
+
+                  {(page.title || page.bio) && (
+                    <div className="space-y-1 px-1">
+                      {page.title && (
+                        <h2 className={`font-bold text-sm leading-tight ${theme.textColor}`}>
+                          {page.title}
+                        </h2>
+                      )}
+                      {page.bio && (
+                        <p className={`text-[11px] max-w-[230px] mx-auto leading-relaxed ${theme.bioColor} whitespace-pre-line`}>
+                          {page.bio}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  {/* Avatar Profile */}
+                  <div className="relative inline-block">
+                    {page.avatarUrl && !imgError ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={page.avatarUrl}
+                        alt={page.title || page.username}
+                        onError={() => setImgError(true)}
+                        className={`w-20 h-20 rounded-full object-cover shadow-lg mx-auto ${theme.avatarBorder}`}
+                      />
+                    ) : (
+                      <div
+                        className={`w-20 h-20 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 text-white font-bold text-2xl flex items-center justify-center shadow-lg mx-auto ${theme.avatarBorder}`}
+                      >
+                        {(page.title || page.username).charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Profile Title & Bio */}
+                  <div className="space-y-1">
+                    <h2 className={`font-bold text-base leading-tight ${theme.textColor}`}>
+                      {page.title || page.username}
+                    </h2>
+                    {page.bio && (
+                      <p className={`text-xs max-w-[240px] mx-auto leading-relaxed ${theme.bioColor}`}>
+                        {page.bio}
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
+            </>
+          )}
+
+          {/* Handle Badge (Stencil, Tiles, Pill, None) */}
+          <div className={isHeroMode && page.themeConfig?.hideTitleInHero ? '-mt-4 relative z-20' : ''}>
+            {badgeStyle === 'stencil' ? (
+              <div
+                className={`font-['Monofett',monospace] text-2xl tracking-wider select-none py-0.5 text-center drop-shadow-xs ${
+                  theme.id === 'minimal' ? 'text-slate-900' : 'text-white'
+                }`}
+              >
+                @{page.themeConfig?.handleUppercase ? displayHandle.toUpperCase() : displayHandle}
+              </div>
+            ) : badgeStyle === 'tiles' ? (
+              <div className="flex items-center justify-center gap-1 my-1 flex-wrap max-w-full px-2">
+                <span
+                  className={`${
+                    displayHandle.length > 7 ? 'w-5 h-5 text-[10px]' : 'w-6 h-6 text-xs'
+                  } rounded-md bg-white/90 text-slate-800 font-bold flex items-center justify-center shadow-xs border border-white/80 select-none`}
+                >
+                  @
+                </span>
+                {tiles.map((char, idx) => (
+                  <span
+                    key={idx}
+                    className={`${
+                      displayHandle.length > 7 ? 'w-5 h-5 text-[10px]' : 'w-6 h-6 text-xs'
+                    } rounded-md bg-white/90 text-slate-800 font-bold flex items-center justify-center shadow-xs border border-white/80 select-none`}
+                  >
+                    {char}
+                  </span>
+                ))}
+              </div>
+            ) : badgeStyle === 'pill' ? (
+              <div className="inline-flex items-center px-3 py-0.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white font-mono text-[11px] font-semibold shadow-xs my-1">
+                @{page.themeConfig?.handleUppercase ? displayHandle.toUpperCase() : displayHandle}
+              </div>
+            ) : null}
           </div>
 
           {/* Social Icons Row */}
@@ -1537,16 +2829,48 @@ function MobileMockupView({
                 }
 
                 const isHighlight = l.highlight;
+                const hasImageThumb = Boolean(
+                  l.icon &&
+                  (l.icon.startsWith('http://') ||
+                    l.icon.startsWith('https://') ||
+                    l.icon.startsWith('/') ||
+                    l.icon.startsWith('data:image'))
+                );
+
                 return (
                   <div
                     key={l.id}
-                    className={`w-full py-3 px-4 font-medium text-xs flex items-center justify-between transition-all select-none ${getBioButtonClass(
+                    style={getBioButtonCustomStyle(page.themeConfig, isHighlight)}
+                    className={`w-full py-2.5 px-3 font-medium text-xs flex items-center justify-between transition-all select-none ${getBioButtonClass(
                       theme,
                       page.themeConfig?.buttonStyle || 'rounded-full',
                       isHighlight
                     )} ${isHighlight ? 'animate-pulse' : ''}`}
                   >
-                    <span className="truncate flex-1 text-center font-medium">{l.title}</span>
+                    {/* Left thumbnail or invisible balance spacer */}
+                    {hasImageThumb ? (
+                      <div className="w-6 h-6 shrink-0 flex items-center justify-center mr-1.5">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={l.icon}
+                          alt=""
+                          className="w-5 h-5 rounded-full object-cover border border-white/40 shadow-xs bg-white/20"
+                        />
+                      </div>
+                    ) : (
+                      /* Invisible balance spacer so title is centered against 3-dots button */
+                      <div className="w-6 h-6 shrink-0 mr-1.5 invisible pointer-events-none" aria-hidden="true" />
+                    )}
+
+                    {/* Centered title */}
+                    <span className="truncate flex-1 text-center px-1 font-bold text-xs">
+                      {l.title}
+                    </span>
+
+                    {/* Right 3-dots */}
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center opacity-70 shrink-0 ml-1.5">
+                      <MoreVertical className="h-3.5 w-3.5" />
+                    </div>
                   </div>
                 );
               })

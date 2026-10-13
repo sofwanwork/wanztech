@@ -52,5 +52,17 @@ export default async function PublicBioPage(props: PublicBioPageProps) {
   // Increment page view count in background (fire-and-forget)
   incrementBioPageView(page.id).catch(() => {});
 
-  return <PublicBioClient page={page} />;
+  return (
+    <>
+      {/* Google Font Monofett for Linktree @fik2026 stencil typography */}
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+      <link
+        href="https://fonts.googleapis.com/css2?family=Monofett&display=swap"
+        rel="stylesheet"
+      />
+      <PublicBioClient page={page} />
+    </>
+  );
 }

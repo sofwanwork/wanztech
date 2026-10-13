@@ -12,7 +12,8 @@ export type BioTheme =
   | 'minimal'
   | 'lavender'
   | 'neon'
-  | 'midnight';
+  | 'midnight'
+  | 'sky';
 
 export type BioButtonStyle =
   | 'rounded-full'
@@ -32,14 +33,30 @@ export type BioPattern =
   | 'stars'
   | 'circuit';
 
+export type BioHeaderType = 'avatar' | 'poster' | 'hero' | 'banner';
+export type BioBadgeStyle = 'tiles' | 'pill' | 'stencil' | 'subtle' | 'none';
+export type BioFadeStyle = 'smooth' | 'deep' | 'subtle';
+
 export interface BioThemeConfig {
   bgType?: 'preset' | 'color' | 'gradient';
   bgValue?: string;
   pattern?: BioPattern;
+  patternOpacity?: number;
   buttonStyle?: BioButtonStyle;
   textColor?: string;
   buttonColor?: string;
   buttonTextColor?: string;
+  buttonBorderColor?: string;
+  highlightButtonColor?: string;
+  highlightButtonTextColor?: string;
+  buttonPreset?: string;
+  headerType?: BioHeaderType;
+  posterUrl?: string;
+  badgeStyle?: BioBadgeStyle;
+  fadeStyle?: BioFadeStyle;
+  hideTitleInHero?: boolean;
+  handleUppercase?: boolean;
+  customHandle?: string;
 }
 
 export interface BioSocialLinks {

@@ -440,16 +440,16 @@ export function PamphletBuilderClient({
             className="w-full flex-1 flex flex-col"
           >
             <div className="px-4 pt-3 border-b border-gray-100 bg-gray-50/50 sticky top-0 z-10">
-              <TabsList className="grid grid-cols-3 w-full rounded-xl bg-gray-200/70 p-1">
-                <TabsTrigger value="pages" className="text-xs font-semibold rounded-lg gap-1.5">
+              <TabsList className="grid grid-cols-3 w-full h-10 rounded-xl bg-gray-200/70 p-1">
+                <TabsTrigger value="pages" className="h-full text-xs font-semibold rounded-lg gap-1.5 py-0 flex items-center justify-center">
                   <Layers className="h-3.5 w-3.5" />
                   <span>Pages ({pamphlet.pages?.length || 0})</span>
                 </TabsTrigger>
-                <TabsTrigger value="details" className="text-xs font-semibold rounded-lg gap-1.5">
+                <TabsTrigger value="details" className="h-full text-xs font-semibold rounded-lg gap-1.5 py-0 flex items-center justify-center">
                   <FileText className="h-3.5 w-3.5" />
                   <span>Details</span>
                 </TabsTrigger>
-                <TabsTrigger value="appearance" className="text-xs font-semibold rounded-lg gap-1.5">
+                <TabsTrigger value="appearance" className="h-full text-xs font-semibold rounded-lg gap-1.5 py-0 flex items-center justify-center">
                   <Palette className="h-3.5 w-3.5" />
                   <span>Style & Buttons</span>
                 </TabsTrigger>

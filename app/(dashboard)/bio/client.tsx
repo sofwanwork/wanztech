@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useRef } from 'react';
+import { useState, useEffect, useTransition, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
@@ -215,10 +215,17 @@ export function BioPageCard({ page, appUrl }: BioPageCardProps) {
   const [isActive, setIsActive] = useState(page.isActive);
   const [isDeleting, startDelete] = useTransition();
   const [isUpdating, startUpdate] = useTransition();
+  const [resolvedAppUrl, setResolvedAppUrl] = useState(appUrl);
   const qrRef = useRef<SVGSVGElement>(null);
   const router = useRouter();
 
-  const publicUrl = `${appUrl}/bio/${page.username}`;
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setResolvedAppUrl(window.location.origin);
+    }
+  }, []);
+
+  const publicUrl = `${resolvedAppUrl}/bio/${page.username}`;
   const theme = BIO_THEMES[page.theme] || BIO_THEMES.emerald;
 
   const handleCopy = () => {
