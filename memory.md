@@ -2995,6 +2995,17 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - `npm run lint`: 0 ralat ESLint.
   - `npm test`: 381 / 381 ujian unit lulus merentas 39 suite fail.
 
+## Pelancaran Pengeluaran Vercel (Production Deployment) (2026-10-14 — E-Cert Mobile Builder Polish, Theme Color Zoom Bar & Hydration Fixes)
+- **Komit Git**: `8d707f4` (`feat(ecert,bio): mobile responsive canvas fit, canva-style bottom dock, brand theme zoom capsule, and hydration fixes`).
+- **Kaedah Pelancaran**: Tolak ke GitHub (`git push origin master`) dengan pembinaan automatik Vercel (CI/CD).
+- **Status Vercel**: ● Ready (Build Time: ~3m).
+- **ID Deployment**: `dpl_5WvhfUcP8P1tPd1U5gWtoXV7dvYU`
+- **Domain Pengeluaran Aktif**:
+  - `https://www.klikform.com`
+  - `https://klikform.vercel.app`
+  - `https://klikform.com`
+
+
 
 
 
