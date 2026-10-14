@@ -421,24 +421,27 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
   };
 
   return (
-    <div className="min-h-screen bg-gray-50/50 pb-20">
+    <div className="bg-gray-50/50 pb-8 sm:pb-12">
       {/* Sticky Header Bar */}
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-gray-200 px-4 md:px-8 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/bio">
-            <Button variant="ghost" size="icon" className="h-9 w-9 text-gray-500 hover:text-gray-900">
-              <ChevronLeft className="h-5 w-5" />
+      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-gray-200 px-3 sm:px-4 md:px-8 py-2.5 sm:py-3 flex items-center justify-between gap-2 min-w-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+          <Link href="/bio" className="shrink-0">
+            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 text-gray-500 hover:text-gray-900 shrink-0">
+              <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
           </Link>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="font-bold text-gray-900 text-lg md:text-xl truncate max-w-[200px] md:max-w-md">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <h1 className="font-bold text-gray-900 text-sm sm:text-base md:text-xl truncate">
                 {page.title || page.username}
               </h1>
-              <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="text-[10px] sm:text-xs font-mono px-1.5 sm:px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0 hidden sm:inline-block truncate">
                 @{page.username}
               </span>
             </div>
+            <p className="text-[11px] text-gray-500 sm:hidden truncate font-mono mt-0.5">
+              @{page.username}
+            </p>
             <p className="text-xs text-gray-500 hidden sm:block">
               {savedStatus === 'saving' ? (
                 <span className="text-amber-600 animate-pulse">Saving changes...</span>
@@ -451,25 +454,25 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Mobile Preview Toggle Button (visible on < lg screens) */}
           <Button
             variant="outline"
             size="sm"
             onClick={() => setMobilePreviewOpen(true)}
-            className="lg:hidden gap-1.5 text-xs text-gray-700"
+            className="lg:hidden gap-1 text-xs text-gray-700 h-8 px-2 sm:px-3 shrink-0"
           >
-            <Smartphone className="h-4 w-4 text-emerald-600" />
-            Preview
+            <Smartphone className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+            <span>Preview</span>
           </Button>
 
           <Button
             variant="outline"
             size="sm"
             onClick={handleCopyLink}
-            className="gap-1.5 text-xs hidden sm:flex"
+            className="gap-1.5 text-xs hidden sm:flex h-8 shrink-0"
           >
-            {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+            {copied ? <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0" /> : <Copy className="h-3.5 w-3.5 shrink-0" />}
             {copied ? 'Copied' : 'Copy Link'}
           </Button>
 
@@ -477,9 +480,10 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
             href={publicUrl}
             target="_blank"
             rel="noopener noreferrer"
+            className="shrink-0"
           >
-            <Button size="sm" className="gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 shadow-sm font-medium">
-              <ExternalLink className="h-3.5 w-3.5" />
+            <Button size="sm" className="gap-1 text-xs bg-emerald-600 hover:bg-emerald-700 shadow-sm font-medium h-8 px-2.5 sm:px-3 shrink-0">
+              <ExternalLink className="h-3.5 w-3.5 shrink-0" />
               <span className="hidden sm:inline">View Public</span> Bio
             </Button>
           </a>
@@ -487,42 +491,45 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
       </header>
 
       {/* Main Split Layout */}
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-8 py-4 sm:py-6 min-w-0 w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start min-w-0 w-full">
           {/* Left Column: Settings Tabs */}
-          <div className="lg:col-span-7 space-y-6">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-4 w-full h-11 bg-gray-100 p-1.5 rounded-xl">
-                <TabsTrigger value="links" className="h-full rounded-lg text-xs md:text-sm font-medium gap-1.5 py-0 flex items-center justify-center">
-                  <LinkIcon className="h-3.5 w-3.5" />
-                  Links
+          <div className="lg:col-span-7 space-y-6 min-w-0 w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full min-w-0">
+              <TabsList className="grid grid-cols-4 w-full h-10 sm:h-11 bg-gray-100 p-1 sm:p-1.5 rounded-xl min-w-0">
+                <TabsTrigger value="links" className="h-full rounded-lg text-[11px] sm:text-xs md:text-sm font-medium gap-1 sm:gap-1.5 py-0 px-1 sm:px-2 flex items-center justify-center min-w-0">
+                  <LinkIcon className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">Links</span>
                 </TabsTrigger>
-                <TabsTrigger value="theme" className="h-full rounded-lg text-xs md:text-sm font-medium gap-1.5 py-0 flex items-center justify-center">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Design
+                <TabsTrigger value="theme" className="h-full rounded-lg text-[11px] sm:text-xs md:text-sm font-medium gap-1 sm:gap-1.5 py-0 px-1 sm:px-2 flex items-center justify-center min-w-0">
+                  <Sparkles className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">Design</span>
                 </TabsTrigger>
-                <TabsTrigger value="profile" className="h-full rounded-lg text-xs md:text-sm font-medium gap-1.5 py-0 flex items-center justify-center">
-                  <Instagram className="h-3.5 w-3.5" />
-                  Profile
+                <TabsTrigger value="profile" className="h-full rounded-lg text-[11px] sm:text-xs md:text-sm font-medium gap-1 sm:gap-1.5 py-0 px-1 sm:px-2 flex items-center justify-center min-w-0">
+                  <Instagram className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">Profile</span>
                 </TabsTrigger>
-                <TabsTrigger value="share" className="h-full rounded-lg text-xs md:text-sm font-medium gap-1.5 py-0 flex items-center justify-center">
-                  <QrCode className="h-3.5 w-3.5" />
-                  Share & QR
+                <TabsTrigger value="share" className="h-full rounded-lg text-[11px] sm:text-xs md:text-sm font-medium gap-1 sm:gap-1.5 py-0 px-1 sm:px-2 flex items-center justify-center min-w-0">
+                  <QrCode className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate sm:hidden">Share</span>
+                  <span className="truncate hidden sm:inline">Share & QR</span>
                 </TabsTrigger>
               </TabsList>
 
               {/* TAB 1: LINKS & BLOCKS */}
-              <TabsContent value="links" className="space-y-4 pt-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-base font-semibold text-gray-900">Your Bio Links</h3>
+              <TabsContent value="links" className="space-y-4 pt-4 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
+                  <div className="min-w-0">
+                    <h3 className="text-base font-semibold text-gray-900 truncate">Your Bio Links</h3>
                     <p className="text-xs text-gray-500">Drag to reorder your links and buttons.</p>
                   </div>
-                  <AddLinkDialog
-                    bioPageId={page.id}
-                    forms={forms}
-                    onLinkAdded={(newLink) => setLinks((prev) => [...prev, newLink])}
-                  />
+                  <div className="shrink-0 self-start sm:self-auto">
+                    <AddLinkDialog
+                      bioPageId={page.id}
+                      forms={forms}
+                      onLinkAdded={(newLink) => setLinks((prev) => [...prev, newLink])}
+                    />
+                  </div>
                 </div>
 
                 {links.length === 0 ? (
@@ -1929,7 +1936,7 @@ function SortableBioLinkItem({
       style={style}
       className={`bg-white rounded-xl border ${
         isDragging ? 'border-emerald-500 shadow-lg' : 'border-gray-200 shadow-sm'
-      } p-3.5 flex items-center gap-3 transition-colors`}
+      } p-2.5 sm:p-3.5 flex items-center gap-2 sm:gap-3 transition-colors min-w-0 w-full`}
     >
       {/* Drag Grip Handle */}
       <button
@@ -1937,46 +1944,46 @@ function SortableBioLinkItem({
         {...attributes}
         {...listeners}
         suppressHydrationWarning
-        className="text-gray-400 hover:text-gray-700 cursor-grab active:cursor-grabbing p-1 touch-none"
+        className="text-gray-400 hover:text-gray-700 cursor-grab active:cursor-grabbing p-1 touch-none shrink-0"
         title="Drag to reorder"
       >
-        <GripVertical className="h-5 w-5" />
+        <GripVertical className="h-4 w-4 sm:h-5 sm:w-5" />
       </button>
 
       {/* Type Icon or Thumbnail Image */}
       {link.icon ? (
-        <div className="w-9 h-9 rounded-full overflow-hidden border border-gray-200 shrink-0 bg-gray-50 flex items-center justify-center">
+        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden border border-gray-200 shrink-0 bg-gray-50 flex items-center justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={link.icon} alt="" className="w-full h-full object-cover" />
         </div>
       ) : (
-        <div className="p-2 rounded-lg bg-gray-50 border border-gray-100 shrink-0">
+        <div className="p-1.5 sm:p-2 rounded-lg bg-gray-50 border border-gray-100 shrink-0">
           {getIconForType()}
         </div>
       )}
 
       {/* Link Info */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <h4 className="font-semibold text-gray-900 text-sm truncate">{link.title}</h4>
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+          <h4 className="font-semibold text-gray-900 text-xs sm:text-sm truncate">{link.title}</h4>
           {link.highlight && (
-            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-200">
+            <span className="text-[9px] sm:text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-200 shrink-0">
               Glow
             </span>
           )}
         </div>
         {link.type !== 'header' && (
-          <p className="text-xs text-gray-500 font-mono truncate mt-0.5">{link.url || 'No URL configured'}</p>
+          <p className="text-[11px] sm:text-xs text-gray-500 font-mono truncate mt-0.5">{link.url || 'No URL configured'}</p>
         )}
       </div>
 
       {/* Controls */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
         <Switch
           checked={isActive}
           onCheckedChange={handleToggleActive}
           disabled={isUpdating}
-          className="scale-75 data-[state=checked]:bg-emerald-600"
+          className="scale-75 data-[state=checked]:bg-emerald-600 shrink-0"
           title="Toggle visibility"
         />
 

@@ -17,7 +17,24 @@ import {
   Minus,
   Plus,
   Maximize2,
+  PlusCircle,
+  Palette,
+  RotateCw,
+  Download,
+  FileDown,
+  Copy,
+  Trash2,
+  Layers,
+  X,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
 import { ImageCropperDialog } from '@/components/image-cropper-dialog';
 import { toast } from 'sonner';
 // import html2canvas from 'html2canvas-pro';
@@ -132,33 +149,80 @@ export function CertificateBuilderClient({
   const selectedElement = template.elements.find((el) => el.id === selectedId);
 
   // Responsive Workspace & Zoom State
+  const [mounted, setMounted] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
   const [zoomMode, setZoomMode] = useState<'fit' | 'custom'>('fit');
   const [customZoom, setCustomZoom] = useState(1);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
+  // Mobile Drawers State
+  const [mobileAddOpen, setMobileAddOpen] = useState(false);
+  const [mobilePropsOpen, setMobilePropsOpen] = useState(false);
+  const [mobileExportOpen, setMobileExportOpen] = useState(false);
+
   useEffect(() => {
+    setMounted(true);
     const node = containerRef.current;
     if (!node) return;
+
+    const measure = () => {
+      const rect = node.getBoundingClientRect();
+      const parentW = node.parentElement?.getBoundingClientRect().width || window.innerWidth;
+      const w = Math.min(rect.width || node.clientWidth, parentW, window.innerWidth);
+      const h = rect.height || node.clientHeight || (window.innerHeight - 140);
+      if (w > 0 && h > 0) {
+        setContainerSize({ width: Math.round(w), height: Math.round(h) });
+      }
+    };
+
+    measure();
+
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (!entry) return;
-      const { width, height } = entry.contentRect;
-      setContainerSize({ width, height });
+      const rawW = entry.contentRect.width || node.clientWidth;
+      const rawH = entry.contentRect.height || node.clientHeight;
+      const w = Math.min(rawW, window.innerWidth);
+      const h = rawH;
+      if (w > 0 && h > 0) {
+        setContainerSize({ width: Math.round(w), height: Math.round(h) });
+      }
     });
+
     observer.observe(node);
-    return () => observer.disconnect();
+    window.addEventListener('resize', measure);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', measure);
+    };
   }, []);
 
   // Compute fit-to-screen scale based on available container dimensions
   const fitScale = useMemo(() => {
-    if (!containerSize.width || !containerSize.height) return 0.65;
-    const padX = 40;
-    const padY = 40;
-    const availW = Math.max(200, containerSize.width - padX);
-    const availH = Math.max(200, containerSize.height - padY);
+    // Deterministic baseline across SSR and initial client hydration (prevents hydration mismatch)
+    if (!mounted || containerSize.width === 0) {
+      const baselineW = 390;
+      const padX = 16;
+      return Math.min((baselineW - padX) / template.width, 500 / template.height);
+    }
+
+    const screenW = window.innerWidth;
+    const isMobile = (containerSize.width > 0 ? containerSize.width : screenW) < 640;
+    const padX = isMobile ? 16 : 40;
+    const padY = isMobile ? 24 : 40;
+
+    const effectiveW = containerSize.width > 0 ? Math.min(containerSize.width, screenW) : screenW;
+    const effectiveH =
+      containerSize.height > 0
+        ? containerSize.height
+        : (window.innerHeight - 150);
+
+    const availW = Math.max(120, effectiveW - padX);
+    const availH = Math.max(120, effectiveH - padY);
+
     return Math.min(availW / template.width, availH / template.height);
-  }, [containerSize.width, containerSize.height, template.width, template.height]);
+  }, [mounted, containerSize.width, containerSize.height, template.width, template.height]);
 
   const currentScale = zoomMode === 'fit' ? Math.min(fitScale, 1.25) : customZoom;
   const renderedWidth = Math.max(100, Math.round(template.width * currentScale));
@@ -247,6 +311,29 @@ export function CertificateBuilderClient({
     const next = redoHistory();
     if (next) setTemplate(next);
   }, [redoHistory]);
+
+  const handleToggleOrientation = useCallback(() => {
+    setTemplate((prev) => {
+      const nextWidth = prev.height;
+      const nextHeight = prev.width;
+      const ratioX = nextWidth / prev.width;
+      const ratioY = nextHeight / prev.height;
+      const newElements = prev.elements.map((el) => ({
+        ...el,
+        x: Math.round(el.x * ratioX),
+        y: Math.round(el.y * ratioY),
+      }));
+      const updated = {
+        ...prev,
+        width: nextWidth,
+        height: nextHeight,
+        elements: newElements,
+      };
+      commitToHistoryHook(updated);
+      return updated;
+    });
+    setZoomMode('fit');
+  }, [commitToHistoryHook]);
 
   // Handle Mouse Down (Selection Wrapper)
   const handleMouseDown = useCallback(
@@ -752,7 +839,7 @@ export function CertificateBuilderClient({
   }, [isDragging, isResizing]);
 
   return (
-    <div className="h-full flex-1 flex flex-col bg-gray-100 overflow-hidden">
+    <div className="h-full flex-1 flex flex-col bg-gray-100 overflow-hidden min-w-0 min-h-0">
       {/* Google Fonts for Certificates */}
       {/* eslint-disable-next-line @next/next/no-page-custom-font */}
       <link
@@ -796,33 +883,34 @@ export function CertificateBuilderClient({
         showSafeMargin={showSafeMargin}
         onToggleSafeMargin={() => setShowSafeMargin(!showSafeMargin)}
         orientation={template.width >= template.height ? 'landscape' : 'portrait'}
-        onOrientationChange={() => {
-          setTemplate((prev) => {
-            const nextWidth = prev.height;
-            const nextHeight = prev.width;
-            const ratioX = nextWidth / prev.width;
-            const ratioY = nextHeight / prev.height;
-            const newElements = prev.elements.map((el) => ({
-              ...el,
-              x: Math.round(el.x * ratioX),
-              y: Math.round(el.y * ratioY),
-            }));
-            const updated = {
-              ...prev,
-              width: nextWidth,
-              height: nextHeight,
-              elements: newElements,
-            };
-            commitToHistoryHook(updated);
-            return updated;
-          });
-          setZoomMode('fit');
-        }}
+        onOrientationChange={handleToggleOrientation}
         showSidebar={showSidebar}
         onToggleSidebar={() => setShowSidebar((prev) => !prev)}
       />
 
-      <div className="flex-1 flex overflow-hidden">
+      {/* Mobile Canvas Status Strip (md:hidden) */}
+      <div className="md:hidden bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-3 py-1.5 flex items-center justify-between text-[11px] text-slate-600 shrink-0 shadow-xs">
+        <div className="flex items-center gap-1.5 font-medium">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+          <span className="font-semibold text-slate-800">
+            {template.width >= template.height ? 'A4 Landscape' : 'A4 Portrait'}
+          </span>
+          <span className="text-slate-400 font-mono text-[10px]">
+            ({template.width}×{template.height}px)
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={handleToggleOrientation}
+          className="text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded-md font-medium flex items-center gap-1 text-[11px] transition-colors active:scale-95"
+          title="Switch Orientation between Landscape & Portrait"
+        >
+          <RotateCw className="h-3 w-3 text-slate-500" />
+          <span>Rotate A4</span>
+        </button>
+      </div>
+
+      <div className="flex-1 flex overflow-hidden min-w-0 min-h-0">
         {/* Left Sidebar - Elements */}
         {showSidebar && (
           <CertificateEditorSidebar
@@ -837,13 +925,14 @@ export function CertificateBuilderClient({
         {/* Canvas Area */}
         <div
           ref={containerRef}
-          className="flex-1 overflow-auto p-4 md:p-6 flex relative bg-slate-100/90 select-none"
+          className="flex-1 min-w-0 min-h-0 overflow-auto p-3 sm:p-4 md:p-6 pb-24 md:pb-6 flex relative bg-slate-100/90 select-none"
           onClick={() => setSelectedId(null)}
         >
           <div
             ref={canvasRef}
+            suppressHydrationWarning
             className={`relative shadow-2xl bg-cover m-auto shrink-0 select-none ${
-              isDragging || isResizing ? 'transition-none' : 'transition-[width,height] duration-100'
+              !mounted || isDragging || isResizing ? 'transition-none' : 'transition-[width,height] duration-100'
             }`}
             style={{
               width: `${renderedWidth}px`,
@@ -1092,48 +1181,69 @@ export function CertificateBuilderClient({
             ))}
           </div>
 
-          {/* Floating Zoom Bar (Canva-Style) */}
+          {/* Floating Zoom Bar (Canva/Apple Precision Capsule - Brand Theme) */}
           <div
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-md border border-gray-200/90 shadow-lg rounded-full px-2 py-1 flex items-center gap-1 z-30 text-xs text-gray-700"
+            className="absolute bottom-20 md:bottom-4 left-1/2 -translate-x-1/2 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800 shadow-[0_8px_25px_-4px_rgba(124,58,237,0.15),0_2px_8px_-2px_rgba(0,0,0,0.06)] ring-1 ring-primary/20 rounded-full p-1 flex items-center gap-1 z-30 text-xs text-slate-700 transition-all duration-200 select-none"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               type="button"
-              className="h-7 w-7 rounded-full flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+              className="h-7 w-7 rounded-full flex items-center justify-center text-slate-600 hover:text-primary hover:bg-primary/10 active:scale-90 active:bg-primary/20 transition-all"
               onClick={handleZoomOut}
               title="Zoom Out (-)"
+              aria-label="Zoom Out"
             >
-              <Minus className="h-3.5 w-3.5" />
+              <Minus className="h-3.5 w-3.5 stroke-[2.25]" />
             </button>
 
             <button
               type="button"
-              className={`h-7 px-2.5 text-xs font-medium rounded-full flex items-center gap-1 transition-colors ${
+              className={`h-7 px-2.5 text-xs font-medium rounded-full flex items-center gap-1.5 transition-all active:scale-95 ${
                 zoomMode === 'fit'
-                  ? 'bg-primary/10 text-primary font-semibold'
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-primary text-white font-semibold shadow-xs hover:bg-primary/90'
+                  : 'text-slate-700 hover:bg-primary/10 hover:text-primary'
               }`}
-              onClick={handleResetFit}
-              title="Fit Certificate to Screen"
+              onClick={() => {
+                if (zoomMode === 'fit') {
+                  handleActualSize();
+                } else {
+                  handleResetFit();
+                }
+              }}
+              title={zoomMode === 'fit' ? 'Fit to Screen (Click for 100%)' : 'Click to Fit Screen'}
             >
-              <Maximize2 className="h-3 w-3" />
-              <span>{zoomMode === 'fit' ? `Fit (${Math.round(currentScale * 100)}%)` : `${Math.round(currentScale * 100)}%`}</span>
+              <Maximize2
+                className={`h-3 w-3 shrink-0 ${zoomMode === 'fit' ? 'text-white stroke-[2.5]' : 'text-slate-500'}`}
+              />
+              <span suppressHydrationWarning className="tabular-nums font-semibold tracking-tight">
+                {Math.round(currentScale * 100)}%
+              </span>
+              {zoomMode === 'fit' && (
+                <span className="text-[9px] font-bold uppercase tracking-wider bg-white/25 text-white px-1.5 py-0.5 rounded-full shrink-0">
+                  Fit
+                </span>
+              )}
             </button>
 
             <button
               type="button"
-              className="h-7 w-7 rounded-full flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+              className="h-7 w-7 rounded-full flex items-center justify-center text-slate-600 hover:text-primary hover:bg-primary/10 active:scale-90 active:bg-primary/20 transition-all"
               onClick={handleZoomIn}
               title="Zoom In (+)"
+              aria-label="Zoom In"
             >
-              <Plus className="h-3.5 w-3.5" />
+              <Plus className="h-3.5 w-3.5 stroke-[2.25]" />
             </button>
 
-            <div className="h-4 w-px bg-gray-200 mx-0.5" />
+            <div className="h-4 w-px bg-slate-200/90 mx-0.5 shrink-0" />
 
             <button
               type="button"
-              className="h-7 px-2 text-xs font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+              className={`h-7 px-2.5 text-[11px] font-medium rounded-full transition-all active:scale-95 ${
+                zoomMode === 'custom' && Math.round(currentScale * 100) === 100
+                  ? 'bg-primary text-white font-semibold shadow-xs hover:bg-primary/90'
+                  : 'text-slate-600 hover:text-primary hover:bg-primary/10'
+              }`}
               onClick={handleActualSize}
               title="Actual Size 100%"
             >
@@ -1163,6 +1273,243 @@ export function CertificateBuilderClient({
           onDistributeElements={handleDistributeElements}
         />
       </div>
+
+      {/* Mobile Canva-Style Docked Bottom Bar (md:hidden) */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-3 py-2 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] flex items-center justify-between gap-1.5 safe-area-inset-bottom">
+        {selectedElement ? (
+          // Contextual Element Action Mode (When an element is selected)
+          <div className="w-full flex items-center justify-between gap-1.5">
+            <Button
+              size="sm"
+              className="flex-1 h-9 gap-1.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/25 font-semibold text-xs shadow-none"
+              onClick={() => setMobilePropsOpen(true)}
+            >
+              <Palette className="h-4 w-4" />
+              <span>Edit Style</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 shrink-0 text-slate-700 hover:bg-slate-100"
+              onClick={() => {
+                duplicateElement(selectedElement.id);
+                toast.success('Element duplicated!');
+              }}
+              title="Duplicate Element"
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 shrink-0 text-slate-700 hover:bg-slate-100"
+              onClick={() => {
+                bringToFront(selectedElement.id);
+                toast.success('Brought to front');
+              }}
+              title="Bring Forward"
+            >
+              <Layers className="h-4 w-4" />
+            </Button>
+
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 shrink-0 text-rose-600 hover:bg-rose-50 hover:text-rose-700 border-rose-200"
+              onClick={() => {
+                deleteElement(selectedElement.id);
+                setSelectedId(null);
+                toast.success('Element deleted');
+              }}
+              title="Delete Element"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 shrink-0 text-slate-500 hover:bg-slate-100"
+              onClick={() => setSelectedId(null)}
+              title="Deselect"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : (
+          // Default Mode (When NO element is selected)
+          <div className="w-full flex items-center justify-between gap-1.5">
+            <Button
+              size="sm"
+              className="flex-1 h-9 gap-1.5 bg-primary hover:bg-primary/90 text-white font-medium text-xs rounded-lg shadow-sm"
+              onClick={() => setMobileAddOpen(true)}
+            >
+              <PlusCircle className="h-4 w-4" />
+              <span>Add Element</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 px-2.5 text-xs gap-1 text-slate-700 hover:bg-slate-100"
+              onClick={() => setMobileAddOpen(true)}
+              title="Certificate Background & Themes"
+            >
+              <Palette className="h-3.5 w-3.5" />
+              <span>Canvas</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 px-2.5 text-xs gap-1 text-slate-700 hover:bg-slate-100"
+              onClick={handleToggleOrientation}
+              title="Flip Orientation"
+            >
+              <RotateCw className="h-3.5 w-3.5" />
+              <span>Flip</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 px-2.5 text-xs gap-1 text-slate-700 hover:bg-slate-100"
+              onClick={() => setMobileExportOpen(true)}
+              title="Export Certificate"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span>Export</span>
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Mobile Drawer 1: Add Elements & Canvas */}
+      <Sheet open={mobileAddOpen} onOpenChange={setMobileAddOpen}>
+        <SheetContent
+          side="bottom"
+          className="h-[80vh] max-h-[85vh] p-0 flex flex-col rounded-t-2xl border-t bg-white shadow-2xl overflow-hidden"
+        >
+          <div className="w-10 h-1 bg-slate-300 rounded-full mx-auto my-2.5 shrink-0" />
+          <SheetHeader className="px-4 py-2 border-b shrink-0 text-left">
+            <SheetTitle className="text-base font-semibold">Add to Certificate</SheetTitle>
+            <SheetDescription className="text-xs text-slate-500">
+              Select elements, text placeholders, or customize the background canvas.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <CertificateEditorSidebar
+              addElement={addElement}
+              addElements={addElements}
+              imageInputRef={imageInputRef}
+              template={template}
+              onUpdateTemplate={(updates) => setTemplate((prev) => ({ ...prev, ...updates }))}
+              className="w-full border-r-0 block h-auto p-4 space-y-6"
+              onItemAdded={() => {
+                setMobileAddOpen(false);
+                toast.success('Added to certificate!');
+              }}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Mobile Drawer 2: Element Properties */}
+      <Sheet open={mobilePropsOpen} onOpenChange={setMobilePropsOpen}>
+        <SheetContent
+          side="bottom"
+          className="h-[80vh] max-h-[85vh] p-0 flex flex-col rounded-t-2xl border-t bg-white shadow-2xl overflow-hidden"
+        >
+          <div className="w-10 h-1 bg-slate-300 rounded-full mx-auto my-2.5 shrink-0" />
+          <SheetHeader className="px-4 py-2 border-b shrink-0 text-left">
+            <SheetTitle className="text-base font-semibold capitalize">
+              Edit {selectedElement?.type || 'Element'} Style
+            </SheetTitle>
+            <SheetDescription className="text-xs text-slate-500">
+              Customize typography, colors, borders, and position.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto min-h-0">
+            {selectedElement && (
+              <CertificateEditorProperties
+                selectedElement={selectedElement}
+                updateElement={updateElement}
+                deleteElement={(id) => {
+                  deleteElement(id);
+                  setMobilePropsOpen(false);
+                  setSelectedId(null);
+                }}
+                duplicateElement={duplicateElement}
+                bringToFront={bringToFront}
+                sendToBack={sendToBack}
+                moveLayerUp={moveLayerUp}
+                moveLayerDown={moveLayerDown}
+                onCrop={(src) => {
+                  setImageToCrop(src);
+                  setCropperOpen(true);
+                  setMobilePropsOpen(false);
+                }}
+                templateWidth={template.width}
+                templateHeight={template.height}
+                hasMultiSelection={allSelectedIds.length > 1}
+                onAlignElements={handleAlignElements}
+                onDistributeElements={handleDistributeElements}
+                className="w-full border-l-0 block h-auto p-4"
+              />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Mobile Drawer 3: Export Options */}
+      <Sheet open={mobileExportOpen} onOpenChange={setMobileExportOpen}>
+        <SheetContent
+          side="bottom"
+          className="p-5 flex flex-col rounded-t-2xl border-t bg-white shadow-2xl"
+        >
+          <div className="w-10 h-1 bg-slate-300 rounded-full mx-auto -mt-2 mb-3" />
+          <SheetHeader className="text-left p-0 pb-3">
+            <SheetTitle className="text-base font-semibold">Export Certificate</SheetTitle>
+            <SheetDescription className="text-xs text-slate-500">
+              Download your certificate in high quality image or print format.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="grid grid-cols-2 gap-3 mt-2">
+            <Button
+              variant="outline"
+              className="flex flex-col h-20 gap-2 items-center justify-center border-slate-200 hover:border-primary hover:bg-primary/5"
+              onClick={() => {
+                setMobileExportOpen(false);
+                exportToPNG();
+              }}
+              disabled={exporting || exportingPdf}
+            >
+              <Download className="h-5 w-5 text-primary" />
+              <div className="text-center">
+                <div className="text-xs font-semibold text-slate-900">Download PNG</div>
+                <div className="text-[10px] text-slate-500">High-Res Image</div>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="flex flex-col h-20 gap-2 items-center justify-center border-slate-200 hover:border-primary hover:bg-primary/5"
+              onClick={() => {
+                setMobileExportOpen(false);
+                exportToPDF();
+              }}
+              disabled={exporting || exportingPdf}
+            >
+              <FileDown className="h-5 w-5 text-emerald-600" />
+              <div className="text-center">
+                <div className="text-xs font-semibold text-slate-900">Download PDF</div>
+                <div className="text-[10px] text-slate-500">Print-Ready A4</div>
+              </div>
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
       <ImageCropperDialog
         open={cropperOpen}
         onOpenChange={setCropperOpen}

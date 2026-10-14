@@ -1,5 +1,8 @@
 # Development Lessons
 
+- **Dynamic Canvas Scale Hydration Mismatch (`typeof window !== 'undefined'`)**: In Next.js App Router Client Components, never branch state initialization or scale calculations on `typeof window !== 'undefined'` (e.g. `useState(() => window.innerWidth < 768 ? ... : {0, 0})`). Because SSR renders with `window === undefined` while client hydration executes with `window.innerWidth`, the server generates HTML with fallback dimensions (e.g. 374px / 33%) while the client hydrates with device dimensions (e.g. 424px / 38%), causing React 19 to fail with `Hydration failed because the server rendered text didn't match the client`. To eliminate this permanently: (1) Initialize container size state to `{ width: 0, height: 0 }` identically across both server and client; (2) Use a `mounted` state (`useState(false)` flipped in `useEffect`) and compute pre-mount scale against a stable deterministic baseline; (3) Measure actual viewport dimensions and update state strictly within `useEffect`; (4) Apply `!mounted ? 'transition-none'` so the post-hydration scale update snaps into place without visual delay or glitch; (5) Equip dynamic canvas containers and zoom percentage text with `suppressHydrationWarning`.
+
+
 - **HTML2Canvas Visibility Quirk**: Never trust `html2canvas` to correctly paint elements positioned at `-9999px` out of the browser viewport. However, **never physically move** the hidden element into the active viewport using hacks like `position: fixed` and `z-index: 9999` before capturing, as this causes the enormous element to flash/spill visually across the user's screen during the 100ms it takes to snapshot. Instead, leave the real element strictly behind `-9999px` and use the `html2canvas` `onclone` Hook to safely target the cloned iframe sandbox element (`clonedDoc.getElementById`), modifying the inner cloned `style.position` without touching the real user DOM.
 - **Balancing Quality vs File Size in jsPDF**: Increasing `html2canvas` `scale` (e.g., from `2` to `3` or `4`) sharply enhances HD rendering for text, but bloats file sizes organically. To offset this penalty when writing the PDF via `jsPDF`, never use `image/png` if lossless quality isn't strictly required. Use `image/jpeg` with `.toDataURL('image/jpeg', 0.7)` and inject the image natively to the PDF using the `'FAST'` alias (`pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST')`). This results in a much smaller output byte-count but retains the sharpness of the original 3x scaled text.
 - **jsPDF White Borders (Sub-pixel scaling)**: Browsers round element dimensions natively. This creates cases where a generated PDF will exhibit a microscopic 1px white border at the bottom/side. To completely eliminate this, lock the `html2canvas` render state to `scrollY: 0` and `scrollX: 0`, and explicitly add a `+2` offset mapping to the target jsPDF rendering height/width (`pdf.addImage(..., pdfWidth + 2, pdfHeight + 2)`).
@@ -441,3 +444,26 @@
   (2) **Penyelesaian Topeng Pudar Adaptif (*Adaptive Gradient Masking*)**:
   - Sentiasa benarkan pilihan pengguna dipaparkan. Gunakan CSS `maskImage: 'linear-gradient(to bottom, transparent 0px, transparent 130px, black 230px)'` pada lapisan corak latar.
   - Ini memastikan bahagian atas imej poster kekal bersih 100% tanpa sebarang bintik corak yang mencacatkan foto, sementara kawasan di bawah foto (di belakang nama pengguna, butang pautan, dan kaki halaman) memaparkan corak latar yang dipilih pengguna dengan anggun dan jelas.
+
+- **Punca Keratan Sisi Kiri Mudah Alih & Limpahan Mendatar (*Mobile Viewport Clipping & Horizontal Overflow*)**:
+  (1) **Punca Masalah ("kenapa jadi view di mobile view macam ni")**:
+  - Apabila kontena induk (seperti `<main>` dalam shell dashboard) mempunyai `overflow-y: auto`, spesifikasi CSS secara automatik mengira paksi pasangannya (`overflow-x`) sebagai `auto` (bukan `hidden`).
+  - Jika sebarang komponen anak mengandungi elemen tegar yang memerlukan kelebaran minimum melebihi kelebaran skrin telefon pintar (contohnya: tajuk panjang tanpa `min-w-0 flex-1 truncate`, lencana username sebaris dengan butang tindakan yang memerlukan >520px ruang, atau bar `TabsList` 4 lajur dengan teks `whitespace-nowrap`), kontena `<main>` mengalami limpahan mendatar (*horizontal overflow*).
+  - Semasa pengguna meleret skrin (swiping) atau berinteraksi pada peranti mudah alih, sebarang leretan santai atau pergerakan jari akan meleretkan kontena ke sebelah kanan (`scrollLeft > 0`).
+  - Ini menyebabkan keseluruhan kandungan sebelah kiri (butang kembali `< `, permulaan tajuk, tab pertama, dan pemegang drag pada kad pautan) teranjak dan terpotong di luar birai kiri skrin, manakala butang tindakan di sebelah kanan melekat rapat ke tepi.
+  (2) **Penyelesaian Dua Lapisan Menyeluruh**:
+  - **Lapisan Kontena Induk**: Tambahkan `min-w-0 overflow-x-hidden w-full` secara mutlak pada elemen `<main>` di `DashboardShell` supaya kontena utama dihalang 100% daripada menggelincir atau diskrol secara mendatar.
+  - **Lapisan Komponen**:
+    - Padatkan bar pengepala: sediakan `min-w-0 flex-1` pada tajuk dengan pemotongan teks automatik (`truncate`), alihkan lencana `@username` ke baris kedua pada paparan mudah alih (`sm:hidden text-[11px] font-mono`), dan letakkan `shrink-0` pada butang tindakan (`Preview` dan `Bio`).
+    - Pendekkan teks tab pada skrin kecil: gunakan label padat ("Share" pada telefon pintar melalui `sm:hidden`, dan "Share & QR" pada desktop melalui `hidden sm:inline`) bersama `min-w-0 px-1 sm:px-2`.
+    - Padatkan kad pautan: gunakan `min-w-0 w-full` pada bekas kad, `shrink-0` pada pemegang drag dan kawalan suis/butang, serta `flex-1 min-w-0` pada teks pautan untuk pemotongan elipsis lancar pada skrin sekecil 320px (iPhone SE).
+
+- **Elakkan `min-h-screen` di Dalam Kontena Skrol Shell Dashboard (*Avoid Nested min-h-screen & Phantom Vertical Scroll*)**:
+  (1) **Punca Masalah ("kenapa boleh scroll ya, sedangkan tak sampai bawah lagi")**:
+  - Apabila komponen halaman anak (seperti `client.tsx` di Bio Builder) dibalut dengan `<div className="min-h-screen ... pb-20">`, kelas `min-h-screen` menetapkan `min-height: 100vh` (iaitu 100% ketinggian tetingkap pelayar).
+  - Namun, kontena induknya (`<main>` di `DashboardShell`) sudah pun mempunyai saiz `h-full` dan padding atas `pt-16` (64px) untuk bar menu mudah alih.
+  - Akibatnya, jumlah ketinggian minimum menjadi `100vh + 64px + 80px (pb-20) = 100vh + 144px`. Walaupun kandungan pautan muat sepenuhnya pada satu skrin tanpa memerlukan tatalan, pelayar dipaksa mencipta ruang tatalan menegak tambahan sebanyak 144px ke kawasan kosong putih/kelabu yang tidak perlu.
+  (2) **Penyelesaian**:
+  - Di dalam shell dashboard yang sudah mempunyai pengurusan skrol menegak (`main.overflow-y-auto`), **jangan sesekali meletakkan `min-h-screen`** pada elemen anak.
+  - Biarkan ketinggian elemen anak mengalir secara semulajadi mengikut kandungan sebenar (`<div className="bg-gray-50/50 pb-8 sm:pb-12">`).
+  - Latar belakang shell dashboard (`bg-gray-50`) mengisi mana-mana ruang baki secara lancar tanpa sebarang herotan visual atau tatalan phantom.

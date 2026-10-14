@@ -25,7 +25,7 @@ export function DashboardShell({
 
   if (isStudioRoute) {
     return (
-      <div className="h-screen w-screen overflow-hidden bg-gray-100 flex flex-col">
+      <div className="h-screen w-screen max-w-full overflow-hidden bg-gray-100 flex flex-col min-w-0 min-h-0">
         {children}
       </div>
     );
@@ -42,7 +42,7 @@ export function DashboardShell({
       </aside>
 
       {/* Main Content Area - Add top padding on mobile for fixed header */}
-      <main className="flex-1 overflow-y-auto h-full relative scroll-smooth pt-16 md:pt-0">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden min-w-0 w-full h-full relative scroll-smooth pt-16 md:pt-0">
         {banner}
         {children}
       </main>

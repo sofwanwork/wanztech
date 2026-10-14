@@ -29,7 +29,7 @@ import { createClient } from '@/utils/supabase/client';
 import { compressImage } from '@/utils/image-compression';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
-import { toValidHexColor } from '@/lib/utils';
+import { cn, toValidHexColor } from '@/lib/utils';
 
 interface CertificateEditorSidebarProps {
   addElement: (type: CertificateElement['type'], extra?: Partial<CertificateElement>) => void;
@@ -42,15 +42,33 @@ interface CertificateEditorSidebarProps {
   imageInputRef: RefObject<HTMLInputElement | null>;
   template: CertificateTemplate;
   onUpdateTemplate: (updates: Partial<CertificateTemplate>) => void;
+  className?: string;
+  onItemAdded?: () => void;
 }
 
 export function CertificateEditorSidebar({
-  addElement,
-  addElements,
+  addElement: originalAddElement,
+  addElements: originalAddElements,
   imageInputRef,
   template,
   onUpdateTemplate,
+  className,
+  onItemAdded,
 }: CertificateEditorSidebarProps) {
+  const addElement = (type: CertificateElement['type'], extra?: Partial<CertificateElement>) => {
+    originalAddElement(type, extra);
+    onItemAdded?.();
+  };
+
+  const addElements = (elements: Array<{ type: CertificateElement['type']; extra?: Partial<CertificateElement> }>) => {
+    if (originalAddElements) {
+      originalAddElements(elements);
+    } else {
+      elements.forEach((el) => originalAddElement(el.type, el.extra));
+    }
+    onItemAdded?.();
+  };
+
   const handleAddDualSignatures = () => {
     const w = template.width || 1123;
     const h = template.height || 794;
@@ -259,7 +277,12 @@ export function CertificateEditorSidebar({
   };
 
   return (
-    <div className="w-64 shrink-0 bg-white border-r p-4 space-y-6 overflow-y-auto hidden md:block select-none h-full">
+    <div
+      className={cn(
+        'w-64 shrink-0 bg-white border-r p-4 space-y-6 overflow-y-auto hidden md:block select-none h-full',
+        className
+      )}
+    >
       {/* Add Elements Section */}
       <div>
         <Label className="text-xs text-gray-500 uppercase tracking-wider">Add Elements</Label>

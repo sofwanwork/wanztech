@@ -32,7 +32,7 @@ import {
   AlignVerticalDistributeCenter,
 } from 'lucide-react';
 import { CertificateElement } from '@/lib/types';
-import { toValidHexColor } from '@/lib/utils';
+import { cn, toValidHexColor } from '@/lib/utils';
 
 interface CertificateEditorPropertiesProps {
   selectedElement?: CertificateElement | null;
@@ -49,6 +49,7 @@ interface CertificateEditorPropertiesProps {
   onAlignElements?: (type: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
   onDistributeElements?: (direction: 'horizontal' | 'vertical') => void;
   hasMultiSelection?: boolean;
+  className?: string;
 }
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -79,17 +80,28 @@ export function CertificateEditorProperties({
   onAlignElements,
   onDistributeElements,
   hasMultiSelection,
+  className,
 }: CertificateEditorPropertiesProps) {
   if (!selectedElement) {
     return (
-      <div className="w-72 xl:w-80 bg-white border-l p-4 flex items-center justify-center text-gray-500 text-sm hidden lg:flex select-none text-center">
+      <div
+        className={cn(
+          'w-72 xl:w-80 bg-white border-l p-4 flex items-center justify-center text-gray-500 text-sm hidden lg:flex select-none text-center',
+          className
+        )}
+      >
         Select an element on the certificate to customize settings
       </div>
     );
   }
 
   return (
-    <div className="w-72 xl:w-80 bg-white border-l p-4 overflow-y-auto hidden lg:block h-full select-none">
+    <div
+      className={cn(
+        'w-72 xl:w-80 bg-white border-l p-4 overflow-y-auto hidden lg:block h-full select-none',
+        className
+      )}
+    >
       {/* Header and Layer Controls */}
       <div className="flex items-center justify-between mb-6 border-b pb-4">
         <div>

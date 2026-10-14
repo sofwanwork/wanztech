@@ -102,16 +102,16 @@ export function CertificateEditorToolbar({
         <Input
           value={templateName}
           onChange={(e) => onNameChange(e.target.value)}
-          className="font-semibold text-base sm:text-lg border-none shadow-none focus-visible:ring-0 w-36 sm:w-48 md:w-56 truncate px-1 h-8"
+          className="font-semibold text-sm sm:text-base md:text-lg border-none shadow-none focus-visible:ring-0 w-24 sm:w-44 md:w-56 truncate px-1.5 h-8 focus:bg-slate-50 rounded"
           title={templateName}
         />
 
         {/* Undo/Redo */}
-        <div className="flex items-center gap-0.5 border-l pl-2 sm:pl-3">
+        <div className="flex items-center gap-0.5 border-l pl-1 sm:pl-2">
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className="h-8 w-7 sm:w-8"
             onClick={onUndo}
             disabled={!canUndo}
             title="Undo"
@@ -121,7 +121,7 @@ export function CertificateEditorToolbar({
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className="h-8 w-7 sm:w-8"
             onClick={onRedo}
             disabled={!canRedo}
             title="Redo"
@@ -131,11 +131,11 @@ export function CertificateEditorToolbar({
         </div>
 
         {/* Orientation Toggle */}
-        <div className="flex items-center gap-0.5 border-l pl-2 sm:pl-3">
+        <div className="flex items-center gap-0.5 border-l pl-1 sm:pl-2">
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className="h-8 w-7 sm:w-8"
             onClick={onOrientationChange}
             title={orientation === 'landscape' ? 'Switch to Portrait' : 'Switch to Landscape'}
           >
@@ -147,8 +147,8 @@ export function CertificateEditorToolbar({
           </Button>
         </div>
 
-        {/* Smart Tools */}
-        <div className="flex items-center gap-0.5 border-l pl-2 sm:pl-3">
+        {/* Smart Tools (Hidden on Mobile < sm) */}
+        <div className="hidden sm:flex items-center gap-0.5 border-l pl-2 sm:pl-3">
           <Button
             variant="ghost"
             size="icon"
@@ -169,11 +169,11 @@ export function CertificateEditorToolbar({
           >
             <Ungroup className="h-4 w-4" />
           </Button>
-          <div className="w-px h-5 bg-gray-200 mx-1 hidden sm:block" />
+          <div className="w-px h-5 bg-gray-200 mx-1" />
           <Button
             variant={showGrid ? 'default' : 'ghost'}
             size="icon"
-            className="h-8 w-8 hidden sm:flex"
+            className="h-8 w-8"
             onClick={onToggleGrid}
             title="Show Grid"
           >
@@ -182,7 +182,7 @@ export function CertificateEditorToolbar({
           <Button
             variant={snapToGrid ? 'default' : 'ghost'}
             size="icon"
-            className="h-8 w-8 hidden sm:flex"
+            className="h-8 w-8"
             onClick={onToggleSnap}
             title="Snap to Grid"
           >
@@ -204,7 +204,7 @@ export function CertificateEditorToolbar({
         <Button
           variant="outline"
           size="sm"
-          className="gap-1 sm:gap-1.5 h-8 px-2 sm:px-3 text-xs"
+          className="gap-1 sm:gap-1.5 h-8 px-2 sm:px-3 text-xs hidden sm:inline-flex"
           onClick={onExport}
           disabled={exporting || exportingPdf}
         >
@@ -214,7 +214,7 @@ export function CertificateEditorToolbar({
         <Button
           variant="outline"
           size="sm"
-          className="gap-1 sm:gap-1.5 h-8 px-2 sm:px-3 text-xs"
+          className="gap-1 sm:gap-1.5 h-8 px-2 sm:px-3 text-xs hidden sm:inline-flex"
           onClick={onExportPdf}
           disabled={exportingPdf || exporting}
         >
@@ -222,12 +222,12 @@ export function CertificateEditorToolbar({
           <span className="hidden md:inline">{exportingPdf ? 'Generating...' : 'PDF (A4)'}</span>
         </Button>
         <Button variant="outline" size="sm" className="gap-1 sm:gap-1.5 h-8 px-2 sm:px-3 text-xs" asChild>
-          <Link href={`/certificates/builder/${templateId}/preview`}>
+          <Link href={`/certificates/builder/${templateId}/preview`} title="Preview Certificate">
             <Eye className="h-3.5 w-3.5" />
-            <span className="hidden lg:inline">Preview</span>
+            <span className="hidden sm:inline">Preview</span>
           </Link>
         </Button>
-        <Button onClick={onSave} disabled={saving} size="sm" className="gap-1.5 h-8 px-3 text-xs">
+        <Button onClick={onSave} disabled={saving} size="sm" className="gap-1.5 h-8 px-2.5 sm:px-3 text-xs">
           <Save className="h-3.5 w-3.5" />
           <span>{saving ? 'Saving...' : 'Save'}</span>
         </Button>

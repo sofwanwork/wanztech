@@ -2877,12 +2877,124 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
 - **Komit Git**: `6736325` (`feat(bio): add custom handle casing, custom button colors, background patterns, and pattern opacity controls`).
 - **Kaedah Pelancaran**: Tolak ke GitHub (`git push origin master`) dengan penyelarasan automatik Vercel.
 - **Status Vercel**: ● Ready.
-- **Deployment ID**: `dpl_5rryC4RYdcCvTfSD2KGz6RJ7bPQc`.
-- **URL Pengeluaran**: `https://www.klikform.com` & `https://klikform.com`.
-- **URL Binaan Vercel**: `https://klikform-y9quyzoa8-sofwan-jailanis-projects.vercel.app`.
-- **Pengesahan HTTP**:
-  - `https://www.klikform.com`: HTTP 200 OK.
-  - `https://www.klikform.com/bio/metmalaysia`: HTTP 200 OK.
+## Pembaikan Limpahan Paparan Mudah Alih Bio Builder (Mobile View Horizontal Overflow & Clipping Fix) (2026-10-14)
+- **Konteks & Maklum Balas Pengguna**: "kenapa jadi view di mobile view macam ni ya?" bersama tangkapan skrin telefon pintar di mana kandungan Bio Builder terpotong di sebelah kiri (Back button hilang, "BATAN METEOROL...", tab "s", "inks", drag grip handles terpotong) manakala bahagian kanan melekat rapat ke tepi.
+- **Punca Masalah (Root Causes)**:
+  1. *Horizontal Overflow*: Bar sub-header Bio Builder (Back button, tajuk agensi panjang, lencana @username, Preview dan View Bio) memerlukan kelebaran minimum >520px, melebihi skrin telefon pintar (360px-414px). Bar 4-tab navigasi (`grid-cols-4` dengan label "Share & QR") turut memerlukan >440px dengan teks `whitespace-nowrap`.
+  2. *CSS Auto Overflow-X*: Elemen `<main>` dalam `DashboardShell` mempunyai `overflow-y: auto`. Mengikut spesifikasi CSS, pelayar mengira paksi pasangannya `overflow-x` sebagai `auto`.
+  3. *Tatalan Mendatar*: Apabila pengguna meleret skrin telefon, sebarang leretan santai atau sentuhan jari menyebabkan kontena `<main>` diskrol ke sebelah kanan (`scrollLeft > 0`), menolak kandungan sebelah kiri (x: 0 ke ~90px) keluar dari birai skrin peranti.
+- **Penyelesaian Dilaksanakan**:
+  1. **Pertahanan Lapisan Kontena Asas (`components/dashboard/dashboard-shell.tsx`)**:
+     - Menetapkan `min-w-0 overflow-x-hidden w-full` pada elemen `<main>` di `DashboardShell`, menghapuskan keupayaan pelayar untuk menggelincirkan kontena induk secara mendatar pada peranti mudah alih.
+  2. **Pengoptimuman Responsif Antaramuka Bio Builder (`app/(dashboard)/bio-builder/[id]/client.tsx`)**:
+     - *Sticky Header Bar*: Menyuntik `min-w-0 flex-1 truncate` pada tajuk supaya teks panjang terpotong kemas dengan elipsis (`...`), memindahkan `@username` ke baris kedua pada paparan mudah alih (`sm:hidden font-mono text-[11px]`) dan sebaris pada desktop (`hidden sm:inline-block`), serta menetapkan `shrink-0` dan butang kompak `h-8 px-2 sm:px-3` pada `Preview` dan `Bio`.
+     - *Tabs Bar (`TabsList`)*: Menetapkan `min-w-0`, `px-1 sm:px-2`, `gap-1 sm:gap-1.5`, serta menyingkatkan teks tab ke-4 kepada "Share" pada paparan mudah alih (`sm:hidden`) dan "Share & QR" pada desktop (`hidden sm:inline`). Kesemua 4 tab kini muat 100% pada skrin telefon sekecil 320px (iPhone SE).
+     - *Seksyen Tajuk*: Menggunakan susun atur responsif `flex flex-col sm:flex-row justify-between gap-3 min-w-0` agar tajuk dan butang `+ Add Block / Link` tidak menolak sempadan skrin.
+     - *Kad Pautan (`SortableBioLinkItem`)*: Menggunakan `p-2.5 sm:p-3.5`, `gap-2 sm:gap-3`, `min-w-0 w-full` pada bekas kad, `shrink-0` pada pemegang drag dan suis/butang kawalan, serta `flex-1 min-w-0` pada teks tajuk dan pautan.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / amaran ESLint.
+  - `npm test`: 381 / 381 ujian unit lulus merentas 39 suite fail.
+
+## Penghapusan Tatalan Phantom Menegak Bio Builder (Mobile Vertical Phantom Scroll Fix) (2026-10-14)
+- **Konteks & Maklum Balas Pengguna**: "kenapa boleh scroll ya, sedangkan tak sampai bawah lagi" bersama tangkapan skrin yang menunjukkan halaman boleh diskrol ke bawah ke kawasan kosong putih yang luas di bawah kad pautan terakhir ("TekaMET (Game MET)").
+- **Punca Masalah (Root Causes)**:
+  1. *Nested `min-h-screen`*: Elemen pembalut dalam `BioBuilderClient` mempunyai kelas `min-h-screen` (`min-height: 100vh`).
+  2. *Padding Bertindan*: Kontena induk (`<main>` di `DashboardShell`) sudah pun mempunyai ketinggian `h-full` dengan padding atas `pt-16` (64px). Apabila elemen anak menetapkan `min-h-screen` dan padding bawah `pb-20` (80px), jumlah ketinggian minimum dipaksa menjadi `100vh + 144px`.
+  3. Ini memaksa pelayar menghasilkan tatalan menegak tambahan sebanyak 144px ke kawasan kosong kelabu/putih walaupun kandungan pautan telah habis.
+- **Penyelesaian Dilaksanakan**:
+  - Di `app/(dashboard)/bio-builder/[id]/client.tsx`, menyingkirkan kelas `min-h-screen` dan menukar `pb-20` (80px) kepada `pb-8 sm:pb-12` (32px).
+  - Ketinggian halaman kini mengalir secara semulajadi mengikut kandungan sebenar tanpa ruang mati (*dead space*).
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / amaran ESLint.
+  - `npm test`: 381 / 381 ujian unit lulus merentas 39 suite fail.
+
+## Pengindahan & Pengoptimuman Paparan Mudah Alih E-Cert Builder (Mobile E-Cert Builder Canva-Style UX Polish) (2026-10-14)
+- **Konteks & Maklum Balas Pengguna**: "mobile view utk e cert builder macam ni, cantikkan sikit" bersama tangkapan skrin telefon pintar yang menunjukkan toolbar atas bersesak dengan 10+ butang ikon dan kanvas sijil berskala ~33% terapung di tengah ruang kosong kelabu tanpa sebarang sidebar atau kawalan penyuntingan.
+- **Punca Masalah (Root Causes)**:
+  1. *Panel Terkunci*: `CertificateEditorSidebar` dan `CertificateEditorProperties` dikunci secara statik dengan `hidden md:block` dan `hidden lg:block`. Pada paparan telefon pintar (`< 768px`), pengguna langsung tidak mempunyai akses kepada ciri menambah elemen (teks, bentuk, imej, QR, preset tandatangan) mahupun menyunting sifat elemen (fon, saiz, warna, border, lapisan).
+  2. *Toolbar Bersesak*: Toolbar atas memaparkan Group, Ungroup, Grid, Snap, Safe Margin, Orientasi, Download PNG, Download PDF, Preview, dan Save serentak dalam satu baris sempit 360px tanpa ruang untuk tajuk templat.
+  3. *Pertindihan Bar Zum*: Bar zum terapung (`bottom-4`) bertembung dengan bahagian bawah skrin dan tiada ruang selamat kanvas.
+- **Penyelesaian Dilaksanakan**:
+  1. **Top Toolbar Ramping & Responsif (`components/certificates/builder/toolbar.tsx`)**:
+     - Memendekkan input nama templat kepada `w-24 sm:w-44 md:w-56` dengan fon responsif `text-sm sm:text-base md:text-lg`.
+     - Menyembunyikan perkakasan papan kekunci desktop (Group, Ungroup, Grid, Snap, Safe Margin) di bawah `hidden sm:flex`.
+     - Mengekalkan butang penting (Back, Undo, Redo, Orientation Toggle, Preview, Save) dan memindahkan eksport berat ke bar/drawer mudah alih.
+  2. **Jalur Status Kanvas Mudah Alih (`app/(dashboard)/certificates/builder/[id]/client.tsx`)**:
+     - Memaparkan lencana orientasi aktif (`A4 Landscape` vs `A4 Portrait` bersama ukuran piksel) dan butang pintas pusingan A4 di bawah toolbar.
+  3. **Bar Navigasi Bawah Berlabuh Canva-Style (Docked Bottom Bar `md:hidden`)**:
+     - *Mod Bebas (Tiada Elemen Dipilih)*: `[＋ Add Element]` (butang menyerlah bersaiz besar mesra ibu jari), `[🎨 Canvas]`, `[⟳ Flip]`, dan `[📥 Export]`.
+     - *Mod Kontekstual (Elemen Dipilih)*: Bertukar secara dinamik kepada `[🎨 Edit Style]` (membuka laci properties), `[📋 Duplicate]`, `[⬆️ Layer Forward]`, `[🗑️ Delete]`, dan `[✕ Deselect]`.
+  4. **Laci Gelongsor Bawah Mudah Alih (`Sheet side="bottom"`)**:
+     - Menyokong prop `className?: string` dan callback `onItemAdded` dalam `CertificateEditorSidebar` dan `CertificateEditorProperties`.
+     - Laci 1 (Add Elements & Canvas): Menyediakan akses 100% kepada penambahan teks, gambar peranti, bentuk geometri, garisan, tempat letak `{Nama}`, `{Program}`, `{Tarikh}`, `{IC}`, `{QR}`, pratetap tandatangan, bingkai emas, dan warna/imej latar belakang kanvas.
+     - Laci 2 (Element Properties): Menyediakan akses 100% kepada pemilihan Google Fonts (Alex Brush, Cinzel, Montserrat, dsb.), saiz, warna hex sah, bayang teks, dan lapisan z-index.
+     - Laci 3 (Export Options): Pilihan muat turun 1-klik untuk PNG Resolusi Tinggi dan PDF Cetakan A4.
+  5. **Kelegaan Ruang Kanvas & Bar Zum Terapung**:
+     - Bar zum dinaikkan ke `bottom-16 md:bottom-4` dan kawasan kanvas ditambah padding `pb-24 md:pb-6` agar tidak terhalang oleh bar navigasi bawah.
+  6. **Pembaikan Skala Fit (65%) & Limpahan Sisi Kanan (Mobile Canvas Viewport Bounding)**:
+     - *Punca Masalah*: Pada mount permulaan, `containerSize` bernilai `{ width: 0, height: 0 }`. Fallback desktop `0.65` menyebabkan kanvas dirender pada kelebaran 730px. Kerana kontena flex `containerRef` kekurangan kelas `min-w-0`, spesifikasi CSS Flexbox menetapkan `min-width: auto` (min-content), menyebabkan kontena mengembang mengikut saiz kanvas 730px. Apabila `ResizeObserver` mengukur kontena, ia membaca 730px dan bukannya kelebaran skrin sebenar (390px), memerangkap pengiraan `fitScale` pada ~65% dan memotong 40% bahagian kanan sijil di luar skrin.
+     - *Penyelesaian*: Inisialisasi `containerSize` secara dinamik dengan `window.innerWidth`, sekat (*clamp*) pembacaan `ResizeObserver` kepada `window.innerWidth`, suntik `min-w-0 min-h-0 max-w-full` merentas semua lapisan flex (`dashboard-shell.tsx`, flex-col root, flex-row editor body, dan `containerRef`), dan kira `fitScale` dengan had kelebaran skrin sebenar. Pada telefon pintar (360px-400px), templat landskap 1123px diskalakan secara tepat kepada `~33%` dan muat 100% pada skrin tanpa sebarang keratan teks atau sempadan.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm test`: 381 / 381 ujian unit lulus merentas 39 suite fail.
+
+## Pengindahan & Penstrukturan Semula Kawalan Zum Mudah Alih E-Cert Builder (Mobile Zoom Bar Canva/iOS Precision Polish) (2026-10-14)
+- **Konteks & Maklum Balas Pengguna**: "kenapa macam tu ya" dan "betulkan yg tu bagi cantik" bersama tangkapan skrin telefon pintar yang membulatkan bar kawalan zum terapung `[-] [Fit (36%)] [+] | 100%` di atas bar navigasi bawah.
+- **Punca Masalah Estetika & UX (Root Causes)**:
+  1. *Perlanggaran Vertikal*: Kedudukan `bottom-16` (64px) meletakkan bar zum hanya ~12px di atas bar navigasi bawah dock (52px), kelihatan seperti widget desktop terbiar yang terhimpit di atas bar butang bawah.
+  2. *Bahan & Gaya Rata (Flat White Pill)*: Gaya `bg-white/95 border-gray-200/90 shadow-lg` kelihatan seperti pelekat putih tebal yang dilekatkan secara rawak di ruang kelabu kanvas.
+  3. *Tipografi Mentah*: Butang peratusan memaparkan `Fit (36%)` dalam kurungan dengan kotak biru cyan yang kelihatan seperti teks debug pengaturcara berbanding antaramuka produk premium.
+  4. *Ketiadaan Maklum Balas Sentuhan*: Ketiadaan kelas `active:scale` menjadikan butang kaku pada peranti skrin sentuh.
+- **Penyelesaian Dilaksanakan**:
+  1. **Kapsul Kaca Terapung Frosted Glassmorphism (`app/(dashboard)/certificates/builder/[id]/client.tsx`)**:
+     - Menggunakan `bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800 shadow-[0_8px_25px_-4px_rgba(0,0,0,0.12),0_2px_8px_-2px_rgba(0,0,0,0.06)] ring-1 ring-black/[0.04] rounded-full p-1`.
+  2. **Penyelarasan Ruang Lega Seimbang**:
+     - Kedudukan dinaikkan kepada `bottom-20 md:bottom-4` (80px), memberikan ruang lega 28px yang selesa dan seimbang di atas bar dock bawah pada peranti mudah alih, dan kekal rapi di `bottom-4` pada komputer meja.
+  3. **Tipografi Segmen & Lencana Pintar (Smart Fit/100% Toggle)**:
+     - Menggantikan teks `Fit (36%)` dengan butang segmen berkuasa: memaparkan nombor peratusan kemas (`36%`), ikon `Maximize2` bercahaya zamrud (`text-emerald-400`), dan lencana mikro `FIT` (`bg-white/20 text-white`) di dalam kapsul gelap `bg-slate-900 text-white shadow-xs` apabila mod Fit aktif.
+     - Mengklik butang ini bertindak sebagai togol dwiarah pintar: klik ketika Fit akan mengezum ke 100% (saiz sebenar), dan klik ketika Custom Zoom akan mereset kanvas kembali ke Fit.
+  4. **Pencahayaan Butang Pratetap 100%**:
+     - Butang `100%` menyala secara automatik dengan gaya aktif moden `bg-slate-900 text-white font-semibold shadow-xs` apabila skala kanvas tepat pada 100%.
+  5. **Mikro-Interaksi Sentuhan Responsif**:
+     - Butang `[-]`, `[+]`, tengah, dan `100%` dilengkapi `active:scale-90` dan `active:scale-95` bersama `select-none` untuk pengalaman sentuhan taktil seumpama aplikasi natif iOS / Canva.
+  6. **Penambahbaikan Jalur Status Mudah Alih Atas (`md:hidden`)**:
+     - Lencana orientasi (`A4 Landscape / Portrait`) dan butang pintas `Rotate A4` dipertingkatkan dengan reka bentuk butang kapsul moden `bg-slate-100 hover:bg-slate-200`.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm test`: 381 / 381 ujian unit lulus merentas 39 suite fail.
+  - Pelayan dev mengesahkan sambungan sihat HTTP 200.
+
+## Penyelarasan Bar Zum Mudah Alih ke Warna Tema (Mobile Zoom Bar Theme Color Alignment) (2026-10-14)
+- **Konteks & Maklum Balas Pengguna**: "tukar ke warna tema" bersama tangkapan skrin membulatkan bar kawalan zum yang sebelum ini menggunakan lencana hitam `bg-slate-900` dan aksen zamrud `emerald-400`.
+- **Penyelesaian Dilaksanakan**:
+  1. *Lencana Aktif Fit*: Ditukarkan daripada hitam `bg-slate-900` kepada warna tema rasmi KlikForm (`bg-primary text-white hover:bg-primary/90`) sepadan dengan butang *Save* dan *+ Add Element*.
+  2. *Ikon & Teks*: Ikon `Maximize2` ditukar kepada putih `text-white stroke-[2.5]`, dan lencana `FIT` diselaraskan kepada `bg-white/25 text-white`.
+  3. *Pratetap 100%*: Pencahayaan aktif butang `100%` diselaraskan ke `bg-primary text-white font-semibold shadow-xs hover:bg-primary/90`.
+  4. *Aksen Kapsul & Hover*: Butang `[-]` dan `[+]` kini menyokong `hover:text-primary hover:bg-primary/10 active:bg-primary/20`, manakala kapsul dilengkapi rona bayang tema `shadow-[0_8px_25px_-4px_rgba(124,58,237,0.15)...]` dan `ring-1 ring-primary/20`.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm test`: 381 / 381 ujian unit lulus merentas 39 suite fail.
+
+## Penghapusan Ralat Hidrasi E-Cert Builder (Hydration Mismatch Elimination) (2026-10-14)
+- **Konteks & Maklum Balas Pengguna**: Ralat konsol React 19 `Uncaught Error: Hydration failed because the server rendered text didn't match the client`. Pelayan (SSR) menjana `width: 374px`, `height: 264px`, teks `33%`, manakala klien (hydration) menjana `width: 424px`, `height: 300px`, teks `38%`.
+- **Punca Masalah (Root Cause)**:
+  - `containerSize` memulakan nilai menggunakan percabangan `if (typeof window !== 'undefined')`. Di pelayan, `window` adalah `undefined`, maka dimensi ialah `{0, 0}` dan fallback ke lebar skrin `390px` (`fitScale = 33%`). Di klien sewaktu permulaan state, `window.innerWidth` bernilai `440px` (`fitScale = 38%`). Perbezaan dimensi ini menyebabkan React 19 mengesan ketidakpadanan DOM (*hydration mismatch*) pada atribut gaya kanvas dan teks peratusan zum.
+- **Penyelesaian Dilaksanakan**:
+  1. *Corak `mounted` Guard*: Menambah state `mounted` (`useState(false)` dan diaktifkan `setMounted(true)` dalam `useEffect`).
+  2. *Inisialisasi Deterministik*: `containerSize` dimulakan secara seragam kepada `{ width: 0, height: 0 }` di kedua-dua pelayan dan klien awal.
+  3. *Skala Garis Asas Sebelum Mount*: Pengiraan `fitScale` semasa `!mounted` menggunakan garis asas tetap yang identikal 100% di pelayan dan hidrasi klien.
+  4. *Nyahaktifkan Transisi Awal*: Menyuntik `!mounted ? 'transition-none'` supaya peralihan daripada garis asas ke ukuran sebenar skrin berlaku serta-merta tanpa sebarang kelipan animasi.
+  5. *Pertahanan Mendalam (`suppressHydrationWarning`)*: Dipasang pada kontena `<div ref={canvasRef} suppressHydrationWarning ...>` dan lencana teks peratusan zum.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat ESLint.
+  - `npm test`: 381 / 381 ujian unit lulus merentas 39 suite fail.
+
 
 
 
