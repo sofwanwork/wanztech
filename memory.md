@@ -3133,6 +3133,18 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - `npm run lint`: 0 ralat / 0 amaran ESLint.
   - `npm test`: 392 / 392 ujian unit lulus merentas 40 fail suite.
 
+## Pelancaran Pengeluaran Vercel (Production Deployment) (2026-10-18 — Multi-Day Attendance, 3D Flipbook Showcase, Whitespace Pre-Wrap & Instant Question Label Entry)
+- **Komit Git**: `6ff28bd` (`feat: multi-day smart attendance, 3d flipbook viewer showcase, description whitespace pre-wrap, and instant question title entry`).
+- **Kaedah Pelancaran**: Ditugaskan ke GitHub (`origin/master`) dan dideploy melalui Vercel CLI (`npx vercel --prod --yes`).
+- **Status Vercel**: ● Ready (Build Time: ~2m).
+- **ID Deployment**: `dpl_HhUhjtn5HhbbtFKfanTKLMSLwB4U`
+- **Domain Pengeluaran Aktif**:
+  - `https://www.klikform.com`
+  - `https://klikform-b2g7p54q8-sofwan-jailanis-projects.vercel.app`
+- **Nota Migrasi Pangkalan Data**:
+  - Fail migrasi `supabase/migrations/20261018000000_add_multi_day_attendance.sql` sedia ada untuk menambah `day_number` pada `attendance_records` di Supabase.
+
+
 
 
 
