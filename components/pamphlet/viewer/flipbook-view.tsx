@@ -185,20 +185,40 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
     const isAnimatingRef = React.useRef(false);
     const currentAngleRef = React.useRef(0);
 
+    // Auto-detect natural image aspect ratio if not explicitly specified
+    const [detectedRatio, setDetectedRatio] = React.useState<number | null>(null);
+
+    React.useEffect(() => {
+      const firstUrl = pages[0]?.imageUrl;
+      if (!firstUrl) return;
+      const img = new Image();
+      img.src = firstUrl;
+      img.onload = () => {
+        if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+          const r = img.naturalWidth / img.naturalHeight;
+          setDetectedRatio(r);
+        }
+      };
+    }, [pages]);
+
     // Track aspect ratios
     const isLandscape =
       orientation === 'landscape' ||
-      (pages && pages[0]?.orientation === 'landscape');
+      (pages && pages[0]?.orientation === 'landscape') ||
+      (pages && pages[0]?.aspectRatio && pages[0].aspectRatio > 1.05) ||
+      (detectedRatio !== null && detectedRatio > 1.05);
 
     const defaultPageRatio = isLandscape ? 1.414 : 0.707;
-    const singlePageRatio = pages[0]?.aspectRatio || defaultPageRatio;
+    const singlePageRatio = detectedRatio || pages[0]?.aspectRatio || defaultPageRatio;
 
     // Determine two-page spread status
     const isTwoPageSpread =
       !forceMobile &&
       totalPages >= 2 &&
       pageSpreadMode !== 'single' &&
-      (pageSpreadMode === 'double' || (totalPages > 2 && containerDimensions.width >= 768));
+      (pageSpreadMode === 'double' ||
+        (containerDimensions.width >= 768 && !isLandscape && totalPages >= 2) ||
+        (containerDimensions.width >= 960 && isLandscape && totalPages > 2));
 
     // Calculate dimensions
     let bookWidth: number;
@@ -220,7 +240,7 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
     } else {
       const availW = Math.max(260, containerDimensions.width - 24);
       const availH = Math.max(200, containerDimensions.height - 96);
-      let targetH = Math.min(availH, isLandscape ? 520 : 680);
+      let targetH = Math.min(availH, isLandscape ? 560 : 700);
       let targetW = targetH * singlePageRatio;
 
       if (targetW > availW) {
@@ -236,8 +256,8 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
     // Helper: compute book pose shift based on sheet state
     const getBookShiftPercent = React.useCallback(
       (sheetIdx: number): number => {
-        if (!isTwoPageSpread || totalPages <= 2) return 0;
-        if (sheetIdx === 0) return -25; // Closed front cover: shift left 25% to center cover
+        if (!isTwoPageSpread) return 0;
+        if (sheetIdx === 0) return -25; // Closed front cover: shift left 25% to center right page
         if (sheetIdx === totalSheets && totalPages % 2 === 0) return 25; // Closed back cover: shift right 25%
         return 0; // Open spread: centered
       },
@@ -806,16 +826,21 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
           >
             {/* Ground Flat Drop Shadow Ellipse */}
             <div
-              className="absolute pointer-events-none transition-transform duration-500 ease-out z-0"
+              className="absolute pointer-events-none transition-all duration-500 ease-out z-0"
               style={{
-                width: `${bookWidth * 1.08}px`,
-                height: '70px',
-                bottom: '-42px',
-                left: `calc(50% - ${(bookWidth * 1.08) / 2}px)`,
+                width: isTwoPageSpread
+                  ? currentSheetIndex === 0 || currentSheetIndex === totalSheets
+                    ? `${pageWidth * 1.08}px`
+                    : `${bookWidth * 1.04}px`
+                  : `${bookWidth * 1.06}px`,
+                height: isLandscape ? '40px' : '48px',
+                bottom: isLandscape ? '-22px' : '-28px',
+                left: '50%',
+                transform: 'translateX(-50%)',
                 borderRadius: '50%',
                 background:
-                  'radial-gradient(ellipse at center, rgba(0, 0, 0, 0.52) 0%, rgba(0, 0, 0, 0.22) 45%, transparent 75%)',
-                transform: `translateX(var(--book-shift, 0%))`,
+                  'radial-gradient(ellipse at center, rgba(0, 0, 0, 0.24) 0%, rgba(0, 0, 0, 0.10) 38%, rgba(0, 0, 0, 0.02) 65%, transparent 78%)',
+                filter: 'blur(4px)',
               }}
             />
 
@@ -831,47 +856,55 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                 width: `${bookWidth}px`,
                 height: `${bookHeight}px`,
                 transformStyle: 'preserve-3d',
-                transform: `translateX(var(--book-shift, -25%)) rotateX(7deg)`,
+                transform: isTwoPageSpread
+                  ? `translateX(var(--book-shift, -25%)) rotateX(7deg)`
+                  : `translateX(0%) rotateX(7deg)`,
                 cursor: zoom <= 1 ? 'pointer' : 'default',
               }}
             >
               {/* Stacked Paper Edges on Left Side */}
-              <div
-                className={cn(
-                  'absolute top-1 bottom-1 w-2.5 rounded-l pointer-events-none transition-opacity duration-300 z-10',
-                  currentSheetIndex > 0 ? 'opacity-100' : 'opacity-0'
-                )}
-                style={{
-                  left: '-9px',
-                  background:
-                    'repeating-linear-gradient(to left, #c8beab 0px, #f4efe4 1px, #b9ad97 2.5px, #fbf9f4 3.5px)',
-                  boxShadow: 'inset -2px 0 4px rgba(0,0,0,0.15), -2px 0 5px rgba(0,0,0,0.2)',
-                }}
-              />
+              {isTwoPageSpread && (
+                <div
+                  className={cn(
+                    'absolute top-1 bottom-1 w-2.5 rounded-l pointer-events-none transition-opacity duration-300 z-10',
+                    currentSheetIndex > 0 ? 'opacity-100' : 'opacity-0'
+                  )}
+                  style={{
+                    left: '-9px',
+                    background:
+                      'repeating-linear-gradient(to left, #c8beab 0px, #f4efe4 1px, #b9ad97 2.5px, #fbf9f4 3.5px)',
+                    boxShadow: 'inset -2px 0 4px rgba(0,0,0,0.15), -2px 0 5px rgba(0,0,0,0.2)',
+                  }}
+                />
+              )}
 
               {/* Stacked Paper Edges on Right Side */}
-              <div
-                className={cn(
-                  'absolute top-1 bottom-1 w-2.5 rounded-r pointer-events-none transition-opacity duration-300 z-10',
-                  currentSheetIndex < totalSheets ? 'opacity-100' : 'opacity-0'
-                )}
-                style={{
-                  right: '-9px',
-                  background:
-                    'repeating-linear-gradient(to right, #c8beab 0px, #f4efe4 1px, #b9ad97 2.5px, #fbf9f4 3.5px)',
-                  boxShadow: 'inset 2px 0 4px rgba(0,0,0,0.15), 2px 0 5px rgba(0,0,0,0.2)',
-                }}
-              />
+              {isTwoPageSpread && (
+                <div
+                  className={cn(
+                    'absolute top-1 bottom-1 w-2.5 rounded-r pointer-events-none transition-opacity duration-300 z-10',
+                    currentSheetIndex < totalSheets ? 'opacity-100' : 'opacity-0'
+                  )}
+                  style={{
+                    right: '-9px',
+                    background:
+                      'repeating-linear-gradient(to right, #c8beab 0px, #f4efe4 1px, #b9ad97 2.5px, #fbf9f4 3.5px)',
+                    boxShadow: 'inset 2px 0 4px rgba(0,0,0,0.15), 2px 0 5px rgba(0,0,0,0.2)',
+                  }}
+                />
+              )}
 
               {/* Book Spine Center Crease Guide */}
-              <div
-                className="absolute top-0 bottom-0 pointer-events-none z-20"
-                style={{
-                  left: 'calc(50% - 1px)',
-                  width: '2px',
-                  background: 'linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.1))',
-                }}
-              />
+              {isTwoPageSpread && (
+                <div
+                  className="absolute top-0 bottom-0 pointer-events-none z-20"
+                  style={{
+                    left: 'calc(50% - 1px)',
+                    width: '2px',
+                    background: 'linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.1))',
+                  }}
+                />
+              )}
 
               {/* Physical Sheets Stack */}
               {Array.from({ length: totalSheets }).map((_, sheetIdx) => {
@@ -888,29 +921,36 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                     }}
                     className="absolute top-0 bottom-0 right-0"
                     style={{
-                      left: '50%',
-                      width: '50%',
+                      left: isTwoPageSpread ? '50%' : '0%',
+                      width: isTwoPageSpread ? '50%' : '100%',
                       transformStyle: 'preserve-3d',
-                      transformOrigin: 'left center',
+                      transformOrigin: isTwoPageSpread ? 'left center' : 'center center',
                       willChange: 'transform',
                     }}
                   >
                     {/* Front Face (Odd page number: 1, 3, 5...) */}
                     <div
-                      className="absolute inset-0 bg-[#faf7f0] rounded-r-xl overflow-hidden border-y border-r border-black/15 shadow-sm"
+                      className={cn(
+                        'absolute inset-0 bg-white overflow-hidden shadow-[0_4px_24px_-2px_rgba(0,0,0,0.14),0_2px_8px_-1px_rgba(0,0,0,0.08)]',
+                        isTwoPageSpread
+                          ? 'rounded-r-xl border-y border-r border-slate-300/60'
+                          : 'rounded-xl border border-slate-300/60'
+                      )}
                       style={{
                         backfaceVisibility: 'hidden',
                         WebkitBackfaceVisibility: 'hidden',
                       }}
                     >
                       {/* Spine Crease Shadow on Left Edge */}
-                      <div
-                        className="absolute inset-y-0 left-0 w-5 pointer-events-none z-10"
-                        style={{
-                          background:
-                            'linear-gradient(to right, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.08) 6px, transparent 18px)',
-                        }}
-                      />
+                      {isTwoPageSpread && (
+                        <div
+                          className="absolute inset-y-0 left-0 w-5 pointer-events-none z-10"
+                          style={{
+                            background:
+                              'linear-gradient(to right, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.08) 6px, transparent 18px)',
+                          }}
+                        />
+                      )}
 
                       {/* Dynamic Glare Specular Highlight */}
                       <div
@@ -953,7 +993,12 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
 
                     {/* Back Face (Even page number: 2, 4, 6...) */}
                     <div
-                      className="absolute inset-0 bg-[#faf7f0] rounded-l-xl overflow-hidden border-y border-l border-black/15 shadow-sm"
+                      className={cn(
+                        'absolute inset-0 bg-white overflow-hidden shadow-[0_4px_24px_-2px_rgba(0,0,0,0.14),0_2px_8px_-1px_rgba(0,0,0,0.08)]',
+                        isTwoPageSpread
+                          ? 'rounded-l-xl border-y border-l border-slate-300/60'
+                          : 'rounded-xl border border-slate-300/60'
+                      )}
                       style={{
                         backfaceVisibility: 'hidden',
                         WebkitBackfaceVisibility: 'hidden',
@@ -961,13 +1006,15 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                       }}
                     >
                       {/* Spine Crease Shadow on Right Edge */}
-                      <div
-                        className="absolute inset-y-0 right-0 w-5 pointer-events-none z-10"
-                        style={{
-                          background:
-                            'linear-gradient(to left, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.08) 6px, transparent 18px)',
-                        }}
-                      />
+                      {isTwoPageSpread && (
+                        <div
+                          className="absolute inset-y-0 right-0 w-5 pointer-events-none z-10"
+                          style={{
+                            background:
+                              'linear-gradient(to left, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.08) 6px, transparent 18px)',
+                          }}
+                        />
+                      )}
 
                       {/* Dynamic Glare Specular Highlight */}
                       <div
@@ -1008,7 +1055,7 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
           </div>
 
           {/* Minimalist Mobile Hint */}
-          {!isTwoPageSpread && isLandscape && zoom <= 1.0 && (
+          {!isTwoPageSpread && isLandscape && zoom <= 1.0 && containerDimensions.width < 768 && (
             <div className="flex items-center justify-center gap-1.5 mt-3 text-[11px] text-current opacity-60 font-medium select-none pointer-events-none transition-opacity">
               <Smartphone className="h-3.5 w-3.5 rotate-90 shrink-0 opacity-80" />
               <span>Rotate phone for wide spread • Drag or click side to turn</span>

@@ -1,3 +1,40 @@
+# Pengindahan & Penyelarasan Visual Pemapar 3D Flipbook (3D Flipbook Viewer Visual Polish, True Aspect Ratio & Balanced Shadow) ✅ SELESAI
+
+**Matlamat**: Mengindahkan paparan 3D Flipbook Viewer agar risalah/brosur (terutamanya brosur landskap seperti METMalaysia) dipaparkan mengikut nisbah aspek sebenar (*true aspect ratio*) tanpa ruang mati/letterbox, bayang bawah buku (*ground shadow*) diselaraskan 100% seimbang di bawah buku tanpa terpesong ke kiri, dan bahan helaian kelihatan bersih, mewah, serta bertaraf industri.
+
+### Pelan Pelaksanaan
+- [x] 1. Pengesanan Nisbah Aspek Sebenar Imej (True Image Aspect Ratio):
+  - [x] 1.1 Pasang pengesan nisbah imej pintar (`detectedRatio`) dalam `FlipbookView` agar brosur landskap (contoh: 1.414 / 1.5) dikesan secara automatik dan mengisi kanvas buku sepenuhnya tanpa ruang kosong kelabu/krem di atas & bawah.
+- [x] 2. Pembetulan & Pengimbangan Bayang Bawah Buku (Ground Drop Shadow Perfection):
+  - [x] 2.1 Pindahkan pelarasan bayang agar sentiasa segerak dengan kedudukan halaman buku yang aktif (Cover vs Open Spread vs Back Cover vs Single Page).
+  - [x] 2.2 Laraskan kelebaran bayang mengikut lebar kandungan yang kelihatan (`pageWidth * 1.08` pada muka depan, `bookWidth * 1.04` pada hamparan terbuka, `bookWidth * 1.06` pada helaian tunggal).
+  - [x] 2.3 Lembutkan rona bayang daripada hitam pekat kasar kepada bayang ambient fotorealistik bertaraf studio (`radial-gradient` `rgba(0,0,0,0.24)` ke `rgba(0,0,0,0.02)` dengan `blur(4px)`).
+- [x] 3. Pengindahan Bahan Helaian & Responsif (Sheet Material Polish):
+  - [x] 3.1 Gantikan warna asas `#faf7f0` kepada putih bersih gred kertas seni (`bg-white`) dengan bayang halus `shadow-[0_4px_24px_-2px_rgba(0,0,0,0.14),0_2px_8px_-1px_rgba(0,0,0,0.08)]` dan sempadan lembut `border-slate-300/60`.
+  - [x] 3.2 Pastikan mod halaman tunggal (`!isTwoPageSpread`) meletakkan helaian di tengah skrin (`left: 0, width: 100%`, `transformOrigin: center center`) tanpa pembahagian 50% yang kosong di sebelah kiri.
+  - [x] 3.3 Sembunyikan petunjuk telefon ("Rotate phone") pada skrin desktop/komputer (`containerDimensions.width < 768`).
+  - [x] 3.4 Sembunyikan tulang buku (`spine crease`) dan tepi bertindih (`stacked paper edges`) apabila beroperasi dalam mod helaian tunggal.
+- [x] 4. Pengesahan Kualiti & Ujian:
+  - [x] 4.1 Jalankan `npm run typecheck` (0 ralat TypeScript).
+  - [x] 4.2 Jalankan `npm run lint` (0 ralat / 0 amaran ESLint).
+  - [x] 4.3 Jalankan `npm test` (semua 392 ujian unit lulus merentas 40 fail).
+- [x] 5. Dokumentasi & Memori:
+  - [x] 5.1 Kemas kini `task.md` dan `memory.md`.
+  - [x] 5.2 Terangkan perubahan kepada pengguna dalam Bahasa Melayu.
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Punca Ketidakseimbangan Visual & Anjakan Bayang (Root Cause Analysis)**:
+   - *Anjakan Halaman ke Kanan*: Bagi dokumen landskap 2 muka surat (seperti brosur 3 lipatan METMalaysia), `isTwoPageSpread` dinilai sebagai `false` (halaman tunggal), menetapkan lebar bekas `bookWidth` bersamaan 1 muka surat. Walau bagaimanapun, elemen lembaran (`sheets`) dikod tegar dengan `left: 50%, width: 50%` yang hanya sesuai untuk hamparan 2 muka surat. Akibatnya, helaian dimampatkan ke separuh lebar di bahagian kanan bekas, meninggalkan 50% sebelah kiri kosong.
+   - *Bayang Terpesong ke Kiri*: Bayang elips bawah diletakkan berpusat pada bekas `left: calc(50% - ...)`, manakala helaian berada di bahagian kanan. Ditambah pula dengan ketiadaan pewarisan CSS custom property `--book-shift` dari elemen adik-beradik, bayang jatuh di kawasan lantai kosong sebelah kiri.
+   - *Ruang Mati / Letterboxing Atas & Bawah*: Ketiadaan pengesanan nisbah aspek sebenar imej menyebabkan nisbah lalai potret (0.707) digunakan sebelum ini, memaksa imej brosur landskap (1.414) mengecil dengan ruang kosong tebal di atas dan bawah.
+2. **Seni Bina Penjajaran Helaian & Bayang Sejati (Adaptive 1-Page & 2-Page Precision Geometry)**:
+   - *Penyesuaian Geometri Adaptif*: Dalam mod halaman tunggal (`!isTwoPageSpread`), helaian kini mengambil `left: 0%`, `width: 100%`, `transformOrigin: center center`, dan `transform: translateX(0%) rotateX(7deg)`, meletakkan brosur 100% berpusat di tengah kanvas pemapar.
+   - *Bayang Studio Berpusat Dinamik*: Bayang bawah dipusatkan secara mutlak di tengah skrin (`left: 50%, transform: translateX(-50%)`) dengan kelebaran yang bersesuaian tepat mengikut fasa buku: `pageWidth * 1.08` sewaktu kulit hadapan/belakang, `bookWidth * 1.04` sewaktu buku terbuka, dan `bookWidth * 1.06` sewaktu helaian tunggal. Rona bayang diperhalusi kepada kecerunan fotorealistik `rgba(0,0,0,0.24)` ke `rgba(0,0,0,0.02)` dengan `blur(4px)`.
+   - *Pengesanan Nisbah Aspek Sebenar (True Aspect Ratio Auto-Fit)*: `detectedRatio` mengukur dimensi semulajadi (`naturalWidth / naturalHeight`) imej yang dimuat naik, memastikan kontena buku memeluk imej tanpa sebarang ruang kosong atas atau bawah.
+   - *Pembersihan Elemen Tidak Relevan*: Tulang tengah (`crease`) dan tepi kertas bertindih (`stacked paper edges`) kini disembunyikan secara bersyarat hanya pada hamparan 2 muka surat, manakala petunjuk telefon hanya muncul di peranti mudah alih (`width < 768px`).
+
+---
+
 # Pengalaman Auto-Tulis Tajuk Soalan Baharu (Instant Question Label Entry Without Manual Deletion) ✅ SELESAI
 
 **Matlamat**: Membolehkan pengguna menulis tajuk soalan secara langsung apabila menambah soalan baharu atau apabila mengklik medan `Label / Question` tanpa perlu memadam teks lalai "New Question" secara manual.

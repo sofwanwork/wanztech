@@ -3141,8 +3141,27 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
 - **Domain Pengeluaran Aktif**:
   - `https://www.klikform.com`
   - `https://klikform-b2g7p54q8-sofwan-jailanis-projects.vercel.app`
-- **Nota Migrasi Pangkalan Data**:
-  - Fail migrasi `supabase/migrations/20261018000000_add_multi_day_attendance.sql` sedia ada untuk menambah `day_number` pada `attendance_records` di Supabase.
+## Pengindahan & Penyelarasan Visual Pemapar 3D Flipbook (3D Flipbook Viewer Visual Polish, True Aspect Ratio & Balanced Shadow) (2026-10-18)
+- **Konteks & Maklum Balas Pengguna**: Pengguna memuat naik tangkapan skrin pemapar 3D Flipbook bagi risalah landskap 2 muka surat METMalaysia ("GEMPA BUMI") dengan permintaan "yg ni cantikkan sikit".
+- **Punca Masalah (Root Cause)**:
+  1. *Anjakan Halaman ke Kanan*: Risalah landskap 2 muka surat dinilai sebagai mod halaman tunggal (`!isTwoPageSpread`), menetapkan kelebaran kanvas `bookWidth` bersamaan 1 muka surat. Walau bagaimanapun, elemen lembaran (`sheets`) dikod tegar dengan `left: 50%, width: 50%` (geometri hamparan buku 2 muka surat), menyebabkan helaian dimampatkan separuh saiz di sebelah kanan bekas manakala 50% bahagian kiri kosong.
+  2. *Bayang Terkeluar ke Kiri*: Bayang elips bawah diletakkan berpusat pada bekas `left: calc(50% - ...)`, manakala helaian berada di bahagian kanan. Bayang juga tidak mewarisi `--book-shift` dari elemen adik-beradik, menyebabkan bayang hitam pekat (`rgba(0,0,0,0.52)`) terpesong ke kawasan kosong sebelah kiri.
+  3. *Letterboxing Tebal Atas & Bawah*: Ketiadaan pengesanan nisbah aspek sebenar menyebabkan risalah menggunakan nisbah potret lalai (0.707) dan mengecilkan brosur landskap (1.414).
+  4. *Petunjuk Telefon di Desktop*: Teks "Rotate phone for wide spread" dipaparkan di skrin komputer desktop.
+- **Penyelesaian Dilaksanakan**:
+  - `components/pamphlet/viewer/flipbook-view.tsx`:
+    1. *Pengesanan Nisbah Aspek Sebenar (True Aspect Ratio)*: Ditambah `detectedRatio` yang mengukur dimensi semulajadi (`naturalWidth / naturalHeight`) imej yang dimuat naik, memadankan saiz buku tepat dengan risalah tanpa sebarang ruang kosong letterbox.
+    2. *Geometri Helaian Adaptif*: Dalam mod halaman tunggal (`!isTwoPageSpread`), helaian kini mengambil `left: 0%`, `width: 100%`, `transformOrigin: center center`, dan `transform: translateX(0%) rotateX(7deg)`, meletakkan helaian 100% tepat di tengah kanvas pemapar.
+    3. *Bayang Studio Berpusat & Lembut*: Bayang bawah dipusatkan secara mutlak (`left: 50%, transform: translateX(-50%)`) dengan kelebaran dinamik (`pageWidth * 1.08` sewaktu kulit hadapan/belakang, `bookWidth * 1.04` sewaktu buku terbuka, dan `bookWidth * 1.06` sewaktu helaian tunggal). Rona diperhalusi kepada kecerunan fotorealistik `radial-gradient(ellipse at center, rgba(0,0,0,0.24) 0%, rgba(0,0,0,0.10) 38%, rgba(0,0,0,0.02) 65%, transparent 78%)` dengan `filter: blur(4px)`.
+    4. *Bahan Kertas Studio Bersih*: Menggantikan warna `#faf7f0` kepada putih bersih `bg-white` dengan bayang halus `shadow-[0_4px_24px_-2px_rgba(0,0,0,0.14),0_2px_8px_-1px_rgba(0,0,0,0.08)]` dan sempadan lembut `border-slate-300/60`.
+    5. *Kawalan Bersyarat*: Menyembunyikan tulang buku (`crease`) dan tepi bertindih (`stacked paper edges`) apabila beroperasi dalam mod helaian tunggal, serta menghadkan petunjuk telefon hanya pada peranti berskrin kecil (`width < 768px`).
+  - `lib/pamphlets/utils.ts`:
+    - Mengemas kini `getPamphletOrientation` untuk mengesan `firstPage.aspectRatio > 1.05` sebagai `'landscape'`.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm test`: 392 / 392 ujian unit lulus merentas 40 fail suite.
+
 
 
 

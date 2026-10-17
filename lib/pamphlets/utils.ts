@@ -298,5 +298,6 @@ export function getPamphletOrientation(pamphlet?: {
   if (pamphlet.orientation) return pamphlet.orientation;
   const firstPage = pamphlet.pages?.[0];
   if (firstPage?.orientation) return firstPage.orientation;
+  if (firstPage?.aspectRatio && firstPage.aspectRatio > 1.05) return 'landscape';
   return 'portrait';
 }
