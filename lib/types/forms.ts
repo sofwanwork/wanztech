@@ -170,6 +170,8 @@ export interface CheckInOutConfig {
   checkOutPasscode?: string;
   /** Minimum hours required to be eligible to claim e-certificate (e.g. 6 or 8). */
   minHoursForCertificate?: number;
+  /** Total number of days for this event (default: 1). E.g. 1, 2, 3, etc. */
+  totalDays?: number;
 }
 
 /**

@@ -31,7 +31,7 @@ export function cleanPamphletSlug(raw: string): string {
  * Audio synthesis helper using Web Audio API for page flip effect.
  * Produces a soft, realistic paper rustle without requiring external mp3 assets!
  */
-export function playPageTurnSound() {
+export function playPageTurnSound(direction: 'forward' | 'backward' = 'forward') {
   if (typeof window === 'undefined') return;
   try {
     const AudioContextClass =
@@ -43,7 +43,7 @@ export function playPageTurnSound() {
     const now = ctx.currentTime;
 
     // Buffer of white noise filtered to sound like paper rustle
-    const bufferSize = ctx.sampleRate * 0.08; // 80ms
+    const bufferSize = Math.floor(ctx.sampleRate * 0.08); // 80ms
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const data = buffer.getChannelData(0);
 
@@ -56,10 +56,10 @@ export function playPageTurnSound() {
     const noise = ctx.createBufferSource();
     noise.buffer = buffer;
 
-    // Bandpass filter to isolate paper-like frequency (1.2kHz - 3.5kHz)
+    // Bandpass filter to isolate paper-like frequency (~1.6kHz forward / ~1.2kHz backward)
     const filter = ctx.createBiquadFilter();
     filter.type = 'bandpass';
-    filter.frequency.setValueAtTime(1800, now);
+    filter.frequency.setValueAtTime(direction === 'forward' ? 1600 : 1200, now);
     filter.Q.setValueAtTime(1.5, now);
 
     const gain = ctx.createGain();

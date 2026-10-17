@@ -26,10 +26,11 @@ import {
 import { cn, getProxiedImageUrl, sanitizeHtml } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useState, useEffect } from 'react';
-import { Loader2, CheckCircle2, List, Clock, ExternalLink, LogOut, Award, KeyRound, AlertTriangle, ShieldAlert, Lock, Info, UserCheck, UserPlus, Hourglass, QrCode, RefreshCw } from 'lucide-react';
+import { Loader2, CheckCircle2, List, Clock, ExternalLink, LogOut, Award, KeyRound, AlertTriangle, ShieldAlert, Lock, Info, UserCheck, UserPlus, Hourglass, QrCode, RefreshCw, CalendarCheck, ArrowRight } from 'lucide-react';
 import { submitFormAction } from '@/actions/forms';
 import {
   checkAttendanceStatusAction,
+  submitAttendanceCheckInAction,
   submitAttendanceCheckOutAction,
 } from '@/actions/attendance';
 import { findIdentifierField } from '@/lib/forms/attendance';
@@ -168,6 +169,7 @@ export function PublicFormClient({
 
   const [attendanceSummary, setAttendanceSummary] = useState<AttendanceSummary | null>(null);
   const [checkingOut, setCheckingOut] = useState(false);
+  const [checkingInNextDay, setCheckingInNextDay] = useState(false);
   const [checkInResult, setCheckInResult] = useState<{
     isCheckIn?: boolean;
     checkInTime?: string;
@@ -308,10 +310,16 @@ export function PublicFormClient({
       if (res.success && res.summary) {
         setCheckOutResult(res.summary);
         setSubmitted(true);
-        try {
-          localStorage.removeItem(`klikform_att_id_${form.id}`);
-        } catch {}
-        toast.success('Check-out recorded successfully!');
+        if (res.summary.isAllDaysCompleted || (res.summary.totalDays || 1) <= 1) {
+          try {
+            localStorage.removeItem(`klikform_att_id_${form.id}`);
+          } catch {}
+        }
+        toast.success(
+          res.summary.totalDays && res.summary.totalDays > 1
+            ? `Day ${res.summary.dayNumber} check-out recorded successfully!`
+            : 'Check-out recorded successfully!'
+        );
       } else {
         toast.error(res.error || 'Failed to check out.');
       }
@@ -319,6 +327,48 @@ export function PublicFormClient({
       toast.error('An error occurred during check-out.');
     } finally {
       setCheckingOut(false);
+    }
+  };
+
+  const handleCheckInNextDay = async () => {
+    if (!identifierField) return;
+    const rawVal = formData[identifierField.id] || attendanceSummary?.identifierValue;
+    if (!rawVal) return;
+
+    setCheckingInNextDay(true);
+    try {
+      const res = await submitAttendanceCheckInAction(
+        form.id,
+        String(rawVal),
+        attendanceSummary?.nextDayNumber,
+        rqW && rqSig ? { windowIndex: rqW, signature: rqSig } : undefined
+      );
+
+      if (res.success && res.summary) {
+        toast.success(`Successfully checked in for Day ${res.summary.dayNumber}!`);
+        setAttendanceSummary(res.summary);
+        setCheckInResult({
+          isCheckIn: true,
+          checkInTime: res.summary.checkInTime,
+          participantName: res.summary.participantName,
+        });
+        try {
+          localStorage.setItem(`klikform_att_id_${form.id}`, String(rawVal));
+          localStorage.setItem(`klikform_att_status_${form.id}`, 'checked_in');
+          if (res.summary.participantName) {
+            localStorage.setItem(`klikform_att_name_${form.id}`, res.summary.participantName);
+          }
+          if (res.summary.checkInTime) {
+            localStorage.setItem(`klikform_att_time_${form.id}`, res.summary.checkInTime);
+          }
+        } catch {}
+      } else {
+        toast.error(res.error || 'Failed to check in.');
+      }
+    } catch {
+      toast.error('An error occurred during check-in.');
+    } finally {
+      setCheckingInNextDay(false);
     }
   };
 
@@ -504,13 +554,19 @@ export function PublicFormClient({
           if (checkOutPayload.summary) {
             setCheckOutResult(checkOutPayload.summary);
           }
-          try {
-            localStorage.removeItem(`klikform_att_id_${form.id}`);
-            localStorage.removeItem(`klikform_att_status_${form.id}`);
-            localStorage.removeItem(`klikform_att_name_${form.id}`);
-            localStorage.removeItem(`klikform_att_time_${form.id}`);
-          } catch {}
-          toast.success('Check-out recorded successfully!');
+          if (checkOutPayload.summary?.isAllDaysCompleted || (checkOutPayload.summary?.totalDays || 1) <= 1) {
+            try {
+              localStorage.removeItem(`klikform_att_id_${form.id}`);
+              localStorage.removeItem(`klikform_att_status_${form.id}`);
+              localStorage.removeItem(`klikform_att_name_${form.id}`);
+              localStorage.removeItem(`klikform_att_time_${form.id}`);
+            } catch {}
+          }
+          toast.success(
+            checkOutPayload.summary?.totalDays && checkOutPayload.summary.totalDays > 1
+              ? `Day ${checkOutPayload.summary.dayNumber} check-out recorded successfully!`
+              : 'Check-out recorded successfully!'
+          );
         } else if ('isCheckIn' in result && result.isCheckIn) {
           const checkInPayload = result as {
             checkInTime?: string;
@@ -920,12 +976,29 @@ export function PublicFormClient({
                 <Award className="h-7 w-7" />
               </div>
               <CardTitle className="text-2xl font-bold text-gray-900">
-                Check-Out Successful!
+                {checkOutResult.totalDays && checkOutResult.totalDays > 1
+                  ? checkOutResult.isAllDaysCompleted
+                    ? 'All Program Days Completed!'
+                    : `Day ${checkOutResult.dayNumber} Check-Out Successful!`
+                  : 'Check-Out Successful!'}
               </CardTitle>
               <CardDescription className="text-gray-600 mt-2">
                 Thank you{checkOutResult.participantName ? `, ${checkOutResult.participantName}` : ''} for attending this event!
+                {checkOutResult.totalDays && checkOutResult.totalDays > 1 && !checkOutResult.isAllDaysCompleted && (
+                  <span className="block mt-1 text-emerald-700 font-medium">
+                    Please scan the same QR code again on Day {checkOutResult.nextDayNumber} to check in.
+                  </span>
+                )}
               </CardDescription>
               <div className="mt-6 p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 text-left space-y-2.5">
+                {checkOutResult.totalDays && checkOutResult.totalDays > 1 && (
+                  <div className="flex justify-between items-center text-xs text-emerald-900 pb-2 border-b border-emerald-200/60">
+                    <span className="text-muted-foreground">Program Progress:</span>
+                    <strong className="font-semibold text-emerald-800">
+                      Day {checkOutResult.dayNumber} of {checkOutResult.totalDays} ({checkOutResult.completedDays} / {checkOutResult.totalDays} Days)
+                    </strong>
+                  </div>
+                )}
                 <div className="flex justify-between items-center text-xs text-emerald-900">
                   <span className="text-muted-foreground">Check-In Time:</span>
                   <strong className="font-semibold">{checkOutResult.checkInTime}</strong>
@@ -935,9 +1008,11 @@ export function PublicFormClient({
                   <strong className="font-semibold">{checkOutResult.checkOutTime}</strong>
                 </div>
                 <div className="pt-2 border-t border-emerald-200 flex justify-between items-center text-emerald-950">
-                  <span className="text-xs font-semibold">Total Attendance Duration:</span>
+                  <span className="text-xs font-semibold">
+                    {checkOutResult.totalDays && checkOutResult.totalDays > 1 ? 'Cumulative Total Duration:' : 'Total Attendance Duration:'}
+                  </span>
                   <strong className="text-base font-bold text-emerald-700">
-                    {checkOutResult.durationFormatted} ({checkOutResult.durationHours} Hours)
+                    {checkOutResult.totalAccumulatedFormatted || checkOutResult.durationFormatted} ({checkOutResult.totalAccumulatedHours || checkOutResult.durationHours} Hours)
                   </strong>
                 </div>
               </div>
@@ -1255,7 +1330,7 @@ export function PublicFormClient({
               </CardTitle>
               {form.description && (
                 <div
-                  className="ProseMirror text-gray-600 mt-2 [&>p]:mb-0 [&>p:empty]:h-3 [&_strong]:font-bold [&_b]:font-bold font-sans"
+                  className="ProseMirror text-gray-600 mt-2 [&>p]:mb-0 [&>p:empty]:h-3 [&_strong]:font-bold [&_b]:font-bold font-sans whitespace-pre-wrap break-words"
                   dangerouslySetInnerHTML={{ __html: sanitizeHtml(form.description) }}
                 />
               )}
@@ -1295,17 +1370,28 @@ export function PublicFormClient({
                     </span>
                     <span>Currently Present</span>
                   </div>
-                  <span className="text-[11px] font-medium text-emerald-700/80 bg-emerald-50/80 px-2.5 py-0.5 rounded-full border border-emerald-200/50">
-                    Smart Attendance
-                  </span>
+                  {attendanceSummary.totalDays && attendanceSummary.totalDays > 1 ? (
+                    <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100/80 px-2.5 py-0.5 rounded-full border border-emerald-200/70">
+                      Day {attendanceSummary.dayNumber || 1} of {attendanceSummary.totalDays}
+                    </span>
+                  ) : (
+                    <span className="text-[11px] font-medium text-emerald-700/80 bg-emerald-50/80 px-2.5 py-0.5 rounded-full border border-emerald-200/50">
+                      Smart Attendance
+                    </span>
+                  )}
                 </div>
 
                 <div className="mt-3 space-y-1">
                   <CardTitle className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
-                    Check-Out Confirmation
+                    {attendanceSummary.totalDays && attendanceSummary.totalDays > 1
+                      ? `Day ${attendanceSummary.dayNumber || 1} Check-Out Confirmation`
+                      : 'Check-Out Confirmation'}
                   </CardTitle>
                   <CardDescription className="text-slate-600 text-xs sm:text-sm leading-relaxed">
-                    Welcome back{attendanceSummary.participantName ? <>, <span className="font-semibold text-slate-900">{attendanceSummary.participantName}</span></> : ''}! Your attendance record is active.
+                    Welcome back{attendanceSummary.participantName ? <>, <span className="font-semibold text-slate-900">{attendanceSummary.participantName}</span></> : ''}!
+                    {attendanceSummary.totalDays && attendanceSummary.totalDays > 1
+                      ? ` Your Day ${attendanceSummary.dayNumber || 1} session is currently active.`
+                      : ' Your attendance record is active.'}
                   </CardDescription>
                 </div>
 
@@ -1333,6 +1419,31 @@ export function PublicFormClient({
                     </div>
                   </div>
                 </div>
+
+                {/* Previous Completed Days Progress if Multi-Day */}
+                {attendanceSummary.totalDays && attendanceSummary.totalDays > 1 && attendanceSummary.dailyRecords && attendanceSummary.dailyRecords.filter(r => r.status === 'completed').length > 0 && (
+                  <div className="mt-3.5 p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200/70 text-xs space-y-2">
+                    <div className="flex justify-between items-center text-emerald-950 font-semibold text-xs">
+                      <span className="flex items-center gap-1.5">
+                        <CalendarCheck className="w-3.5 h-3.5 text-emerald-700" />
+                        <span>Completed Days Progress:</span>
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-200/70 text-emerald-900 font-bold text-[11px]">
+                        {attendanceSummary.completedDays} / {attendanceSummary.totalDays} Days
+                      </span>
+                    </div>
+                    <div className="space-y-1 pt-1 border-t border-emerald-200/50">
+                      {attendanceSummary.dailyRecords
+                        .filter(r => r.status === 'completed')
+                        .map(r => (
+                          <div key={r.dayNumber} className="flex justify-between items-center text-[11px] text-emerald-900">
+                            <span className="text-slate-600">Day {r.dayNumber} ({r.checkInTime} – {r.checkOutTime}):</span>
+                            <strong className="font-semibold font-mono text-emerald-900">{r.durationFormatted || `${r.durationHours} hrs`}</strong>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
               </CardHeader>
 
               <CardContent className="p-5 sm:p-6 pt-2 space-y-4">
@@ -1374,7 +1485,11 @@ export function PublicFormClient({
                     ) : (
                       <>
                         <LogOut className="h-5 w-5" />
-                        <span>Check-Out Now</span>
+                        <span>
+                          {attendanceSummary.totalDays && attendanceSummary.totalDays > 1
+                            ? `Check-Out for Day ${attendanceSummary.dayNumber || 1}`
+                            : 'Check-Out Now'}
+                        </span>
                       </>
                     )}
                   </Button>
@@ -1474,61 +1589,128 @@ export function PublicFormClient({
           {/* Smart Attendance Already Completed Card */}
           {attendanceSummary?.status === 'completed' && (
             <Card className="border border-indigo-100 shadow-xl shadow-indigo-950/5 bg-white rounded-3xl overflow-hidden p-0 gap-0 animate-in fade-in slide-in-from-top-3 duration-300">
-              <div className="h-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 w-full shrink-0" />
+              <div className={`h-2 bg-gradient-to-r ${attendanceSummary.canCheckInNextDay ? 'from-emerald-500 via-teal-500 to-indigo-500' : 'from-blue-500 via-indigo-500 to-purple-500'} w-full shrink-0`} />
               <CardHeader className="bg-gradient-to-b from-blue-50/70 via-indigo-50/20 to-transparent pt-6 pb-5 px-5 sm:px-6 text-center">
                 <div className="relative mx-auto w-14 h-14 mb-3.5">
-                  <div className="absolute inset-0 rounded-2xl bg-blue-400 animate-ping opacity-20" />
-                  <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/25">
-                    <CheckCircle2 className="h-7 w-7" />
+                  <div className={`absolute inset-0 rounded-2xl ${attendanceSummary.canCheckInNextDay ? 'bg-emerald-400' : 'bg-blue-400'} animate-ping opacity-20`} />
+                  <div className={`relative w-14 h-14 rounded-2xl bg-gradient-to-br ${attendanceSummary.canCheckInNextDay ? 'from-emerald-600 to-teal-600 shadow-emerald-500/25' : 'from-blue-600 to-indigo-600 shadow-blue-500/25'} flex items-center justify-center text-white shadow-lg`}>
+                    {attendanceSummary.canCheckInNextDay ? (
+                      <CalendarCheck className="h-7 w-7" />
+                    ) : (
+                      <CheckCircle2 className="h-7 w-7" />
+                    )}
                   </div>
                 </div>
 
                 <CardTitle className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
-                  Your Attendance Has Been Fully Recorded
+                  {attendanceSummary.canCheckInNextDay
+                    ? `Day ${attendanceSummary.dayNumber || 1} Attendance Completed!`
+                    : attendanceSummary.totalDays && attendanceSummary.totalDays > 1
+                    ? 'All Program Days Completed!'
+                    : 'Your Attendance Has Been Fully Recorded'}
                 </CardTitle>
                 <CardDescription className="text-slate-600 text-xs sm:text-sm mt-1.5 leading-relaxed max-w-md mx-auto">
-                  Thank you{attendanceSummary.participantName ? <>, <span className="font-semibold text-slate-900">{attendanceSummary.participantName}</span></> : ''}. Your check-in and check-out records have been confirmed.
+                  {attendanceSummary.canCheckInNextDay ? (
+                    <>
+                      Great job{attendanceSummary.participantName ? <>, <span className="font-semibold text-slate-900">{attendanceSummary.participantName}</span></> : ''}! You have completed Day {attendanceSummary.dayNumber || 1}. Ready to record your attendance for Day {attendanceSummary.nextDayNumber}?
+                    </>
+                  ) : (
+                    <>
+                      Thank you{attendanceSummary.participantName ? <>, <span className="font-semibold text-slate-900">{attendanceSummary.participantName}</span></> : ''}. {attendanceSummary.totalDays && attendanceSummary.totalDays > 1 ? `All ${attendanceSummary.totalDays} event days have been completed.` : 'Your check-in and check-out records have been confirmed.'}
+                    </>
+                  )}
                 </CardDescription>
 
                 {/* Digital Attendance Ticket Receipt */}
                 <div className="mt-5 p-4 sm:p-5 rounded-2xl bg-slate-50/90 border border-slate-200/80 text-left shadow-2xs space-y-3">
+                  {/* Latest Day Record */}
                   <div className="grid grid-cols-2 gap-3 sm:gap-4">
                     <div className="p-3 bg-white rounded-xl border border-slate-200/60 shadow-2xs">
-                      <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider block">Check-In Time</span>
+                      <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider block">
+                        {attendanceSummary.totalDays && attendanceSummary.totalDays > 1 ? `Day ${attendanceSummary.dayNumber || 1} Check-In` : 'Check-In Time'}
+                      </span>
                       <strong className="text-sm sm:text-base font-bold text-slate-900 font-mono block mt-0.5">
                         {attendanceSummary.checkInTime}
                       </strong>
                     </div>
                     <div className="p-3 bg-white rounded-xl border border-slate-200/60 shadow-2xs">
-                      <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider block">Check-Out Time</span>
+                      <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider block">
+                        {attendanceSummary.totalDays && attendanceSummary.totalDays > 1 ? `Day ${attendanceSummary.dayNumber || 1} Check-Out` : 'Check-Out Time'}
+                      </span>
                       <strong className="text-sm sm:text-base font-bold text-slate-900 font-mono block mt-0.5">
                         {attendanceSummary.checkOutTime}
                       </strong>
                     </div>
                   </div>
 
+                  {/* Multi-Day Detailed Breakdown List */}
+                  {attendanceSummary.totalDays && attendanceSummary.totalDays > 1 && attendanceSummary.dailyRecords && attendanceSummary.dailyRecords.length > 0 && (
+                    <div className="space-y-1.5 pt-2 border-t border-slate-200/70">
+                      <div className="flex justify-between items-center text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                        <span>Daily Breakdown</span>
+                        <span className="text-emerald-700">
+                          {attendanceSummary.completedDays || 1} / {attendanceSummary.totalDays} Days Done
+                        </span>
+                      </div>
+                      <div className="space-y-1">
+                        {attendanceSummary.dailyRecords.map((r) => (
+                          <div key={r.dayNumber} className="flex justify-between items-center text-xs p-2.5 rounded-xl bg-white border border-slate-200/60">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-800">Day {r.dayNumber}</span>
+                              <span className="text-[11px] text-slate-400 font-mono">({r.checkInTime} – {r.checkOutTime || '-'})</span>
+                            </div>
+                            <span className="font-bold font-mono text-emerald-700">{r.durationFormatted || `${r.durationHours} hrs`}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="pt-2.5 border-t border-dashed border-slate-200 flex items-center justify-between gap-2 flex-wrap">
                     <span className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>Total Time Present:</span>
+                      <span>{attendanceSummary.totalDays && attendanceSummary.totalDays > 1 ? 'Cumulative Total Duration:' : 'Total Time Present:'}</span>
                     </span>
                     <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs sm:text-sm font-bold border border-emerald-200/70 font-mono">
-                      {attendanceSummary.durationFormatted} ({attendanceSummary.durationHours} Hours)
+                      {attendanceSummary.totalAccumulatedFormatted || attendanceSummary.durationFormatted} ({attendanceSummary.totalAccumulatedHours || attendanceSummary.durationHours} Hours)
                     </span>
                   </div>
                 </div>
               </CardHeader>
               <CardFooter className="p-5 sm:p-6 pt-2 flex-col gap-3">
-                {hasCertificate && (
+                {/* 1-Click Check-In to Next Day Button */}
+                {attendanceSummary.canCheckInNextDay ? (
                   <Button
-                    asChild
-                    className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 h-auto text-sm sm:text-base rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 group hover:scale-[1.01] active:scale-[0.99]"
+                    type="button"
+                    onClick={handleCheckInNextDay}
+                    disabled={checkingInNextDay}
+                    className="w-full bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-800 text-white font-bold py-3.5 h-auto text-sm sm:text-base rounded-2xl shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2 group hover:scale-[1.01] active:scale-[0.99]"
                   >
-                    <Link href={`/check/${form.id}`}>
-                      <Award className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 transition-transform group-hover:scale-110" />
-                      <span>Check / Claim Your E-Certificate</span>
-                    </Link>
+                    {checkingInNextDay ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <span>Checking In for Day {attendanceSummary.nextDayNumber}...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Clock className="h-5 w-5" />
+                        <span>Check-In for Day {attendanceSummary.nextDayNumber} Now</span>
+                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      </>
+                    )}
                   </Button>
+                ) : (
+                  hasCertificate && (
+                    <Button
+                      asChild
+                      className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 h-auto text-sm sm:text-base rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 group hover:scale-[1.01] active:scale-[0.99]"
+                    >
+                      <Link href={`/check/${form.id}`}>
+                        <Award className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 transition-transform group-hover:scale-110" />
+                        <span>Check / Claim Your E-Certificate</span>
+                      </Link>
+                    </Button>
+                  )
                 )}
                 <Button
                   variant="outline"

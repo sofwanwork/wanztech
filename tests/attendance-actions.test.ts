@@ -81,6 +81,12 @@ vi.mock('@/lib/storage/attendance', () => ({
     }
     return Promise.resolve(null);
   }),
+  getAttendanceRecordsForParticipant: vi.fn().mockImplementation((formId: string, cleanId: string) => {
+    if (formId === 'form-123' && cleanId === '950101145555') {
+      return Promise.resolve([mockAttendanceRecord]);
+    }
+    return Promise.resolve([]);
+  }),
   updateAttendanceCheckOut: vi.fn().mockImplementation((id: string, input: { durationMinutes: number }) => {
     return Promise.resolve({
       ...mockAttendanceRecord,

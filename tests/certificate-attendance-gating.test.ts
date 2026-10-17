@@ -80,6 +80,9 @@ let currentAttendanceRecord: Record<string, unknown> | null = null;
 
 vi.mock('@/lib/storage/attendance', () => ({
   getAttendanceRecord: vi.fn().mockImplementation(() => Promise.resolve(currentAttendanceRecord)),
+  getAttendanceRecordsForParticipant: vi.fn().mockImplementation(() =>
+    Promise.resolve(currentAttendanceRecord ? [currentAttendanceRecord] : [])
+  ),
 }));
 
 vi.mock('google-spreadsheet', () => {

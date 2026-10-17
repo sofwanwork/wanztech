@@ -75,7 +75,7 @@ export function RichTextEditor({
     content: value || '',
     editorProps: {
       attributes: {
-        class: 'prose prose-sm max-w-none min-h-[80px] px-3 py-2 focus:outline-none',
+        class: 'prose prose-sm max-w-none min-h-[80px] px-3 py-2 focus:outline-none whitespace-pre-wrap break-words',
       },
     },
     onUpdate: ({ editor }) => {

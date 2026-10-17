@@ -190,6 +190,8 @@
 /* TipTap Editor Styles */
 .ProseMirror {
   outline: none;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .ProseMirror ul {

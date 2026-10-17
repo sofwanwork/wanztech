@@ -297,20 +297,20 @@ export async function checkCertificateByICOrEmail(
             : 0;
 
         if (minHoursRequired > 0) {
-          const { getAttendanceRecord } = await import('@/lib/storage/attendance');
+          const { getAttendanceRecordsForParticipant } = await import('@/lib/storage/attendance');
           const { cleanIdentifier, checkCertificateAttendanceEligibility } = await import(
             '@/lib/forms/attendance'
           );
 
           // Check using search identifier first
-          let attRecord = await getAttendanceRecord(formId, cleanIdentifier(identifier));
+          let attRecords = await getAttendanceRecordsForParticipant(formId, cleanIdentifier(identifier));
           // If not found and realIc exists, check using real IC
-          if (!attRecord && realIc) {
-            attRecord = await getAttendanceRecord(formId, cleanIdentifier(realIc));
+          if ((!attRecords || attRecords.length === 0) && realIc) {
+            attRecords = await getAttendanceRecordsForParticipant(formId, cleanIdentifier(realIc));
           }
 
           const eligibility = checkCertificateAttendanceEligibility(
-            attRecord,
+            attRecords,
             minHoursRequired,
             checkInOutConfig?.breakMinutes || 0
           );

@@ -35,10 +35,11 @@ import {
   formatAttendanceTime,
   formatAttendanceDateTime,
   calculateAttendanceDuration,
+  calculateMultiDayAttendanceDuration,
 } from '@/lib/forms/attendance';
 import {
   createAttendanceRecord,
-  getAttendanceRecord,
+  getAttendanceRecordsForParticipant,
   updateAttendanceCheckOut,
 } from '@/lib/storage/attendance';
 import { verifyRotatingQrToken } from '@/lib/forms/rotating-qr';
@@ -117,6 +118,14 @@ export async function updateFormAction(form: Form) {
     }
     if (form.thankYouMessage) {
       form.thankYouMessage = sanitizeHtml(form.thankYouMessage);
+    }
+
+    // Ensure all fields have non-empty labels before saving
+    if (Array.isArray(form.fields)) {
+      form.fields = form.fields.map((f, i) => ({
+        ...f,
+        label: f.label && f.label.trim() ? f.label.trim() : (f.type === 'pagebreak' ? 'Page Break' : `Question ${i + 1}`),
+      }));
     }
 
     await saveForm(form);
@@ -407,23 +416,34 @@ export async function submitFormAction(
     const nowCheckIn = new Date();
 
     if (cleanId) {
-      const existingRecord = await getAttendanceRecord(form.id, cleanId);
+      const totalDays = Math.max(1, form.attendanceSettings?.checkInOut?.totalDays || 1);
+      const records = await getAttendanceRecordsForParticipant(form.id, cleanId);
+      const activeRecord = records.find((r) => r.status === 'checked_in');
+      const completedRecords = records.filter((r) => r.status === 'completed' && r.checkOutAt);
 
-      // SCENARIO 1: Participant is ALREADY checked in!
+      // SCENARIO 1: Participant is ALREADY checked in for an active day!
       // This happens when respondent re-scans the form to check-out, but submits the form
       // instead of using the top banner button (or pressed Enter).
       // We must CONVERT this into a Check-Out, NEVER create a duplicate check-in row!
-      if (existingRecord && existingRecord.status === 'checked_in') {
+      if (activeRecord) {
         const checkInOutConfig = form.attendanceSettings?.checkInOut;
         const breakMinutes = checkInOutConfig?.breakMinutes || 0;
         const nowCheckOut = new Date();
-        const dur = calculateAttendanceDuration(existingRecord.checkInAt, nowCheckOut, breakMinutes);
+        const dur = calculateAttendanceDuration(activeRecord.checkInAt, nowCheckOut, breakMinutes);
+        const dayNum = activeRecord.dayNumber ?? (completedRecords.length + 1);
 
         // Update attendance record in Supabase to completed
-        await updateAttendanceCheckOut(existingRecord.id, {
+        await updateAttendanceCheckOut(activeRecord.id, {
           checkOutAt: nowCheckOut.toISOString(),
           durationMinutes: dur.totalMinutes,
         });
+
+        const allCompletedAfterThis = [
+          ...completedRecords,
+          { ...activeRecord, checkOutAt: nowCheckOut.toISOString(), status: 'completed' as const, durationMinutes: dur.totalMinutes, dayNumber: dayNum },
+        ];
+        const multiDay = calculateMultiDayAttendanceDuration(allCompletedAfterThis, breakMinutes);
+        const isAllDone = dayNum >= totalDays;
 
         // Update local form_responses if exists
         try {
@@ -431,37 +451,57 @@ export async function submitFormAction(
           const { data: resp } = await admin
             .from('form_responses')
             .select('data')
-            .eq('submission_id', existingRecord.submissionId)
+            .eq('submission_id', activeRecord.submissionId)
             .maybeSingle();
 
           if (resp && resp.data) {
             const existingData = resp.data as Record<string, unknown>;
-            existingData['Masa Keluar (Check-Out)'] = formatAttendanceDateTime(nowCheckOut);
-            existingData['Jumlah Masa Hadir'] = dur.formattedText;
-            existingData['Jumlah Jam (Hours)'] = dur.decimalHours;
-            existingData['Status Kehadiran'] = 'Selesai (Completed)';
+            if (totalDays > 1) {
+              existingData[`Masa Keluar (Hari ${dayNum})`] = formatAttendanceDateTime(nowCheckOut);
+              existingData[`Jumlah Jam (Hari ${dayNum})`] = dur.decimalHours;
+              existingData['Jumlah Masa Hadir'] = multiDay.formattedTotalText;
+              existingData['Jumlah Jam Keseluruhan (Total Hours)'] = multiDay.totalDecimalHours;
+              existingData['Status Kehadiran'] = isAllDone
+                ? `Selesai Sepenuhnya (${totalDays}/${totalDays} Hari)`
+                : `Hari ${dayNum} Selesai (${dayNum}/${totalDays} Hari)`;
+            } else {
+              existingData['Masa Keluar (Check-Out)'] = formatAttendanceDateTime(nowCheckOut);
+              existingData['Jumlah Masa Hadir'] = dur.formattedText;
+              existingData['Jumlah Jam (Hours)'] = dur.decimalHours;
+              existingData['Status Kehadiran'] = 'Selesai (Completed)';
+            }
 
             await admin
               .from('form_responses')
               .update({ data: existingData })
-              .eq('submission_id', existingRecord.submissionId);
+              .eq('submission_id', activeRecord.submissionId);
           }
         } catch (dbErr) {
           console.warn('[submitFormAction] update existing form_responses error:', dbErr);
         }
 
         // Background Google Sheet update (using after())
-        const checkOutUpdateData: Record<string, string | number> = {
-          'Masa Keluar (Check-Out)': formatAttendanceDateTime(nowCheckOut),
-          'Jumlah Masa Hadir': dur.formattedText,
-          'Jumlah Jam (Hours)': dur.decimalHours,
-          'Status Kehadiran': 'Selesai (Completed)',
-        };
+        const checkOutUpdateData: Record<string, string | number> = totalDays > 1
+          ? {
+              [`Masa Keluar (Hari ${dayNum})`]: formatAttendanceDateTime(nowCheckOut),
+              [`Jumlah Jam (Hari ${dayNum})`]: dur.decimalHours,
+              'Jumlah Masa Hadir': multiDay.formattedTotalText,
+              'Jumlah Jam Keseluruhan (Total Hours)': multiDay.totalDecimalHours,
+              'Status Kehadiran': isAllDone
+                ? `Selesai Sepenuhnya (${totalDays}/${totalDays} Hari)`
+                : `Hari ${dayNum} Selesai (${dayNum}/${totalDays} Hari)`,
+            }
+          : {
+              'Masa Keluar (Check-Out)': formatAttendanceDateTime(nowCheckOut),
+              'Jumlah Masa Hadir': dur.formattedText,
+              'Jumlah Jam (Hours)': dur.decimalHours,
+              'Status Kehadiran': 'Selesai (Completed)',
+            };
 
         const formSnap = form;
         const settingsSnap = settings;
-        const existingSubmissionId = existingRecord.submissionId;
-        const existingIdentifierLabel = existingRecord.identifierLabel;
+        const existingSubmissionId = activeRecord.submissionId;
+        const existingIdentifierLabel = activeRecord.identifierLabel;
         const rawIdentifierStr = String(rawId);
 
         after(async () => {
@@ -529,46 +569,127 @@ export async function submitFormAction(
           isCheckOut: true,
           summary: {
             status: 'completed',
-            participantName: existingRecord.participantName || participantName,
+            participantName: activeRecord.participantName || participantName,
             identifierValue: String(rawId),
-            checkInTime: formatAttendanceTime(existingRecord.checkInAt),
+            checkInTime: formatAttendanceTime(activeRecord.checkInAt),
             checkOutTime: formatAttendanceTime(nowCheckOut),
-            durationFormatted: dur.formattedText,
-            durationHours: dur.decimalHours,
+            durationFormatted: totalDays > 1 ? multiDay.formattedTotalText : dur.formattedText,
+            durationHours: totalDays > 1 ? multiDay.totalDecimalHours : dur.decimalHours,
+            dayNumber: dayNum,
+            totalDays,
+            completedDays: completedRecords.length + 1,
+            isAllDaysCompleted: isAllDone,
+            canCheckInNextDay: !isAllDone,
+            nextDayNumber: !isAllDone ? dayNum + 1 : undefined,
+            totalAccumulatedMinutes: multiDay.totalMinutes,
+            totalAccumulatedHours: multiDay.totalDecimalHours,
+            totalAccumulatedFormatted: multiDay.formattedTotalText,
           },
         };
       }
 
-      // SCENARIO 2: Participant already COMPLETED attendance (checked-out previously)
-      if (existingRecord && existingRecord.status === 'completed') {
+      // SCENARIO 2: Participant completed previous days and is eligible for NEXT day check-in (multi-day)
+      if (!activeRecord && completedRecords.length > 0 && completedRecords.length < totalDays) {
+        const nextDay = completedRecords.length + 1;
+        const baseRecord = records[0];
+
+        if (totalDays > 1) {
+          dbData[`Masa Masuk (Hari ${nextDay})`] = formatAttendanceDateTime(nowCheckIn);
+          dbData[`Masa Keluar (Hari ${nextDay})`] = '-';
+          dbData[`Jumlah Jam (Hari ${nextDay})`] = 0;
+          dbData['Status Kehadiran'] = `Daftar Masuk (Hari ${nextDay}/${totalDays})`;
+        }
+
+        try {
+          await createAttendanceRecord({
+            formId: form.id,
+            userId: form.userId,
+            submissionId: baseRecord?.submissionId || submissionId,
+            identifierValue: cleanId,
+            identifierLabel: identifierField?.label || 'IC',
+            participantName: baseRecord?.participantName || participantName,
+            checkInAt: nowCheckIn.toISOString(),
+            dayNumber: nextDay,
+            metadata: { ...dbData },
+          });
+
+          checkInResultInfo = {
+            checkInTime: formatAttendanceTime(nowCheckIn),
+            participantName: baseRecord?.participantName || participantName,
+          };
+        } catch (attErr) {
+          console.warn('Attendance next day check-in record creation error:', attErr);
+        }
+
+        const multiDay = calculateMultiDayAttendanceDuration(
+          completedRecords,
+          form.attendanceSettings?.checkInOut?.breakMinutes || 0
+        );
+
+        return {
+          success: true,
+          isCheckIn: true,
+          summary: {
+            status: 'checked_in',
+            participantName: baseRecord?.participantName || participantName,
+            identifierValue: String(rawId),
+            checkInTime: formatAttendanceTime(nowCheckIn),
+            dayNumber: nextDay,
+            totalDays,
+            completedDays: completedRecords.length,
+            isAllDaysCompleted: false,
+            totalAccumulatedMinutes: multiDay.totalMinutes,
+            totalAccumulatedHours: multiDay.totalDecimalHours,
+            totalAccumulatedFormatted: multiDay.formattedTotalText,
+          },
+        };
+      }
+
+      // SCENARIO 3: Participant already COMPLETED ALL attendance days
+      if (!activeRecord && completedRecords.length >= totalDays) {
         const checkInOutConfig = form.attendanceSettings?.checkInOut;
         const breakMinutes = checkInOutConfig?.breakMinutes || 0;
-        const dur = calculateAttendanceDuration(
-          existingRecord.checkInAt,
-          existingRecord.checkOutAt || existingRecord.checkInAt,
-          breakMinutes
-        );
+        const multiDay = calculateMultiDayAttendanceDuration(completedRecords, breakMinutes);
+        const latest = completedRecords[completedRecords.length - 1] || records[records.length - 1];
+
         return {
           success: true,
           isCheckOut: true,
           summary: {
             status: 'completed',
-            participantName: existingRecord.participantName || participantName,
+            participantName: latest.participantName || participantName,
             identifierValue: String(rawId),
-            checkInTime: formatAttendanceTime(existingRecord.checkInAt),
-            checkOutTime: existingRecord.checkOutAt ? formatAttendanceTime(existingRecord.checkOutAt) : '',
-            durationFormatted: dur.formattedText,
-            durationHours: dur.decimalHours,
+            checkInTime: formatAttendanceTime(latest.checkInAt),
+            checkOutTime: latest.checkOutAt ? formatAttendanceTime(latest.checkOutAt) : '',
+            durationFormatted: totalDays > 1 ? multiDay.formattedTotalText : (latest.durationMinutes ? `${Math.floor(latest.durationMinutes / 60)} Hours` : '0 Minutes'),
+            durationHours: multiDay.totalDecimalHours,
+            dayNumber: latest.dayNumber,
+            totalDays,
+            completedDays: completedRecords.length,
+            isAllDaysCompleted: true,
+            canCheckInNextDay: false,
+            totalAccumulatedMinutes: multiDay.totalMinutes,
+            totalAccumulatedHours: multiDay.totalDecimalHours,
+            totalAccumulatedFormatted: multiDay.formattedTotalText,
           },
         };
       }
 
-      // SCENARIO 3: Fresh Check-In (no existing record)
-      dbData['Masa Masuk (Check-In)'] = formatAttendanceDateTime(nowCheckIn);
-      dbData['Masa Keluar (Check-Out)'] = '-';
-      dbData['Jumlah Masa Hadir'] = '-';
-      dbData['Jumlah Jam (Hours)'] = 0;
-      dbData['Status Kehadiran'] = 'Daftar Masuk (Checked-In)';
+      // SCENARIO 4: Fresh Check-In (Day 1)
+      if (totalDays > 1) {
+        dbData['Masa Masuk (Hari 1)'] = formatAttendanceDateTime(nowCheckIn);
+        dbData['Masa Keluar (Hari 1)'] = '-';
+        dbData['Jumlah Jam (Hari 1)'] = 0;
+        dbData['Jumlah Masa Hadir'] = '-';
+        dbData['Jumlah Jam Keseluruhan (Total Hours)'] = 0;
+        dbData['Status Kehadiran'] = `Daftar Masuk (Hari 1/${totalDays})`;
+      } else {
+        dbData['Masa Masuk (Check-In)'] = formatAttendanceDateTime(nowCheckIn);
+        dbData['Masa Keluar (Check-Out)'] = '-';
+        dbData['Jumlah Masa Hadir'] = '-';
+        dbData['Jumlah Jam (Hours)'] = 0;
+        dbData['Status Kehadiran'] = 'Daftar Masuk (Checked-In)';
+      }
 
       try {
         await createAttendanceRecord({
@@ -579,6 +700,7 @@ export async function submitFormAction(
           identifierLabel: identifierField?.label || 'IC',
           participantName,
           checkInAt: nowCheckIn.toISOString(),
+          dayNumber: 1,
           metadata: { ...dbData },
         });
 

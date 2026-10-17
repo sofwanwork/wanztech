@@ -166,6 +166,117 @@ export function formatAttendanceDateTime(dateInput: string | Date): string {
   return `${dateStr}, ${timeStr}`;
 }
 
+export interface MultiDayDurationResult {
+  totalMinutes: number;
+  hours: number;
+  minutes: number;
+  decimalHours: number;
+  totalDecimalHours: number;
+  formattedText: string;
+  formattedTotalText: string;
+  completedDays: number;
+  dailyBreakdown: Array<{
+    dayNumber: number;
+    hours: number;
+    minutes: number;
+    decimalHours: number;
+    formattedText: string;
+    duration: DurationResult;
+    checkInAt: string;
+    checkOutAt?: string | null;
+    status: string;
+  }>;
+}
+
+/**
+ * Calculate cumulative duration across multiple days / attendance records.
+ */
+export function calculateMultiDayAttendanceDuration(
+  records: Array<{
+    dayNumber?: number;
+    checkInAt: string | Date;
+    checkOutAt?: string | Date | null;
+    status: string;
+    durationMinutes?: number | null;
+  }>,
+  breakMinutesPerDay = 0
+): MultiDayDurationResult {
+  if (!records || records.length === 0) {
+    return {
+      totalMinutes: 0,
+      hours: 0,
+      minutes: 0,
+      decimalHours: 0,
+      totalDecimalHours: 0,
+      formattedText: '0 Minutes',
+      formattedTotalText: '0 Minutes',
+      completedDays: 0,
+      dailyBreakdown: [],
+    };
+  }
+
+  let totalMinutes = 0;
+  let completedDays = 0;
+
+  const dailyBreakdown = records.map((rec, index) => {
+    const dayNum = rec.dayNumber ?? index + 1;
+    if (rec.status === 'completed' && rec.checkOutAt) {
+      const dur = calculateAttendanceDuration(rec.checkInAt, rec.checkOutAt, breakMinutesPerDay);
+      totalMinutes += dur.totalMinutes;
+      completedDays++;
+      return {
+        dayNumber: dayNum,
+        hours: dur.hours,
+        minutes: dur.totalMinutes,
+        decimalHours: dur.decimalHours,
+        formattedText: dur.formattedText,
+        duration: dur,
+        checkInAt: String(rec.checkInAt),
+        checkOutAt: String(rec.checkOutAt),
+        status: rec.status,
+      };
+    } else {
+      const dur = calculateAttendanceDuration(rec.checkInAt, new Date(), breakMinutesPerDay);
+      return {
+        dayNumber: dayNum,
+        hours: dur.hours,
+        minutes: dur.totalMinutes,
+        decimalHours: dur.decimalHours,
+        formattedText: dur.formattedText,
+        duration: dur,
+        checkInAt: String(rec.checkInAt),
+        checkOutAt: null,
+        status: rec.status,
+      };
+    }
+  });
+
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  const totalDecimalHours = Math.round((totalMinutes / 60) * 100) / 100;
+
+  let formattedTotalText = '0 Minutes';
+  if (hours > 0 && minutes > 0) {
+    formattedTotalText = `${hours} Hours ${minutes} Minutes`;
+  } else if (hours > 0) {
+    formattedTotalText = `${hours} Hours`;
+  } else if (minutes > 0) {
+    formattedTotalText = `${minutes} Minutes`;
+  }
+
+  return {
+    totalMinutes,
+    hours,
+    minutes,
+    decimalHours: totalDecimalHours,
+    totalDecimalHours,
+    formattedText: formattedTotalText,
+    formattedTotalText,
+    completedDays,
+    dailyBreakdown,
+  };
+}
+
 export interface CertificateAttendanceEligibility {
   eligible: boolean;
   reason?: 'no_record' | 'not_checked_out' | 'insufficient_hours';
@@ -177,12 +288,22 @@ export interface CertificateAttendanceEligibility {
   message: string;
 }
 
+export type AttendanceRecordInput = {
+  status: string;
+  checkInAt: string | Date;
+  checkOutAt?: string | Date | null;
+  durationMinutes?: number | null;
+  dayNumber?: number;
+};
+
 /**
- * Check if a participant's attendance record qualifies them for certificate claiming.
+ * Check if a participant's attendance record(s) qualify them for certificate claiming.
+ * Supports both a single attendance record or an array of multi-day records.
  */
 export function checkCertificateAttendanceEligibility(
-  record:
-    | { status: string; checkInAt: string | Date; checkOutAt?: string | Date | null }
+  recordOrRecords:
+    | AttendanceRecordInput
+    | AttendanceRecordInput[]
     | null
     | undefined,
   minHoursRequired: number,
@@ -203,7 +324,13 @@ export function checkCertificateAttendanceEligibility(
     };
   }
 
-  if (!record) {
+  const records: AttendanceRecordInput[] = !recordOrRecords
+    ? []
+    : Array.isArray(recordOrRecords)
+      ? recordOrRecords
+      : [recordOrRecords];
+
+  if (records.length === 0) {
     return {
       eligible: false,
       reason: 'no_record',
@@ -216,8 +343,14 @@ export function checkCertificateAttendanceEligibility(
     };
   }
 
-  if (record.status !== 'completed' || !record.checkOutAt) {
-    const elapsed = calculateAttendanceDuration(record.checkInAt, new Date(), breakMinutes);
+  // Check if any record is currently checked_in (not yet checked out)
+  const activeCheckIn = records.find((r) => r.status === 'checked_in' || !r.checkOutAt);
+  const completedRecords = records.filter((r) => r.status === 'completed' && r.checkOutAt);
+
+  // If there is an active check-in (participant has not checked out)
+  if (activeCheckIn) {
+    const elapsed = calculateAttendanceDuration(activeCheckIn.checkInAt, new Date(), breakMinutes);
+    const dayNotice = activeCheckIn.dayNumber ? ` for Day ${activeCheckIn.dayNumber}` : '';
     return {
       eligible: false,
       reason: 'not_checked_out',
@@ -227,15 +360,16 @@ export function checkCertificateAttendanceEligibility(
       shortfallMinutes: Math.max(0, Math.round(reqHours * 60 - elapsed.totalMinutes)),
       shortfallText: '',
       message:
-        'You have not checked out yet. Please scan the program QR code to check out and record your total attendance hours.',
+        `You have not checked out yet${dayNotice}. Please scan the program QR code to check out and record your total attendance hours.`,
     };
   }
 
-  const duration = calculateAttendanceDuration(record.checkInAt, record.checkOutAt, breakMinutes);
+  // Calculate total hours across completed records
+  const multiDay = calculateMultiDayAttendanceDuration(completedRecords, breakMinutes);
   const requiredMinutes = Math.round(reqHours * 60);
 
-  if (duration.totalMinutes < requiredMinutes) {
-    const shortfallMin = requiredMinutes - duration.totalMinutes;
+  if (multiDay.totalMinutes < requiredMinutes) {
+    const shortfallMin = requiredMinutes - multiDay.totalMinutes;
     const shortH = Math.floor(shortfallMin / 60);
     const shortM = shortfallMin % 60;
     let shortfallText = '';
@@ -246,19 +380,19 @@ export function checkCertificateAttendanceEligibility(
     return {
       eligible: false,
       reason: 'insufficient_hours',
-      attendedHours: duration.decimalHours,
-      attendedDurationFormatted: duration.formattedText,
+      attendedHours: multiDay.totalDecimalHours,
+      attendedDurationFormatted: multiDay.formattedTotalText,
       requiredHours: reqHours,
       shortfallMinutes: shortfallMin,
       shortfallText,
-      message: `Your total attendance is ${duration.formattedText} (minimum requirement: ${reqHours} Hours). You are short by ${shortfallText} to be eligible for certificate claiming.`,
+      message: `Your total attendance is ${multiDay.formattedTotalText} (minimum requirement: ${reqHours} Hours). You are short by ${shortfallText} to be eligible for certificate claiming.`,
     };
   }
 
   return {
     eligible: true,
-    attendedHours: duration.decimalHours,
-    attendedDurationFormatted: duration.formattedText,
+    attendedHours: multiDay.totalDecimalHours,
+    attendedDurationFormatted: multiDay.formattedTotalText,
     requiredHours: reqHours,
     shortfallMinutes: 0,
     shortfallText: '',

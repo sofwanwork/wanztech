@@ -171,7 +171,23 @@ function SortableField({
               <Input
                 id={`field-label-${field.id}`}
                 value={field.label}
+                placeholder="New Question"
                 onChange={(e) => updateField(index, { label: e.target.value })}
+                onFocus={(e) => {
+                  if (e.target.value === 'New Question') {
+                    updateField(index, { label: '' });
+                  }
+                }}
+                onClick={(e) => {
+                  if ((e.target as HTMLInputElement).value === 'New Question') {
+                    updateField(index, { label: '' });
+                  }
+                }}
+                onBlur={(e) => {
+                  if (!e.target.value.trim()) {
+                    updateField(index, { label: 'New Question' });
+                  }
+                }}
               />
             </div>
             <div className="space-y-2">
@@ -827,7 +843,15 @@ interface FieldsEditorProps {
   };
 
   const addField = () => {
-    onChange([...fields, { id: uuidv4(), type: 'text', label: 'New Question', required: false }]);
+    const newId = uuidv4();
+    onChange([...fields, { id: newId, type: 'text', label: '', required: false }]);
+    setTimeout(() => {
+      const input = document.getElementById(`field-label-${newId}`) as HTMLInputElement | null;
+      if (input) {
+        input.focus();
+        input.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }, 50);
   };
 
   const addPageBreak = () => {
@@ -845,7 +869,8 @@ interface FieldsEditorProps {
 
   const duplicateField = (index: number) => {
     const field = fields[index];
-    const newField = { ...field, id: uuidv4(), label: `${field.label} (Copy)` };
+    const baseLabel = field.label?.trim() || 'Question';
+    const newField = { ...field, id: uuidv4(), label: `${baseLabel} (Copy)` };
     const newFields = [...fields];
     newFields.splice(index + 1, 0, newField);
     onChange(newFields);

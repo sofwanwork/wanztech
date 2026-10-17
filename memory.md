@@ -3005,7 +3005,133 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - `https://klikform.vercel.app`
   - `https://klikform.com`
 
+## Pembinaan Pemapar 3D Flipbook E-Pamphlet Mandiri (Standalone 3D Flipbook Viewer `index.html`) (2026-10-14)
+- **Konteks & Permintaan Pengguna**: Membina pemapar 3D flipbook realistis bertaraf industri seumpama `online.flippingbook.com` dalam satu fail tunggal mandiri `index.html` menggunakan 100% vanilla HTML, CSS 3D transforms, dan JavaScript tanpa kebergantungan luaran, tanpa canvas/webgl, dan berfungsi sepenuhnya di luar talian (offline).
+- **Seni Bina & Ciri-Ciri Utama**:
+  1. **Seni Bina CSS 3D Murni**:
+     - Dimensi buku 880×580px, `perspective: 2600px`, `rotateX(7deg)` condong pandangan dari atas, skala responsif `--scale = Math.min(1, (vw * 0.96) / 880, (vh * 0.84) / 580)`.
+     - Lembaran fizikal (`.sheet`): `left: 50%; width: 50%; height: 100%; transform-style: preserve-3d; transform-origin: left center`.
+     - Muka helaian (`.face.front` & `.face.back`): `backface-visibility: hidden; inset: 0`, helaian belakang pra-putaran `rotateY(180deg)`.
+     - Lapisan Z-index: Helaian belum diselak $N - i$, helaian telah diselak $i + 1$, helaian sedang berputar $N + 10$.
+     - Tiada `overflow`, `filter`, atau `clip-path` pada mana-mana bekas induk buku bagi mengelakkan perataan konteks 3D.
+  2. **Animasi & Kinematik `requestAnimationFrame`**:
+     - Animasi berpandukan rAF dengan `easeInOutCubic` (~780ms).
+     - Kinematik angkatan helaian `translateZ(shade * 16px) rotateY(angle)` di mana `shade = sin(min(|angle|/180, 1) * PI)`.
+     - Kilauan spekular dinamik `.glare` dipacu oleh pemboleh ubah CSS `--shade`.
+     - Anjakan pose buku (`translateX(-25%)` kulit depan, `0%` buka hamparan dua muka, `+25%` kulit belakang) bersama bayang bawah elips yang menjejak pergerakan.
+  3. **Interaksi Penuh (Klik, Sentuh/Seret, Papan Kekunci, Audio & HUD)**:
+     - Klik kiri (undur helaian) & klik kanan (maju helaian) dengan saringan anjakan klik `< 6px`.
+     - Kawalan seretan lancar (*drag-to-flip*) menggunakan `setPointerCapture`, sudut putaran menjejak kursor, ambang lontaran 32%, dan lantunan lembut (*spring back*).
+     - Pintasan papan kekunci lengkap: `←`/`→`, `PageUp`/`PageDown`, `Space`, `Home`/`End`, `F` (skrin penuh), `M` (bisu).
+     - Bar kawalan HUD kaca terapung (*glassmorphism bottom dock*): Pertama, Sebelum, Penunjuk halaman dinamik ("Kulit Depan", "4–5 / 14", "Kulit Belakang"), Seterusnya, Terakhir, Togol Bunyi, dan Skrin Penuh.
+     - Sintesis audio selakan kertas tanpa fail audio menggunakan Web Audio API (white noise bandpass filter ~1500Hz / ~1100Hz).
+     - Petunjuk lengkungan bucu (*pulsing corner-curl hint*) pada kulit depan yang pudar secara automatik pada interaksi pertama.
+  4. **Kandungan 14 Muka Surat E-Pamphlet Beresolusi Tinggi**:
+     - Kulit Hadapan E-Pamphlet mewah emas/gelap, Jadual Kandungan bertitik, Panduan Penggunaan 4 langkah, Rencana Editorial (drop cap & pull quote), Grid 4 Kad Keupayaan Platform, Seni Kecerunan Aurora Murni CSS, Tipografi Gergasi 3D, Sistem Reka Bentuk & Swatches, Grid Statistik Numerik, Mockup Peranti Kanvas Beresolusi Tinggi, Spesimen Tipografi Pelbagai Lajur, Agenda & Garis Masa Acara, Gambaran Teknikal & Penghargaan, serta Kulit Belakang dengan Kod Bar Murni CSS.
+- **Fail Terlibat**:
+  - `c:\Users\Sofwan\Desktop\klikform\index.html` (Fail utama kendiri, 57KB, 0 pautan luaran, sifar kebergantungan luar).
+  - `c:\Users\Sofwan\Desktop\klikform\public\flipbook\index.html` (Salinan untuk akses terus melalui pelayan dev di `http://localhost:3000/flipbook/index.html`).
+- **Pengesahan & Ujian**:
+  - Pengesahan sintaks JavaScript: 0 ralat sintaks.
+  - Sifar kebergantungan luaran: `Contains http: false`, `Contains script src: false`, `Contains link stylesheet: false`.
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm test`: 381 / 381 ujian unit lulus merentas 39 suite fail.
 
+## Integrasi Pemapar 3D Flipbook ke Dalam KlikForm (3D Flipbook Implementation in KlikForm) (2026-10-14)
+- **Konteks & Permintaan Pengguna**: "sy nak awak impliment di klikform" — Pengguna meminta enjin 3D flipbook realistis yang telah dibina disepadukan secara natif ke dalam aplikasi web KlikForm.
+- **Penyelesaian Dilaksanakan**:
+  1. **Naik Taraf Pemapar E-Pamphlet Natif (`components/pamphlet/viewer/flipbook-view.tsx`)**:
+     - *Struktur Lembaran Fizikal*: Muka surat dipadankan kepada lembaran berengsel pada tulang buku (`left: 50%; transform-origin: left center; transform-style: preserve-3d`), dengan muka hadapan ganjil (1, 3, 5...) dan muka belakang genap (2, 4, 6...) berorientasikan `rotateY(180deg)`.
+     - *Kawalan Seretan Taktil (*Drag-to-Flip*)*: Menyokong `setPointerCapture` pada tetikus dan skrin sentuh (`pointerdown`, `pointermove`, `pointerup`, `pointercancel`). Lembaran berputar mengikut kursor secara dinamik. Jika dilepaskan melepasi ambang 32%, selakan diteruskan; jika di bawah 32%, lembaran melantun (*spring back*) kembali ke posisi asal.
+     - *Enjin Kinematik `requestAnimationFrame`*: Animasi selakan berpandukan `easeInOutCubic` (~720ms) dengan angkatan spatial `translateZ(shade * 18px)` dan pemboleh ubah CSS `--shade` yang mengawal kilauan spekular dinamik `.glare` pada kedua-dua muka surat.
+     - *Lapisan Z-Index Fizikal*: Lembaran belum diselak ($N - i$), lembaran telah diselak ($i + 1$), dan lembaran sedang berputar ($N + 10$).
+     - *Anjakan Pose Buku*: `translateX(-25%)` semasa kulit depan, `0%` semasa dua muka surat terbuka, dan `+25%` semasa kulit belakang, dengan bayang elips bawah buku (*ground drop shadow*) yang bergerak seiring.
+     - *Tepi Kertas Bertindih (*Stacked Paper Edges*)*: Memaparkan lapisan tepi kertas di sisi kiri dan kanan buku.
+     - *Audio Sintetik*: Memanggil `playPageTurnSound(direction)` dengan frekuensi berbeza (~1600Hz mara / ~1200Hz undur) menggunakan Web Audio API tanpa memerlukan fail audio luaran.
+     - *Keserasian Penuh*: Mengekalkan fungsi `computeSpread` (lulus semua ujian unit Vitest), navigasi `ref` (`flipNext`, `flipPrev`), papan kekunci, togol skrin penuh, dan integrasi bersama `PamphletToolbar` dan `ThumbnailsStrip`.
+  2. **Penyediaan Laluan Awam Showcase E-Pamphlet (`app/(public)/flipbook/page.tsx`)**:
+     - Membina laluan awam `/flipbook` di KlikForm yang memaparkan showcase pemapar 3D Flipbook interaktif beresolusi tinggi dengan metadata SEO lengkap.
+  3. **Penambahbaikan Utiliti Audio (`lib/pamphlets/utils.ts`)**:
+     - Menambah sokongan arah (`direction?: 'forward' | 'backward'`) dalam `playPageTurnSound` untuk frekuensi selakan kertas yang lebih taktil dan realistik.
+- **Pengesahan & Ujian Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm test`: 381 / 381 ujian unit lulus merentas 39 suite fail.
+  - Ujian HTTP dev server: `/flipbook` (Status 200 OK), `/p/demo` (Status 200 OK).
+
+## Fitur Multi-Day Smart Attendance (1-QR Check-In & Check-Out Berbilang Hari) (2026-10-18)
+- **Konteks & Permintaan Pengguna**: "kalau yg ni boleh ke guna untuk event yg lebih daripada sehari?", "kalau tak nak cipta borang byk2 tapi still nk kira jam jgk boleh ke utk multi day?", "so kalau fitur Multi-Day Smart Attendance, boleh guna utk 1 hari jgk kan?", "okay proceed untuk penambah baikan".
+- **Objektif Utama**:
+  1. Membolehkan penganjur menetapkan tempoh acara berbilang hari (*1 Day, 2 Days, 3 Days, ... 14 Days*) dalam sistem 1-QR Smart Check-In & Check-Out.
+  2. Peserta menggunakan **1 kod QR yang sama** merentas keseluruhan hari acara tanpa perlu mendaftar borang berasingan untuk setiap hari.
+  3. Mengira waktu masuk, waktu keluar, durasi harian, dan jumlah masa terkumpul (kumulatif) secara automatik bagi syarat kelayakan e-Sijil.
+  4. 100% *backward-compatible* dengan acara 1 hari sedia ada (`totalDays = 1` sebagai lalai).
+- **Komponen & Seni Bina Dilaksanakan**:
+  1. **Pangkalan Data (`supabase/migrations/20261018000000_add_multi_day_attendance.sql`)**:
+     - Menambah lajur `day_number integer NOT NULL DEFAULT 1` pada jadual `attendance_records`.
+     - Menambah indeks kompaun `idx_attendance_records_form_participant_day ON attendance_records (form_id, identifier_value, day_number)`.
+     - Melaksanakan `NOTIFY pgrst, 'reload schema'`.
+  2. **Skema Jenis TypeScript (`lib/types/forms.ts` & `lib/types/attendance.ts`)**:
+     - `CheckInOutConfig`: Ditambah `totalDays?: number`.
+     - `AttendanceRecord`: Ditambah `dayNumber?: number`.
+     - `DailyAttendanceDetail`: Jenis baharu untuk butiran harian (`dayNumber`, `checkInTime`, `checkOutTime`, `durationFormatted`, `durationHours`, `status`).
+     - `AttendanceSummary`: Diperluas dengan medan `dayNumber`, `totalDays`, `completedDays`, `isAllDaysCompleted`, `totalAccumulatedMinutes`, `totalAccumulatedHours`, `totalAccumulatedFormatted`, `dailyRecords`, `canCheckInNextDay`, `nextDayNumber`.
+     - Barrel `lib/types/index.ts` dikemas kini untuk mengeksport `DailyAttendanceDetail`.
+  3. **Lapisan Logik Kehadiran (`lib/forms/attendance.ts`)**:
+     - `calculateMultiDayAttendanceDuration`: Mengira masa terkumpul merentas semua rekod hari peserta, menolak masa rehat harian (`breakMinutesPerDay`), dan menyusun pecahan harian (`dailyBreakdown`).
+     - `checkCertificateAttendanceEligibility`: Menyokong rekod tunggal (keserasian 1-hari) mahupun susunan rekod (`AttendanceRecord[]`). Menguatkuasakan semakan `activeCheckIn` (jika sebarang hari masih `checked_in`, menolak dengan status `not_checked_out` sehingga peserta check out).
+  4. **Lapisan Storan Pangkalan Data (`lib/storage/attendance.ts`)**:
+     - `getAttendanceRecordsForParticipant`: Mengambil semua rekod hari peserta mengikut `form_id` dan `cleanId`, disusun mengikut `day_number ASC`.
+     - `createAttendanceRecord` & `updateAttendanceCheckOut`: Menyokong `day_number`.
+  5. **Tindakan Pelayan (`actions/attendance.ts`, `actions/forms.ts`, `actions/certificates.ts`)**:
+     - `checkAttendanceStatusAction`: Menilai kemajuan multi-day peserta, mengenal pasti rekod aktif vs rekod hari terdahulu yang telah siap, dan mengesan kesediaan untuk Hari $K+1$.
+     - `submitAttendanceCheckInAction`: Tindakan 1-klik untuk mendaftar masuk Hari $K+1$ secara serta-merta tanpa mengisi semula borang.
+     - `submitAttendanceCheckOutAction`: Merekod check-out hari berkenaan, mengira durasi kumulatif, dan menyelaraskan Google Sheets dengan lajur dinamik (`Masa Masuk (Hari X)`, `Masa Keluar (Hari X)`, `Jumlah Jam (Hari X)`) serta lajur kumulatif `Jumlah Masa Hadir` dan `Jumlah Jam Keseluruhan (Total Hours)`.
+     - `submitFormAction`: Membina kitaran hayat 4-senario (active check-out convert, Day $K+1$ check-in, completion guard, fresh Day 1).
+     - `checkCertificateByICOrEmail`: Mengambil semua rekod multi-day dan menilai kelayakan jam terkumpul untuk tuntutan e-Sijil.
+  6. **Antaramuka Form Builder & Public Form UX (`app/builder/[id]/client.tsx` & `app/(public)/form/[id]/client.tsx`)**:
+     - *Form Builder*: Menambah dropdown "Program Duration (Event Days / Tempoh Acara)" (1 Day hingga 14 Days) dalam kad tetapan 1-QR Check-In & Check-Out.
+     - *Public Form*:
+       - Lencana `Day X of Y` pada kad `checked_in`.
+       - Pecahan sejarah hari-hari sebelum yang telah selesai pada kad `checked_in`.
+       - Kad `completed` dwi-mod: Jika ada hari seterusnya (`canCheckInNextDay`), paparan tahniah hari tersebut bersama butang menonjol 1-klik `[ Check-In for Day X+1 Now ]`; jika semua hari selesai, paparan resit digital lengkap pecahan setiap hari dan butang tuntutan e-Sijil.
+  7. **Ujian Unit & Kualiti (`tests/attendance-multiday.test.ts`)**:
+     - 11 ujian unit baharu merangkumi pengiraan jam terkumpul multi-day, penolakan rehat harian, penilaian kelayakan e-Sijil merentas berbilang hari, dan keserasian rekod tunggal.
+     - Selaras mock di `tests/attendance-actions.test.ts` dan `tests/certificate-attendance-gating.test.ts`.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm test`: 392 / 392 ujian unit lulus merentas 40 fail suite (semua lulus, 100% sifar regresi).
+
+## Penjajaran Teks Sekata Penerangan Borang (Whitespace Pre-Wrap & Alignment in Description) (2026-10-18)
+- **Konteks & Permintaan Pengguna**: "yg tu boleh ke nak sekata macam ni?" bersama gambar tangkapan skrin editor Description di mana pengguna menaip ruang *spacebar* berturut-turut untuk menjajarkan titik bertindih (`:`) bagi Tarikh, Masa, Tempat, dan Pengerusi.
+- **Punca Masalah (Root Cause)**:
+  - Pelayar web mengikut spesifikasi HTML secara lazim mengecutkan (*collapse*) urutan ruang kosong (multiple spaces) menjadi satu ruang kosong sahaja jika `white-space` tidak ditetapkan kepada `pre-wrap`. Akibatnya, jarak yang ditaip oleh pengguna hilang pada paparan borang awam dan teks menjadi senget.
+- **Penyelesaian Dilaksanakan**:
+  - `app/globals.css`: Menambah `white-space: pre-wrap; word-break: break-word;` pada peraturan `.ProseMirror`.
+  - `components/ui/rich-text-editor.tsx`: Menambah kelas Tailwind `whitespace-pre-wrap break-words` pada atribut editor ProseMirror.
+  - `app/(public)/form/[id]/client.tsx`: Menambah kelas `whitespace-pre-wrap break-words` pada kontena paparan Description borang awam.
+  - Kini sebarang bilangan *spaces* manual yang ditaip oleh pengguna untuk menjajarkan titik bertindih (`:`) kekal 100% terpelihara dan tertera kemas di borang awam.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm test`: 392 / 392 ujian unit lulus merentas 40 fail suite.
+
+## Pengalaman Auto-Tulis Tajuk Soalan Baharu (Instant Question Label Entry Without Manual Deletion) (2026-10-18)
+- **Konteks & Maklum Balas Pengguna**: "sepatutnya kalau add new question, bila klik label/question tu auto boleh tulis tajuk, tak perlu padam new question" bersama gambar tangkapan skrin membulatkan kotak input `Label / Question` yang mengandungi nilai "New Question".
+- **Punca Masalah (Root Cause)**:
+  - Sebelum ini, fungsi `addField()` memasukkan nilai string sebenar `label: 'New Question'`.
+  - Apabila pengguna mengklik medan input, kursor mendarat di penghujung teks dan memaksa pengguna menekan Backspace 12 kali untuk memadam "New Question" sebelum dapat menaip soalan sebenar.
+- **Penyelesaian Dilaksanakan**:
+  - `components/forms/fields-editor/index.tsx`:
+    1. *Input Label Pintar*: Ditambah `placeholder="New Question"`, cangkuk `onFocus` & `onClick` yang mengosongkan nilai serta-merta apabila bernilai `'New Question'` (membolehkan pengguna terus menaip tanpa memadam apa-apa), dan cangkuk `onBlur` yang memulihkan `'New Question'` jika input ditinggalkan kosong.
+    2. *Aliran Pantas `addField`*: Menjana soalan baharu dengan `label: ''` dan memfokuskan kursor secara automatik ke dalam input tajuk soalan baharu tersebut.
+    3. *Keselamatan Duplikasi (`duplicateField`)*: Menyokong fallback tajuk jika soalan asal kosong.
+  - `actions/forms.ts`:
+    - Memastikan fungsi `updateFormAction` menyaring sebarang soalan yang ditinggalkan kosong dengan tajuk selamat (`Question X` / `Page Break`) sebelum disimpan ke pangkalan data.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm test`: 392 / 392 ujian unit lulus merentas 40 fail suite.
 
 
 

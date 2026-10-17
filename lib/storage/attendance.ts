@@ -14,6 +14,7 @@ interface DbRow {
   check_out_at: string | null;
   duration_minutes: number | null;
   status: AttendanceStatus;
+  day_number?: number;
   metadata: unknown;
   created_at: string;
   updated_at: string;
@@ -32,6 +33,7 @@ function rowToRecord(row: DbRow): AttendanceRecord {
     checkOutAt: row.check_out_at,
     durationMinutes: row.duration_minutes,
     status: row.status,
+    dayNumber: row.day_number ?? 1,
     metadata: (row.metadata as Record<string, unknown>) ?? {},
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -39,14 +41,14 @@ function rowToRecord(row: DbRow): AttendanceRecord {
 }
 
 /**
- * Get active attendance record for a participant in a specific form.
- * Matches by form_id and cleaned identifier (IC, Email, etc.).
+ * Get all attendance records for a participant across all days of a form.
+ * Ordered by day_number ascending, then created_at ascending.
  */
-export async function getAttendanceRecord(
+export async function getAttendanceRecordsForParticipant(
   formId: string,
   cleanIdentifierVal: string
-): Promise<AttendanceRecord | null> {
-  if (!formId || !cleanIdentifierVal) return null;
+): Promise<AttendanceRecord[]> {
+  if (!formId || !cleanIdentifierVal) return [];
 
   try {
     const admin = createAdminClient();
@@ -55,6 +57,46 @@ export async function getAttendanceRecord(
       .select('*')
       .eq('form_id', formId)
       .eq('identifier_value', cleanIdentifierVal)
+      .order('day_number', { ascending: true })
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.warn('[attendance-storage] getAttendanceRecordsForParticipant error:', error);
+      return [];
+    }
+
+    if (!data) return [];
+    return (data as DbRow[]).map(rowToRecord);
+  } catch (err) {
+    console.error('[attendance-storage] getAttendanceRecordsForParticipant exception:', err);
+    return [];
+  }
+}
+
+/**
+ * Get active or latest attendance record for a participant in a specific form.
+ * Matches by form_id and cleaned identifier (IC, Email, etc.), with optional dayNumber filter.
+ */
+export async function getAttendanceRecord(
+  formId: string,
+  cleanIdentifierVal: string,
+  dayNumber?: number
+): Promise<AttendanceRecord | null> {
+  if (!formId || !cleanIdentifierVal) return null;
+
+  try {
+    const admin = createAdminClient();
+    let query = admin
+      .from('attendance_records')
+      .select('*')
+      .eq('form_id', formId)
+      .eq('identifier_value', cleanIdentifierVal);
+
+    if (typeof dayNumber === 'number') {
+      query = query.eq('day_number', dayNumber);
+    }
+
+    const { data, error } = await query
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -83,6 +125,7 @@ export async function createAttendanceRecord(input: {
   identifierLabel?: string;
   participantName?: string;
   checkInAt?: string;
+  dayNumber?: number;
   metadata?: Record<string, unknown>;
 }): Promise<AttendanceRecord | null> {
   try {
@@ -98,6 +141,7 @@ export async function createAttendanceRecord(input: {
       participant_name: input.participantName || null,
       check_in_at: checkInTime,
       status: 'checked_in',
+      day_number: input.dayNumber ?? 1,
       metadata: input.metadata || {},
     };
 

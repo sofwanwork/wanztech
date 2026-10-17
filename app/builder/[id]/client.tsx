@@ -52,6 +52,7 @@ import {
   Tv,
   Radio,
   RotateCcw,
+  Calendar,
 } from 'lucide-react';
 
 import Link from 'next/link';
@@ -1618,6 +1619,90 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                           </Select>
                           <p className="text-[11px] text-muted-foreground">
                             Used to match participant records between Check-In (arrival) and Check-Out (departure).
+                          </p>
+                        </div>
+
+                        <div className="pt-2 border-t border-emerald-200/60 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="w-3.5 h-3.5 text-emerald-700" />
+                              <Label htmlFor="total-days" className="text-xs font-semibold text-emerald-950">
+                                Program Duration (Event Days / Tempoh Acara)
+                              </Label>
+                            </div>
+                            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                              {(form.attendanceSettings?.checkInOut?.totalDays || 1) === 1
+                                ? '1 Day (Single Session)'
+                                : `${form.attendanceSettings?.checkInOut?.totalDays} Days (Multi-Day)`}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Input
+                              id="total-days"
+                              type="number"
+                              min={1}
+                              max={365}
+                              className="bg-white font-mono font-semibold h-10 w-28 text-center text-base"
+                              value={form.attendanceSettings?.checkInOut?.totalDays || 1}
+                              onChange={(e) => {
+                                const parsed = parseInt(e.target.value);
+                                const val = isNaN(parsed) ? 1 : Math.max(1, Math.min(365, parsed));
+                                setForm((f) => ({
+                                  ...f,
+                                  attendanceSettings: {
+                                    ...f.attendanceSettings!,
+                                    checkInOut: {
+                                      ...f.attendanceSettings!.checkInOut!,
+                                      totalDays: val,
+                                    },
+                                  },
+                                }));
+                              }}
+                            />
+                            <span className="text-xs font-medium text-slate-600">
+                              Hari / Days (Boleh masukkan sebarang bilangan hari, cth: 1–30+)
+                            </span>
+                          </div>
+
+                          {/* Quick Presets */}
+                          <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                            <span className="text-[11px] text-slate-500 font-medium mr-1">Presets:</span>
+                            {[1, 2, 3, 4, 5, 7, 10, 14, 21, 30].map((days) => {
+                              const isSelected = (form.attendanceSettings?.checkInOut?.totalDays || 1) === days;
+                              return (
+                                <button
+                                  key={days}
+                                  type="button"
+                                  onClick={() =>
+                                    setForm((f) => ({
+                                      ...f,
+                                      attendanceSettings: {
+                                        ...f.attendanceSettings!,
+                                        checkInOut: {
+                                          ...f.attendanceSettings!.checkInOut!,
+                                          totalDays: days,
+                                        },
+                                      },
+                                    }))
+                                  }
+                                  className={cn(
+                                    'px-2.5 py-1 rounded-lg text-xs font-medium transition-all',
+                                    isSelected
+                                      ? 'bg-emerald-600 text-white shadow-xs font-semibold'
+                                      : 'bg-white hover:bg-emerald-50 text-slate-700 border border-slate-200/80 hover:border-emerald-300'
+                                  )}
+                                >
+                                  {days === 1 ? '1 Hari' : days === 7 ? '7 Hari (1 Mggu)' : days === 14 ? '14 Hari (2 Mggu)' : days === 30 ? '30 Hari (1 Bulan)' : `${days} Hari`}
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          <p className="text-[11px] text-muted-foreground pt-1">
+                            {(form.attendanceSettings?.checkInOut?.totalDays || 1) > 1
+                              ? `Multi-day mode enabled (${form.attendanceSettings?.checkInOut?.totalDays} Days). Peserta menggunakan 1 kod QR yang sama untuk setiap hari. Waktu masuk/keluar harian dan jumlah jam kumulatif dikira automatik.`
+                              : 'Standard 1-day event. Peserta check in waktu sampai dan check out waktu tamat.'}
                           </p>
                         </div>
 
