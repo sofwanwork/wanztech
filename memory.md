@@ -3138,9 +3138,15 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
 - **Kaedah Pelancaran**: Ditugaskan ke GitHub (`origin/master`) dan dideploy melalui Vercel CLI (`npx vercel --prod --yes`).
 - **Status Vercel**: ● Ready (Build Time: ~2m).
 - **ID Deployment**: `dpl_HhUhjtn5HhbbtFKfanTKLMSLwB4U`
+## Pelancaran Pengeluaran Vercel (Production Deployment) (2026-10-18 — 3D Flipbook Viewer Visual Polish, True Aspect Ratio & Balanced Shadow)
+- **Komit Git**: `014f378` (`feat(pamphlet): true aspect ratio auto-fit, centered 3d sheet layout, and soft ambient ground shadow`).
+- **Kaedah Pelancaran**: Ditugaskan ke GitHub (`origin/master`) dan dideploy melalui Vercel CLI (`npx vercel --prod --yes`).
+- **Status Vercel**: ● Ready (Build Time: ~2m).
+- **ID Deployment**: `dpl_AdiFtNvKHjE83J2piesTAJmryLfk`
 - **Domain Pengeluaran Aktif**:
   - `https://www.klikform.com`
-  - `https://klikform-b2g7p54q8-sofwan-jailanis-projects.vercel.app`
+  - `https://klikform-fgipaqt7u-sofwan-jailanis-projects.vercel.app`
+
 ## Pengindahan & Penyelarasan Visual Pemapar 3D Flipbook (3D Flipbook Viewer Visual Polish, True Aspect Ratio & Balanced Shadow) (2026-10-18)
 - **Konteks & Maklum Balas Pengguna**: Pengguna memuat naik tangkapan skrin pemapar 3D Flipbook bagi risalah landskap 2 muka surat METMalaysia ("GEMPA BUMI") dengan permintaan "yg ni cantikkan sikit".
 - **Punca Masalah (Root Cause)**:
