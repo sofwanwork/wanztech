@@ -85,6 +85,8 @@ vi.mock('@/lib/storage/attendance', () => ({
   ),
 }));
 
+let customTarikhValue: string | null = null;
+
 vi.mock('google-spreadsheet', () => {
   return {
     GoogleSpreadsheet: vi.fn().mockImplementation(() => ({
@@ -92,14 +94,15 @@ vi.mock('google-spreadsheet', () => {
       sheetsByIndex: [
         {
           loadHeaderRow: vi.fn().mockResolvedValue(undefined),
-          headerValues: ['Nama Penuh', 'No. Kad Pengenalan', 'Email', 'Tarikh'],
+          headerValues: ['timestamp', 'Nama Penuh', 'No. Kad Pengenalan', 'Email', 'Tarikh'],
           getRows: vi.fn().mockResolvedValue([
             {
               get: vi.fn().mockImplementation((col: string) => {
+                if (col === 'timestamp') return '2026-09-28T08:00:00.000Z';
                 if (col === 'Nama Penuh') return 'Siti Khadijah';
                 if (col === 'No. Kad Pengenalan') return '990202-14-1234';
                 if (col === 'Email') return 'siti@example.com';
-                if (col === 'Tarikh') return '28/09/2026';
+                if (col === 'Tarikh') return customTarikhValue || '28/09/2026';
                 return '';
               }),
             },
@@ -113,6 +116,7 @@ vi.mock('google-spreadsheet', () => {
 describe('Certificate Attendance Gating — checkCertificateByICOrEmail', () => {
   beforeEach(() => {
     currentAttendanceRecord = null;
+    customTarikhValue = null;
   });
 
   it('blocks certificate claiming when participant has no attendance record in gated form', async () => {
@@ -178,6 +182,7 @@ describe('Certificate Attendance Gating — checkCertificateByICOrEmail', () => 
     expect(res.found).toBe(true);
     expect(res.name).toBe('Siti Khadijah');
     expect(res.programName).toBe('Kursus Keselamatan AI 2026');
+    expect(res.date).toBe('28/09/2026'); // Prioritizes 'Tarikh' column over 'timestamp'
     expect(res.attendanceIneligible).toBeUndefined();
   });
 
@@ -187,6 +192,14 @@ describe('Certificate Attendance Gating — checkCertificateByICOrEmail', () => 
     expect(res.found).toBe(true);
     expect(res.name).toBe('Siti Khadijah');
     expect(res.programName).toBe('Seminar Awam');
+    expect(res.date).toBe('28/09/2026');
+  });
+
+  it('correctly reads multi-day date strings (e.g. "7 & 8 Oktober 2026") from Tarikh column', async () => {
+    customTarikhValue = '7 & 8 Oktober 2026';
+    const res = await checkCertificateByICOrEmail('form-ungated', '990202141234');
+    expect(res.found).toBe(true);
+    expect(res.date).toBe('7 & 8 Oktober 2026');
   });
 });
 

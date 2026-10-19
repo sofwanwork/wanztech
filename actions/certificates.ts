@@ -236,24 +236,28 @@ export async function checkCertificateByICOrEmail(
         const name = row.get(headers[nameColumnIndex]) || '';
 
         // Look for date column (optional)
-        const dateColumnIndex = headers.findIndex(
+        // Prioritize explicit 'tarikh' or 'date' column over generic submission 'timestamp'
+        const explicitDateIndex = headers.findIndex(
           (h) =>
             h.toLowerCase().includes('tarikh') ||
-            h.toLowerCase().includes('date') ||
-            h.toLowerCase() === 'timestamp'
+            h.toLowerCase().includes('date')
         );
+        const timestampIndex = headers.findIndex((h) => h.toLowerCase() === 'timestamp');
+        const dateColumnIndex = explicitDateIndex !== -1 ? explicitDateIndex : timestampIndex;
         const date = dateColumnIndex !== -1 ? row.get(headers[dateColumnIndex]) : undefined;
 
         // Expiration Check
         if (form.eCertificateExpiryDays && form.eCertificateExpiryDays > 0) {
-          if (!date) {
+          // Use submission timestamp for expiration calculation if available, or fallback to date
+          const rawExpiryDate = (timestampIndex !== -1 ? row.get(headers[timestampIndex]) : undefined) || date;
+          if (!rawExpiryDate) {
             return { found: false, error: 'Date not found for expiration verification' };
           }
 
-          const submissionDate = parseDate(date.toString());
+          const submissionDate = parseDate(rawExpiryDate.toString());
 
           if (!submissionDate || isNaN(submissionDate.getTime())) {
-            console.error(`Date parsing failed for: ${date}`);
+            console.error(`Date parsing failed for: ${rawExpiryDate}`);
             return { found: false, error: 'Invalid date format for verification' };
           }
 
