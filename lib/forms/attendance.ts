@@ -166,6 +166,148 @@ export function formatAttendanceDateTime(dateInput: string | Date): string {
   return `${dateStr}, ${timeStr}`;
 }
 
+/**
+ * Format date (e.g. "October 7, 2026") using Malaysia Time (+08:00).
+ * Handles Date objects, ISO strings, and Malaysian DD/MM/YYYY formats.
+ */
+export function formatAttendanceDate(dateInput: string | Date): string {
+  if (!dateInput) return '';
+  if (dateInput instanceof Date) {
+    if (isNaN(dateInput.getTime())) return '';
+    return dateInput.toLocaleDateString('en-US', {
+      timeZone: 'Asia/Kuala_Lumpur',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+  }
+
+  const str = String(dateInput).trim();
+  if (!str) return '';
+
+  // Check if DD/MM/YYYY or DD-MM-YYYY format (e.g. 07/10/2026)
+  const parts = str.split(/[/-]/);
+  if (parts.length === 3 && parts[0].length <= 2 && parts[2].length === 4) {
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10);
+    const year = parseInt(parts[2], 10);
+    if (!isNaN(day) && !isNaN(month) && !isNaN(year) && month >= 1 && month <= 12) {
+      const d = new Date(year, month - 1, day);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString('en-US', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        });
+      }
+    }
+  }
+
+  const d = new Date(str);
+  if (!isNaN(d.getTime())) {
+    return d.toLocaleDateString('en-US', {
+      timeZone: 'Asia/Kuala_Lumpur',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+  }
+
+  return str;
+}
+
+export interface DailyCertificateOption {
+  dayNumber: number; // 1, 2, ... or 0 for All Days / Combined
+  label: string; // e.g. "Hari 1", "Hari 2", "Semua Hari (Penuh)"
+  date: string; // date string to put on certificate
+  formattedDate: string;
+  attendedDate?: string;
+  isCombined?: boolean;
+}
+
+/**
+ * Generate certificate options for multi-day events.
+ * Enables participants to claim individual day certificates or a combined full event certificate.
+ */
+export function buildDailyCertificateOptions(params: {
+  records?: Array<{
+    dayNumber?: number;
+    checkInAt: string | Date;
+    status?: string;
+  }>;
+  sheetRowData?: Record<string, string | undefined>;
+  defaultDate?: string;
+  totalDays?: number;
+}): DailyCertificateOption[] {
+  const { records = [], sheetRowData = {}, defaultDate, totalDays = 1 } = params;
+  const optionsMap = new Map<number, DailyCertificateOption>();
+
+  // 1. Process attendance records (from Supabase DB)
+  if (records && records.length > 0) {
+    const sorted = [...records].sort((a, b) => (a.dayNumber ?? 1) - (b.dayNumber ?? 1));
+    for (const rec of sorted) {
+      const dayNum = rec.dayNumber ?? 1;
+      if (!optionsMap.has(dayNum) && rec.checkInAt) {
+        const formatted = formatAttendanceDate(rec.checkInAt);
+        if (formatted) {
+          optionsMap.set(dayNum, {
+            dayNumber: dayNum,
+            label: `Hari ${dayNum}`,
+            date: formatted,
+            formattedDate: formatted,
+            attendedDate: formatted,
+            isCombined: false,
+          });
+        }
+      }
+    }
+  }
+
+  // 2. Process sheetRowData (Google Sheet columns like "Masa Masuk (Hari 1)", "Masa Masuk (Hari 2)")
+  if (sheetRowData) {
+    for (const [key, val] of Object.entries(sheetRowData)) {
+      if (!val || val.trim() === '-' || val.trim() === '') continue;
+      const match = key.match(/Masa\s+Masuk\s*(?:\(Hari\s*(\d+)\)|Day\s*(\d+))/i);
+      if (match) {
+        const dayNum = parseInt(match[1] || match[2], 10);
+        if (!optionsMap.has(dayNum)) {
+          const datePart = val.split(',')[0].trim();
+          const parsed = formatAttendanceDate(datePart);
+          const displayDate = parsed || datePart;
+          optionsMap.set(dayNum, {
+            dayNumber: dayNum,
+            label: `Hari ${dayNum}`,
+            date: displayDate,
+            formattedDate: displayDate,
+            attendedDate: displayDate,
+            isCombined: false,
+          });
+        }
+      }
+    }
+  }
+
+  const dailyOptions = Array.from(optionsMap.values()).sort((a, b) => a.dayNumber - b.dayNumber);
+
+  // If there are multiple attended days or totalDays > 1, provide the combined "Semua Hari" option
+  if (dailyOptions.length > 1 || (totalDays > 1 && dailyOptions.length > 0)) {
+    if (dailyOptions.length > 1) {
+      const combinedDate =
+        defaultDate?.trim() ||
+        `${dailyOptions[0].date} - ${dailyOptions[dailyOptions.length - 1].date}`;
+      dailyOptions.push({
+        dayNumber: 0,
+        label: 'Semua Hari (Penuh)',
+        date: combinedDate,
+        formattedDate: combinedDate,
+        isCombined: true,
+      });
+    }
+  }
+
+  return dailyOptions;
+}
+
 export interface MultiDayDurationResult {
   totalMinutes: number;
   hours: number;

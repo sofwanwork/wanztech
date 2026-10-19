@@ -1,3 +1,43 @@
+# Sokongan Berbilang Sijil Mengikut Hari Kehadiran (Multi-Day Attendance Certificate Claiming) ✅ SELESAI
+
+**Matlamat**: Membolehkan peserta program pelbagai hari (*multi-day events*) memuat turun sijil berasingan mengikut setiap hari kehadiran yang dihadiri (dengan tarikh khusus hari tersebut) atau sijil gabungan keseluruhan program, menggunakan satu borang dan templat sijil yang sama.
+
+### Pelan Pelaksanaan
+- [x] 1. Lapisan Model Data & Tindakan Pelayan (*Server Action & Data Layer*):
+  - [x] 1.1 Tambah jenis `DailyCertificateOption` pada `lib/types/attendance.ts` dan eksport pada `lib/types/index.ts`, serta medan `dailyCertificates?: DailyCertificateOption[]` pada `CertificateCheckResult` dalam `actions/certificates.ts`.
+  - [x] 1.2 Dalam `checkCertificateByICOrEmail`, ambil rekod kehadiran peserta (`getAttendanceRecordsForParticipant`) dan periksa rekod kehadiran berbilang hari serta lajur Google Sheet (`Masa Masuk (Hari X)`).
+  - [x] 1.3 Jana pecahan pilihan sijil harian (`Hari 1`, `Hari 2`, ...) berserta tarikh masing-masing, serta pilihan sijil penuh keseluruhan (`Semua Hari (Penuh)`).
+- [x] 2. Lapisan Antaramuka Semakan Sijil Awam (*Public Certificate Check UI*):
+  - [x] 2.1 Di `app/(public)/check/[formId]/client.tsx`, bina pemilih hari (*Day Selector Tabs / Pill Buttons*) apabila `result.dailyCertificates` melebihi 1 pilihan.
+  - [x] 2.2 Hubungkan pilihan hari aktif kepada pratonton langsung (`Live Preview`), modal HD skrin penuh, dan penjanaan PDF/PNG dengan tarikh hari yang dipilih (`activeCertDate`).
+  - [x] 2.3 Sesuaikan nama fail muat turun (contoh: `Certificate_[Nama]_Hari_1.pdf`) dan notifikasi muat turun (toast).
+- [x] 3. Pengesahan Kualiti & Ujian Unit (*Quality & Tests*):
+  - [x] 3.1 Tambah ujian unit di `tests/certificate-multiday-options.test.ts` (8/8 ujian lulus) untuk menguji pemformatan tarikh dan penjanaan `dailyCertificates` bagi peserta 1 hari vs pelbagai hari.
+  - [x] 3.2 Jalankan `npm run typecheck` (0 ralat TypeScript).
+  - [x] 3.3 Jalankan `npm run lint` (0 ralat ESLint).
+  - [x] 3.4 Jalankan `npm test` (semua 401 ujian unit lulus merentas 41 suite fail).
+- [x] 4. Pengesahan Binaan & Dokumentasi (*Build & Documentation*):
+  - [x] 4.1 Jalankan `npm run build` (58 laluan Next.js 16.2.6 Turbopack bersih tanpa ralat).
+  - [x] 4.2 Kemas kini `memory.md` dan `task.md`.
+  - [x] 4.3 Maklumkan kepada pengguna dengan ringkas dan padat dalam Bahasa Melayu.
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Penjanaan Sijil Multi-Day Pintar (Multi-Certificate per Participant Architecture)**:
+   - Apabila sesebuah acara berlangsung selama berbilang hari (`totalDays > 1` atau mempunyai rekod kehadiran merentas beberapa tarikh), penganjur dan peserta mempunyai 2 keperluan:
+     a) Memerlukan sijil mengikut sesi/hari kehadiran tertentu (contohnya Modul Hari 1 pada 7 Okt, Modul Hari 2 pada 8 Okt).
+     b) Memerlukan sijil penuh gabungan keseluruhan program (contohnya tarikh 7 & 8 Oktober 2026).
+   - Seni bina ini menyelesaikan kedua-dua senario menggunakan 1 templat sijil dan 1 borang pendaftaran/kehadiran yang sama.
+2. **Pengekstrakan Tarikh Dwi-Sumber (DB Supabase + Google Sheet Fallback)**:
+   - Fungsi `buildDailyCertificateOptions` memeriksa rekod kehadiran `attendance_records` dari pangkalan data Supabase (`check_in_at`), dan sekiranya tiada, menyemak lajur Google Sheet (`Masa Masuk (Hari 1)`, `Masa Masuk (Hari 2)`).
+   - Ini memastikan peserta sentiasa mendapat pilihan sijil harian walaupun borang hanya diselaraskan ke Google Sheets.
+3. **Pengalaman Pengguna Interaktif (Interactive Day Selector Tabs)**:
+   - Di halaman semakan sijil awam (`/check/[formId]`), sekiranya peserta mempunyai berbilang hari kehadiran, sistem memaparkan senarai kad pilihan di sebelah kiri dan butang pil (*pill buttons*) di atas kanvas pratonton.
+   - Mengklik mana-mana hari memperbaharui pratonton sijil, modal paparan HD skrin penuh, dan fail muat turun PDF/PNG secara serta-merta tanpa perlu memuat semula halaman.
+4. **Keserasian Ke Belakang 100% (Zero Breaking Changes)**:
+   - Untuk borang 1 hari biasa (`totalDays = 1` atau tanpa rekod multi-day), antaramuka berfungsi 100% identikal seperti sedia ada tanpa sebarang perbezaan.
+
+---
+
 # Penyembunyian Dwi-Bar Tatalan Dialog Cipta Sijil (Hide Dual Scrollbars in Create New Certificate Dialog) ✅ SELESAI
 
 **Matlamat**: Menyelesaikan masalah kemunculan dwi-bar tatalan (*dual scrollbars* luaran dan dalaman) yang tebal pada modal dialog "Create New Certificate" (`media_1792383864750_0b9b9718.png`) di `components/certificates/new-certificate-dialog.tsx`, sambil mengekalkan fungsi tatalan lancar (smooth wheel & touch swipe) untuk senarai templat pratetap dan kategori.

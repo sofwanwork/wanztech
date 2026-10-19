@@ -59,3 +59,12 @@ export interface AttendanceStats {
   checkedIn: number;
   completed: number;
 }
+
+export interface DailyCertificateOption {
+  dayNumber: number;
+  label: string;
+  date: string;
+  formattedDate: string;
+  attendedDate?: string;
+  isCombined?: boolean;
+}

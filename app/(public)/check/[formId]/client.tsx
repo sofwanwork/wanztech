@@ -24,6 +24,7 @@ import {
   ZoomOut,
   Maximize2,
   ShieldCheck,
+  Calendar,
 } from 'lucide-react';
 import {
   Dialog,
@@ -130,16 +131,26 @@ export function CertificateCheckClient({
 
   const effectiveScale = baseFitScale * zoomMultiplier;
 
-  const formattedDate = result?.date
+  const [selectedCertIndex, setSelectedCertIndex] = useState(0);
+
+  const dailyOptions =
+    result?.dailyCertificates && result.dailyCertificates.length > 1
+      ? result.dailyCertificates
+      : null;
+
+  const activeDailyOption = dailyOptions ? dailyOptions[selectedCertIndex] || dailyOptions[0] : null;
+  const activeCertDate = activeDailyOption ? activeDailyOption.date : result?.date;
+
+  const formattedDate = activeCertDate
     ? (() => {
-        const d = new Date(result.date);
+        const d = new Date(activeCertDate);
         return !isNaN(d.getTime())
           ? d.toLocaleDateString('en-US', {
               day: 'numeric',
               month: 'long',
               year: 'numeric',
             })
-          : result.date;
+          : activeCertDate;
       })()
     : null;
 
@@ -151,11 +162,13 @@ export function CertificateCheckClient({
 
     setLoading(true);
     setResult(null);
+    setSelectedCertIndex(0);
     setZoomMultiplier(1);
 
     try {
       const checkResult = await checkCertificateByICOrEmail(formId, identifier.trim());
       setResult(checkResult);
+      setSelectedCertIndex(0);
       setZoomMultiplier(1);
     } catch {
       toast.error('Error verifying certificate');
@@ -201,13 +214,18 @@ export function CertificateCheckClient({
         },
       });
 
+      const certSuffix = activeDailyOption && !activeDailyOption.isCombined
+        ? `_${activeDailyOption.label.replace(/\s+/g, '_')}`
+        : '';
       const link = document.createElement('a');
-      link.download = `Certificate_${result.name.replace(/\s+/g, '_')}.png`;
+      link.download = `Certificate_${result.name.replace(/\s+/g, '_')}${certSuffix}.png`;
       // For PNG, keeping full 1.0 quality as PNG is typically lossless anyway 
       link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
 
-      toast.success('Certificate PNG downloaded successfully!');
+      toast.success(
+        `Certificate ${activeDailyOption ? `(${activeDailyOption.label}) ` : ''}PNG downloaded successfully!`
+      );
     } catch (error) {
       console.error('Download error:', error);
       toast.error('Failed to download certificate');
@@ -271,9 +289,14 @@ export function CertificateCheckClient({
       // Ensure 'FAST' or 'MEDIUM' compression alias is injected
       // Add generous +1 overlapping to prevent subpixel scaling rounding errors from revealing the white PDF background
       pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth + 2, pdfHeight + 2, undefined, 'FAST');
-      pdf.save(`Certificate_${result.name.replace(/\s+/g, '_')}.pdf`);
+      const certSuffix = activeDailyOption && !activeDailyOption.isCombined
+        ? `_${activeDailyOption.label.replace(/\s+/g, '_')}`
+        : '';
+      pdf.save(`Certificate_${result.name.replace(/\s+/g, '_')}${certSuffix}.pdf`);
 
-      toast.success('Certificate PDF downloaded successfully!');
+      toast.success(
+        `Certificate ${activeDailyOption ? `(${activeDailyOption.label}) ` : ''}PDF downloaded successfully!`
+      );
     } catch (error) {
       console.error('PDF Download error:', error);
       toast.error('Failed to download PDF');
@@ -388,6 +411,53 @@ export function CertificateCheckClient({
                         </span>
                       </div>
                     )}
+
+                    {dailyOptions && (
+                      <div className="pt-2.5 border-t border-slate-100 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-semibold text-emerald-800 uppercase tracking-wider flex items-center gap-1">
+                            <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Pilihan Sijil Kehadiran</span>
+                          </span>
+                          <span className="text-[10px] text-emerald-700 bg-emerald-100 font-medium px-2 py-0.5 rounded-full">
+                            {dailyOptions.length} Sijil
+                          </span>
+                        </div>
+                        <div className="space-y-1.5">
+                          {dailyOptions.map((opt, idx) => {
+                            const isSelected = selectedCertIndex === idx;
+                            return (
+                              <button
+                                key={idx}
+                                type="button"
+                                onClick={() => setSelectedCertIndex(idx)}
+                                className={`w-full text-left p-2.5 rounded-xl text-xs transition-all border flex items-center justify-between gap-2 cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-emerald-600 text-white border-emerald-700 font-semibold shadow-2xs'
+                                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200/80'
+                                }`}
+                              >
+                                <span className="flex items-center gap-1.5 truncate">
+                                  <Award
+                                    className={`w-3.5 h-3.5 shrink-0 ${
+                                      isSelected ? 'text-white' : 'text-emerald-600'
+                                    }`}
+                                  />
+                                  <span className="truncate">{opt.label}</span>
+                                </span>
+                                <span
+                                  className={`text-[10px] shrink-0 ${
+                                    isSelected ? 'text-emerald-100 font-normal' : 'text-slate-500'
+                                  }`}
+                                >
+                                  {opt.formattedDate}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2.5">
@@ -444,6 +514,11 @@ export function CertificateCheckClient({
                         <CardTitle className="text-base font-semibold text-slate-900 leading-none">
                           Live Preview
                         </CardTitle>
+                        {activeDailyOption && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200/80 shrink-0">
+                            {activeDailyOption.label}
+                          </span>
+                        )}
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80 shrink-0">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                           Ready
@@ -451,6 +526,7 @@ export function CertificateCheckClient({
                       </div>
                       <p className="text-xs text-muted-foreground mt-1 truncate">
                         {isPortrait ? 'Portrait (A4)' : 'Landscape (A4)'} • High Resolution
+                        {activeCertDate ? ` • ${formattedDate || activeCertDate}` : ''}
                       </p>
                     </div>
                   </div>
@@ -502,6 +578,31 @@ export function CertificateCheckClient({
                   </div>
                 </CardHeader>
 
+                {dailyOptions && (
+                  <div className="px-4 sm:px-6 py-2.5 bg-slate-50 border-b border-slate-200/80 flex items-center gap-2 overflow-x-auto no-scrollbar">
+                    <span className="text-xs font-semibold text-slate-600 shrink-0 flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Pilih Sijil:</span>
+                    </span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {dailyOptions.map((opt, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setSelectedCertIndex(idx)}
+                          className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                            selectedCertIndex === idx
+                              ? 'bg-emerald-600 text-white font-semibold shadow-2xs'
+                              : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
+                          }`}
+                        >
+                          {opt.label} ({opt.formattedDate})
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <CardContent className="p-0 bg-slate-100/90 relative overflow-hidden">
                   {/* Stable measurement wrapper - ref here so available width is consistent */}
                   <div ref={previewWrapperRef} className="w-full">
@@ -535,7 +636,7 @@ export function CertificateCheckClient({
                               type={templateId || 'classic'}
                               name={result.name || ''}
                               program={formTitle || ''}
-                              date={result.date}
+                              date={activeCertDate}
                               id="check-preview"
                               customTemplateData={activeTemplate}
                               ic={result.ic || (identifier.includes('@') ? '' : identifier)}
@@ -585,7 +686,7 @@ export function CertificateCheckClient({
                 type={templateId || 'classic'}
                 name={result.name || ''}
                 program={formTitle || ''}
-                date={result.date}
+                date={activeCertDate}
                 id="hidden-certificate"
                 customTemplateData={activeTemplate}
                 ic={result.ic || (identifier.includes('@') ? '' : identifier)}
@@ -668,8 +769,13 @@ export function CertificateCheckClient({
                 <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
                   <Award className="h-4 w-4" />
                 </div>
-                <DialogTitle className="text-base font-semibold text-white">
-                  Certificate Full HD Preview
+                <DialogTitle className="text-base font-semibold text-white flex items-center gap-2 flex-wrap">
+                  <span>Certificate Full HD Preview</span>
+                  {activeDailyOption && (
+                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-normal">
+                      {activeDailyOption.label} • {activeDailyOption.formattedDate}
+                    </span>
+                  )}
                 </DialogTitle>
               </div>
 
@@ -739,7 +845,7 @@ export function CertificateCheckClient({
                         type={templateId || 'classic'}
                         name={result.name || ''}
                         program={formTitle || ''}
-                        date={result.date}
+                        date={activeCertDate}
                         id="dialog-preview"
                         customTemplateData={activeTemplate}
                         ic={result.ic || (identifier.includes('@') ? '' : identifier)}

@@ -9,6 +9,7 @@ import { createAdminClient } from '@/utils/supabase/admin';
 import { encrypt } from '@/lib/encryption';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { isIcHeader } from '@/lib/certificates/headers';
+import type { DailyCertificateOption } from '@/lib/types';
 
 export interface CertificateCheckResult {
   found: boolean;
@@ -29,6 +30,8 @@ export interface CertificateCheckResult {
     shortfallMinutes: number;
     shortfallText: string;
   };
+  /** Multiple certificate options for multi-day events. */
+  dailyCertificates?: DailyCertificateOption[];
 }
 
 function formatPrivateKey(key: string) {
@@ -300,18 +303,25 @@ export async function checkCertificateByICOrEmail(
             ? (checkInOutConfig?.minHoursForCertificate ?? 0)
             : 0;
 
+        let attRecords: import('@/lib/types').AttendanceRecord[] = [];
+        if (form.attendanceSettings?.enabled && checkInOutConfig?.enabled) {
+          try {
+            const { getAttendanceRecordsForParticipant } = await import('@/lib/storage/attendance');
+            const { cleanIdentifier } = await import('@/lib/forms/attendance');
+
+            attRecords = await getAttendanceRecordsForParticipant(formId, cleanIdentifier(identifier));
+            if ((!attRecords || attRecords.length === 0) && realIc) {
+              attRecords = await getAttendanceRecordsForParticipant(formId, cleanIdentifier(realIc));
+            }
+          } catch (attErr) {
+            console.warn('[certificate-check] Error fetching attendance records:', attErr);
+          }
+        }
+
         if (minHoursRequired > 0) {
-          const { getAttendanceRecordsForParticipant } = await import('@/lib/storage/attendance');
-          const { cleanIdentifier, checkCertificateAttendanceEligibility } = await import(
+          const { checkCertificateAttendanceEligibility } = await import(
             '@/lib/forms/attendance'
           );
-
-          // Check using search identifier first
-          let attRecords = await getAttendanceRecordsForParticipant(formId, cleanIdentifier(identifier));
-          // If not found and realIc exists, check using real IC
-          if ((!attRecords || attRecords.length === 0) && realIc) {
-            attRecords = await getAttendanceRecordsForParticipant(formId, cleanIdentifier(realIc));
-          }
 
           const eligibility = checkCertificateAttendanceEligibility(
             attRecords,
@@ -336,12 +346,37 @@ export async function checkCertificateByICOrEmail(
           }
         }
 
+        // Build Daily Certificate Options for Multi-Day events
+        const { buildDailyCertificateOptions } = await import('@/lib/forms/attendance');
+        const sheetRowData: Record<string, string | undefined> = {};
+        for (const h of headers) {
+          if (
+            h.toLowerCase().includes('hari') ||
+            h.toLowerCase().includes('day') ||
+            h.toLowerCase().includes('masuk') ||
+            h.toLowerCase().includes('check-in')
+          ) {
+            const v = row.get(h);
+            if (v !== undefined && v !== null) {
+              sheetRowData[h] = v.toString();
+            }
+          }
+        }
+
+        const dailyCertificates = buildDailyCertificateOptions({
+          records: attRecords,
+          sheetRowData,
+          defaultDate: date?.toString(),
+          totalDays: checkInOutConfig?.totalDays || 1,
+        });
+
         return {
           found: true,
           name: name.toString(),
           date: date?.toString(),
           programName: form.title,
           ic: realIc,
+          dailyCertificates: dailyCertificates.length > 0 ? dailyCertificates : undefined,
           category: (() => {
             // Read the respondent's category answer (the Sheet column is keyed
             // by the field's LABEL) so the client can pick the right template.

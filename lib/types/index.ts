@@ -36,6 +36,7 @@ export type {
   AttendanceSummary,
   AttendanceStats,
   DailyAttendanceDetail,
+  DailyCertificateOption,
 } from './attendance';
 
 // E-Certificate types
