@@ -1,3 +1,47 @@
+# Pembetulan Pepijat Tahun Sijil Terpapar 2001 (Fix 2001 Year Parsing Bug) ✅ SELESAI (MENUNGGU PENGESAHAN PENGGUNA SEBELUM KE VERCEL)
+
+**Matlamat**: Memperbaiki pepijat tarikh pada e-Sijil dan sari kata pratonton awam yang memaparkan tahun `2001` (contohnya `October 7, 2001` dan `October 8, 2001`) dan bukannya tahun sebenar `2026`. (PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL SEHINGGA DIBERI KEBENARAN).
+
+### Pelan Pelaksanaan
+- [x] 1. Pembaikan Pengekstrakan Tarikh & Masa (`lib/forms/attendance.ts`):
+  - [x] 1.1 Gantikan logik `split(',')` yang naif dalam `formatAttendanceDate` dengan regex pemotongan masa berasaskan corak (`replace(/,?\s*\b\d{1,2}:\d{2}(?::\d{2})?(?:\s*[AaPp][Mm])?.*$/, '')`) supaya tidak memotong tahun `, 2026` daripada format tarikh standard seperti `"October 8, 2026"`.
+  - [x] 1.2 Perkemaskan penjanaan tarikh gabungan `Semua Hari (Penuh)` dalam `buildDailyCertificateOptions` supaya tidak mencetak cop masa mentah ISO (contoh `2026-10-07T02:05:47.358Z`).
+- [x] 2. Pengesahan Kualiti & Ujian Unit (`tests/certificate-multiday-options.test.ts`):
+  - [x] 2.1 Tambah ujian unit untuk idempotensi `formatAttendanceDate("October 8, 2026")` -> `"October 8, 2026"`.
+  - [x] 2.2 Tambah ujian unit untuk `formatAttendanceDate("8/10/2026, 4:05 PM")` -> `"October 8, 2026"`.
+  - [x] 2.3 Tambah ujian unit untuk tarikh gabungan `Semua Hari (Penuh)` berformat bersih tanpa ISO string.
+  - [x] 2.4 Jalankan `npm test` dan sahkan semua ujian lulus (441/441 ujian lulus merentas 45 suite).
+  - [x] 2.5 Jalankan `npm run typecheck` (0 ralat), `npm run lint` (0 ralat), dan `npm run build` (58 laluan bersih).
+- [x] 3. Dokumentasi & Pengesahan Pengguna:
+  - [x] 3.1 Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
+  - [x] 3.2 Terangkan punca ralat dan penyelesaian secara ringkas & padat kepada pengguna.
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Punca Asal Isu Tahun 2001 (Root Cause of the 2001 Year Bug)**:
+   - Apabila fungsi `buildDailyCertificateOptions` membaca sel Google Sheet (contoh: `"8/10/2026, 4:05 PM"`), tarikh tersebut berjaya diformatkan kali pertama menjadi `"October 8, 2026"`. Ini menjelaskan mengapa butang pilihan harian memaparkan teks yang betul: `Hari 2 (October 8, 2026)`.
+   - Namun, apabila pengguna memilih hari tersebut, rentetan `"October 8, 2026"` diserahkan semula ke dalam `<CertificateTemplate>` dan sari kata pratonton, di mana fungsi `formatAttendanceDate` dipanggil sekali lagi (*idempotency call*).
+   - Di dalam `formatAttendanceDate`:
+     ```ts
+     // Kod terdahulu:
+     let datePart = rawStr;
+     if (datePart.includes(',')) {
+       datePart = datePart.split(',')[0].trim();
+     }
+     ```
+   - Logik ini menganggap koma hanya wujud untuk memisahkan tarikh dan masa pada format Google Sheet (`"8/10/2026, 4:05 PM"`). Tetapi pada rentetan tarikh standard Inggeris `"October 8, 2026"`, koma terletak di antara hari dan tahun!
+   - Akibatnya, `split(',')[0]` memotong bahagian tahun `, 2026` dan meninggalkan rentetan `"October 8"` sahaja.
+   - Apabila rentetan `"October 8"` (tanpa tahun) dihantar ke enjin JavaScript `new Date("October 8")`, spesifikasi ECMAScript / V8 mentafsirnya sebagai `Sun Oct 08 2001` (tahun lalai 2001).
+   - Ini menyebabkan sari kata dan e-Sijil memaparkan `October 8, 2001` (dan `October 7, 2001` bagi Hari 1).
+2. **Penyelesaian Elegan Berasaskan Corak Masa (Pattern-Based Time Stripping)**:
+   - Menggantikan `split(',')` dengan regex corak masa eksplisit:
+     `rawStr.replace(/,?\s*\b\d{1,2}:\d{2}(?::\d{2})?(?:\s*[AaPp][Mm])?.*$/, '').trim()`
+   - Regex ini hanya memotong bahagian masa yang sepadan dengan format masa (`04:15 PM`, `16:30`), dan mengekalkan tahun pada tarikh standard seperti `"October 8, 2026"` tanpa sebarang pemotongan.
+   - Fungsi `formatAttendanceDate` kini 100% idempoten: memformat tarikh berulang kali menghasilkan nilai yang sama tanpa herotan tahun.
+3. **Penyelarasan Butang Gabungan Semua Hari (Penuh)**:
+   - Bagi pilihan `Semua Hari (Penuh)`, sistem menyemak sama ada `defaultDate` daripada borang merupakan teks julat hari (contoh `"7 & 8 Oktober 2026"`). Jika hanya cop masa pendaftaran Sheet 0 (`"2026-10-07T02:05:47.358Z"`), sistem mensintesis julat hari secara automatik: `"October 7, 2026 - October 8, 2026"`, menghapuskan rentetan mentah ISO pada butang.
+
+---
+
 # Pembetulan Aksesibiliti & Label Borang Awam (Fix Incorrect Use of <label for=FORM_ELEMENT>) ✅ SELESAI (LIVE DI VERCEL)
 
 **Matlamat**: Memperbaiki isu Chrome DevTools / Aksesibiliti `Incorrect use of <label for=FORM_ELEMENT>` (2 isu dikesan pada soalan komposit/kumpulan seperti Skala Penilaian / Rating dan Multiple Choice Grid). Label tajuk soalan sebelum ini meletakkan atribut `htmlFor="field-input-${field.id}"` secara mandatori pada SEMUA jenis soalan, sedangkan soalan kumpulan (seperti `rating`, `grid`, `checkbox`, `radio`, `file`, `product`) tidak mempunyai elemen input tunggal dengan ID tersebut. Sistem akan membezakan jenis medan input tunggal (`text`, `email`, `number`, `textarea`, `select`, `date`, `time`) dengan soalan kumpulan supaya atribut `for` sentiasa sah dan tiada elemen terputus (*broken label association*). (PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL SEHINGGA DIBERI KEBENARAN).

@@ -231,14 +231,9 @@ export function formatAttendanceDate(dateInput: string | Date | undefined | null
     }
   }
 
-  // Extract date part before any time indicator (e.g. "18/10/2026, 04:15 PM" -> "18/10/2026")
-  let datePart = rawStr;
-  if (datePart.includes(',')) {
-    datePart = datePart.split(',')[0].trim();
-  } else {
-    // Strip trailing time like " 04:15:00" or " 04:15 PM" or " 16:30"
-    datePart = datePart.replace(/\s+\d{1,2}:\d{2}(?::\d{2})?(?:\s*[AaPp][Mm])?.*$/, '').trim();
-  }
+  // Extract date part before any time indicator (e.g. "18/10/2026, 04:15 PM" -> "18/10/2026" or "October 8, 2026, 4:05 PM" -> "October 8, 2026")
+  // Do NOT blindly split on commas, because standard formatted dates (e.g. "October 8, 2026") contain a comma before the year.
+  const datePart = rawStr.replace(/,?\s*\b\d{1,2}:\d{2}(?::\d{2})?(?:\s*[AaPp][Mm])?.*$/, '').trim();
 
   // If it is a multi-day range string containing & or spaced hyphen with multiple dates (e.g. "7 & 8 Oktober 2026", "7 - 8 Oct 2026")
   // preserve it as is.
@@ -475,14 +470,26 @@ export function buildDailyCertificateOptions(params: {
   // If there are multiple attended days or totalDays > 1, provide the combined "Semua Hari" option
   if (dailyOptions.length > 1 || (totalDays > 1 && dailyOptions.length > 0)) {
     if (dailyOptions.length > 1) {
+      // If defaultDate is an explicit multi-day range text (e.g. "7 & 8 Oktober 2026"), preserve it.
+      // If defaultDate is a single-day ISO timestamp or single date, synthesize the range from Day 1 to Day N.
+      const isMultiDayText =
+        defaultDate &&
+        /\b(?:\d{1,2}\s*(?:&|dan|to|hingga|sampai|\s+-\s+)\s*\d{1,2})\b/i.test(defaultDate);
+
       const combinedDate =
-        defaultDate?.trim() ||
-        `${dailyOptions[0].date} - ${dailyOptions[dailyOptions.length - 1].date}`;
+        isMultiDayText
+          ? defaultDate.trim()
+          : `${dailyOptions[0].date} - ${dailyOptions[dailyOptions.length - 1].date}`;
+
+      const formattedCombined = isMultiDayText
+        ? formatAttendanceDate(combinedDate) || combinedDate
+        : combinedDate;
+
       dailyOptions.push({
         dayNumber: 0,
         label: 'Semua Hari (Penuh)',
         date: combinedDate,
-        formattedDate: combinedDate,
+        formattedDate: formattedCombined,
         isCombined: true,
       });
     }

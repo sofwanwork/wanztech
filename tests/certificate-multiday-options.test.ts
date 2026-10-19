@@ -53,6 +53,13 @@ describe('formatAttendanceDate', () => {
     expect(formatted).toBe('7 & 8 Oktober 2026');
   });
 
+  it('preserves already formatted dates without stripping year (prevent 2001 bug)', () => {
+    expect(formatAttendanceDate('October 7, 2026')).toBe('October 7, 2026');
+    expect(formatAttendanceDate('October 8, 2026')).toBe('October 8, 2026');
+    expect(formatAttendanceDate('October 8, 2026, 4:05 PM')).toBe('October 8, 2026');
+    expect(formatAttendanceDate('8/10/2026, 4:05 PM')).toBe('October 8, 2026');
+  });
+
   it('returns empty string for empty or null inputs', () => {
     expect(formatAttendanceDate('')).toBe('');
     expect(formatAttendanceDate('-')).toBe('');
@@ -235,5 +242,35 @@ describe('buildDailyCertificateOptions', () => {
     expect(options[0].label).toBe('Hari 1');
     expect(options[0].date).toBe('October 7, 2026');
     expect(options[0].isCombined).toBe(false);
+  });
+
+  it('synthesizes clean date range for Semua Hari when defaultDate is a single-day ISO timestamp', () => {
+    const options = buildDailyCertificateOptions({
+      records: [
+        {
+          dayNumber: 1,
+          checkInAt: '2026-10-07T08:38:00.000Z',
+          status: 'completed',
+        },
+        {
+          dayNumber: 2,
+          checkInAt: '2026-10-08T08:05:00.000Z',
+          status: 'completed',
+        },
+      ],
+      defaultDate: '2026-10-07T02:05:47.358Z', // Single registration timestamp from Sheet 0
+      totalDays: 2,
+    });
+
+    expect(options).toHaveLength(3);
+    expect(options[0].label).toBe('Hari 1');
+    expect(options[0].date).toBe('October 7, 2026');
+    expect(options[1].label).toBe('Hari 2');
+    expect(options[1].date).toBe('October 8, 2026');
+
+    // Semua Hari must NOT be raw ISO string '2026-10-07T02:05:47.358Z'
+    expect(options[2].label).toBe('Semua Hari (Penuh)');
+    expect(options[2].date).toBe('October 7, 2026 - October 8, 2026');
+    expect(options[2].formattedDate).toBe('October 7, 2026 - October 8, 2026');
   });
 });
