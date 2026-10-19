@@ -832,7 +832,7 @@ export function PublicFormClient({
 
   if (form.isActive === false) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 transition-colors duration-500 font-sans access-denied-container" style={{ backgroundColor: backgroundColor || '#f9fafb' }}>
+      <div className="min-h-screen min-h-[100dvh] w-full max-w-full overflow-x-hidden flex items-center justify-center p-4 transition-colors duration-500 font-sans access-denied-container" style={{ backgroundColor: backgroundColor || '#f9fafb' }}>
         <Card className="w-full max-w-md text-center border-t-4 border-slate-500 shadow-lg bg-white">
           <CardHeader className="pt-8 pb-6">
             <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
@@ -859,7 +859,7 @@ export function PublicFormClient({
     if (attendanceSummary?.status === 'checked_in') {
       return (
         <div
-          className="min-h-screen flex items-center justify-center p-4 transition-colors duration-500 font-sans"
+          className="min-h-screen min-h-[100dvh] w-full max-w-full overflow-x-hidden flex items-center justify-center p-4 transition-colors duration-500 font-sans"
           style={{ backgroundColor: backgroundColor || '#f9fafb' }}
         >
           <Card className="w-full max-w-md text-center shadow-xl bg-white border border-emerald-200/80 rounded-3xl overflow-hidden p-0 gap-0">
@@ -912,7 +912,7 @@ export function PublicFormClient({
     // Otherwise (not checked in), display Anti-Fraud Lock Screen
     return (
       <div
-        className="min-h-screen flex items-center justify-center p-4 transition-colors duration-500 font-sans"
+        className="min-h-screen min-h-[100dvh] w-full max-w-full overflow-x-hidden flex items-center justify-center p-4 transition-colors duration-500 font-sans"
         style={{ backgroundColor: backgroundColor || '#f9fafb' }}
       >
         <Card className="w-full max-w-md text-center shadow-xl bg-white border border-slate-200 rounded-3xl overflow-hidden p-6 sm:p-8">
@@ -956,7 +956,7 @@ export function PublicFormClient({
 
   if (submitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 transition-colors duration-500 font-sans submitted-container">
+      <div className="min-h-screen min-h-[100dvh] w-full max-w-full overflow-x-hidden flex items-center justify-center p-4 transition-colors duration-500 font-sans submitted-container">
         <Card className={cn("w-full max-w-md text-center shadow-lg bg-white overflow-hidden relative border-none", form.coverImage && "!pt-0 !gap-0")}>
           {!form.coverImage && (
             <div className="absolute top-0 left-0 right-0 h-1.5 bg-[var(--primary)]" />
@@ -1225,13 +1225,12 @@ export function PublicFormClient({
         : 'cover',
       backgroundRepeat: patternCSS.backgroundImage ? 'repeat, no-repeat' : 'no-repeat',
       backgroundPosition: 'center',
-      backgroundAttachment: 'fixed',
     };
   };
 
   return (
     <div
-      className="min-h-screen py-8 sm:py-12 px-4 transition-colors duration-500 font-sans form-container"
+      className="min-h-screen min-h-[100dvh] w-full max-w-full overflow-x-hidden py-3 sm:py-8 md:py-12 px-3 sm:px-4 transition-colors duration-500 font-sans form-container"
       style={getBackgroundStyle()}
     >
       <style jsx global>{`
@@ -1256,48 +1255,48 @@ export function PublicFormClient({
 
       {/* Progress Bar (Sticky Top) */}
       {!isAttendanceCardShowing && (
-        <div className="fixed top-0 left-0 w-full z-50">
+        <div className="fixed top-0 inset-x-0 z-50 pointer-events-none">
           <Progress value={progressPercentage} className="h-1.5 rounded-none bg-black/10" style={{ '--primary': primaryColor || '#0f172a' } as React.CSSProperties} />
         </div>
       )}
 
       {/* Countdown Timer Badge */}
       {timeLeft && !submitted && !isAttendanceCardShowing && (
-        <div className="fixed top-4 right-4 z-40 bg-white/90 backdrop-blur-sm shadow-md border border-red-100 rounded-full px-4 py-2 flex items-center gap-2 text-sm font-semibold text-red-600 animate-in fade-in slide-in-from-top-4">
-          <Clock className="h-4 w-4" />
+        <div className="fixed top-3 right-3 sm:top-4 sm:right-4 z-40 bg-white/90 backdrop-blur-sm shadow-md border border-red-100 rounded-full px-3 py-1.5 sm:px-4 sm:py-2 flex items-center gap-2 text-xs sm:text-sm font-semibold text-red-600 animate-in fade-in slide-in-from-top-4">
+          <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           <span>Closes in: {timeLeft}</span>
         </div>
       )}
 
       {/* Progress Badge (Floating Bottom Right) */}
       {!submitted && !isAttendanceCardShowing && totalRequired > 0 && (
-        <div className="fixed bottom-4 right-4 z-40 bg-white/90 backdrop-blur-sm shadow-md border border-gray-200 rounded-full px-4 py-2 text-xs font-semibold text-gray-700 animate-in fade-in slide-in-from-bottom-4">
+        <div className="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-40 bg-white/90 backdrop-blur-sm shadow-md border border-gray-200 rounded-full px-3 py-1.5 sm:px-4 sm:py-2 text-[11px] sm:text-xs font-semibold text-gray-700 animate-in fade-in slide-in-from-bottom-4">
           {filledRequired} / {totalRequired} Answered
         </div>
       )}
 
-      <div className="max-w-2xl mx-auto space-y-6 pt-4">
+      <div className="w-full max-w-2xl mx-auto space-y-3 sm:space-y-6 pt-0 sm:pt-4 min-w-0">
         {/* Cover Image */}
         {form.coverImage && (
-          <div className="rounded-lg overflow-hidden border border-gray-200">
+          <div className="rounded-xl overflow-hidden border border-gray-200">
             <div className="w-full aspect-[2/1] bg-cover bg-center cover-image-container" />
           </div>
         )}
 
         {/* Header */}
-        <div className="rounded-xl shadow-lg flex overflow-hidden bg-transparent">
-          <div className="w-[6px] shrink-0 bg-primary" />
+        <div className="rounded-2xl sm:rounded-3xl shadow-sm border border-gray-200/80 flex overflow-hidden bg-white">
+          <div className="w-1.5 sm:w-2 shrink-0 bg-primary" />
           <div
             className={cn(
-              'flex-1 bg-white',
+              'flex-1 bg-white min-w-0',
               form.theme?.headerAlignment === 'center' && 'text-center'
             )}
           >
-            <CardHeader className="pt-8 pb-6">
+            <CardHeader className="py-4 sm:py-8 px-4 sm:px-6">
               {form.theme?.logo && (
                 <div
                   className={cn(
-                    'mb-6 flex',
+                    'mb-4 sm:mb-6 flex',
                     form.theme?.logoAlignment === 'center' ||
                       (!form.theme?.logoAlignment && form.theme?.headerAlignment === 'center')
                       ? 'justify-center'
@@ -1310,12 +1309,12 @@ export function PublicFormClient({
                   <img
                     src={getProxiedImageUrl(form.theme.logo)}
                     alt="Logo"
-                    className="max-h-24 w-auto object-contain"
+                    className="max-h-16 sm:max-h-24 w-auto object-contain"
                   />
                 </div>
               )}
               <CardTitle
-                className="text-2xl font-black text-gray-900 leading-tight whitespace-pre-line break-words"
+                className="text-xl sm:text-2xl font-black text-gray-900 leading-tight whitespace-pre-line break-words"
                 style={{
                   fontFamily:
                     form.theme?.headerFont === 'playfair'
@@ -1331,7 +1330,7 @@ export function PublicFormClient({
               </CardTitle>
               {form.description && (
                 <div
-                  className="ProseMirror text-slate-600 text-sm sm:text-base leading-relaxed mt-3.5 sm:mt-4 [&>p:not(:last-child)]:mb-2.5 sm:[&>p:not(:last-child)]:mb-2 [&>p:empty]:h-2 [&>p:empty]:mb-0 [&_strong]:font-bold [&_strong]:text-slate-900 [&_b]:font-bold [&_b]:text-slate-900 font-sans whitespace-pre-wrap break-words"
+                  className="ProseMirror text-slate-600 text-sm sm:text-base leading-relaxed mt-2.5 sm:mt-4 [&>p:not(:last-child)]:mb-2.5 sm:[&>p:not(:last-child)]:mb-2 [&>p:empty]:h-2 [&>p:empty]:mb-0 [&_strong]:font-bold [&_strong]:text-slate-900 [&_b]:font-bold [&_b]:text-slate-900 font-sans whitespace-pre-wrap break-words"
                   dangerouslySetInnerHTML={{ __html: sanitizeHtml(form.description) }}
                 />
               )}
@@ -1340,7 +1339,7 @@ export function PublicFormClient({
         </div>
 
         {/* Form Fields */}
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-6">
           <input type="text" name="_gotcha" tabIndex={-1} autoComplete="off" className="absolute opacity-0 -z-50 w-0 h-0 overflow-hidden" />
 
           {/* Anti-Fraud Rotating QR Notice if participant opened without live token */}
@@ -1727,7 +1726,7 @@ export function PublicFormClient({
           )}
 
           {(!checkInOutEnabled || (attendanceSummary?.status !== 'checked_in' && attendanceSummary?.status !== 'completed')) && (
-          <Card className="border border-gray-200 bg-white">
+          <Card className="p-0 gap-0 overflow-hidden border border-gray-200/80 bg-white shadow-sm rounded-2xl sm:rounded-3xl">
             <CardContent className="p-0">
               {currentPageFields.map((field) => {
                 if (field.type === 'separator') {
@@ -1736,7 +1735,7 @@ export function PublicFormClient({
                   return (
                     <div
                       key={field.id}
-                      className="py-5 sm:py-6 px-6 bg-gradient-to-r from-slate-50/90 via-slate-50/50 to-white border-b border-gray-100 last:border-b-0 border-l-4 border-l-primary/80 transition-colors"
+                      className="py-4 sm:py-6 px-4 sm:px-6 bg-gradient-to-r from-slate-50/90 via-slate-50/50 to-white border-b border-gray-100 last:border-b-0 border-l-4 border-l-primary/80 transition-colors"
                     >
                       <h3 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
                         {field.label}
@@ -1788,7 +1787,7 @@ export function PublicFormClient({
                   return (
                     <div
                       key={field.id}
-                      className="py-6 px-6 bg-slate-50 border-b border-gray-100 last:border-b-0 space-y-4"
+                      className="py-4 sm:py-6 px-4 sm:px-6 bg-slate-50 border-b border-gray-100 last:border-b-0 space-y-4"
                     >
                       {field.label && field.label !== 'New Question' && field.label !== '' && (
                          <h3 className="text-lg font-semibold text-gray-900">{field.label}</h3>
@@ -1817,7 +1816,7 @@ export function PublicFormClient({
                     key={field.id}
                     id={`field-container-${field.id}`}
                     onFocusCapture={() => trackFieldFocus(field.id)}
-                    className="py-5 px-6 border-b border-gray-100 last:border-b-0 transition-colors duration-300 hover:bg-slate-50/50"
+                    className="py-3.5 sm:py-5 px-4 sm:px-6 border-b border-gray-100 last:border-b-0 transition-colors duration-300 hover:bg-slate-50/50"
                   >
                     <Label
                       htmlFor={`field-input-${field.id}`}
@@ -2026,7 +2025,7 @@ export function PublicFormClient({
                       <RadioGroup
                         value={formData[field.id]?.toString() || ''}
                         onValueChange={(val) => handleInputChange(field.id, val)}
-                        className="w-full pt-4"
+                        className="w-full pt-2 sm:pt-4"
                       >
                         <div className="flex flex-col w-full">
                           {/* Scale Circles */}
@@ -2222,7 +2221,7 @@ export function PublicFormClient({
                 );
               })}
             </CardContent>
-            <CardFooter className="p-6 border-t border-gray-100 flex-col items-stretch gap-4">
+            <CardFooter className="p-4 sm:p-6 border-t border-gray-100 flex-col items-stretch gap-3 sm:gap-4">
               {multiPage && displayTotal > 1 && (
                 <p className="text-center text-xs font-medium text-muted-foreground">
                   Page {displayCurrent} / {displayTotal}
@@ -2290,8 +2289,8 @@ export function PublicFormClient({
                     {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {submitting
                       ? checkInOutEnabled
-                        ? 'Checking In...'
-                        : 'Submitting...'
+                          ? 'Checking In...'
+                          : 'Submitting...'
                       : checkInOutEnabled
                       ? 'Check-In Attendance'
                       : 'Submit'}
@@ -2304,7 +2303,7 @@ export function PublicFormClient({
         </form>
 
         {(!form.userTier || form.userTier === 'free') && (
-          <div className="mt-8 pb-8 text-center">
+          <div className="mt-4 sm:mt-8 pb-4 sm:pb-8 text-center">
             <Link
               href="/"
               target="_blank"

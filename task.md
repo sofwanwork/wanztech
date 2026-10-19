@@ -1,3 +1,57 @@
+# Penghapusan Tatalan Mendatar & Pengoptimuman Ketinggian Mudah Alih Borang (Lock Horizontal Scroll & Mobile Vertical Height Optimization) ✅ SELESAI (MENUNGGU PENGESAHAN PENGGUNA SEBELUM KE VERCEL)
+
+**Matlamat**: Menyelesaikan aduan pengguna ("kenapa boleh scroll kiri dan kanan, atas dan bawah, di mobile view, sy nak fix tanpa scroll kecuali question byk" - `media_1792392998295_0ef2b0b8.png`) supaya: (1) menghapuskan 100% tatalan kiri-kanan (*horizontal scroll / overscroll bounce*) pada peranti mudah alih; (2) mengoptimumkan ketinggian menegak dan padding borang supaya soalan ringkas (1-4 soalan) muat sepenuhnya di dalam satu skrin mudah alih tanpa perlu menatal atas-bawah, dan hanya menatal apabila soalan banyak; (3) menghapuskan "ghost padding" 48px dan gap 24px daripada shadcn `<Card>` pada kad soalan awam. (PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL LAGI).
+
+### Pelan Pelaksanaan
+- [x] 1. Kunci Limpahan Paksi-X Global & Viewport Meta:
+  - [x] 1.1 Tambah `max-width: 100vw; overflow-x: hidden;` pada `html, body` di `app/globals.css`.
+  - [x] 1.2 Eksport konfigurasi `viewport: Viewport` di `app/layout.tsx` (`width: 'device-width', initialScale: 1`).
+- [x] 2. Pengoptimuman Responsif Borang Awam (`app/(public)/form/[id]/client.tsx`):
+  - [x] 2.1 Tukar kontena luaran kepada `min-h-screen min-h-[100dvh] w-full max-w-full overflow-x-hidden py-3 sm:py-8 md:py-12 px-3 sm:px-4`.
+  - [x] 2.2 Betulkan bar kemajuan lekat `fixed top-0 inset-x-0 z-50 pointer-events-none` (gantikan `w-full` 100vw).
+  - [x] 2.3 Buang `backgroundAttachment: 'fixed'` yang mencetuskan pepijat pengiraan viewport WebKit/Android.
+  - [x] 2.4 Padatkan jurang pembalut dalaman kepada `w-full max-w-2xl mx-auto space-y-3 sm:space-y-6 pt-0 sm:pt-4 min-w-0`.
+  - [x] 2.5 Selaraskan kad pengepala tajuk dengan `rounded-2xl sm:rounded-3xl shadow-sm border border-gray-200/80 bg-white overflow-hidden` dan padding `py-4 sm:py-8 px-4 sm:px-6`.
+  - [x] 2.6 Kunci kad soalan dengan `p-0 gap-0 overflow-hidden rounded-2xl sm:rounded-3xl shadow-sm border border-gray-200/80` (hapuskan 72px ghost padding/gap shadcn).
+  - [x] 2.7 Padatkan padding setiap baris soalan kepada `py-3.5 sm:py-5 px-4 sm:px-6`.
+  - [x] 2.8 Padatkan `CardFooter` kepada `p-4 sm:p-6 border-t border-gray-100 flex-col items-stretch gap-3 sm:gap-4` dan bahagian Powered by kepada `mt-4 sm:mt-8 pb-4 sm:pb-8`.
+- [x] 3. Pengesahan Kualiti & Ujian:
+  - [x] 3.1 Jalankan `npm run typecheck` (0 ralat TypeScript).
+  - [x] 3.2 Jalankan `npm run lint` (0 ralat ESLint).
+  - [x] 3.3 Jalankan `npm test` (semua 406 ujian unit lulus merentas 42 fail).
+  - [x] 3.4 Jalankan `npm run build` (kompilasi Next.js 16 Turbopack bersih, 58 laluan).
+- [x] 4. Dokumentasi & Pengesahan Pengguna:
+  - [x] 4.1 Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
+  - [x] 4.2 PATUHI arahan pengguna: JANGAN kemas kini ke Vercel lagi ("jgn update ke vercel lg").
+  - [x] 4.3 Maklumkan kepada pengguna dengan ringkas dalam Bahasa Melayu untuk semakan mereka.
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Punca Utama Tatalan Mendatar (*Horizontal Scroll / Overscroll Bounce*)**:
+   - `html` dan `body` dalam `app/globals.css` serta kontena luaran dalam `client.tsx` tidak mempunyai sekatan `overflow-x: hidden` dan `max-width: 100vw`.
+   - Bar kemajuan lekat di atas menggunakan `fixed top-0 left-0 w-full`. Dalam pelayar web mudah alih, `w-full` pada elemen berkedudukan tetap dinilai sebagai `100vw` (yang merangkumi kelebaran bar tatalan). Apabila kandungan melebihi ketinggian skrin walau 1 piksel, elemen tetap melimpah keluar sebanyak 15-17px, membolehkan pengguna menolak/menatal skrin ke kiri dan ke kanan.
+   - Tetapan `backgroundAttachment: 'fixed'` pada `getBackgroundStyle()` mencetuskan pepijat pengiraan sempadan viewport pada peranti WebKit iOS dan Chrome Android.
+   - Kad pengepala menggunakan `shadow-lg` tanpa sekatan limpahan, di mana radius kabur bayang (*blur radius*) melimpah ke luar skrin.
+2. **Penyelesaian Kunci Paksi-X Mutlak (*Zero Horizontal Scroll Lockdown*)**:
+   - Mengunci `html, body` dengan `max-width: 100vw; overflow-x: hidden;` dalam `app/globals.css`.
+   - Mengeksport `viewport: Viewport = { width: 'device-width', initialScale: 1 }` secara rasmi di `app/layout.tsx`.
+   - Menggantikan `fixed top-0 left-0 w-full` kepada `fixed top-0 inset-x-0 z-50 pointer-events-none`.
+   - Membuang `backgroundAttachment: 'fixed'` dan menyuntik `w-full max-w-full overflow-x-hidden min-w-0` pada semua bekas lapisan utama borang awam.
+3. **Punca Tatalan Menegak Pada Borang Pendek (*Vertical Height Root Cause*)**:
+   - Komponen asas shadcn `<Card>` (`components/ui/card.tsx`) menetapkan `py-6` (padding atas/bawah 24px) dan `gap-6` (jurang antara elemen 24px) secara lalai.
+   - Kad soalan sebelum ini tidak mempunyai `p-0 gap-0 overflow-hidden`, mewujudkan ruang putih hantu sebanyak 72px (24px atas kad + 24px bawah kad + 24px jurang antara CardContent dan CardFooter).
+   - Ditambah pula dengan `py-8` (64px) pada kontena luaran, `space-y-6` (24px), `pt-8 pb-6` (56px) pada CardHeader, `py-5` (40px) pada setiap baris soalan, dan `mt-8 pb-8` (64px) pada Powered by.
+   - Jumlah keseluruhan ruang putih kosong mencecah ~300px, menjadikan borang seringkas 4 soalan berketinggian ~894px (jauh melebihi ketinggian skrin telefon biasa 667px - 740px), memaksa pengguna menatal atas-bawah.
+4. **Pengoptimuman Geometri Menegak Mudah Alih (~260px Ruang Dijimatkan)**:
+   - *Kontena Luaran*: Menggantikan `min-h-screen py-8 sm:py-12` kepada `min-h-screen min-h-[100dvh] py-3 sm:py-8 md:py-12 px-3 sm:px-4` (menjimatkan 40px). Penggunaan `min-h-[100dvh]` mengambil kira bar alamat dinamik pelayar telefon pintar.
+   - *Jurang Dalaman*: Mengurangkan jurang kad kepada `space-y-3 sm:space-y-6 pt-0 sm:pt-4` (menjimatkan 28px).
+   - *Pengepala Borang*: Menyelaraskan padding kepada `py-4 sm:py-8 px-4 sm:px-6` (menjimatkan 24px).
+   - *Kad Soalan*: Kunci dengan `p-0 gap-0 overflow-hidden rounded-2xl sm:rounded-3xl shadow-sm border border-gray-200/80` (menghapuskan 72px ghost padding/gap shadcn).
+   - *Baris Soalan*: Memadatkan padding setiap soalan kepada `py-3.5 sm:py-5 px-4 sm:px-6` (menjimatkan 12px setiap soalan, iaitu 48px untuk 4 soalan).
+   - *Footer & Powered By*: Memadatkan footer kepada `p-4 sm:p-6 gap-3 sm:gap-4` dan Powered by kepada `mt-4 sm:mt-8 pb-4 sm:pb-8` (menjimatkan 48px).
+   - Hasilnya, borang pendek (1-4 soalan) kini muat 100% pada satu skrin telefon pintar tanpa perlu menatal sama sekali, dan tatalan atas-bawah hanya berlaku secara semulajadi apabila soalan banyak ("kecuali question byk").
+
+---
+
 # Pengindahan Pemisah Seksyen & Skala Penilaian Mudah Alih (Section Separator & Rating Scale Mobile Polish) ✅ SELESAI (MENUNGGU PENGESAHAN PENGGUNA SEBELUM KE VERCEL)
 
 **Matlamat**: Memperbaiki paparan pemisah seksyen (*Section Separator*) dan skala penilaian (*Rating / Linear Scale*) pada pandangan mudah alih (*mobile view*) di `app/(public)/form/[id]/client.tsx` (`media_1792391870912_4d5a252c.jpg`) supaya: (1) garis penunjuk skala ASCII (`1-----> 6 Sangat tidak setuju Sangat Setuju`) tidak terputus dan terlipat ke berbilang baris hodoh pada skrin sempit; (2) butang skala 1-6 tidak terpotong di sebelah kanan dengan bar tatalan kelabu akibat kotak kosong `w-20`; (3) kotak pemisah seksyen dipamerkan anggun dengan aksen warna tema. (PERINGATAN: JANGAN KEMAS KINI KE VERCEL LAGI).
