@@ -1330,7 +1330,7 @@ export function PublicFormClient({
               </CardTitle>
               {form.description && (
                 <div
-                  className="ProseMirror text-gray-600 mt-2 [&>p]:mb-0 [&>p:empty]:h-3 [&_strong]:font-bold [&_b]:font-bold font-sans whitespace-pre-wrap break-words"
+                  className="ProseMirror text-slate-600 text-sm sm:text-base leading-relaxed mt-3.5 sm:mt-4 [&>p:not(:last-child)]:mb-2.5 sm:[&>p:not(:last-child)]:mb-2 [&>p:empty]:h-2 [&>p:empty]:mb-0 [&_strong]:font-bold [&_strong]:text-slate-900 [&_b]:font-bold [&_b]:text-slate-900 font-sans whitespace-pre-wrap break-words"
                   dangerouslySetInnerHTML={{ __html: sanitizeHtml(form.description) }}
                 />
               )}

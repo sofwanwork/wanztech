@@ -1,3 +1,34 @@
+# Pengindahan Paparan Penerangan Borang Pandangan Mudah Alih (Mobile View Form Description Polish) ✅ SELESAI (MENUNGGU PENGESAHAN PENGGUNA SEBELUM KE VERCEL)
+
+**Matlamat**: Memperbaiki paparan penerangan borang (Form Description) pada pandangan mudah alih (*mobile view*) di `app/(public)/form/[id]/client.tsx` (`media_1792391040813_7c01dbd5.jpg`) supaya butiran program (seperti Tarikh, Masa, Tempat) tidak bertindih rapat menjadi satu blok teks padat, dengan menyuntik jarak perenggan responsif (`[&>p:not(:last-child)]:mb-2.5 sm:[&>p:not(:last-child)]:mb-2`), saiz fon adaptif (`text-sm sm:text-base`), jarak baris lega (`leading-relaxed`), dan kontras tajam pada teks tebal (`[&_strong]:text-slate-900`). (PERINGATAN: JANGAN KEMAS KINI KE VERCEL LAGI).
+
+### Pelan Pelaksanaan
+- [x] 1. Penambahbaikan Tipografi & Jarak Perenggan Penerangan Borang (`app/(public)/form/[id]/client.tsx`):
+  - [x] 1.1 Gantikan `[&>p]:mb-0` dengan jarak perenggan adaptif `[&>p:not(:last-child)]:mb-2.5 sm:[&>p:not(:last-child)]:mb-2` dan kendalikan perenggan kosong `[&>p:empty]:h-2 [&>p:empty]:mb-0`.
+  - [x] 1.2 Laraskan tipografi kepada saiz mesra mudah alih `text-sm sm:text-base text-slate-600 leading-relaxed mt-3.5 sm:mt-4`.
+  - [x] 1.3 Perhebatkan kontras teks tebal (`[&_strong]:font-bold [&_strong]:text-slate-900 [&_b]:font-bold [&_b]:text-slate-900`) agar label metadata jelas menonjol daripada nilai huraian.
+- [x] 2. Pengesahan Kualiti & Ujian:
+  - [x] 2.1 Jalankan `npm run typecheck` (0 ralat TypeScript).
+  - [x] 2.2 Jalankan `npm run lint` (0 ralat / amaran ESLint).
+  - [x] 2.3 Jalankan `npm test` (semua 401 ujian unit lulus merentas 41 fail).
+  - [x] 2.4 Jalankan `npm run build` (kompilasi Next.js 16 Turbopack bersih, 58 laluan).
+- [x] 3. Dokumentasi & Pengesahan Pengguna:
+  - [x] 3.1 Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
+  - [x] 3.2 PATUHI arahan pengguna: JANGAN kemas kini ke Vercel lagi ("jgn update ke vercel lg").
+  - [x] 3.3 Maklumkan kepada pengguna dengan ringkas dalam Bahasa Melayu untuk semakan mereka.
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Punca Utama Rupa Tidak Kemas Pada Skrin Telefon (Mobile View Description Breakdown)**:
+   - Penggunaan kelas `[&>p]:mb-0` memadamkan 100% jarak bawah (*bottom margin*) bagi setiap elemen perenggan `<p>` yang dijana oleh editor teks ProseMirror/TipTap.
+   - Pada skrin komputer (*desktop*), setiap baris metadata (seperti Tarikh, Masa, Tempat) cukup panjang untuk muat pada satu baris tunggal, menjadikannya kelihatan seperti senarai padat biasa.
+   - Namun pada skrin telefon pintar yang sempit (~320px - 360px), teks bernilai panjang terlipat (*wrapped*) ke baris kedua dan ketiga. Kerana tiada sebarang jarak perenggan (`mb-0`), baris yang terlipat (contohnya `(Selasa & Rabu)` atau `petang`) bercantum terus dengan permulaan perenggan seterusnya (`Masa : ...` atau `Tempat : ...`) tanpa sebarang pemisah visual. Akibatnya, keseluruhan penerangan kelihatan seperti satu blok teks bercelaru dan tidak teratur.
+2. **Seni Bina Jarak Perenggan & Tipografi Adaptif Mudah Alih**:
+   - *Jarak Perenggan Responsif*: Menggantikan `[&>p]:mb-0` dengan `[&>p:not(:last-child)]:mb-2.5 sm:[&>p:not(:last-child)]:mb-2` serta `[&>p:empty]:h-2 [&>p:empty]:mb-0`. Setiap perenggan kini mempunyai jurang visual 10px yang jelas memisahkan antara setiap item maklumat (Tarikh, Masa, Tempat).
+   - *Saiz Fon Adaptif & Jarak Baris Lega*: Menetapkan `text-sm sm:text-base` dan `leading-relaxed`. Pada telefon pintar, saiz 14px membolehkan lebih banyak aksara muat sebaris tanpa lipatan janggal, sementara ketinggian baris 1.625 memberikan ruang bernafas yang selesa.
+   - *Kontras Tajam Label Metadata*: Menyuntik `[&_strong]:text-slate-900 [&_b]:text-slate-900` dengan berat tebal `font-bold` di atas teks badan `text-slate-600`. Mata pembaca kini dapat membezakan label utama dengan nilai huraian serta-merta pada skrin mudah alih.
+
+---
+
 # Sokongan Berbilang Sijil Mengikut Hari Kehadiran (Multi-Day Attendance Certificate Claiming) ✅ SELESAI
 
 **Matlamat**: Membolehkan peserta program pelbagai hari (*multi-day events*) memuat turun sijil berasingan mengikut setiap hari kehadiran yang dihadiri (dengan tarikh khusus hari tersebut) atau sijil gabungan keseluruhan program, menggunakan satu borang dan templat sijil yang sama.
