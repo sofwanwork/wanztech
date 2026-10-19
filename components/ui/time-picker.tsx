@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 
 interface TimePickerProps {
+  id?: string;
   value?: string;
   onChange?: (value: string) => void;
   className?: string;
@@ -14,6 +15,7 @@ interface TimePickerProps {
 }
 
 export function TimePicker({
+  id,
   value,
   onChange,
   className,
@@ -53,6 +55,7 @@ export function TimePicker({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
+          id={id}
           variant="outline"
           className={cn(
             'w-full h-12 justify-start text-left font-normal text-base border-slate-200',

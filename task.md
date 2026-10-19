@@ -1,3 +1,40 @@
+# Pembetulan Aksesibiliti & Label Borang Awam (Fix Incorrect Use of <label for=FORM_ELEMENT>) ✅ SELESAI (MENUNGGU PENGESAHAN PENGGUNA SEBELUM KE VERCEL)
+
+**Matlamat**: Memperbaiki isu Chrome DevTools / Aksesibiliti `Incorrect use of <label for=FORM_ELEMENT>` (2 isu dikesan pada soalan komposit/kumpulan seperti Skala Penilaian / Rating dan Multiple Choice Grid). Label tajuk soalan sebelum ini meletakkan atribut `htmlFor="field-input-${field.id}"` secara mandatori pada SEMUA jenis soalan, sedangkan soalan kumpulan (seperti `rating`, `grid`, `checkbox`, `radio`, `file`, `product`) tidak mempunyai elemen input tunggal dengan ID tersebut. Sistem akan membezakan jenis medan input tunggal (`text`, `email`, `number`, `textarea`, `select`, `date`, `time`) dengan soalan kumpulan supaya atribut `for` sentiasa sah dan tiada elemen terputus (*broken label association*). (PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL SEHINGGA DIBERI KEBENARAN).
+
+### Pelan Pelaksanaan
+- [x] 1. Sokongan ID Komponen Pemilih Tarikh & Masa (`components/ui/date-picker.tsx` & `components/ui/time-picker.tsx`):
+  - [x] 1.1 Tambah prop `id?: string` pada `DatePickerProps` dan pautkan ke butang pencetus (`<Button id={id} ...>`).
+  - [x] 1.2 Tambah prop `id?: string` pada `TimePickerProps` dan pautkan ke butang pencetus (`<Button id={id} ...>`).
+- [x] 2. Penyelarasan Label Borang Awam (`app/(public)/form/[id]/client.tsx`):
+  - [x] 2.1 Tentukan pembantu `hasSingleInput`: hanya medan input tunggal (`text`, `email`, `number`, `textarea`, `select`, `date`, `time`) menggunakan `<Label htmlFor={...}>`.
+  - [x] 2.2 Untuk soalan kumpulan/komposit (`rating`, `grid`, `checkbox`, `radio`, `file`, `product`), gunakan elemen tajuk `<span id={`field-label-${field.id}`}>` tanpa atribut `htmlFor` kerana pilihan dalaman sudah mempunyai label masing-masing dan kumpulan dipautkan melalui `aria-labelledby`.
+  - [x] 2.3 Hantar `id={`field-input-${field.id}`}` ke `<DatePicker>` dan `<TimePicker>`.
+  - [x] 2.4 Tambah `aria-labelledby={`field-label-${field.id}`}` pada `<RadioGroup>` untuk soalan penilaian (*rating*).
+  - [x] 2.5 Tambah `role="group"` dan `aria-labelledby` pada kontena matriks `grid` dan pilihan `product`.
+- [x] 3. Pengesahan Kualiti & Ujian:
+  - [x] 3.1 Cipta ujian unit di `tests/form-label-accessibility.test.ts` (menguji pengelasan `hasSingleInput`, pautan `id` pada DatePicker & TimePicker — 5/5 lulus).
+  - [x] 3.2 Jalankan `npm run typecheck` (0 ralat TypeScript).
+  - [x] 3.3 Jalankan `npm run lint` (0 ralat ESLint).
+  - [x] 3.4 Jalankan `npm test` (semua 439 ujian unit lulus merentas 45 suite).
+  - [x] 3.5 Jalankan `npm run build` (kompilasi Next.js 16 Turbopack bersih, 58 laluan).
+- [x] 4. Dokumentasi & Pengesahan Pengguna:
+  - [x] 4.1 Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
+  - [x] 4.2 Maklumkan kepada pengguna dengan ringkas dalam Bahasa Melayu.
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Punca Ralat Chrome DevTools (`Incorrect use of <label for=FORM_ELEMENT>`)**:
+   - Di bawah piawaian W3C HTML dan Web Accessibility (WCAG 1.3.1 & 4.1.2), elemen `<label for="targetId">` mestilah merujuk kepada ID elemen kawalan borang yang boleh dilabel (*labelable element*) seperti `<input>`, `<textarea>`, `<select>`, atau `<button>`. Sekiranya pelayar menemui `<label for="targetId">` tetapi `document.getElementById("targetId")` tidak wujud di dalam DOM, Chrome DevTools akan mencatatkan amaran:
+     `Incorrect use of <label for=FORM_ELEMENT>`: *"The label's for attribute doesn't match any element id..."*
+   - Kod terdahulu merender `<Label htmlFor={`field-input-${field.id}`}>` secara mandatori pada setiap soalan. Bagi soalan input tunggal (`text`, `email`, `number`, `textarea`, `select`), elemen dengan ID tersebut wujud. Namun bagi soalan komposit / kumpulan seperti Skala Penilaian (`rating`), Matriks Skala (`grid`), Kotak Semak (`checkbox`), Butang Radio (`radio`), Muat Naik Fail (`file`), dan Pilihan Produk (`product`), tiada satu elemen input tunggal dengan ID `field-input-${field.id}`. Sebaliknya, setiap pilihan di dalamnya mempunyai ID tersendiri (contoh: `${field.id}-${val}` atau `grid-${field.id}-${rIdx}-${cIdx}`).
+   - Akibatnya, pada borang yang mempunyai soalan penilaian dan matriks grid (atau gabungan kumpulan lain), 2 elemen `<label>` yang terputus dikesan dan dilaporkan oleh Chrome DevTools.
+2. **Seni Bina Pemisahan Medan Tunggal vs Kumpulan Komposit**:
+   - *Medan Input Tunggal (`hasSingleInput: true`)*: Merangkumi `text`, `email`, `number`, `textarea`, `select`, `date`, dan `time`. Menggunakan `<Label htmlFor={`field-input-${field.id}`} id={`field-label-${field.id}`}>` di mana butang/input/pencetus mempunyai ID yang sepadan. Menekan label akan memfokuskan atau membuka kawalan input.
+   - *Medan Kumpulan Komposit (`hasSingleInput: false`)*: Merangkumi `rating`, `grid`, `checkbox`, `radio`, `file`, dan `product`. Menggunakan `<span id={`field-label-${field.id}`}>` tanpa atribut `htmlFor`. Tajuk ini bertindak sebagai nama aksesibel (*accessible name*) bagi keseluruhan kumpulan yang dirujuk melalui `role="group"` dan `aria-labelledby={`field-label-${field.id}`}` pada kontena atau `<RadioGroup>`, manakala setiap pilihan di dalamnya mengekalkan `<Label htmlFor={optionId}>` yang tepat kepada kawalan inputnya.
+   - Ini menghapuskan 100% amaran Chrome DevTools tanpa menjejaskan sebarang gaya visual atau tingkah laku pengguna.
+
+---
+
 # Pecahan Kehadiran Berbilang Hari ke Tab Google Sheets Baharu (Dedicated Daily Worksheets for Multi-Day Attendance) ✅ SELESAI (MENUNGGU PENGESAHAN PENGGUNA SEBELUM KE VERCEL)
 
 **Matlamat**: Membolehkan kehadiran bagi Hari 2 dan seterusnya direkodkan ke dalam tab / helaian (*worksheet*) baharu secara automatik (contohnya tab `Hari 2`, `Hari 3`) di Google Spreadsheet, supaya helaian utama (Sheet 0) kekal bersih tanpa limpahan lajur yang semakin banyak ke kanan. Sistem juga akan menyelaraskan pembacaan sijil awam supaya tarikh dan kehadiran daripada tab harian tersebut dikesan secara automatik. (PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL SEHINGGA DIBERI KEBENARAN).

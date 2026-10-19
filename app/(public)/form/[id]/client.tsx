@@ -1851,15 +1851,38 @@ export function PublicFormClient({
                     onFocusCapture={() => trackFieldFocus(field.id)}
                     className="py-3.5 sm:py-5 px-4 sm:px-6 border-b border-gray-100 last:border-b-0 transition-colors duration-300 hover:bg-slate-50/50"
                   >
-                    <Label
-                      htmlFor={`field-input-${field.id}`}
-                      id={`field-label-${field.id}`}
-                      className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-1"
-                    >
-                      {field.label}
-                      {field.required && <span className="text-red-500" aria-hidden="true">*</span>}
-                      {field.required && <span className="sr-only">(required)</span>}
-                    </Label>
+                    {(() => {
+                      const hasSingleInput = [
+                        'text',
+                        'email',
+                        'number',
+                        'textarea',
+                        'select',
+                        'date',
+                        'time',
+                      ].includes(field.type);
+
+                      return hasSingleInput ? (
+                        <Label
+                          htmlFor={`field-input-${field.id}`}
+                          id={`field-label-${field.id}`}
+                          className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-1"
+                        >
+                          {field.label}
+                          {field.required && <span className="text-red-500" aria-hidden="true">*</span>}
+                          {field.required && <span className="sr-only">(required)</span>}
+                        </Label>
+                      ) : (
+                        <span
+                          id={`field-label-${field.id}`}
+                          className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-1 select-none"
+                        >
+                          {field.label}
+                          {field.required && <span className="text-red-500" aria-hidden="true">*</span>}
+                          {field.required && <span className="sr-only">(required)</span>}
+                        </span>
+                      );
+                    })()}
 
                     {field.description && (
                       <p className="text-sm text-gray-500 mb-3">{field.description}</p>
@@ -2037,6 +2060,7 @@ export function PublicFormClient({
 
                     {field.type === 'date' && (
                       <DatePicker
+                        id={`field-input-${field.id}`}
                         value={formData[field.id]}
                         onChange={(date) => {
                           handleInputChange(field.id, date);
@@ -2048,6 +2072,7 @@ export function PublicFormClient({
 
                     {field.type === 'time' && (
                       <TimePicker
+                        id={`field-input-${field.id}`}
                         value={formData[field.id] || ''}
                         onChange={(val) => handleInputChange(field.id, val)}
                         placeholder="Pick a time"
@@ -2056,6 +2081,7 @@ export function PublicFormClient({
 
                     {field.type === 'rating' && (
                       <RadioGroup
+                        aria-labelledby={`field-label-${field.id}`}
                         value={formData[field.id]?.toString() || ''}
                         onValueChange={(val) => handleInputChange(field.id, val)}
                         className="w-full pt-2 sm:pt-4"
@@ -2122,10 +2148,17 @@ export function PublicFormClient({
                       };
 
                       return (
-                        <div className="w-full space-y-3 pt-2">
+                        <div
+                          className="w-full space-y-3 pt-2"
+                          role="group"
+                          aria-labelledby={`field-label-${field.id}`}
+                        >
                           {/* Desktop Matrix Table (hidden on mobile) */}
                           <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-2xs">
-                            <table className="w-full border-collapse text-left text-sm">
+                            <table
+                              className="w-full border-collapse text-left text-sm"
+                              aria-labelledby={`field-label-${field.id}`}
+                            >
                               <thead>
                                 <tr className="border-b border-slate-200 bg-slate-50/80">
                                   <th className="py-3.5 px-4 font-semibold text-slate-700 w-2/5">
@@ -2307,7 +2340,11 @@ export function PublicFormClient({
                       );
                     })()}
                     {field.type === 'product' && (
-                      <div className="space-y-4 pt-2">
+                      <div
+                        className="space-y-4 pt-2"
+                        role="group"
+                        aria-labelledby={`field-label-${field.id}`}
+                      >
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           {field.products?.map((product) => {
                             const selectedProducts = formData[field.id] || [];

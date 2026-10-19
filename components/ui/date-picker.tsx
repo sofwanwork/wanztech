@@ -9,6 +9,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface DatePickerProps {
+  id?: string;
   value?: Date;
   onChange?: (date: Date | undefined) => void;
   className?: string;
@@ -16,6 +17,7 @@ interface DatePickerProps {
 }
 
 export function DatePicker({
+  id,
   value,
   onChange,
   className,
@@ -32,6 +34,7 @@ export function DatePicker({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
+          id={id}
           variant={'outline'}
           className={cn(
             'w-full h-12 justify-start text-left font-normal text-base border-slate-200',
