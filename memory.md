@@ -3372,3 +3372,21 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - `npm run lint`: 0 ralat / 0 amaran ESLint.
   - `npm run build`: Kompilasi Next.js 16 Turbopack bersih tanpa ralat (58 laluan).
 
+## Penyorokan Automatik Kad Carian Semakan Sijil Awam (`Auto-Hide Search Box`) (2026-10-20)
+- **Konteks & Permintaan Pengguna**:
+  - Pengguna meminta agar kotak carian disorokkan secara automatik sebaik sahaja sijil keluar: *"yg tu bila dh keluar sijil boleh tak auto hide, maksudnya keluar sijil sahaja"* (`media_1792426318854_180222fc.png`).
+- **Punca Asal (Root Cause Analysis)**:
+  - Sebelum ini, apabila carian rekod peserta berjaya (`result?.found === true`), kad "Semakan Rekod Peserta" berserta medan input dan butang semakan kekal berada di atas bahagian sijil dengan margin `mb-8`. Ini memakan ruang menegak ~350px dan menolak kad pratonton sijil serta butang muat turun ke bawah (*below the fold*), memaksa pengguna menatal skrin ke bawah.
+- **Penyelesaian Dilaksanakan**:
+  - `app/(public)/check/[formId]/client.tsx`:
+    - Membalut kad borang carian dengan syarat `{!result?.found && ( ... )}` supaya kad carian dinyahlekap secara automatik apabila rekod sijil dijumpai.
+    - Menyelaras teks sari kata pengepala secara dinamik: bertukar kepada *"Sijil rasmi anda telah berjaya disahkan dan sedia untuk dimuat turun."* apabila sijil ditemui.
+    - Menambah bar tindakan pantas atas (`Top Quick Action Bar`) dengan butang `[ 🔄 Semak Peserta Lain ]` dan lencana status `✓ Rekod Peserta Disahkan`.
+    - Menambah butang `[ 🔄 Semak Sijil Peserta Lain ]` pada kad perincian kiri di bawah butang Muat Turun PNG untuk membolehkan responden memulakan semula carian tanpa perlu menyegarkan semula (*reload*) halaman.
+- **Pengesahan & Kualiti**:
+  - `npm test`: 472 / 472 ujian unit lulus merentas 46 fail suite.
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm run build`: Kompilasi Next.js 16 Turbopack bersih tanpa sebarang ralat (58 laluan).
+
+

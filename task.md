@@ -1,3 +1,34 @@
+# Sorokkan Kad Carian Automatik Selepas Sijil Ditemui (Auto-Hide Search Box When Certificate Found) ✅ SELESAI
+
+**Matlamat**: Menyelesaikan aduan pengguna ("yg tu bila dh keluar sijil boleh tak auto hide, maksudnya keluar sijil sahaja" - `media_1792426318854_180222fc.png`): (1) Menyembunyikan kad borang carian semakan ("Semakan Rekod Peserta") secara automatik sebaik sahaja rekod sijil peserta ditemui (`result?.found === true`), supaya hanya bahagian e-Sijil (kad perincian, butang muat turun, dan pratonton sijil) yang terpapar sepenuhnya di skrin tanpa perlu menatal melepasi kotak carian; (2) Mengemas kini sari kata pengepala apabila sijil ditemui kepada *"Sijil rasmi anda telah berjaya disahkan dan sedia untuk dimuat turun."*; (3) Menyediakan butang tindakan pantas `[ 🔄 Semak Peserta Lain ]` di bahagian atas dan pada kad perincian untuk membolehkan semakan semula dengan mudah. (PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL SEHINGGA DIBERI KEBENARAN).
+
+### Pelan Pelaksanaan
+- [x] 1. Antaramuka Auto-Hide & Aliran Navigasi Semula (`app/(public)/check/[formId]/client.tsx`):
+  - [x] 1.1 Balut kontena borang carian dengan syarat `{!result?.found && ( ... )}` supaya kad carian dinyahlekap (*unmount*) / disorok secara automatik apabila sijil ditemui.
+  - [x] 1.2 Sesuaikan sari kata pengepala secara dinamik: memaparkan status pengesahan berjaya apabila sijil ditemui, atau arahan carian biasa apabila belum dicari.
+  - [x] 1.3 Tambah bar tindakan pantas atas pada bahagian sijil dengan butang `[ 🔄 Semak Peserta Lain ]` dan lencana `✓ Rekod Peserta Disahkan`.
+  - [x] 1.4 Tambah butang `[ 🔄 Semak Sijil Peserta Lain ]` pada kad perincian peserta di bawah butang Muat Turun PNG untuk membolehkan responden/urusetia menetapkan semula carian dengan satu klik.
+- [x] 2. Pengesahan Kualiti & Ujian:
+  - [x] 2.1 Jalankan `npm run typecheck` (0 ralat TypeScript).
+  - [x] 2.2 Jalankan `npm run lint` (0 ralat ESLint).
+  - [x] 2.3 Jalankan `npm test` (semua 472 ujian unit lulus merentas 46 suite).
+  - [x] 2.4 Jalankan `npm run build` (kompilasi Next.js 16 Turbopack bersih, 58 laluan).
+- [x] 3. Dokumentasi & Pengesahan Pengguna:
+  - [x] 3.1 Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
+  - [x] 3.2 PATUHI arahan pengguna: JANGAN kemas kini ke Vercel lagi sehingga diarahkan.
+  - [x] 3.3 Maklumkan kepada pengguna dengan ringkas dalam Bahasa Melayu.
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Punca Lebihan Menegak Semasa Sijil Dipaparkan**:
+   - Sebelum ini, apabila carian peserta berjaya, kad "Semakan Rekod Peserta" kekal terpapar di bahagian atas dengan margin `mb-8`.
+   - Pada komputer riba mahupun telefon pintar, kad carian ini memakan ruang menegak ~350px. Akibatnya, pratonton sijil tertolak jauh ke bawah (*below the fold*) dan pengguna terpaksa menatal ke bawah untuk melihat nama dan butang muat turun.
+2. **Seni Bina Paparan Eksklusif Berperingkat (*Single-Purpose Progressive View*)**:
+   - Fasa 1 (Carian): Hanya kad semakan dipaparkan di tengah skrin (`max-w-xl mx-auto`).
+   - Fasa 2 (Hasil Sijil): Kad semakan disorokkan sepenuhnya. Layar beralih 100% kepada pengalaman paparan sijil (*Certificate-First View*) dengan pratonton saiz optimum dan butang muat turun terus di hadapan mata.
+   - Kebolehbalikan Penuh (*Reversibility*): Butang `[ 🔄 Semak Peserta Lain ]` memulihkan semula kotak carian dan memfokuskan kursor ke input secara serta-merta tanpa perlu memuat semula halaman pelayar.
+
+---
+
 # Penyesuaian Dinamik Pengesahan Sijil Awam Berasaskan Medan Borang (Dynamic Certificate Check Adaptation based on Form Fields) ✅ SELESAI
 
 **Matlamat**: Menyelesaikan aduan pengguna ("dekat sini kalau form yg ada emel baru letak emel, kalau form yg ada ic baru letak ic, kalau ada dua2 baru letak dua2" - `media_1792425039076_07d2b73a.png`): (1) Mengesan jenis medan borang secara dinamik (`detectVerificationMode`: `email_only`, `ic_only`, `both`) daripada skema borang (`form.fields`) tanpa penambahan panggilan API; (2) Menyelaras label input, pemegang tempat, sari kata, teks bantuan, `inputMode` mudah alih, dan ikon secara automatik mengikut mod pengesahan borang; (3) Menyediakan amaran ketidaksepadanan proaktif apabila pengguna menaip `@` pada borang No. IC atau menaip angka pada borang E-mel; (4) Menyelaras tip panduan carian pada kad "Rekod Sijil Tidak Ditemui". (PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL SEHINGGA DIBERI KEBENARAN).

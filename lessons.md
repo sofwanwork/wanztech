@@ -581,3 +581,13 @@
     2. *Borang Hanya No. IC (`ic_only`)*: Menukar label kepada "No. Kad Pengenalan (IC)", pemegang tempat kepada `901020015566`, ikon kekal `CreditCard`, `inputMode="numeric"`, sari kata khusus kepada No. IC, serta tip semakan 12 digit nombor kad pengenalan.
     3. *Borang Ada Kedua-duanya / Sandaran (`both`)*: Mengekalkan dwi-label "No. Kad Pengenalan / E-mel", pemegang tempat dwi-format, dan peralihan ikon dinamik berasaskan aksara yang ditaip.
   - **Amaran Ketidaksepadanan Proaktif (*Proactive Mismatch Warning*)**: Jika pengguna secara tidak sengaja menaip aksara `@` pada borang `ic_only`, atau menaip digit angka pada borang `email_only`, sistem memaparkan amaran kontekstual lembut serta-merta di bawah input sebelum pengguna menekan butang semakan.
+
+
+- **Pendedahan Progresif & Penyorokan Borang Carian Selepas Kejayaan Pengesahan (*Progressive Disclosure & Auto-Hide Search Form*)**:
+  (1) **Punca Masalah ("yg tu bila dh keluar sijil boleh tak auto hide, maksudnya keluar sijil sahaja")**:
+  - Pada halaman semakan e-Sijil (`/check/[formId]`), apabila carian berjaya, kad borang carian sebelum ini kekal terpapar di atas hasil carian.
+  - Kad carian ini mengambil ruang menegak ~350px. Ini memaksa pratonton e-sijil dan butang muat turun tertolak ke bawah garis lipatan skrin (*below the fold*), mewajibkan pengguna menatal untuk melihat sijil mereka.
+  (2) **Penyelesaian**:
+  - **Penyorokan Bersyarat (`{!result?.found && <SearchCard />}`)**: Sorokkan keseluruhan kad borang carian secara automatik sebaik sahaja `result?.found === true`. Layar serta-merta bertukar menjadi paparan khusus sijil (*Certificate-First View*) tanpa sebarang gangguan elemen carian di atasnya.
+  - **Penyelarasan Sari Kata Berasaskan Status**: Tukar sari kata arahan carian kepada status pengesahan berjaya ("Sijil rasmi anda telah berjaya disahkan dan sedia untuk dimuat turun.") apabila sijil wujud.
+  - **Pintasan Semakan Semula Dwi-Akses**: Sediakan butang `[ 🔄 Semak Peserta Lain ]` pada bar atas dan `[ 🔄 Semak Sijil Peserta Lain ]` pada kad perincian kiri. Mengklik butang ini akan mengosongkan status hasil carian (`setResult(null)`), memulihkan semula kotak carian dengan animasi pudar lembut, dan memfokuskan kursor ke input secara automatik.

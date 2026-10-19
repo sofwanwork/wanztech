@@ -411,7 +411,11 @@ export function CertificateCheckClient({
 
       <div className="max-w-6xl mx-auto w-full flex-1">
         {/* Header */}
-        <div className="text-center mb-8 sm:mb-10 max-w-3xl mx-auto">
+        <div
+          className={`text-center max-w-3xl mx-auto transition-all duration-300 ${
+            result?.found ? 'mb-6 sm:mb-8' : 'mb-8 sm:mb-10'
+          }`}
+        >
           {/* Floating dual-ring badge */}
           <div className="relative inline-flex mb-4 group">
             <div className="absolute -inset-1.5 bg-gradient-to-r from-primary/30 to-purple-600/30 rounded-3xl blur-md opacity-75 group-hover:opacity-100 transition duration-500" />
@@ -436,7 +440,9 @@ export function CertificateCheckClient({
             {formTitle}
           </h1>
           <p className="text-slate-600 mt-2.5 text-sm sm:text-base [text-wrap:balance] max-w-xl mx-auto leading-relaxed">
-            {modeContent.subtitle}
+            {result?.found
+              ? 'Sijil rasmi anda telah berjaya disahkan dan sedia untuk dimuat turun.'
+              : modeContent.subtitle}
           </p>
 
           {minHoursRequired && minHoursRequired > 0 ? (
@@ -449,11 +455,10 @@ export function CertificateCheckClient({
           ) : null}
         </div>
 
-        {/* Check Form - Center this if no result */}
-        <div
-          className={`transition-all duration-500 ${result?.found ? 'mb-8' : 'max-w-xl mx-auto'}`}
-        >
-          <Card className="border border-slate-200/90 shadow-xl shadow-slate-200/50 rounded-3xl p-6 sm:p-8 gap-5 bg-white/95 backdrop-blur-xl">
+        {/* Check Form - Automatically hidden when certificate is found */}
+        {!result?.found && (
+          <div className="max-w-xl mx-auto animate-in fade-in duration-300">
+            <Card className="border border-slate-200/90 shadow-xl shadow-slate-200/50 rounded-3xl p-6 sm:p-8 gap-5 bg-white/95 backdrop-blur-xl">
             <CardHeader className="p-0 gap-1.5">
               <div className="flex items-center gap-2 text-primary font-semibold text-xs tracking-wider uppercase">
                 <FileText className="w-4 h-4" />
@@ -535,10 +540,35 @@ export function CertificateCheckClient({
             </CardFooter>
           </Card>
         </div>
+      )}
 
-        {/* Result Section */}
-        {result?.found && (
-          <div className="grid md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 items-start">
+      {/* Result Section - Exclusively visible when certificate is found */}
+      {result?.found && (
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          {/* Top Quick Action Bar */}
+          <div className="flex items-center justify-between flex-wrap gap-3 pb-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setResult(null);
+                setIdentifier('');
+                setTimeout(() => inputRef.current?.focus(), 50);
+              }}
+              className="rounded-xl h-9 px-3.5 text-xs font-semibold text-slate-700 hover:text-slate-900 border-slate-200 bg-white shadow-2xs hover:bg-slate-50 transition-all cursor-pointer"
+            >
+              <RefreshCw className="w-3.5 h-3.5 mr-1.5 text-slate-500" />
+              <span>Semak Peserta Lain</span>
+            </Button>
+
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 px-3.5 py-1 rounded-full border border-emerald-200/80 shadow-2xs">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Rekod Peserta Disahkan</span>
+            </span>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6 items-start">
             {/* Left: Result Details */}
             <div className="md:col-span-1 space-y-4">
               <Card className="border border-emerald-100 shadow-xl rounded-3xl p-0 gap-0 overflow-hidden bg-gradient-to-b from-emerald-50/90 via-emerald-50/40 to-white">
@@ -660,6 +690,19 @@ export function CertificateCheckClient({
                           Download PNG
                         </>
                       )}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => {
+                        setResult(null);
+                        setIdentifier('');
+                        setTimeout(() => inputRef.current?.focus(), 50);
+                      }}
+                      className="w-full h-10 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-emerald-50/70 rounded-xl transition-all cursor-pointer mt-1"
+                    >
+                      <RefreshCw className="mr-2 h-3.5 w-3.5 text-emerald-700" />
+                      Semak Sijil Peserta Lain
                     </Button>
                   </div>
                 </CardContent>
@@ -859,7 +902,8 @@ export function CertificateCheckClient({
               />
             </div>
           </div>
-        )}
+        </div>
+      )}
 
         {result && !result.found && (
           <div className="max-w-xl mx-auto mt-6 animate-in fade-in slide-in-from-bottom-3 duration-400">
