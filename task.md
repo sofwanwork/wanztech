@@ -1,4 +1,4 @@
-# Pembetulan Pepijat Tahun Sijil Terpapar 2001 (Fix 2001 Year Parsing Bug) ✅ SELESAI (MENUNGGU PENGESAHAN PENGGUNA SEBELUM KE VERCEL)
+# Pembetulan Pepijat Tahun Sijil Terpapar 2001 (Fix 2001 Year Parsing Bug) ✅ SELESAI (LIVE DI VERCEL)
 
 **Matlamat**: Memperbaiki pepijat tarikh pada e-Sijil dan sari kata pratonton awam yang memaparkan tahun `2001` (contohnya `October 7, 2001` dan `October 8, 2001`) dan bukannya tahun sebenar `2026`. (PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL SEHINGGA DIBERI KEBENARAN).
 
