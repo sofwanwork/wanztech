@@ -19,6 +19,7 @@ export type {
   FormTheme,
   GeofenceConfig,
   CheckInOutConfig,
+  MultiDayCertMode,
   RotatingQrConfig,
   AttendanceSettings,
   QRSettings,

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useTransition, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Form, CertificateTemplate as CertificateTemplateType, AttendanceStats } from '@/lib/types';
+import { Form, CertificateTemplate as CertificateTemplateType, AttendanceStats, MultiDayCertMode } from '@/lib/types';
 import { updateFormAction, deleteFormAction } from '@/actions/forms';
 import { getAttendanceStatsAction, clearAttendanceRecordsAction } from '@/actions/attendance';
 import { FieldsEditor } from '@/components/forms/fields-editor';
@@ -53,6 +53,7 @@ import {
   Radio,
   RotateCcw,
   Calendar,
+  Layers,
 } from 'lucide-react';
 
 import Link from 'next/link';
@@ -1704,6 +1705,121 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                               ? `Multi-day mode enabled (${form.attendanceSettings?.checkInOut?.totalDays} Days). Peserta menggunakan 1 kod QR yang sama untuk setiap hari. Waktu masuk/keluar harian dan jumlah jam kumulatif dikira automatik.`
                               : 'Standard 1-day event. Peserta check in waktu sampai dan check out waktu tamat.'}
                           </p>
+
+                          {/* Multi-Day Certificate Mode Selector */}
+                          {(form.attendanceSettings?.checkInOut?.totalDays || 1) > 1 && (
+                            <div className="mt-3 pt-3 border-t border-emerald-200/60 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-1.5">
+                                  <Award className="h-3.5 w-3.5 text-emerald-700" />
+                                  <Label className="text-xs font-semibold text-emerald-950">
+                                    Format Pengeluaran Sijil (Acara Berbilang Hari)
+                                  </Label>
+                                </div>
+                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200/70">
+                                  Pilihan Pengeluaran Sijil
+                                </span>
+                              </div>
+
+                              <p className="text-[11px] text-slate-600 leading-snug">
+                                Pilih sama ada mahu mengeluarkan sijil berasingan bagi setiap hari atau satu sijil penuh merangkumi keseluruhan acara:
+                              </p>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                {(() => {
+                                  const currentMode: MultiDayCertMode =
+                                    form.attendanceSettings?.checkInOut?.multiDayCertMode || 'daily_only';
+                                  const certOptions: Array<{
+                                    id: MultiDayCertMode;
+                                    title: string;
+                                    badge: string;
+                                    desc: string;
+                                    icon: typeof Calendar;
+                                  }> = [
+                                    {
+                                      id: 'daily_only',
+                                      title: 'Sijil Harian Sahaja',
+                                      badge: 'Lalai',
+                                      desc: 'Sijil berasingan bagi setiap hari (Hari 1, Hari 2). Tiada sijil penuh.',
+                                      icon: Calendar,
+                                    },
+                                    {
+                                      id: 'full_only',
+                                      title: 'Sijil Penuh Sahaja',
+                                      badge: '1 Sijil Penuh',
+                                      desc: 'Hanya 1 sijil penuh merangkumi semua hari acara. Tiada sijil harian.',
+                                      icon: Award,
+                                    },
+                                    {
+                                      id: 'both',
+                                      title: 'Kedua-duanya',
+                                      badge: 'Pilihan Peserta',
+                                      desc: 'Sijil harian dan sijil penuh kedua-duanya disediakan untuk dipilih peserta.',
+                                      icon: Layers,
+                                    },
+                                  ];
+
+                                  return certOptions.map((opt) => {
+                                    const isSelected = currentMode === opt.id;
+                                    const Icon = opt.icon;
+                                    return (
+                                      <button
+                                        key={opt.id}
+                                        type="button"
+                                        onClick={() =>
+                                          setForm((f) => ({
+                                            ...f,
+                                            attendanceSettings: {
+                                              ...f.attendanceSettings!,
+                                              checkInOut: {
+                                                ...f.attendanceSettings!.checkInOut!,
+                                                multiDayCertMode: opt.id,
+                                              },
+                                            },
+                                          }))
+                                        }
+                                        className={cn(
+                                          'flex flex-col text-left p-2.5 rounded-xl border transition-all relative',
+                                          isSelected
+                                            ? 'bg-emerald-50/90 border-emerald-600 ring-2 ring-emerald-500/20 shadow-xs'
+                                            : 'bg-white hover:bg-slate-50 border-slate-200/90 hover:border-emerald-300'
+                                        )}
+                                      >
+                                        <div className="flex items-center justify-between mb-1.5 w-full">
+                                          <div className="flex items-center gap-1.5 min-w-0">
+                                            <Icon
+                                              className={cn(
+                                                'h-4 w-4 shrink-0',
+                                                isSelected ? 'text-emerald-700' : 'text-slate-500'
+                                              )}
+                                            />
+                                            <span
+                                              className={cn(
+                                                'text-xs font-bold leading-tight truncate',
+                                                isSelected ? 'text-emerald-950' : 'text-slate-800'
+                                              )}
+                                            >
+                                              {opt.title}
+                                            </span>
+                                          </div>
+                                          {isSelected ? (
+                                            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 ml-1" />
+                                          ) : (
+                                            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 shrink-0">
+                                              {opt.badge}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <p className="text-[11px] text-slate-500 leading-normal line-clamp-2">
+                                          {opt.desc}
+                                        </p>
+                                      </button>
+                                    );
+                                  });
+                                })()}
+                              </div>
+                            </div>
+                          )}
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">

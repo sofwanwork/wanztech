@@ -1,4 +1,4 @@
-import { FormField } from '@/lib/types';
+import { FormField, MultiDayCertMode } from '@/lib/types';
 
 /**
  * Standardize and clean identifier input (IC number, email, phone, etc.)
@@ -408,8 +408,15 @@ export function buildDailyCertificateOptions(params: {
   sheetRowData?: Record<string, string | undefined>;
   defaultDate?: string;
   totalDays?: number;
+  multiDayCertMode?: MultiDayCertMode;
 }): DailyCertificateOption[] {
-  const { records = [], sheetRowData = {}, defaultDate, totalDays = 1 } = params;
+  const {
+    records = [],
+    sheetRowData = {},
+    defaultDate,
+    totalDays = 1,
+    multiDayCertMode = 'both',
+  } = params;
   const optionsMap = new Map<number, DailyCertificateOption>();
   const priorityMap = new Map<number, number>();
 
@@ -467,31 +474,45 @@ export function buildDailyCertificateOptions(params: {
 
   const dailyOptions = Array.from(optionsMap.values()).sort((a, b) => a.dayNumber - b.dayNumber);
 
-  // If there are multiple attended days or totalDays > 1, provide the combined "Semua Hari" option
+  // If daily_only mode is chosen, only return individual day certificates, never combined option.
+  if (multiDayCertMode === 'daily_only') {
+    return dailyOptions;
+  }
+
+  // Determine combined date text
+  const isMultiDayText =
+    defaultDate &&
+    /\b(?:\d{1,2}\s*(?:&|dan|to|hingga|sampai|\s+-\s+)\s*\d{1,2})\b/i.test(defaultDate);
+
+  const combinedDate =
+    isMultiDayText
+      ? defaultDate.trim()
+      : dailyOptions.length > 1
+      ? `${dailyOptions[0].date} - ${dailyOptions[dailyOptions.length - 1].date}`
+      : defaultDate?.trim() || dailyOptions[0]?.date || '';
+
+  const formattedCombined = isMultiDayText
+    ? formatAttendanceDate(combinedDate) || combinedDate
+    : combinedDate;
+
+  const combinedOption: DailyCertificateOption = {
+    dayNumber: 0,
+    label: 'Semua Hari (Penuh)',
+    date: combinedDate,
+    formattedDate: formattedCombined,
+    attendedDate: combinedDate,
+    isCombined: true,
+  };
+
+  // If full_only mode is chosen, return ONLY the combined full certificate
+  if (multiDayCertMode === 'full_only') {
+    return [combinedOption];
+  }
+
+  // multiDayCertMode === 'both' (or default fallback for backward compatibility)
   if (dailyOptions.length > 1 || (totalDays > 1 && dailyOptions.length > 0)) {
     if (dailyOptions.length > 1) {
-      // If defaultDate is an explicit multi-day range text (e.g. "7 & 8 Oktober 2026"), preserve it.
-      // If defaultDate is a single-day ISO timestamp or single date, synthesize the range from Day 1 to Day N.
-      const isMultiDayText =
-        defaultDate &&
-        /\b(?:\d{1,2}\s*(?:&|dan|to|hingga|sampai|\s+-\s+)\s*\d{1,2})\b/i.test(defaultDate);
-
-      const combinedDate =
-        isMultiDayText
-          ? defaultDate.trim()
-          : `${dailyOptions[0].date} - ${dailyOptions[dailyOptions.length - 1].date}`;
-
-      const formattedCombined = isMultiDayText
-        ? formatAttendanceDate(combinedDate) || combinedDate
-        : combinedDate;
-
-      dailyOptions.push({
-        dayNumber: 0,
-        label: 'Semua Hari (Penuh)',
-        date: combinedDate,
-        formattedDate: formattedCombined,
-        isCombined: true,
-      });
+      dailyOptions.push(combinedOption);
     }
   }
 

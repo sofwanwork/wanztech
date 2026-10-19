@@ -273,4 +273,88 @@ describe('buildDailyCertificateOptions', () => {
     expect(options[2].date).toBe('October 7, 2026 - October 8, 2026');
     expect(options[2].formattedDate).toBe('October 7, 2026 - October 8, 2026');
   });
+
+  describe('multiDayCertMode configuration', () => {
+    const twoDayRecords = [
+      {
+        dayNumber: 1,
+        checkInAt: '2026-10-07T08:30:00.000Z',
+        status: 'completed',
+      },
+      {
+        dayNumber: 2,
+        checkInAt: '2026-10-08T09:00:00.000Z',
+        status: 'completed',
+      },
+    ];
+
+    it('returns only daily certificates (no combined Semua Hari) when multiDayCertMode is daily_only', () => {
+      const options = buildDailyCertificateOptions({
+        records: twoDayRecords,
+        totalDays: 2,
+        defaultDate: '7 & 8 Oktober 2026',
+        multiDayCertMode: 'daily_only',
+      });
+
+      expect(options).toHaveLength(2);
+      expect(options[0].label).toBe('Hari 1');
+      expect(options[0].date).toBe('October 7, 2026');
+      expect(options[0].isCombined).toBe(false);
+
+      expect(options[1].label).toBe('Hari 2');
+      expect(options[1].date).toBe('October 8, 2026');
+      expect(options[1].isCombined).toBe(false);
+
+      // Ensures "Semua Hari (Penuh)" is NOT present
+      expect(options.some((opt) => opt.isCombined)).toBe(false);
+      expect(options.some((opt) => opt.label.includes('Semua Hari'))).toBe(false);
+    });
+
+    it('returns ONLY the full combined certificate when multiDayCertMode is full_only', () => {
+      const options = buildDailyCertificateOptions({
+        records: twoDayRecords,
+        totalDays: 2,
+        defaultDate: '7 & 8 Oktober 2026',
+        multiDayCertMode: 'full_only',
+      });
+
+      expect(options).toHaveLength(1);
+      expect(options[0].label).toBe('Semua Hari (Penuh)');
+      expect(options[0].date).toBe('7 & 8 Oktober 2026');
+      expect(options[0].isCombined).toBe(true);
+      expect(options[0].dayNumber).toBe(0);
+
+      // Ensures individual daily certificates (Hari 1, Hari 2) are omitted
+      expect(options.some((opt) => opt.label === 'Hari 1')).toBe(false);
+      expect(options.some((opt) => opt.label === 'Hari 2')).toBe(false);
+    });
+
+    it('returns both daily certificates AND combined certificate when multiDayCertMode is both', () => {
+      const options = buildDailyCertificateOptions({
+        records: twoDayRecords,
+        totalDays: 2,
+        defaultDate: '7 & 8 Oktober 2026',
+        multiDayCertMode: 'both',
+      });
+
+      expect(options).toHaveLength(3);
+      expect(options[0].label).toBe('Hari 1');
+      expect(options[1].label).toBe('Hari 2');
+      expect(options[2].label).toBe('Semua Hari (Penuh)');
+      expect(options[2].isCombined).toBe(true);
+    });
+
+    it('defaults to both when multiDayCertMode is omitted for backward compatibility', () => {
+      const options = buildDailyCertificateOptions({
+        records: twoDayRecords,
+        totalDays: 2,
+        defaultDate: '7 & 8 Oktober 2026',
+      });
+
+      expect(options).toHaveLength(3);
+      expect(options[0].label).toBe('Hari 1');
+      expect(options[1].label).toBe('Hari 2');
+      expect(options[2].label).toBe('Semua Hari (Penuh)');
+    });
+  });
 });

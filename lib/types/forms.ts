@@ -173,6 +173,14 @@ export interface GeofenceConfig {
 }
 
 /**
+ * Multi-day event certificate issuance format
+ * - 'daily_only': Only issue individual day certificates (Hari 1, Hari 2, etc.), no combined option.
+ * - 'full_only': Only issue 1 combined certificate for the whole event (Semua Hari), no daily options.
+ * - 'both': Issue both daily certificates and combined certificate.
+ */
+export type MultiDayCertMode = 'both' | 'daily_only' | 'full_only';
+
+/**
  * Smart Check-In / Check-Out configuration
  */
 export interface CheckInOutConfig {
@@ -189,6 +197,8 @@ export interface CheckInOutConfig {
   minHoursForCertificate?: number;
   /** Total number of days for this event (default: 1). E.g. 1, 2, 3, etc. */
   totalDays?: number;
+  /** Multi-day certificate issuance mode (default: 'daily_only'). */
+  multiDayCertMode?: MultiDayCertMode;
 }
 
 /**

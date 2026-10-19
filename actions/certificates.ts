@@ -436,11 +436,15 @@ export async function checkCertificateByICOrEmail(
           }
         }
 
+        const isMultiDay = (checkInOutConfig?.totalDays || 1) > 1;
+        const multiDayCertMode = checkInOutConfig?.multiDayCertMode || (isMultiDay ? 'daily_only' : 'both');
+
         const dailyCertificates = buildDailyCertificateOptions({
           records: attRecords,
           sheetRowData,
           defaultDate: date?.toString(),
           totalDays: checkInOutConfig?.totalDays || 1,
+          multiDayCertMode,
         });
 
         const effectiveDate =
