@@ -2095,3 +2095,10 @@
 5. **Butang Segerak Manual Dashboard ("Sync Data")**:
    - Membolehkan penganjur menekan butang "Sync Data" di tab Responses untuk menghantar sebarang respons yang tersangkut/tertunggak (*pending*) terus ke Google Sheet tanpa perlu menunggu giliran cron harian.
 
+### Status Penerapan Vercel Production
+- **Commit**: `f6fccef` (`feat(forms): horizontal scale layout and auto-resize google sheet past 26 columns`)
+- **Pushed to**: `origin/master` (`https://github.com/sofwanwork/wanztech.git`)
+- **Vercel Deployment ID**: `dpl_DDvTo9K7odKgpNTUQoPQ5VNheS9i`
+- **Domain Pengeluaran**: `https://www.klikform.com` (HTTP 200 OK)
+- **Status Akhir**: SELESAI & LIVE DI PENGELUARAN (VERCEL).
+

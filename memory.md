@@ -3279,3 +3279,8 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - `npm run lint`: 0 ralat / 0 amaran ESLint.
   - `npm test`: 461 / 461 ujian unit lulus merentas 46 fail suite.
   - `npm run build`: Kompilasi Next.js 16 Turbopack bersih tanpa sebarang ralat (58 laluan).
+- **Penerapan Vercel Production**:
+  - Commit `f6fccef` ditolak ke `origin/master`.
+  - Vercel Deployment ID: `dpl_DDvTo9K7odKgpNTUQoPQ5VNheS9i`.
+  - Domain Pengeluaran: `https://www.klikform.com` (HTTP 200 OK).
+  - Status: Selesai & Beroperasi Penuh di Pengeluaran.
