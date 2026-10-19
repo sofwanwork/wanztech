@@ -12,6 +12,7 @@ import {
     BarChart3,
     RotateCcw,
     AlertTriangle,
+    RefreshCw,
 } from 'lucide-react';
 import {
     AlertDialog,
@@ -25,7 +26,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { useState, useTransition } from 'react';
-import { createSheetForFormAction } from '@/actions/sheets';
+import { createSheetForFormAction, syncPendingResponsesForFormAction } from '@/actions/sheets';
 import { clearAttendanceRecordsAction } from '@/actions/attendance';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -40,6 +41,7 @@ export function ResponsesClient({ forms, hasGoogleOAuth }: ResponsesClientProps)
     const [query, setQuery] = useState('');
     const [creatingForForm, setCreatingForForm] = useState<string | null>(null);
     const [resettingFormId, setResettingFormId] = useState<string | null>(null);
+    const [syncingFormId, setSyncingFormId] = useState<string | null>(null);
     const [confirmResetForm, setConfirmResetForm] = useState<Form | null>(null);
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
@@ -81,6 +83,27 @@ export function ResponsesClient({ forms, hasGoogleOAuth }: ResponsesClientProps)
             toast.error('An error occurred while resetting attendance records.');
         } finally {
             setResettingFormId(null);
+        }
+    }
+
+    async function handleSyncSheet(formId: string) {
+        setSyncingFormId(formId);
+        try {
+            const res = await syncPendingResponsesForFormAction(formId);
+            if (res.success) {
+                if (res.syncedCount && res.syncedCount > 0) {
+                    toast.success(`Berjaya menyegerakkan ${res.syncedCount} rekod ke Google Sheet!`);
+                } else {
+                    toast.info('Semua data respons sudah selaras dengan Google Sheet.');
+                }
+                router.refresh();
+            } else {
+                toast.error(res.error || 'Gagal menyegerakkan data ke Google Sheet.');
+            }
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Ralat semasa menyegerakkan data.');
+        } finally {
+            setSyncingFormId(null);
         }
     }
 
@@ -172,20 +195,38 @@ export function ResponsesClient({ forms, hasGoogleOAuth }: ResponsesClientProps)
                                                 {form.googleSheetUrl}
                                             </p>
                                         </div>
-                                        <a
-                                            href={form.googleSheetUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                        >
+                                        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
                                             <Button
                                                 size="sm"
-                                                className="gap-1.5 bg-green-600 hover:bg-green-700 text-white shrink-0 w-full sm:w-auto"
+                                                variant="outline"
+                                                onClick={() => handleSyncSheet(form.id)}
+                                                disabled={syncingFormId === form.id}
+                                                className="gap-1.5 text-gray-700 hover:text-gray-900 border-gray-200 hover:bg-gray-50 shrink-0 flex-1 sm:flex-initial"
+                                                title="Segerak rekod tertunggak ke Google Sheet"
                                             >
-                                                <FileSpreadsheet className="h-4 w-4" />
-                                                Open Sheet
-                                                <ExternalLink className="h-3 w-3" />
+                                                {syncingFormId === form.id ? (
+                                                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                                                ) : (
+                                                    <RefreshCw className="h-4 w-4 text-primary" />
+                                                )}
+                                                <span>Sync Data</span>
                                             </Button>
-                                        </a>
+                                            <a
+                                                href={form.googleSheetUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="shrink-0 flex-1 sm:flex-initial"
+                                            >
+                                                <Button
+                                                    size="sm"
+                                                    className="gap-1.5 bg-green-600 hover:bg-green-700 text-white shrink-0 w-full"
+                                                >
+                                                    <FileSpreadsheet className="h-4 w-4" />
+                                                    Open Sheet
+                                                    <ExternalLink className="h-3 w-3" />
+                                                </Button>
+                                            </a>
+                                        </div>
                                     </div>
                                 ) : (
                                     <div className="flex items-center justify-between">

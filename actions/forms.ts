@@ -350,8 +350,19 @@ export async function submitFormAction(
   }
 
   if (formDataOrObj instanceof FormData) {
+    // Collect non-data layout field labels to prevent junk columns in Google Sheets
+    const layoutLabels = new Set(
+      form.fields
+        .filter((f) => f.type === 'separator' || f.type === 'image' || f.type === 'pagebreak')
+        .map((f) => f.label.trim())
+    );
+
     // Handle FormData
     for (const [key, value] of Array.from(formDataOrObj.entries())) {
+      const cleanKey = key.trim();
+      if (!cleanKey) continue;
+      if (layoutLabels.has(cleanKey)) continue;
+
       if (value instanceof File) {
         // Security: File Validation
         if (value.size > MAX_FILE_SIZE) {
@@ -363,22 +374,22 @@ export async function submitFormAction(
 
         // Skip empty files (0 bytes)
         if (value.size === 0) {
-          dbData[key] = '';
+          dbData[cleanKey] = '';
           continue;
         }
 
         // Upload File
         try {
-          console.log(`Uploading file for field: ${key}`);
+          console.log(`Uploading file for field: ${cleanKey}`);
           // Pass safeSettings (which has potentially refreshed token)
           const uploadResult = await uploadToDrive(value, safeSettings.googleDriveFolderId, safeSettings);
-          dbData[key] = uploadResult.viewLink;
+          dbData[cleanKey] = uploadResult.viewLink;
         } catch (e) {
           console.error('File Upload Failed:', e);
           return { success: false, error: 'File upload failed.' };
         }
       } else {
-        dbData[key] = value;
+        dbData[cleanKey] = value;
       }
     }
   } else {

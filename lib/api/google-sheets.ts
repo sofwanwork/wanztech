@@ -45,6 +45,63 @@ export function sanitizeSheetValue(value: unknown): string | number | boolean {
   return stringValue;
 }
 
+/**
+ * Ensures header names are valid for Google Spreadsheet:
+ * - Trims whitespace
+ * - Assigns fallback name for blank headers (e.g. Kolom_1)
+ * - Automatically resolves duplicates by suffixing (e.g. "Soalan (2)", "Soalan (3)")
+ */
+export function sanitizeHeaders(rawHeaders: string[]): string[] {
+  const seen = new Map<string, number>();
+  return rawHeaders.map((rawHeader, idx) => {
+    let trimmed = (rawHeader ?? '').toString().trim();
+    if (!trimmed) {
+      trimmed = `Kolom_${idx + 1}`;
+    }
+    const count = seen.get(trimmed) || 0;
+    seen.set(trimmed, count + 1);
+    if (count > 0) {
+      return `${trimmed} (${count + 1})`;
+    }
+    return trimmed;
+  });
+}
+
+/**
+ * Checks if the Google Spreadsheet worksheet has enough columns to fit
+ * `requiredColumns`. Google Sheets default to 26 columns (A-Z). When forms
+ * contain many questions (e.g. 18 scale questions + base fields > 26 columns),
+ * google-spreadsheet's setHeaderRow() throws:
+ * "Sheet is not large enough to fit X columns. Resize the sheet first."
+ *
+ * This function automatically resizes the sheet with generous padding (+10 columns)
+ * so headers can be set and rows can be appended without errors.
+ */
+export async function ensureSheetCapacity(
+  sheet: {
+    columnCount?: number;
+    rowCount?: number;
+    resize?: (gridProperties: { rowCount: number; columnCount: number }) => Promise<unknown>;
+  },
+  requiredColumns: number
+): Promise<void> {
+  const currentCols = typeof sheet.columnCount === 'number' ? sheet.columnCount : 26;
+  if (requiredColumns > currentCols) {
+    const targetCols = Math.max(requiredColumns + 10, currentCols + 10);
+    const currentRowCount =
+      typeof sheet.rowCount === 'number' && sheet.rowCount > 0 ? sheet.rowCount : 1000;
+    console.log(
+      `[Google Sheets] Auto-resizing sheet from ${currentCols} to ${targetCols} columns (needed: ${requiredColumns})`
+    );
+    if (typeof sheet.resize === 'function') {
+      await sheet.resize({
+        columnCount: targetCols,
+        rowCount: currentRowCount,
+      });
+    }
+  }
+}
+
 export async function appendToSheet(
   config: SheetConfig,
   data: Record<string, string | number | boolean | null | undefined>
@@ -67,23 +124,30 @@ export async function appendToSheet(
       console.log('Header load failed (expected for new sheet):', e);
     }
 
+    // Filter out blank keys from data
+    const validDataKeys = Object.keys(data)
+      .map((k) => k.trim())
+      .filter((k) => k.length > 0);
+
     // If sheet is new/empty, headerValues might be empty array
     if (!headers || headers.length === 0) {
       console.log('Setting new headers...');
       // Create headers from the keys
-      const newHeaders = Object.keys(data);
+      const newHeaders = sanitizeHeaders(validDataKeys);
+      await ensureSheetCapacity(sheet, newHeaders.length);
       await sheet.setHeaderRow(newHeaders);
 
       // Reload headers to be safe
       await sheet.loadHeaderRow();
     } else {
       // Check if there are new fields in data that do not exist in the current headers
-      const dataKeys = Object.keys(data);
-      const missingHeaders = dataKeys.filter((key) => !headers.includes(key));
-      
+      const existingHeaders = headers.map((h) => h.trim());
+      const missingHeaders = validDataKeys.filter((key) => !existingHeaders.includes(key));
+
       if (missingHeaders.length > 0) {
         console.log('Appending new headers:', missingHeaders);
-        const updatedHeaders = [...headers, ...missingHeaders];
+        const updatedHeaders = sanitizeHeaders([...headers, ...missingHeaders]);
+        await ensureSheetCapacity(sheet, updatedHeaders.length);
         await sheet.setHeaderRow(updatedHeaders);
         await sheet.loadHeaderRow();
       }
@@ -92,20 +156,28 @@ export async function appendToSheet(
     // Sanitize data: convert null/undefined to empty string to satisfy google-spreadsheet types
     const sanitizedData: Record<string, string | number | boolean> = {};
     Object.entries(data).forEach(([key, value]) => {
-      if (value === null || value === undefined) {
-        sanitizedData[key] = '';
-      } else {
-        // Prevent CSV Injection / Formula Injection
-        let stringValue = String(value);
-        if (
-          stringValue.startsWith('=') ||
-          stringValue.startsWith('+') ||
-          stringValue.startsWith('-') ||
-          stringValue.startsWith('@')
-        ) {
-          stringValue = "'" + stringValue;
+      const trimmedKey = key.trim();
+      let sanitizedVal: string | number | boolean = '';
+      if (value !== null && value !== undefined) {
+        if (typeof value === 'number' || typeof value === 'boolean') {
+          sanitizedVal = value;
+        } else {
+          // Prevent CSV Injection / Formula Injection
+          let stringValue = String(value);
+          if (
+            stringValue.startsWith('=') ||
+            stringValue.startsWith('+') ||
+            stringValue.startsWith('-') ||
+            stringValue.startsWith('@')
+          ) {
+            stringValue = "'" + stringValue;
+          }
+          sanitizedVal = stringValue;
         }
-        sanitizedData[key] = stringValue;
+      }
+      sanitizedData[key] = sanitizedVal;
+      if (trimmedKey !== key) {
+        sanitizedData[trimmedKey] = sanitizedVal;
       }
     });
 
@@ -155,10 +227,15 @@ export async function updateSheetRow(
 
     await sheet.loadHeaderRow();
     const headers = sheet.headerValues;
-    const dataKeys = Object.keys(data);
-    const missingHeaders = dataKeys.filter((key) => !headers.includes(key));
+    const validDataKeys = Object.keys(data)
+      .map((k) => k.trim())
+      .filter((k) => k.length > 0);
+    const existingHeaders = headers.map((h) => h.trim());
+    const missingHeaders = validDataKeys.filter((key) => !existingHeaders.includes(key));
     if (missingHeaders.length > 0) {
-      await sheet.setHeaderRow([...headers, ...missingHeaders]);
+      const updatedHeaders = sanitizeHeaders([...headers, ...missingHeaders]);
+      await ensureSheetCapacity(sheet, updatedHeaders.length);
+      await sheet.setHeaderRow(updatedHeaders);
       await sheet.loadHeaderRow();
     }
 
@@ -426,10 +503,13 @@ export async function syncDailyAttendanceToSheet(
     await daySheet.loadHeaderRow();
     let headers = daySheet.headerValues;
     if (!headers || headers.length === 0) {
-      await daySheet.setHeaderRow(defaultHeaders);
+      const sanitizedDefault = sanitizeHeaders(defaultHeaders);
+      await ensureSheetCapacity(daySheet, sanitizedDefault.length);
+      await daySheet.setHeaderRow(sanitizedDefault);
       await daySheet.loadHeaderRow();
       headers = daySheet.headerValues;
     }
+
 
     const cleanIdentifier = identifierValue.replace(/[\s\-_/]/g, '').toLowerCase();
     const idHeaderCandidates = [
@@ -506,7 +586,9 @@ export async function syncDailyAttendanceToSheet(
             (k) => !mHeaders.includes(k)
           );
           if (missingMasterHeaders.length > 0) {
-            await masterSheet.setHeaderRow([...mHeaders, ...missingMasterHeaders]);
+            const updatedMasterHeaders = sanitizeHeaders([...mHeaders, ...missingMasterHeaders]);
+            await ensureSheetCapacity(masterSheet, updatedMasterHeaders.length);
+            await masterSheet.setHeaderRow(updatedMasterHeaders);
             await masterSheet.loadHeaderRow();
           }
 

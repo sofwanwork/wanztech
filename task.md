@@ -1988,3 +1988,110 @@
 
 
 
+
+
+---
+
+# Pelan Tindakan: Susunan Skala & Pilihan Mendatar (Horizontal Scale & Options Layout)
+
+## Konteks & Permintaan Pengguna
+- Pengguna memuat naik tangkapan skrin telefon pintar bagi bahagian borang penilaian ("C. Penilaian Penceramah") dengan soalan-soalan skala penilaian (cth: "Pencapaian Objektif", "Penyampaian Penceramah", "Pengetahuan Berkenaan Topik", "Interaksi dengan Peserta") yang mempunyai 4 pilihan skala: "Lemah", "Baik", "Sangat Baik", "Cemerlang".
+- Pilihan radio tersebut tersusun secara menegak (vertical) memenuhi ruang skrin secara membazir untuk 18 soalan.
+- Pengguna meminta: *"sy nak scale tu mendatar"*.
+
+## Langkah Pelaksanaan
+- [x] 1. Jenis Data (`lib/types/forms.ts`):
+  - [x] 1.1 Tambah `optionsLayout?: 'vertical' | 'horizontal'` pada antara muka `FormField`.
+- [x] 2. Utiliti Pengesanan Skala (`lib/forms/scale-guide.ts`):
+  - [x] 2.1 Cipta fungsi `isScaleLikeOptions(options?: string[]): boolean` untuk mengesan pilihan jenis skala penilaian (cth: Lemah/Baik/Sangat Baik/Cemerlang, Sangat Tidak Setuju/Setuju, nombor 1-5, dll).
+  - [x] 2.2 Cipta fungsi `isFieldHorizontal(field: FormField): boolean` yang menyemak tetapan eksplisit `optionsLayout` dan fallback automatik kepada `isScaleLikeOptions`.
+- [x] 3. Pemapar Borang Awam (`app/(public)/form/[id]/client.tsx`):
+  - [x] 3.1 Sokong susunan mendatar (`flex flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-2.5`) untuk medan `radio` apabila `isFieldHorizontal(field)` adalah benar.
+  - [x] 3.2 Pastikan saiz teks dan padding sentuh mesra peranti mudah alih tanpa sebarang keratan atau limpahan mendatar.
+  - [x] 3.3 Terapkan susunan mendatar yang serupa untuk medan `checkbox`.
+- [x] 4. Pembina Borang (`components/forms/fields-editor/index.tsx`):
+  - [x] 4.1 Tambah kawalan segmen "Susunan Pilihan (Layout)" dengan butang `Menegak (Vertical)` dan `Mendatar (Horizontal)` di bawah input pilihan bagi jenis medan `radio` dan `checkbox`.
+  - [x] 4.2 Paparkan lencana panduan pintar jika skala dikesan secara automatik (`Skala dikesan automatik (Mendatar)`).
+- [x] 5. Ujian Unit & Jaminan Kualiti:
+  - [x] 5.1 Tambah ujian unit di `tests/scale-guide.test.ts` untuk menguji `isScaleLikeOptions` dan `isFieldHorizontal`.
+  - [x] 5.2 Jalankan `npm run typecheck` (0 ralat TypeScript).
+  - [x] 5.3 Jalankan `npm run lint` (0 ralat ESLint).
+  - [x] 5.4 Jalankan `npm test` (semua 452 ujian lulus merentas 45 suite).
+- [x] 6. Dokumentasi & Pengemaskinian Memori:
+  - [x] 6.1 Catat semakan semula di `task.md`.
+  - [x] 6.2 Kemas kini `lessons.md` dan `memory.md`.
+  - [x] 6.3 Berikan jawapan ringkas dan padat kepada pengguna.
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Dwi-Pendekatan: Tetapan Eksplisit & Pengesanan Skala Automatik (*Smart Auto-Detection + Explicit User Control*)**:
+   - Jika kita hanya menambah tetapan di Form Builder, pengguna terpaksa membuka Form Builder dan menukar tetapan pada kesemua 18 soalan penilaian satu demi satu.
+   - Dengan fungsi pintar `isScaleLikeOptions(options)` yang mengesan kata kunci skala penilaian (seperti `Lemah`, `Baik`, `Sangat Baik`, `Cemerlang`, `Setuju`, `Puas Hati`, angka `1-5`, dan polariti `Ya/Tidak`), borang sedia ada pengguna secara automatik berubah kepada susunan mendatar tanpa sebarang tindakan manual!
+   - Pada masa yang sama, jika penganjur mahukan susunan menegak atau mendatar bagi sebarang pilihan, mereka boleh menetapkan pilihan eksplisit melalui kawalan segmen di Form Builder (`optionsLayout: 'vertical' | 'horizontal'`), di mana tetapan eksplisit ini sentiasa diutamakan mendahului pengesanan automatik.
+2. **Kesesuaian Tipografi & Ruang Sentuh Peranti Mudah Alih (*Mobile-First Flex Layout*)**:
+   - Susunan mendatar menggunakan `flex flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-2.5 pt-2`.
+   - Saiz teks disesuaikan kepada `text-sm sm:text-base` supaya 4 pilihan lazim muat dengan sempurna pada skrin telefon pintar sekecil 360px tanpa memerlukan tatalan mendatar atau terpotong di tepi.
+   - Pilihan dibalut dengan padding sentuh mikro `py-1 px-1 rounded-md transition-colors hover:bg-slate-50` dengan kedua-dua bulatan radio dan label menyokong `cursor-pointer select-none` untuk kemudahan mengetik jawapan.
+
+
+---
+
+# Pelan Tindakan: Pembaikan Auto-Resize Lajur Google Sheets (> 26 Lajur) & Segerak Data Borang Skala
+
+## Konteks & Punca Masalah (Root Cause Analysis)
+- Pengguna melaporkan: *"kenapa ya data tak masuk di google sheet"* dan menduga *"sy rasa data tak masuk bila ada soalan scale byk2"*.
+- **Punca Asal 1: Had Grid 26 Lajur Google Sheets (`google-spreadsheet`)**:
+  - Helaian kerja (worksheet) baharu Google Sheets dicipta dengan 26 lajur lalai (A hingga Z, `columnCount = 26`).
+  - Apabila borang mempunyai banyak soalan (seperti 18 soalan skala penilaian + timestamp + _submission_id + nama + emel + dll. > 26 lajur), `google-spreadsheet` (`node_modules/google-spreadsheet/dist/index.js:798-800`) menyemak:
+    ```javascript
+    if (headerValues.length > this.columnCount) {
+      throw new Error(`Sheet is not large enough to fit ${headerValues.length} columns. Resize the sheet first.`);
+    }
+    ```
+  - Sebelum ini, `lib/api/google-sheets.ts` tidak pernah memanggil `sheet.resize` sebelum `setHeaderRow`. Ralat ini dilemparkan secara senyap dalam latar belakang (`appendToSheet` menangkap ralat dan mengembalikan `{ success: false, error: ... }`), menyebabkan data tidak masuk ke Google Sheet bagi borang yang mempunyai banyak soalan skala!
+- **Punca Asal 2: Medan Susun Atur (`separator`, `image`, `pagebreak`) Mencemari Google Sheets**:
+  - Di `app/(public)/form/[id]/client.tsx`, `handleSubmit` memasukkan medan pemisah seksyen (`separator`) dan imej (`image`) ke dalam `FormData` sebagai rentetan kosong `""`.
+  - Ini membazirkan lajur Google Sheets dan berpotensi mencetuskan ralat `Duplicate header detected` sekiranya label pemisah kosong atau berulang.
+- **Punca Asal 3: Pengepala Bertindih / Kosong (Duplicate & Empty Headers)**:
+  - `google-spreadsheet` melarang pengepala bertindih. Sanitasi nama pengepala diperlukan untuk menamakan lajur secara unik (contoh `Kolom_X` atau `Tajuk (2)`).
+
+## Pelan Pelaksanaan
+- [x] 1. Peningkatan Lapisan Integrasi Google Sheets (`lib/api/google-sheets.ts`):
+  - [x] 1.1 Cipta pembantu `ensureSheetCapacity(sheet, requiredColumns)` yang memeriksa `sheet.columnCount` dan memanggil `await sheet.resize({ columnCount: targetCols, rowCount })` dengan margin tambahan (+10 lajur).
+  - [x] 1.2 Cipta pembantu `sanitizeHeaders(rawHeaders: string[])` untuk membersihkan ruang kosong, menamakan lajur kosong, dan menyahduplikasi nama bertindih.
+  - [x] 1.3 Naik taraf `appendToSheet` untuk memanggil `sanitizeHeaders` dan `ensureSheetCapacity` sebelum `setHeaderRow(newHeaders)` dan `setHeaderRow(updatedHeaders)`.
+  - [x] 1.4 Naik taraf `updateSheetRow` dan `syncDailyAttendanceToSheet` dengan `ensureSheetCapacity` dan `sanitizeHeaders`.
+- [x] 2. Penapisan Medan Susun Atur Borang Awam (`app/(public)/form/[id]/client.tsx`):
+  - [x] 2.1 Dalam `handleSubmit`, tapis keluar medan `separator`, `image`, dan `pagebreak` supaya tidak dihantar ke `FormData` atau memakan lajur Google Sheets.
+  - [x] 2.2 Dalam `actions/forms.ts`, pastikan kunci kosong atau medan susun atur tidak dimasukkan ke dalam `dbData`.
+- [x] 3. Tindakan Segerak Manual / Retry di Dashboard (`actions/sheets.ts` & `app/(dashboard)/responses/client.tsx`):
+  - [x] 3.1 Cipta `syncPendingResponsesForFormAction(formId)` dalam `actions/sheets.ts` untuk membolehkan pengguna menyegerakkan rekod tertunggak (pending) serta-merta ke Google Sheet.
+  - [x] 3.2 Tambah butang "Sync Data" di kad borang pada halaman Responses (`app/(dashboard)/responses/client.tsx`).
+- [x] 4. Pengesahan Kualiti & Ujian Unit:
+  - [x] 4.1 Tambah ujian unit di `tests/sheet-capacity.test.ts` (menguji `sanitizeHeaders`, `ensureSheetCapacity` dengan > 26 lajur, penduaan lajur — 9/9 lulus).
+  - [x] 4.2 Jalankan `npm run typecheck` (0 ralat TypeScript).
+  - [x] 4.3 Jalankan `npm run lint` (0 ralat ESLint).
+  - [x] 4.4 Jalankan `npm test` (semua 461 ujian unit lulus merentas 46 suite fail).
+  - [x] 4.5 Jalankan `npm run build` (kompilasi Next.js 16 Turbopack bersih, 58 laluan).
+- [x] 5. Dokumentasi & Pengemaskinian Memori:
+  - [x] 5.1 Catat semakan semula di `task.md`.
+  - [x] 5.2 Kemas kini `lessons.md` dan `memory.md`.
+  - [x] 5.3 Berikan penjelasan ringkas dan padat dalam Bahasa Melayu kepada pengguna.
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Punca Asal Ralat Data Tidak Masuk untuk Soalan Skala Banyak (> 26 Lajur)**:
+   - Enjin `google-spreadsheet` mempunyai sekatan keras: sekiranya bilangan lajur yang hendak ditulis melebihi had grid semasa helaian kerja (`headerValues.length > this.columnCount`), ia akan melemparkan ralat:
+     `Sheet is not large enough to fit X columns. Resize the sheet first.`
+   - Helaian Google Sheet baharu dicipta oleh Google dengan hanya 26 lajur (A hingga Z).
+   - Apabila pengguna mempunyai 18 soalan skala penilaian ditambah dengan medan asas pendaftaran (Timestamp, _submission_id, Nama, IC, Emel, No Tel, Agensi, dll.), jumlah lajur mencecah 27 hingga 30+ lajur.
+   - Tanpa panggilan `sheet.resize`, `sheet.setHeaderRow` gagal secara serta-merta dan menggugurkan penghantaran data ke Google Sheet.
+2. **Penyelesaian Auto-Resize Kapasiti Pintar (`ensureSheetCapacity`)**:
+   - Fungsi `ensureSheetCapacity(sheet, requiredColumns)` memeriksa `sheet.columnCount`.
+   - Sekiranya `requiredColumns > sheet.columnCount`, sistem secara proaktif memanggil `await sheet.resize({ columnCount: Math.max(requiredColumns + 10, sheet.columnCount + 10), rowCount })`.
+   - Margin tambahan (+10 lajur) memastikan jika penganjur menambah soalan baharu pada masa hadapan, operasi Google API tidak perlu memanggil resize berulang kali bagi setiap penambahan lajur.
+3. **Pembersihan Medan Susun Atur (`isLayoutOnlyField`)**:
+   - Medan `separator`, `image`, dan `pagebreak` kini disaring keluar daripada `handleSubmit` dan `dbData`. Ini mengelakkan lajur kosong yang tidak berfaedah mencemari Google Sheet serta mengurangkan pembaziran had lajur.
+4. **Sanitasi Pengepala Kebal Ralat (`sanitizeHeaders`)**:
+   - Memangkas ruang putih (*whitespace*), menggantikan lajur kosong dengan nama sandaran `Kolom_X`, dan menyelesaikan penduaan tajuk secara automatik dengan akhiran nombor (`Tajuk (2)`, `Tajuk (3)`).
+5. **Butang Segerak Manual Dashboard ("Sync Data")**:
+   - Membolehkan penganjur menekan butang "Sync Data" di tab Responses untuk menghantar sebarang respons yang tersangkut/tertunggak (*pending*) terus ke Google Sheet tanpa perlu menunggu giliran cron harian.
+

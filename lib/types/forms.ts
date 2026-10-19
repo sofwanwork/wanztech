@@ -124,6 +124,7 @@ export interface FormField {
   conditional?: ConditionalConfig;
   validation?: ValidationConfig;
   imageUrl?: string;
+  optionsLayout?: 'vertical' | 'horizontal';
 }
 
 /**

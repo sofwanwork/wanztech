@@ -3,8 +3,9 @@
 import { Form, FormField } from '@/lib/types';
 import Link from 'next/link';
 import { evaluateConditional } from '@/lib/forms/conditions';
-import { parseScaleGuide } from '@/lib/forms/scale-guide';
+import { parseScaleGuide, isFieldHorizontal } from '@/lib/forms/scale-guide';
 import { flattenGridResponses, isGridComplete } from '@/lib/forms/grid';
+import { isLayoutOnlyField } from '@/lib/forms/validate-submission';
 
 import {
   Card,
@@ -499,8 +500,12 @@ export function PublicFormClient({
         formDataToSend.append('_submission_key', subKey);
       }
 
-      // Only append visible fields
+      // Only append visible data fields (skip layout-only fields like separator, image, pagebreak)
       visibleFields.forEach((field) => {
+        if (isLayoutOnlyField(field)) {
+          return;
+        }
+
         let value = formData[field.id];
 
         if (field.type === 'grid') {
@@ -1953,60 +1958,88 @@ export function PublicFormClient({
                       </Select>
                     )}
 
-                    {field.type === 'checkbox' && (
-                      <div
-                        className="space-y-3 pt-2"
-                        role="group"
-                        aria-labelledby={`field-label-${field.id}`}
-                      >
-                        {field.options?.map((opt, i) => (
-                          <div key={i} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`${field.id}-${i}`}
-                              checked={(formData[field.id] || []).includes(opt)}
-                              onCheckedChange={(checked) => {
-                                const current = formData[field.id] || [];
-                                if (checked) {
-                                  handleInputChange(field.id, [...current, opt]);
-                                } else {
-                                  handleInputChange(
-                                    field.id,
-                                    current.filter((v: string) => v !== opt)
-                                  );
-                                }
-                              }}
-                            />
-                            <Label
-                              htmlFor={`${field.id}-${i}`}
-                              className="text-base font-normal cursor-pointer"
-                            >
-                              {opt}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    {field.type === 'checkbox' && (() => {
+                      const isHorizontal = isFieldHorizontal(field);
 
-                    {field.type === 'radio' && (
-                      <RadioGroup
-                        aria-labelledby={`field-label-${field.id}`}
-                        value={formData[field.id] || ''}
-                        onValueChange={(val) => handleInputChange(field.id, val)}
-                        className="space-y-3 pt-2"
-                      >
-                        {field.options?.map((opt, i) => (
-                          <div key={i} className="flex items-center space-x-2">
-                            <RadioGroupItem value={opt} id={`${field.id}-${i}`} />
-                            <Label
-                              htmlFor={`${field.id}-${i}`}
-                              className="text-base font-normal cursor-pointer"
+                      return (
+                        <div
+                          className={cn(
+                            isHorizontal
+                              ? 'flex flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-2.5 pt-2'
+                              : 'space-y-3 pt-2'
+                          )}
+                          role="group"
+                          aria-labelledby={`field-label-${field.id}`}
+                        >
+                          {field.options?.map((opt, i) => (
+                            <div
+                              key={i}
+                              className={cn(
+                                'flex items-center space-x-2',
+                                isHorizontal && 'shrink-0 py-1 px-1 rounded-md transition-colors hover:bg-slate-50'
+                              )}
                             >
-                              {opt}
-                            </Label>
-                          </div>
-                        ))}
-                      </RadioGroup>
-                    )}
+                              <Checkbox
+                                id={`${field.id}-${i}`}
+                                checked={(formData[field.id] || []).includes(opt)}
+                                onCheckedChange={(checked) => {
+                                  const current = formData[field.id] || [];
+                                  if (checked) {
+                                    handleInputChange(field.id, [...current, opt]);
+                                  } else {
+                                    handleInputChange(
+                                      field.id,
+                                      current.filter((v: string) => v !== opt)
+                                    );
+                                  }
+                                }}
+                              />
+                              <Label
+                                htmlFor={`${field.id}-${i}`}
+                                className="text-sm sm:text-base font-normal cursor-pointer select-none"
+                              >
+                                {opt}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+
+                    {field.type === 'radio' && (() => {
+                      const isHorizontal = isFieldHorizontal(field);
+
+                      return (
+                        <RadioGroup
+                          aria-labelledby={`field-label-${field.id}`}
+                          value={formData[field.id] || ''}
+                          onValueChange={(val) => handleInputChange(field.id, val)}
+                          className={cn(
+                            isHorizontal
+                              ? 'flex flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-2.5 pt-2'
+                              : 'space-y-3 pt-2'
+                          )}
+                        >
+                          {field.options?.map((opt, i) => (
+                            <div
+                              key={i}
+                              className={cn(
+                                'flex items-center space-x-2',
+                                isHorizontal && 'shrink-0 py-1 px-1 rounded-md transition-colors hover:bg-slate-50'
+                              )}
+                            >
+                              <RadioGroupItem value={opt} id={`${field.id}-${i}`} className="cursor-pointer" />
+                              <Label
+                                htmlFor={`${field.id}-${i}`}
+                                className="text-sm sm:text-base font-normal cursor-pointer select-none"
+                              >
+                                {opt}
+                              </Label>
+                            </div>
+                          ))}
+                        </RadioGroup>
+                      );
+                    })()}
 
                     {field.type === 'file' && (
                       <div className="flex items-center justify-center w-full">

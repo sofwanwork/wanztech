@@ -21,8 +21,10 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Trash2, GripVertical, Plus, Copy } from 'lucide-react';
+import { Trash2, GripVertical, Plus, Copy, List, Columns3 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import { cn } from '@/lib/utils';
+import { isScaleLikeOptions } from '@/lib/forms/scale-guide';
 import {
   Accordion,
   AccordionContent,
@@ -277,14 +279,65 @@ function SortableField({
           )}
 
           {(field.type === 'select' || field.type === 'checkbox' || field.type === 'radio') && (
-            <div className="space-y-2">
-              <Label htmlFor={`field-options-${field.id}`}>Options (comma separated)</Label>
-              <Input
-                id={`field-options-${field.id}`}
-                placeholder="Option A, Option B, Option C"
-                value={field.options?.join(',') || ''}
-                onChange={(e) => updateField(index, { options: e.target.value.split(',') })}
-              />
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor={`field-options-${field.id}`}>Options (comma separated)</Label>
+                <Input
+                  id={`field-options-${field.id}`}
+                  placeholder="Option A, Option B, Option C"
+                  value={field.options?.join(',') || ''}
+                  onChange={(e) => updateField(index, { options: e.target.value.split(',') })}
+                />
+              </div>
+
+              {(field.type === 'radio' || field.type === 'checkbox') && (() => {
+                const autoDetected = isScaleLikeOptions(field.options);
+                const isHorizontal =
+                  field.optionsLayout === 'horizontal' || (!field.optionsLayout && autoDetected);
+
+                return (
+                  <div className="space-y-1.5 pt-0.5">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-semibold text-slate-700">
+                        Susunan Pilihan (Layout)
+                      </Label>
+                      {autoDetected && !field.optionsLayout && (
+                        <span className="text-[11px] text-emerald-700 font-medium bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full">
+                          Skala dikesan automatik (Mendatar)
+                        </span>
+                      )}
+                    </div>
+                    <div className="inline-flex p-1 bg-slate-100/90 rounded-lg gap-1 border border-slate-200/80">
+                      <button
+                        type="button"
+                        onClick={() => updateField(index, { optionsLayout: 'vertical' })}
+                        className={cn(
+                          'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer',
+                          !isHorizontal
+                            ? 'bg-white text-slate-900 shadow-2xs border border-slate-200/90 font-semibold'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                        )}
+                      >
+                        <List className="w-3.5 h-3.5" />
+                        <span>Menegak (Vertical)</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateField(index, { optionsLayout: 'horizontal' })}
+                        className={cn(
+                          'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer',
+                          isHorizontal
+                            ? 'bg-white text-primary shadow-2xs border border-primary/20 font-semibold'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                        )}
+                      >
+                        <Columns3 className="w-3.5 h-3.5" />
+                        <span>Mendatar (Horizontal)</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           )}
 

@@ -3206,3 +3206,76 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
 
 
 
+
+
+## Susunan Skala & Pilihan Mendatar Borang (Horizontal Scale & Options Layout) (2026-10-19)
+- **Konteks & Maklum Balas Pengguna**: Pengguna memuat naik tangkapan skrin telefon pintar bagi bahagian borang penilaian ("C. Penilaian Penceramah") dengan soalan-soalan skala penilaian (cth: "Pencapaian Objektif", "Penyampaian Penceramah", "Pengetahuan Berkenaan Topik", "Interaksi dengan Peserta") yang mempunyai 4 pilihan skala ("Lemah", "Baik", "Sangat Baik", "Cemerlang") yang disusun secara menegak (vertical). Pengguna memohon: *"sy nak scale tu mendatar"*.
+- **Punca Masalah (Root Cause)**:
+  1. *Ketiadaan Sokongan Teks Berperingkat pada `rating`*: Jenis medan `rating` (*Linear Scale*) hanya terhad kepada nombor (cth: 1 hingga 5). Penganjur yang memerlukan skala penilaian berasaskan perkataan (seperti Lemah / Baik / Sangat Baik / Cemerlang) menggunakan medan `radio` (*Multiple Choice*).
+  2. *Susunan Menegak Kod Tegar pada `radio` & `checkbox`*: Dalam `app/(public)/form/[id]/client.tsx`, pilihan medan `radio` dikodkan dengan `space-y-3 pt-2`, memaksa setiap pilihan berada pada baris menegak yang berasingan. Bagi 18 soalan penilaian penceramah, borang memanjang sehingga 72 baris menegak yang memerlukan tatalan skrin yang sangat banyak di telefon pintar.
+  3. *Ketiadaan Tetapan Susunan di Form Builder*: Model data `FormField` dan antara muka Form Builder tidak mempunyai pilihan untuk penganjur memilih susunan mendatar atau menegak bagi pilihan jawapan.
+- **Penyelesaian Dilaksanakan**:
+  - `lib/types/forms.ts`:
+    - Menambah sifat `optionsLayout?: 'vertical' | 'horizontal'` pada antara muka `FormField`.
+  - `lib/forms/scale-guide.ts`:
+    - Membina fungsi `isScaleLikeOptions(options?: string[]): boolean` yang mengesan corak skala penilaian lazim secara automatik berasaskan kamus kata kunci Melayu dan Inggeris (`lemah`, `sederhana`, `baik`, `cemerlang`, `memuaskan`, `setuju`, `puas`, `angka 1-5`, dan `ya/tidak`).
+    - Membina fungsi `isFieldHorizontal(field): boolean` yang mengutamakan tetapan eksplisit `field.optionsLayout` dan membuat fallback pintar kepada `isScaleLikeOptions(field.options)`.
+  - `app/(public)/form/[id]/client.tsx`:
+    - Mengintegrasikan `isFieldHorizontal(field)` pada rendering `radio` dan `checkbox`.
+    - Apabila mendatar, menggunakan susunan flexbox padat `flex flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-2.5 pt-2` dengan saiz fon `text-sm sm:text-base` dan padding sentuh mikro `py-1 px-1 rounded-md` bersama `cursor-pointer select-none` pada bulatan dan label teks. Ini membolehkan 4 pilihan skala muat dengan anggun dalam satu baris mendatar pada skrin telefon pintar sekecil 360px tanpa sebarang limpahan mendatar.
+  - `components/forms/fields-editor/index.tsx`:
+    - Menambah kawalan segmen berikon di bawah input `Options (comma separated)` untuk jenis soalan `radio` dan `checkbox`:
+      - Butang `Menegak (Vertical)` (dengan ikon `List`)
+      - Butang `Mendatar (Horizontal)` (dengan ikon `Columns3`)
+    - Memaparkan lencana status pintar `Skala dikesan automatik (Mendatar)` apabila sistem mengesan pilihan skala penilaian dan tiada susunan manual ditetapkan.
+  - `tests/scale-guide.test.ts`:
+    - Menambah 11 ujian unit baharu merangkumi skala penilaian pengguna ("Lemah", "Baik", "Sangat Baik", "Cemerlang"), skala Likert Melayu & Inggeris, skala berangka, pilihan polariti, senarai bukan skala (negeri, jabatan), dan keutamaan tetapan eksplisit.
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm test`: 452 / 452 ujian unit lulus merentas 45 fail suite.
+
+## Pembaikan Had 26 Lajur Google Sheets & Segerak Data Skala Banyak (Google Sheets >26 Columns Auto-Resize & Pending Sync) (2026-10-19)
+- **Konteks & Laporan Pengguna**:
+  - Pengguna bertanya: *"kenapa ya data tak masuk di google sheet"* dan menduga *"sy rasa data tak masuk bila ada soalan scale byk2"*.
+- **Punca Asal (Root Cause Analysis)**:
+  1. *Had Grid 26 Lajur Google Sheets (`google-spreadsheet`)*:
+     - Setiap helaian baru di Google Sheets secara lalai hanya mempunyai 26 lajur (A hingga Z, `columnCount = 26`).
+     - Pakej `google-spreadsheet` (`node_modules/google-spreadsheet/dist/index.js:798-800`) menyemak:
+       ```javascript
+       if (headerValues.length > this.columnCount) {
+         throw new Error(`Sheet is not large enough to fit ${headerValues.length} columns. Resize the sheet first.`);
+       }
+       ```
+     - Apabila borang mempunyai 18 soalan skala penilaian bersama medan asas pendaftaran (Timestamp, _submission_id, Nama, IC, Emel, No Tel, Agensi, dll.), jumlah lajur mencecah 27 hingga 30+ lajur.
+     - Fungsi `appendToSheet` tidak pernah memanggil `sheet.resize`, menyebabkan `google-spreadsheet` melemparkan exception secara senyap dalam latar belakang (`after()`), menggugurkan penyegerakan ke Google Sheet bagi borang yang mempunyai banyak soalan skala!
+  2. *Medan Susun Atur Mencemari Google Sheets*:
+     - Di `app/(public)/form/[id]/client.tsx`, `handleSubmit` memasukkan medan pemisah seksyen (`separator`) dan imej (`image`) ke dalam `FormData` sebagai rentetan kosong `""`.
+     - Ini bukan sahaja membazirkan lajur Google Sheet dan menghimpit had 26 lajur, malah berisiko mencetuskan ralat `Duplicate header detected` sekiranya label pemisah kosong atau bertindih.
+  3. *Pengepala Kosong / Bertindih*:
+     - `google-spreadsheet` tidak membenarkan nama lajur berulang atau kosong tanpa disambiguasi.
+- **Penyelesaian Dilaksanakan**:
+  - `lib/api/google-sheets.ts`:
+    - Membina pembantu `ensureSheetCapacity(sheet, requiredColumns)`:
+      - Memeriksa `sheet.columnCount` (lalai 26).
+      - Sekiranya `requiredColumns > sheet.columnCount`, memanggil `await sheet.resize({ columnCount: Math.max(requiredColumns + 10, currentCols + 10), rowCount })` dengan margin padding +10 lajur.
+    - Membina pembantu `sanitizeHeaders(rawHeaders)`:
+      - Memangkas ruang putih (*whitespace*).
+      - Menggantikan pengepala kosong dengan `Kolom_X`.
+      - Menyahduplikasi nama lajur bertindih secara automatik dengan akhiran nombor (`Tajuk (2)`, `Tajuk (3)`).
+    - Menyelaras `appendToSheet`, `updateSheetRow`, dan `syncDailyAttendanceToSheet` untuk memanggil `sanitizeHeaders` dan `ensureSheetCapacity` sebelum sebarang panggilan `setHeaderRow`.
+  - `app/(public)/form/[id]/client.tsx`:
+    - Menggunakan `isLayoutOnlyField(field)` di dalam `handleSubmit` untuk menyaring keluar medan `separator`, `image`, dan `pagebreak` daripada dihantar ke `FormData`.
+  - `actions/forms.ts`:
+    - Menyaring keluar kunci kosong (`!key.trim()`) dan label susun atur daripada `dbData`.
+  - `actions/sheets.ts`:
+    - Mencipta fungsi Server Action baharu `syncPendingResponsesForFormAction(formId)` yang menyemak rekod `pending` di Supabase `form_responses` dan menolak data ke Google Sheet dengan auto-resize.
+  - `app/(dashboard)/responses/client.tsx`:
+    - Menambah butang berikon `Sync Data` bersebelahan butang `Open Sheet` di kad borang tab Responses supaya penganjur boleh menekan butang tersebut untuk menyegerakkan sebarang data tertunggak (*pending*) serta-merta tanpa perlu menunggu cron harian.
+  - `tests/sheet-capacity.test.ts`:
+    - Menambah 9 ujian unit baharu menguji sanitasi ruang putih, penamaan lajur kosong, penyahduplikasi pengepala bertindih, auto-resize lajur > 26 (35 lajur -> 45 lajur), keserasian lajur sedia ada, dan simulasi borang 18 soalan skala penilaian (semua lulus).
+- **Pengesahan & Kualiti**:
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm test`: 461 / 461 ujian unit lulus merentas 46 fail suite.
+  - `npm run build`: Kompilasi Next.js 16 Turbopack bersih tanpa sebarang ralat (58 laluan).

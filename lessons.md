@@ -527,3 +527,29 @@
   - Di dalam shell dashboard yang sudah mempunyai pengurusan skrol menegak (`main.overflow-y-auto`), **jangan sesekali meletakkan `min-h-screen`** pada elemen anak.
   - Biarkan ketinggian elemen anak mengalir secara semulajadi mengikut kandungan sebenar (`<div className="bg-gray-50/50 pb-8 sm:pb-12">`).
   - Latar belakang shell dashboard (`bg-gray-50`) mengisi mana-mana ruang baki secara lancar tanpa sebarang herotan visual atau tatalan phantom.
+
+
+- **Pilihan Radio/Skala Penilaian: Dwi-Susunan Mendatar & Pengesanan Skala Automatik (*Horizontal Scale Options Layout & Smart Likert Auto-Detection*)**:
+  (1) **Punca Masalah ("sy nak scale tu mendatar")**:
+  - Secara lazimnya dalam borang penilaian kursus / penceramah (seperti INTAN, JPA, KKM, METMalaysia, dll), soalan penilaian menggunakan skala Likert / prestasi pendek (cth: "Lemah", "Baik", "Sangat Baik", "Cemerlang" atau angka 1-5).
+  - Dalam pembina borang, jenis `rating` (*Linear Scale*) hanya terhad kepada angka 1 hingga 5 tanpa sokongan pilihan teks berperingkat. Akibatnya, penganjur menggunakan jenis soalan `radio` (*Multiple Choice*).
+  - Walau bagaimanapun, medan `radio` sebelum ini dikod tegar dengan susunan menegak `space-y-3 pt-2`. Bagi borang penilaian dengan 18 soalan, 18 soalan $\times$ 4 pilihan = 72 baris menegak yang sangat panjang dan membazir ruang skrin telefon pintar.
+  (2) **Penyelesaian Seni Bina Dwi-Lapis**:
+  - **Lapisan Pengesanan Automatik Pantas (`isScaleLikeOptions`)**: Menyediakan fungsi pengesanan pintar berasaskan kamus kata kunci skala penilaian Melayu dan Inggeris (`lemah`, `sederhana`, `baik`, `cemerlang`, `memuaskan`, `setuju`, `puas`, `angka 1-5`, `ya/tidak`). Pilihan skala dalam borang sedia ada pengguna secara automatik dipaparkan mendatar tanpa mewajibkan mereka menyunting semula 18 soalan satu persatu.
+  - **Kawalan Eksplisit Penganjur (`optionsLayout: 'vertical' | 'horizontal'`)**: Menyediakan togol segmen berikon di Form Builder di bawah pilihan `radio` dan `checkbox` supaya penganjur boleh menentukan secara bebas susunan pilihan yang diingini. Tetapan manual pengguna sentiasa diberi keutamaan mendahului pengesanan automatik.
+  - **Susunan Flex Mesra Telefon Pintar**: Menggunakan `flex flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-2.5 pt-2` dengan saiz fon `text-sm sm:text-base` dan padding sentuh mikro `py-1 px-1 rounded-md` bersama `cursor-pointer select-none` pada kedua-dua bulatan radio dan label teks. Ini memastikan 4 pilihan skala muat dengan anggun pada skrin 360px tanpa sebarang limpahan mendatar (*horizontal overflow*).
+
+
+- **Had Grid 26 Lajur Google Sheets & Pemulihan Auto-Resize (`ensureSheetCapacity` & `sanitizeHeaders`)**:
+  (1) **Punca Masalah ("kenapa ya data tak masuk di google sheet", "sy rasa data tak masuk bila ada soalan scale byk2")**:
+  - Helaian kerja baru Google Sheets dicipta oleh Google dengan hanya 26 lajur (A hingga Z, `columnCount = 26`).
+  - Pakej `google-spreadsheet` (`node_modules/google-spreadsheet/dist/index.js`) menetapkan kawalan tegas:
+    `if (headerValues.length > this.columnCount) throw new Error("Sheet is not large enough to fit " + headerValues.length + " columns. Resize the sheet first.")`
+  - Apabila borang mengandungi 18 soalan skala penilaian bersama medan pendaftaran asas (Timestamp, _submission_id, Nama, IC, Emel, dsb.), jumlah lajur melebihi 26 lajur (> A-Z).
+  - Tanpa auto-resize sebelum `setHeaderRow`, `google-spreadsheet` melemparkan exception dan panggilan `appendToSheet` gagal secara senyap (`{ success: false }`), menyebabkan data tidak masuk ke Google Sheet bagi borang yang mempunyai soalan skala yang banyak.
+  - Tambahan pula, medan susun atur seperti pemisah seksyen (`separator`), imej (`image`), dan `pagebreak` sebelum ini dihantar ke `FormData` sebagai rentetan kosong, membazirkan had lajur dan berisiko mencetuskan ralat `Duplicate header detected`.
+  (2) **Penyelesaian**:
+  - **Fungsi `ensureSheetCapacity(sheet, requiredColumns)`**: Menyemak `sheet.columnCount` dan memanggil `await sheet.resize({ columnCount: Math.max(requiredColumns + 10, (sheet.columnCount || 26) + 10), rowCount: sheet.rowCount || 1000 })` dengan margin padding +10 lajur sebelum sebarang panggilan `setHeaderRow` dalam `appendToSheet`, `updateSheetRow`, dan `syncDailyAttendanceToSheet`.
+  - **Sanitasi Pengepala (`sanitizeHeaders`)**: Memangkas whitespace, menggantikan pengepala kosong dengan nama sandaran `Kolom_X`, dan menyelesaikan penduaan secara automatik dengan akhiran nombor (`Tajuk (2)`).
+  - **Penapisan Medan Susun Atur (`isLayoutOnlyField`)**: Saring keluar medan `separator`, `image`, dan `pagebreak` daripada `handleSubmit` dan `dbData` supaya tidak mencemari lajur spreadsheet.
+  - **Butang Segerak Manual Dashboard ("Sync Data")**: Menambah butang `Sync Data` di tab Responses membolehkan penganjur menghantar semua rekod tertunggak (*pending*) ke Google Sheet serta-merta tanpa perlu menunggu cron harian.

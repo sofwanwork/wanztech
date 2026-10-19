@@ -1,9 +1,104 @@
+import type { FormField } from '@/lib/types/forms';
+
 export interface ScaleGuide {
   intro?: string;
   min: string;
   max: string;
   minLabel?: string;
   maxLabel?: string;
+}
+
+/**
+ * Common keywords used in rating scales, satisfaction levels, and Likert choices (Malay & English).
+ */
+const SCALE_KEYWORDS = [
+  'lemah',
+  'sederhana',
+  'baik',
+  'cemerlang',
+  'memuaskan',
+  'setuju',
+  'puas',
+  'tahap',
+  'rendah',
+  'tinggi',
+  'kerap',
+  'jarang',
+  'selalu',
+  'sentiasa',
+  'berkecuali',
+  'tidak pasti',
+  'kurang',
+  'sangat',
+  'poor',
+  'fair',
+  'good',
+  'excellent',
+  'satisf',
+  'agree',
+  'disagree',
+  'neutral',
+  'low',
+  'high',
+  'medium',
+  'never',
+  'rarely',
+  'sometimes',
+  'often',
+  'always',
+  'star',
+  'bintang',
+];
+
+/**
+ * Checks whether an array of choices represents a rating scale (Likert, satisfaction, grading, or numeric scale).
+ * Used to automatically render scale choices horizontally for a compact, clean layout.
+ */
+export function isScaleLikeOptions(options?: string[]): boolean {
+  if (!options || !Array.isArray(options) || options.length < 2 || options.length > 7) {
+    return false;
+  }
+
+  const cleaned = options.map((o) => (typeof o === 'string' ? o.trim() : '')).filter(Boolean);
+  if (cleaned.length !== options.length) return false;
+
+  // Each scale option is typically concise (<= 22 characters)
+  if (!cleaned.every((opt) => opt.length <= 22)) return false;
+
+  // 1. All numeric scales: e.g. ['1', '2', '3', '4', '5'] or ['1 - Lemah', '2 - Sederhana', ...]
+  const isNumericScale = cleaned.every((opt) => /^[0-9]+(\s*[-–.)]\s*.+)?$/.test(opt));
+  if (isNumericScale) return true;
+
+  // 2. Binary polarity choices: e.g. ['Ya', 'Tidak'], ['Yes', 'No']
+  const lowerAll = cleaned.map((o) => o.toLowerCase());
+  if (
+    cleaned.length === 2 &&
+    ((lowerAll.includes('ya') && lowerAll.includes('tidak')) ||
+      (lowerAll.includes('yes') && lowerAll.includes('no')) ||
+      (lowerAll.includes('true') && lowerAll.includes('false')))
+  ) {
+    return true;
+  }
+
+  // 3. Known scale keywords (Likert / satisfaction / performance levels)
+  const hasScaleKeywords = lowerAll.some((opt) =>
+    SCALE_KEYWORDS.some((kw) => opt.includes(kw))
+  );
+
+  return hasScaleKeywords;
+}
+
+/**
+ * Resolves whether a form field's options should be rendered horizontally (mendatar).
+ * Prioritizes explicit `optionsLayout` configuration, falling back to smart scale detection.
+ */
+export function isFieldHorizontal(
+  field?: Partial<FormField> | { optionsLayout?: 'vertical' | 'horizontal'; options?: string[] } | null
+): boolean {
+  if (!field) return false;
+  if (field.optionsLayout === 'horizontal') return true;
+  if (field.optionsLayout === 'vertical') return false;
+  return isScaleLikeOptions(field.options);
 }
 
 /**
