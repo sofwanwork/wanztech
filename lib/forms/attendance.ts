@@ -166,11 +166,37 @@ export function formatAttendanceDateTime(dateInput: string | Date): string {
   return `${dateStr}, ${timeStr}`;
 }
 
+const MALAY_MONTH_MAP: Record<string, string> = {
+  januari: 'January',
+  jan: 'January',
+  februari: 'February',
+  feb: 'February',
+  mac: 'March',
+  april: 'April',
+  apr: 'April',
+  mei: 'May',
+  jun: 'June',
+  julai: 'July',
+  jul: 'July',
+  ogos: 'August',
+  ogo: 'August',
+  september: 'September',
+  sep: 'September',
+  sept: 'September',
+  oktober: 'October',
+  okt: 'October',
+  november: 'November',
+  nov: 'November',
+  disember: 'December',
+  dis: 'December',
+};
+
 /**
  * Format date (e.g. "October 7, 2026") using Malaysia Time (+08:00).
- * Handles Date objects, ISO strings, and Malaysian DD/MM/YYYY formats.
+ * Handles Date objects, ISO strings, Malaysian DD/MM/YYYY formats, Malay month names,
+ * and preserves multi-day date ranges (e.g. "7 & 8 Oktober 2026").
  */
-export function formatAttendanceDate(dateInput: string | Date): string {
+export function formatAttendanceDate(dateInput: string | Date | undefined | null): string {
   if (!dateInput) return '';
   if (dateInput instanceof Date) {
     if (isNaN(dateInput.getTime())) return '';
@@ -182,16 +208,58 @@ export function formatAttendanceDate(dateInput: string | Date): string {
     });
   }
 
-  const str = String(dateInput).trim();
-  if (!str) return '';
+  const rawStr = String(dateInput).trim();
+  if (
+    !rawStr ||
+    rawStr === '-' ||
+    rawStr.toLowerCase() === 'undefined' ||
+    rawStr.toLowerCase() === 'null'
+  ) {
+    return '';
+  }
 
-  // Check if DD/MM/YYYY or DD-MM-YYYY format (e.g. 07/10/2026)
-  const parts = str.split(/[/-]/);
-  if (parts.length === 3 && parts[0].length <= 2 && parts[2].length === 4) {
-    const day = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10);
-    const year = parseInt(parts[2], 10);
-    if (!isNaN(day) && !isNaN(month) && !isNaN(year) && month >= 1 && month <= 12) {
+  // If already an ISO string with T (e.g. 2026-10-07T08:38:00.000Z)
+  if (rawStr.includes('T')) {
+    const isoDate = new Date(rawStr);
+    if (!isNaN(isoDate.getTime())) {
+      return isoDate.toLocaleDateString('en-US', {
+        timeZone: 'Asia/Kuala_Lumpur',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
+    }
+  }
+
+  // Extract date part before any time indicator (e.g. "18/10/2026, 04:15 PM" -> "18/10/2026")
+  let datePart = rawStr;
+  if (datePart.includes(',')) {
+    datePart = datePart.split(',')[0].trim();
+  } else {
+    // Strip trailing time like " 04:15:00" or " 04:15 PM" or " 16:30"
+    datePart = datePart.replace(/\s+\d{1,2}:\d{2}(?::\d{2})?(?:\s*[AaPp][Mm])?.*$/, '').trim();
+  }
+
+  // If it is a multi-day range string containing & or spaced hyphen with multiple dates (e.g. "7 & 8 Oktober 2026", "7 - 8 Oct 2026")
+  // preserve it as is.
+  if (/\b(?:\d{1,2}\s*(?:&|dan|to|hingga|sampai|\s+-\s+)\s*\d{1,2})\b/i.test(datePart)) {
+    return rawStr;
+  }
+
+  // Check if DD/MM/YYYY, DD-MM-YYYY, DD.MM.YYYY
+  const dmyMatch = datePart.match(/^(\d{1,2})[/\-.]([01]?\d)[/\-.](\d{2,4})$/);
+  if (dmyMatch) {
+    let day = parseInt(dmyMatch[1], 10);
+    const month = parseInt(dmyMatch[2], 10);
+    let year = parseInt(dmyMatch[3], 10);
+    if (year < 100) year += 2000;
+    if (day > 1000) {
+      // YYYY/MM/DD format
+      const temp = day;
+      day = year;
+      year = temp;
+    }
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
       const d = new Date(year, month - 1, day);
       if (!isNaN(d.getTime())) {
         return d.toLocaleDateString('en-US', {
@@ -203,17 +271,60 @@ export function formatAttendanceDate(dateInput: string | Date): string {
     }
   }
 
-  const d = new Date(str);
-  if (!isNaN(d.getTime())) {
-    return d.toLocaleDateString('en-US', {
-      timeZone: 'Asia/Kuala_Lumpur',
+  // Check if YYYY-MM-DD (e.g. 2026-10-18)
+  const ymdMatch = datePart.match(/^(\d{4})[/\-.]([01]?\d)[/\-.](\d{1,2})$/);
+  if (ymdMatch) {
+    const year = parseInt(ymdMatch[1], 10);
+    const month = parseInt(ymdMatch[2], 10);
+    const day = parseInt(ymdMatch[3], 10);
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      const d = new Date(year, month - 1, day);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString('en-US', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        });
+      }
+    }
+  }
+
+  // Check Malay month names (e.g. "18 Oktober 2026", "18hb Oktober 2026")
+  let normalized = datePart.replace(/(\d+)\s*(?:hb|hari\s*bulan)\b/i, '$1');
+  const words = normalized.split(/\s+/);
+  let replacedAny = false;
+  const translatedWords = words.map((w) => {
+    const cleanWord = w.toLowerCase().replace(/[^a-z]/g, '');
+    if (MALAY_MONTH_MAP[cleanWord]) {
+      replacedAny = true;
+      return MALAY_MONTH_MAP[cleanWord];
+    }
+    return w;
+  });
+
+  if (replacedAny) {
+    normalized = translatedWords.join(' ');
+    const d = new Date(normalized);
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleDateString('en-US', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
+    }
+  }
+
+  // General fallback parsing (e.g. "October 18, 2026" or other valid Date string)
+  const fallbackDate = new Date(datePart);
+  if (!isNaN(fallbackDate.getTime())) {
+    return fallbackDate.toLocaleDateString('en-US', {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
     });
   }
 
-  return str;
+  return rawStr;
 }
 
 export interface DailyCertificateOption {
@@ -225,9 +336,73 @@ export interface DailyCertificateOption {
   isCombined?: boolean;
 }
 
+export interface SheetDayMatch {
+  dayNumber: number;
+  priority: number; // Higher number = higher priority
+}
+
+/**
+ * Identify if a Google Sheet header represents an attendance or date column for a specific day.
+ * Returns the day number and priority weight:
+ * - Explicit Date (Tarikh / Date) = 30 (highest priority)
+ * - Check-In (Masa Masuk / Check-In) = 20
+ * - Check-Out (Masa Keluar / Check-Out) = 10
+ * - Generic Day (Hari X / Day X) = 5
+ */
+export function parseSheetDayColumn(header: string): SheetDayMatch | null {
+  const h = header.trim();
+  if (!h) return null;
+
+  // Exclude summary/total duration columns
+  if (/jumlah\s+jam|jumlah\s+masa|total\s+hours|duration|status\s+kehadiran/i.test(h)) {
+    return null;
+  }
+
+  let dayNumber: number | null = null;
+
+  // Look for day indicator: e.g. "Hari 2", "Day 2", "(Hari 2)", "Hari-2", "H2", "D2", "Day2"
+  const dayMatch =
+    h.match(/(?:hari|day)\s*[:#\-]?\s*(\d+)/i) ||
+    h.match(/\((?:hari|day)\s*(\d+)\)/i) ||
+    h.match(/(?:tarikh|date|masuk|keluar|check[\s-]?in|check[\s-]?out)\s*[:#\-]?\s*(?:hari|day)?\s*(\d+)/i);
+
+  if (dayMatch) {
+    dayNumber = parseInt(dayMatch[1], 10);
+  } else if (/^(?:hari|day)\s*(\d+)$/i.test(h)) {
+    dayNumber = parseInt(h.replace(/\D/g, ''), 10);
+  } else {
+    // If no explicit day number is present:
+    // "Masa Masuk", "Check In", "Masa Keluar", "Check Out" without Day/Hari represents Day 1
+    if (/^(?:masa\s+masuk|check[\s-]?in)(?:\s*\(check[\s-]?in\))?$/i.test(h)) {
+      dayNumber = 1;
+    } else if (/^(?:masa\s+keluar|check[\s-]?out)(?:\s*\(check[\s-]?out\))?$/i.test(h)) {
+      dayNumber = 1;
+    }
+  }
+
+  if (!dayNumber || isNaN(dayNumber) || dayNumber < 1) {
+    return null;
+  }
+
+  // Priority hierarchy:
+  // Explicit Date / Tarikh (30) > Check In / Masa Masuk (20) > Check Out / Masa Keluar (10) > Generic Day (5)
+  let priority = 5;
+  if (/tarikh|date/i.test(h)) {
+    priority = 30;
+  } else if (/masuk|check[\s-]?in/i.test(h)) {
+    priority = 20;
+  } else if (/keluar|check[\s-]?out/i.test(h)) {
+    priority = 10;
+  }
+
+  return { dayNumber, priority };
+}
+
 /**
  * Generate certificate options for multi-day events.
  * Enables participants to claim individual day certificates or a combined full event certificate.
+ * Google Sheet date edits take priority over automated Supabase DB check-in timestamps,
+ * allowing organizers to backdate or correct attendance dates directly in their spreadsheet.
  */
 export function buildDailyCertificateOptions(params: {
   records?: Array<{
@@ -241,8 +416,9 @@ export function buildDailyCertificateOptions(params: {
 }): DailyCertificateOption[] {
   const { records = [], sheetRowData = {}, defaultDate, totalDays = 1 } = params;
   const optionsMap = new Map<number, DailyCertificateOption>();
+  const priorityMap = new Map<number, number>();
 
-  // 1. Process attendance records (from Supabase DB)
+  // 1. Process attendance records (from Supabase DB) - baseline priority 0
   if (records && records.length > 0) {
     const sorted = [...records].sort((a, b) => (a.dayNumber ?? 1) - (b.dayNumber ?? 1));
     for (const rec of sorted) {
@@ -258,30 +434,37 @@ export function buildDailyCertificateOptions(params: {
             attendedDate: formatted,
             isCombined: false,
           });
+          priorityMap.set(dayNum, 0);
         }
       }
     }
   }
 
-  // 2. Process sheetRowData (Google Sheet columns like "Masa Masuk (Hari 1)", "Masa Masuk (Hari 2)")
+  // 2. Process sheetRowData (Google Sheet columns like "Masa Masuk (Hari 2)", "Tarikh (Hari 2)", etc.)
+  // Organizers can edit or back-date values directly in Google Sheets.
+  // Google Sheet columns carry higher priority (> 0) than automated DB records,
+  // ensuring that backdated or corrected dates in Google Sheets override the automated check-in timestamps.
   if (sheetRowData) {
     for (const [key, val] of Object.entries(sheetRowData)) {
       if (!val || val.trim() === '-' || val.trim() === '') continue;
-      const match = key.match(/Masa\s+Masuk\s*(?:\(Hari\s*(\d+)\)|Day\s*(\d+))/i);
+      const match = parseSheetDayColumn(key);
       if (match) {
-        const dayNum = parseInt(match[1] || match[2], 10);
-        if (!optionsMap.has(dayNum)) {
-          const datePart = val.split(',')[0].trim();
-          const parsed = formatAttendanceDate(datePart);
-          const displayDate = parsed || datePart;
-          optionsMap.set(dayNum, {
-            dayNumber: dayNum,
-            label: `Hari ${dayNum}`,
+        const { dayNumber, priority } = match;
+        const currentPriority = priorityMap.get(dayNumber) ?? -1;
+
+        if (priority > currentPriority) {
+          const parsed = formatAttendanceDate(val);
+          const displayDate = parsed || val.trim();
+
+          optionsMap.set(dayNumber, {
+            dayNumber,
+            label: `Hari ${dayNumber}`,
             date: displayDate,
             formattedDate: displayDate,
             attendedDate: displayDate,
             isCombined: false,
           });
+          priorityMap.set(dayNumber, priority);
         }
       }
     }

@@ -36,6 +36,7 @@ import { checkCertificateByICOrEmail, CertificateCheckResult } from '@/actions/c
 import { CertificateTemplate } from '@/components/certificate-template';
 import { toast } from 'sonner';
 import { resolveCategoryTemplateId } from '@/lib/certificates/category';
+import { formatAttendanceDate } from '@/lib/forms/attendance';
 
 import {
   CertificateTemplate as CertificateTemplateType,
@@ -141,18 +142,7 @@ export function CertificateCheckClient({
   const activeDailyOption = dailyOptions ? dailyOptions[selectedCertIndex] || dailyOptions[0] : null;
   const activeCertDate = activeDailyOption ? activeDailyOption.date : result?.date;
 
-  const formattedDate = activeCertDate
-    ? (() => {
-        const d = new Date(activeCertDate);
-        return !isNaN(d.getTime())
-          ? d.toLocaleDateString('en-US', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-            })
-          : activeCertDate;
-      })()
-    : null;
+  const formattedDate = activeCertDate ? formatAttendanceDate(activeCertDate) || activeCertDate : null;
 
   const handleCheck = async () => {
     if (!identifier.trim()) {

@@ -3,6 +3,7 @@ import { getProgramFontSize, getNameFontSize, isShortName } from './certificates
 import { CertificateTemplate as CertificateTemplateType } from '@/lib/types';
 import { CertificateRenderer } from './certificates/renderer';
 import { generateCertSerial } from '@/lib/certificates/serial';
+import { formatAttendanceDate } from '@/lib/forms/attendance';
 
 interface CertificateTemplateProps {
   type: string;
@@ -28,18 +29,7 @@ export function CertificateTemplate({
   // Auto-uppercase name for all certificate templates
   const uppercaseName = name.toUpperCase();
 
-  const formattedDate = date
-    ? (() => {
-        const parsed = new Date(date);
-        return !isNaN(parsed.getTime())
-          ? parsed.toLocaleDateString('en-US', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-            })
-          : date;
-      })()
-    : undefined;
+  const formattedDate = date ? formatAttendanceDate(date) || date : undefined;
 
   // Use custom JSON template if available
   if (customTemplateData) {

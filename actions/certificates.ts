@@ -350,16 +350,9 @@ export async function checkCertificateByICOrEmail(
         const { buildDailyCertificateOptions } = await import('@/lib/forms/attendance');
         const sheetRowData: Record<string, string | undefined> = {};
         for (const h of headers) {
-          if (
-            h.toLowerCase().includes('hari') ||
-            h.toLowerCase().includes('day') ||
-            h.toLowerCase().includes('masuk') ||
-            h.toLowerCase().includes('check-in')
-          ) {
-            const v = row.get(h);
-            if (v !== undefined && v !== null) {
-              sheetRowData[h] = v.toString();
-            }
+          const v = row.get(h);
+          if (v !== undefined && v !== null && v !== '') {
+            sheetRowData[h] = v.toString();
           }
         }
 
@@ -370,10 +363,17 @@ export async function checkCertificateByICOrEmail(
           totalDays: checkInOutConfig?.totalDays || 1,
         });
 
+        const effectiveDate =
+          explicitDateIndex !== -1
+            ? date?.toString()
+            : dailyCertificates.length === 1
+            ? dailyCertificates[0].date
+            : date?.toString();
+
         return {
           found: true,
           name: name.toString(),
-          date: date?.toString(),
+          date: effectiveDate,
           programName: form.title,
           ic: realIc,
           dailyCertificates: dailyCertificates.length > 0 ? dailyCertificates : undefined,

@@ -1,3 +1,46 @@
+# Pengutamaan Tarikh Google Sheets untuk Sijil Berbilang Hari (Google Sheets Multi-Day Attendance Date Override) ✅ SELESAI (MENUNGGU PENGESAHAN PENGGUNA SEBELUM KE VERCEL)
+
+**Matlamat**: Menyelesaikan isu di mana apabila penganjur menyunting atau meletakkan tarikh undur (*back-date*) kehadiran di Google Sheets bagi Hari 2 (contohnya `Masa Masuk (Hari 2)`, `Tarikh (Hari 2)`, atau `Date Day 2`), sijil bagi Hari 2 masih memaparkan tarikh lama. Ini berlaku kerana rekod kehadiran automatik di Supabase menyekat pembacaan lajur Google Sheets (`if (!optionsMap.has(dayNum))`) dan penapis regex yang terlalu sempit. Sistem baharu mengutamakan nilai suntingan di Google Sheets berbanding rekod automatik DB Supabase dengan hierarki keutamaan yang mantap. (PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL SEHINGGA DIBERI KEBENARAN).
+
+### Pelan Pelaksanaan
+- [x] 1. Penaiktarafan Pembantu Tarikh & Lajur Google Sheets (`lib/forms/attendance.ts`):
+  - [x] 1.1 Cipta pembantu `parseSheetDayColumn(header)` untuk mengesan nombor hari (`dayNumber`) dan tahap keutamaan (`priority`: Tarikh/Date = 30, Check-In = 20, Check-Out = 10, Day = 5).
+  - [x] 1.2 Naik taraf `formatAttendanceDate` supaya membuang masa sebelum penguraian, menyokong DD/MM/YYYY, DD-MM-YYYY, DD.MM.YYYY, YYYY-MM-DD, dan menukar nama bulan Bahasa Melayu (Oktober, Mei, Disember dsb.) kepada Bahasa Inggeris secara automatik.
+  - [x] 1.3 Naik taraf `buildDailyCertificateOptions` agar lajur Google Sheet bagi setiap hari menimpa (*override*) nilai pangkalan data automatik berasaskan keutamaan tertinggi.
+- [x] 2. Penyelarasan Tindakan Pelayan & Komponen Sijil:
+  - [x] 2.1 Pastikan `actions/certificates.ts` menghantar semua lajur baris Google Sheet ke dalam `sheetRowData` dan menggunakan tarikh harian yang diperbaharui.
+  - [x] 2.2 Kemas kini `components/certificate-template.tsx` dan `app/(public)/check/[formId]/client.tsx` untuk menggunakan `formatAttendanceDate` bagi memastikan pemformatan konsisten.
+- [x] 3. Pengesahan Kualiti & Ujian:
+  - [x] 3.1 Tambah ujian unit di `tests/certificate-multiday-options.test.ts` (menguji suntingan Google Sheet Hari 2 menimpa rekod DB Supabase, pelbagai format tarikh & nama bulan Melayu).
+  - [x] 3.2 Jalankan `npm run typecheck` (0 ralat TypeScript).
+  - [x] 3.3 Jalankan `npm run lint` (0 ralat ESLint).
+  - [x] 3.4 Jalankan `npm test` (semua 427 ujian unit lulus merentas 43 fail).
+  - [x] 3.5 Jalankan `npm run build` (kompilasi Next.js 16 Turbopack bersih, 58 laluan).
+- [x] 4. Dokumentasi & Pengesahan Pengguna:
+  - [x] 4.1 Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
+  - [x] 4.2 Maklumkan kepada pengguna dengan ringkas dalam Bahasa Melayu.
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Punca Utama Tarikh Google Sheet Tidak Muncul Pada Sijil Hari 2**:
+   - Dalam fungsi `buildDailyCertificateOptions` (`lib/forms/attendance.ts`), Langkah 1 mengisi `optionsMap` berasaskan rekod `attendance_records` dari pangkalan data Supabase (yang menyimpan cop masa asal kehadiran automatik QR code).
+   - Langkah 2 yang membaca baris Google Sheets mengandungi sekatan `if (!optionsMap.has(dayNum))`. Kerana Hari 2 telah wujud dalam `optionsMap` daripada rekod DB asal, sebarang nilai atau suntingan tarikh undur (*back-date*) di Google Sheets disekat 100% dan diabaikan!
+   - Di samping itu, penapis regex terdahulu hanya memadankan `Masa Masuk (Hari X)`, mengabaikan `Masa Keluar (Hari 2)` mahupun lajur eksplisit seperti `Tarikh (Hari 2)` / `Date Day 2`.
+   - `formatAttendanceDate` pula tidak memotong masa daripada rentetan seperti `"18/10/2026, 04:15 PM"`, menyebabkan penguraian `new Date()` gagal pada format tarikh Malaysia DD/MM/YYYY dan nama bulan Bahasa Melayu ("Oktober").
+2. **Seni Bina Hierarki Keutamaan (*Priority-Based Precedence Architecture*)**:
+   - Google Sheets ialah panel kawalan langsung bagi penganjur acara. Apabila penganjur membetulkan atau meletakkan tarikh undur di spreadsheet, data Google Sheets mesti mengatasi (*override*) cop masa automatik pangkalan data.
+   - Sistem hierarki keutamaan baharu:
+     - *Keutamaan 30 (Tertinggi)*: Lajur tarikh eksplisit (`Tarikh (Hari X)`, `Date (Day X)`, `Tarikh Hari X`).
+     - *Keutamaan 20*: Lajur masa masuk (`Masa Masuk (Hari X)`, `Check In (Hari X)`).
+     - *Keutamaan 10*: Lajur masa keluar (`Masa Keluar (Hari X)`, `Check Out (Hari X)`).
+     - *Keutamaan 5*: Lajur label hari (`Hari X`, `Day X`).
+     - *Keutamaan 0 (Asas)*: Rekod kehadiran automatik DB Supabase (`attendance_records.check_in_at`).
+   - `priorityMap` memastikan nilai dengan keutamaan lebih tinggi sentiasa menimpa entri sebelumnya bagi hari berkenaan.
+3. **Penyelarasan Penguraian Tarikh Fleksibel & Bahasa Melayu**:
+   - `formatAttendanceDate` memotong masa dan koma sebelum memproses tarikh, menyokong format `DD/MM/YYYY`, `DD-MM-YYYY`, `DD.MM.YYYY`, `YYYY-MM-DD`, serta memetakan nama bulan Bahasa Melayu (`januari` hingga `disember`, serta singkatan `hb`) kepada Bahasa Inggeris supaya difahami oleh enjin JavaScript `Date` secara natif.
+   - Rentetan julat tarikh seperti `"7 & 8 Oktober 2026"` dikekalkan dengan selamat tanpa ralat `Invalid Date`.
+
+---
+
 # Sokongan Soalan Grid Skala Pelbagai Pilihan (Multiple Choice Grid for Scale) ✅ SELESAI (MENUNGGU PENGESAHAN PENGGUNA SEBELUM KE VERCEL)
 
 **Matlamat**: Menambah jenis soalan baharu `grid` (*Multiple Choice Grid / Likert Scale Matrix*) ke dalam KlikForm:
