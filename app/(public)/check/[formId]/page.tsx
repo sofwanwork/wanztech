@@ -45,6 +45,7 @@ export default async function CertificateCheckPage({ params }: PageProps) {
       categoryConfig={categoryConfig}
       templatesById={templatesById}
       minHoursRequired={form.minHoursRequired}
+      verificationMode={form.verificationMode}
     />
   );
 }

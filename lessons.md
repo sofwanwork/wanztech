@@ -568,3 +568,16 @@
   - **Sanitasi Pengepala (`sanitizeHeaders`)**: Memangkas whitespace, menggantikan pengepala kosong dengan nama sandaran `Kolom_X`, dan menyelesaikan penduaan secara automatik dengan akhiran nombor (`Tajuk (2)`).
   - **Penapisan Medan Susun Atur (`isLayoutOnlyField`)**: Saring keluar medan `separator`, `image`, dan `pagebreak` daripada `handleSubmit` dan `dbData` supaya tidak mencemari lajur spreadsheet.
   - **Butang Segerak Manual Dashboard ("Sync Data")**: Menambah butang `Sync Data` di tab Responses membolehkan penganjur menghantar semua rekod tertunggak (*pending*) ke Google Sheet serta-merta tanpa perlu menunggu cron harian.
+
+
+- **Penyesuaian Dinamik Portal Pengesahan Sijil Berasaskan Skema Medan Borang (`detectVerificationMode`)**:
+  (1) **Punca Masalah ("dekat sini kalau form yg ada emel baru letak emel, kalau form yg ada ic baru letak ic, kalau ada dua2 baru letak dua2")**:
+  - Halaman semakan e-Sijil awam (`/check/[formId]`) sebelum ini menetapkan label, sari kata, dan teks pemegang tempat secara statik sebagai "No. Kad Pengenalan / E-mel" pada SEMUA borang.
+  - Bagi penganjur yang mereka bentuk borang program yang hanya mengumpul alamat E-mel (tiada soalan No. IC) atau hanya mengumpul No. IC (tiada soalan E-mel), peserta keliru kerana melihat teks pemegang tempat yang meminta kedua-duanya. Malah, peserta yang menaip No. IC pada borang yang hanya mempunyai E-mel akan menerima maklum balas "Rekod Sijil Tidak Ditemui".
+  (2) **Penyelesaian Seni Bina Dinamik**:
+  - **Fungsi Pengesanan Pintar (`detectVerificationMode`)**: Menganalisis skema medan borang (`form.fields`) tanpa sebarang panggilan API tambahan. Mengesan kehadiran medan emel melalui `type === 'email'` atau `isEmailHeader(label)`, dan medan IC melalui `isIcHeader(label)`, kata kunci `mykad`, atau corak regex IC Malaysia (`[0-9]{12}` atau `[0-9]{6}-[0-9]{2}-[0-9]{4}`).
+  - **Tiga Mod Adaptif (`ic_only`, `email_only`, `both`)**:
+    1. *Borang Hanya Emel (`email_only`)*: Menukar label kepada "Alamat E-mel", pemegang tempat kepada `nama@email.com`, ikon kekal `Mail`, `inputMode="email"`, sari kata dan kad penerangan yang khusus kepada e-mel, serta tip panduan carian yang memeriksa ejaan domain e-mel.
+    2. *Borang Hanya No. IC (`ic_only`)*: Menukar label kepada "No. Kad Pengenalan (IC)", pemegang tempat kepada `901020015566`, ikon kekal `CreditCard`, `inputMode="numeric"`, sari kata khusus kepada No. IC, serta tip semakan 12 digit nombor kad pengenalan.
+    3. *Borang Ada Kedua-duanya / Sandaran (`both`)*: Mengekalkan dwi-label "No. Kad Pengenalan / E-mel", pemegang tempat dwi-format, dan peralihan ikon dinamik berasaskan aksara yang ditaip.
+  - **Amaran Ketidaksepadanan Proaktif (*Proactive Mismatch Warning*)**: Jika pengguna secara tidak sengaja menaip aksara `@` pada borang `ic_only`, atau menaip digit angka pada borang `email_only`, sistem memaparkan amaran kontekstual lembut serta-merta di bawah input sebelum pengguna menekan butang semakan.

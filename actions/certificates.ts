@@ -8,7 +8,7 @@ import { headers as getNextHeaders } from 'next/headers';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { encrypt } from '@/lib/encryption';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
-import { isIcHeader, isEmailHeader } from '@/lib/certificates/headers';
+import { isIcHeader, isEmailHeader, detectVerificationMode } from '@/lib/certificates/headers';
 import type { DailyCertificateOption } from '@/lib/types';
 
 export interface CertificateCheckResult {
@@ -497,5 +497,6 @@ export async function getFormForCertificateCheck(formId: string) {
       form.attendanceSettings?.enabled && form.attendanceSettings?.checkInOut?.enabled
         ? (form.attendanceSettings?.checkInOut?.minHoursForCertificate ?? 0)
         : 0,
+    verificationMode: detectVerificationMode(form.fields),
   };
 }

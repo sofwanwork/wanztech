@@ -1,3 +1,45 @@
+# Penyesuaian Dinamik Pengesahan Sijil Awam Berasaskan Medan Borang (Dynamic Certificate Check Adaptation based on Form Fields) ✅ SELESAI
+
+**Matlamat**: Menyelesaikan aduan pengguna ("dekat sini kalau form yg ada emel baru letak emel, kalau form yg ada ic baru letak ic, kalau ada dua2 baru letak dua2" - `media_1792425039076_07d2b73a.png`): (1) Mengesan jenis medan borang secara dinamik (`detectVerificationMode`: `email_only`, `ic_only`, `both`) daripada skema borang (`form.fields`) tanpa penambahan panggilan API; (2) Menyelaras label input, pemegang tempat, sari kata, teks bantuan, `inputMode` mudah alih, dan ikon secara automatik mengikut mod pengesahan borang; (3) Menyediakan amaran ketidaksepadanan proaktif apabila pengguna menaip `@` pada borang No. IC atau menaip angka pada borang E-mel; (4) Menyelaras tip panduan carian pada kad "Rekod Sijil Tidak Ditemui". (PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL SEHINGGA DIBERI KEBENARAN).
+
+### Pelan Pelaksanaan
+- [x] 1. Pengesanan Mod Pengesahan Dinamik (`lib/certificates/headers.ts` & `actions/certificates.ts`):
+  - [x] 1.1 Tentukan jenis `CertificateVerificationMode = 'both' | 'ic_only' | 'email_only'`.
+  - [x] 1.2 Bina fungsi tulen `detectVerificationMode(fields)` yang mengesan `type === 'email'`, `isEmailHeader`, `isIcHeader`, sokongan kata kunci `mykad`, dan corak regex IC Malaysia.
+  - [x] 1.3 Kemas kini `getFormForCertificateCheck(formId)` dalam `actions/certificates.ts` untuk memulangkan `verificationMode: detectVerificationMode(form.fields)`.
+  - [x] 1.4 Hantar `verificationMode={form.verificationMode}` dari `app/(public)/check/[formId]/page.tsx` ke `<CertificateCheckClient>`.
+- [x] 2. Antaramuka Adaptif Semakan Sijil Awam (`app/(public)/check/[formId]/client.tsx`):
+  - [x] 2.1 Terima prop `verificationMode?: CertificateVerificationMode` (lalai: `'both'`).
+  - [x] 2.2 Sediakan konfigurasi `modeContent` bagi `email_only`, `ic_only`, dan `both` (sari kata, kad penerangan, label, contoh, pemegang tempat, petua, mesej toast).
+  - [x] 2.3 Ikon input dinamik (`renderInputIcon`): Ikon `Mail` tetap untuk `email_only`, `CreditCard` tetap untuk `ic_only`, dan ikon dwi-dinamik berasaskan carian bagi `both`.
+  - [x] 2.4 Amaran ketidaksepadanan proaktif (`mismatchWarning`): Memaparkan amaran lembut jika pengguna menaip `@` pada borang IC atau digit angka pada borang E-mel.
+  - [x] 2.5 Tip panduan berfokus pada kad "Rekod Sijil Tidak Ditemui" mengikut mod borang (ejaan domain emel vs 12-digit No. IC).
+- [x] 3. Pengesahan Kualiti & Ujian:
+  - [x] 3.1 Cipta ujian unit di `tests/certificate-headers.test.ts` (menguji `detectVerificationMode` untuk null/kosong, email_only, ic_only, both, regex, dan MyKad — 15/15 lulus).
+  - [x] 3.2 Jalankan `npm run typecheck` (0 ralat TypeScript).
+  - [x] 3.3 Jalankan `npm run lint` (0 ralat ESLint).
+  - [x] 3.4 Jalankan `npm test` (semua 472 ujian unit lulus merentas 46 suite).
+  - [x] 3.5 Jalankan `npm run build` (kompilasi Next.js 16 Turbopack bersih, 58 laluan).
+- [x] 4. Dokumentasi & Pengesahan Pengguna:
+  - [x] 4.1 Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
+  - [x] 4.2 PATUHI arahan pengguna: JANGAN kemas kini ke Vercel lagi sehingga diarahkan.
+  - [x] 4.3 Maklumkan kepada pengguna dengan ringkas dalam Bahasa Melayu.
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Punca Kekeliruan Pengguna Pada Portal Semakan Sijil Awam**:
+   - Sebelum ini, tajuk kecil, penerangan, dan pemegang tempat pada portal `/check/[formId]` diprogramkan secara statik untuk meminta "No. Kad Pengenalan / E-mel" tanpa mengira jenis medan yang sebenarnya wujud di dalam borang.
+   - Apabila penganjur hanya meminta emel di dalam borang (contohnya borang webinar antarabangsa), peserta di Malaysia tetap melihat arahan No. IC dan sebahagian peserta cuba mencari menggunakan No. IC mereka, lalu menerima ralat "Rekod Sijil Tidak Ditemui".
+2. **Seni Bina Pengesanan Sifar-Latensi (`detectVerificationMode`)**:
+   - Fungsi `getFormForCertificateCheck` sedia membaca metadata borang daripada Supabase yang merangkumi `form.fields`.
+   - Tanpa perlu membuat sebarang panggilan API luar tambahan, enjin menyemak skema medan dengan `detectVerificationMode(form.fields)`.
+   - Mod pengesahan dipetakan secara selamat kepada `'email_only'`, `'ic_only'`, atau `'both'` (dengan sandaran automatik jika tiada pengenalan dikesan).
+3. **Pengalaman Pengguna Adaptif & Papan Kekunci Mudah Alih (`inputMode`)**:
+   - Pada peranti mudah alih, borang `email_only` mengaktifkan `inputMode="email"` dan `type="email"` (memaparkan papan kekunci berserta butang `@` dan `.com`).
+   - Borang `ic_only` mengaktifkan `inputMode="numeric"` (memaparkan papan kekunci nombor terus tanpa perlu menukar mod papan kekunci).
+   - Amaran interaktif proaktif memberi maklum balas serta-merta sekiranya responden tersilap menaip format yang tidak disokong oleh borang program tersebut.
+
+---
+
 # Sokongan Tambah Pemisah Halaman Terus Pada Setiap Soalan (Contextual Page Break Insertion on Every Question) ✅ SELESAI
 
 **Matlamat**: Menyelesaikan aduan pengguna ("add page break ni leceh pulak bila soalan dh byk, boleh tak letak je di setiap question kalau nak add page break"): (1) Membolehkan pengguna menambah Pemisah Halaman (Page Break) terus di bawah mana-mana soalan tanpa perlu menatal ke hujung borang dan menyeretnya ke atas; (2) Menyediakan butang tindakan `[ + Pemisah Halaman ]` pada pengepala setiap soalan (`CardHeader`) dan pintasan di bahagian bawah kad soalan; (3) Mengesan status bersebelahan (`hasNextPageBreak`) secara pintar untuk memaparkan lencana pengesahan `✓ Pemisah Aktif` dan mengelakkan pertindihan pemisah berturutan. (PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL SEHINGGA DIBERI KEBENARAN).

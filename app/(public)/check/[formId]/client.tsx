@@ -50,6 +50,7 @@ import {
   CertificateTemplate as CertificateTemplateType,
   CertificateCategoryConfig,
 } from '@/lib/types';
+import type { CertificateVerificationMode } from '@/lib/certificates/headers';
 
 interface CertificateCheckClientProps {
   formId: string;
@@ -62,6 +63,8 @@ interface CertificateCheckClientProps {
   templatesById?: Record<string, CertificateTemplateType>;
   /** Minimum hours required to be eligible for certificate. */
   minHoursRequired?: number;
+  /** Verification mode detected dynamically from form fields ('ic_only' | 'email_only' | 'both'). */
+  verificationMode?: CertificateVerificationMode;
 }
 
 export function CertificateCheckClient({
@@ -72,6 +75,7 @@ export function CertificateCheckClient({
   categoryConfig,
   templatesById,
   minHoursRequired,
+  verificationMode = 'both',
 }: CertificateCheckClientProps) {
   const [identifier, setIdentifier] = useState('');
   const [loading, setLoading] = useState(false);
@@ -153,9 +157,103 @@ export function CertificateCheckClient({
 
   const formattedDate = activeCertDate ? formatAttendanceDate(activeCertDate) || activeCertDate : null;
 
+  const mode: CertificateVerificationMode = verificationMode || 'both';
+
+  const modeContent = {
+    email_only: {
+      subtitle:
+        'Sahkan kehadiran dan muat turun e-sijil rasmi anda dengan memasukkan alamat E-mel pendaftaran.',
+      cardDesc: 'Masukkan alamat E-mel yang digunakan semasa pendaftaran program.',
+      label: 'Alamat E-mel',
+      example: 'cth: nama@email.com',
+      placeholder: 'Contoh: nama@email.com',
+      hint: (
+        <span>
+          Masukkan alamat e-mel yang digunakan semasa mengisi borang pendaftaran rasmi.
+        </span>
+      ),
+      emptyToast: 'Sila masukkan alamat e-mel anda',
+      inputMode: 'email' as const,
+      type: 'email' as const,
+    },
+    ic_only: {
+      subtitle:
+        'Sahkan kehadiran dan muat turun e-sijil rasmi anda dengan memasukkan No. Kad Pengenalan pendaftaran.',
+      cardDesc: 'Masukkan No. Kad Pengenalan yang digunakan semasa pendaftaran program.',
+      label: 'No. Kad Pengenalan (IC)',
+      example: 'cth: 901234567890',
+      placeholder: 'Contoh: 901020015566',
+      hint: (
+        <span>
+          Masukkan No. IC tanpa sempang (<code>-</code>) seperti 901020015566.
+        </span>
+      ),
+      emptyToast: 'Sila masukkan nombor kad pengenalan anda',
+      inputMode: 'numeric' as const,
+      type: 'text' as const,
+    },
+    both: {
+      subtitle:
+        'Sahkan kehadiran dan muat turun e-sijil rasmi anda dengan memasukkan No. Kad Pengenalan atau E-mel pendaftaran.',
+      cardDesc: 'Masukkan No. Kad Pengenalan atau E-mel yang digunakan semasa pendaftaran program.',
+      label: 'No. Kad Pengenalan / E-mel',
+      example: 'cth: 901234567890',
+      placeholder: 'Contoh: 901020015566 atau nama@email.com',
+      hint: (
+        <span>
+          Masukkan No. IC tanpa sempang (<code>-</code>) atau alamat e-mel pendaftaran rasmi.
+        </span>
+      ),
+      emptyToast: 'Sila masukkan No. Kad Pengenalan atau E-mel anda',
+      inputMode: 'text' as const,
+      type: 'text' as const,
+    },
+  }[mode];
+
+  const mismatchWarning = (() => {
+    if (!identifier.trim()) return null;
+    const cleanDigits = identifier.replace(/[-\s]/g, '');
+    if (mode === 'ic_only' && identifier.includes('@')) {
+      return 'Borang ini menggunakan pengesahan No. Kad Pengenalan (IC). Sila masukkan No. IC tanpa tanda sempang.';
+    }
+    if (mode === 'email_only' && /^\d{6,}$/.test(cleanDigits) && !identifier.includes('@')) {
+      return 'Borang ini menggunakan pengesahan Alamat E-mel. Sila masukkan e-mel pendaftaran anda.';
+    }
+    return null;
+  })();
+
+  const renderInputIcon = () => {
+    if (mode === 'email_only') {
+      return (
+        <Mail
+          className={`h-5 w-5 transition-colors ${
+            identifier.length > 0 ? 'text-primary' : 'text-slate-400'
+          }`}
+        />
+      );
+    }
+    if (mode === 'ic_only') {
+      return (
+        <CreditCard
+          className={`h-5 w-5 transition-colors ${
+            identifier.length > 0 ? 'text-primary' : 'text-slate-400'
+          }`}
+        />
+      );
+    }
+    // mode === 'both'
+    if (identifier.includes('@')) {
+      return <Mail className="h-5 w-5 text-primary transition-colors" />;
+    }
+    if (/^\d+$/.test(identifier.replace(/[-\s]/g, '')) && identifier.length > 0) {
+      return <CreditCard className="h-5 w-5 text-primary transition-colors" />;
+    }
+    return <Search className="h-5 w-5 text-slate-400" />;
+  };
+
   const handleCheck = async () => {
     if (!identifier.trim()) {
-      toast.error('Please enter your IC number or Email');
+      toast.error(modeContent.emptyToast);
       return;
     }
 
@@ -338,7 +436,7 @@ export function CertificateCheckClient({
             {formTitle}
           </h1>
           <p className="text-slate-600 mt-2.5 text-sm sm:text-base [text-wrap:balance] max-w-xl mx-auto leading-relaxed">
-            Sahkan kehadiran dan muat turun e-sijil rasmi anda dengan memasukkan No. Kad Pengenalan atau E-mel pendaftaran.
+            {modeContent.subtitle}
           </p>
 
           {minHoursRequired && minHoursRequired > 0 ? (
@@ -365,29 +463,25 @@ export function CertificateCheckClient({
                 Semakan Rekod Peserta
               </CardTitle>
               <CardDescription className="text-xs sm:text-sm text-slate-500">
-                Masukkan No. Kad Pengenalan atau E-mel yang digunakan semasa pendaftaran program.
+                {modeContent.cardDesc}
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0 space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="ic" className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center justify-between">
-                  <span>No. Kad Pengenalan / E-mel</span>
-                  <span className="text-[11px] font-normal text-slate-400 lowercase">cth: 901234567890</span>
+                  <span>{modeContent.label}</span>
+                  <span className="text-[11px] font-normal text-slate-400 lowercase">{modeContent.example}</span>
                 </Label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    {identifier.includes('@') ? (
-                      <Mail className="h-5 w-5 text-primary transition-colors" />
-                    ) : /^\d+$/.test(identifier.replace(/[-\s]/g, '')) && identifier.length > 0 ? (
-                      <CreditCard className="h-5 w-5 text-primary transition-colors" />
-                    ) : (
-                      <Search className="h-5 w-5 text-slate-400" />
-                    )}
+                    {renderInputIcon()}
                   </div>
                   <Input
                     ref={inputRef}
                     id="ic"
-                    placeholder="Contoh: 901020015566 atau nama@email.com"
+                    type={modeContent.type}
+                    inputMode={modeContent.inputMode}
+                    placeholder={modeContent.placeholder}
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleCheck()}
@@ -407,10 +501,17 @@ export function CertificateCheckClient({
                     </button>
                   )}
                 </div>
-                <p className="text-[11px] text-slate-500 flex items-center gap-1.5 pt-0.5">
-                  <span>💡</span>
-                  <span>Masukkan No. IC tanpa sempang (<code>-</code>) atau alamat e-mel pendaftaran rasmi.</span>
-                </p>
+                {mismatchWarning ? (
+                  <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200/90 rounded-xl px-3 py-1.5 flex items-center gap-1.5 pt-0.5 animate-in fade-in duration-200 shadow-2xs">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0 text-amber-600" />
+                    <span>{mismatchWarning}</span>
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-slate-500 flex items-center gap-1.5 pt-0.5">
+                    <span>💡</span>
+                    <span>{modeContent.hint}</span>
+                  </p>
+                )}
               </div>
             </CardContent>
             <CardFooter className="p-0">
@@ -894,9 +995,25 @@ export function CertificateCheckClient({
                       <span>Panduan & Tindakan:</span>
                     </div>
                     <ul className="space-y-1.5 pl-4 list-disc text-slate-600 leading-relaxed text-xs">
-                      <li>Pastikan No. Kad Pengenalan dimasukkan tanpa tanda sempang (contoh: <code>901020015566</code>).</li>
-                      <li>Pastikan alamat e-mel dieja dengan tepat seperti semasa mengisi borang program.</li>
-                      <li>Sila hubungi pihak urusetia / penganjur jika kehadiran anda belum dimuat naik ke dalam sistem.</li>
+                      {mode === 'email_only' ? (
+                        <>
+                          <li>Pastikan alamat e-mel dieja dengan tepat seperti semasa mengisi borang program.</li>
+                          <li>Periksa ejaan domain e-mel anda (contoh: <code>@gmail.com</code>, <code>@yahoo.com</code>).</li>
+                          <li>Sila hubungi pihak urusetia / penganjur jika kehadiran anda belum dimuat naik ke dalam sistem.</li>
+                        </>
+                      ) : mode === 'ic_only' ? (
+                        <>
+                          <li>Pastikan No. Kad Pengenalan dimasukkan tanpa tanda sempang (contoh: <code>901020015566</code>).</li>
+                          <li>Semak semula 12 digit nombor kad pengenalan anda.</li>
+                          <li>Sila hubungi pihak urusetia / penganjur jika kehadiran anda belum dimuat naik ke dalam sistem.</li>
+                        </>
+                      ) : (
+                        <>
+                          <li>Pastikan No. Kad Pengenalan dimasukkan tanpa tanda sempang (contoh: <code>901020015566</code>).</li>
+                          <li>Pastikan alamat e-mel dieja dengan tepat seperti semasa mengisi borang program.</li>
+                          <li>Sila hubungi pihak urusetia / penganjur jika kehadiran anda belum dimuat naik ke dalam sistem.</li>
+                        </>
+                      )}
                     </ul>
                   </div>
 

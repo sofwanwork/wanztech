@@ -3324,3 +3324,51 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - `npm run typecheck`: 0 ralat TypeScript.
   - `npm run lint`: 0 ralat / 0 amaran ESLint.
   - `npm run build`: Kompilasi Next.js 16 Turbopack bersih tanpa sebarang ralat (58 laluan).
+
+## Sisipan Pemisah Halaman Kontekstual Pada Setiap Soalan (2026-10-19)
+- **Konteks & Permintaan Pengguna**:
+  - Pengguna mendapati menambah pemisah halaman leceh apabila borang mempunyai banyak soalan: *"add page break ni leceh pulak bila soalan dh byk, boleh tak letak je di setiap question kalau nak add page break"*.
+- **Penyelesaian Dilaksanakan**:
+  - `components/forms/fields-editor/index.tsx`:
+    - Fungsi `insertPageBreak(afterIndex)` menggunakan `splice(afterIndex + 1, 0, newPageBreak)` untuk menyuntik pemisah terus di bawah soalan yang dipilih.
+    - Menambah butang `[ + Pemisah Halaman ]` pada `CardHeader` setiap soalan di sebelah butang Salin & Padam.
+    - Menambah pintasan pantas di bahagian bawah `CardContent`: `Mahu jadikan soalan seterusnya pada halaman baharu? [ + Tambah Pemisah di sini ]`.
+    - Pengesanan `hasNextPageBreak`: bertukar kepada lencana `✓ Pemisah Aktif` secara automatik jika pemisah telah wujud di bawah soalan berkenaan untuk mengelakkan pemisah kosong berganda.
+  - `tests/pagination.test.ts`:
+    - Menambah ujian unit penyisipan dan pengesahan pemecahan halaman berbilang muka surat.
+- **Pengesahan & Kualiti**:
+  - `npm test`: 467 / 467 ujian unit lulus.
+  - `npm run typecheck`: 0 ralat.
+  - `npm run lint`: 0 ralat.
+  - `npm run build`: Bersih (58 laluan).
+
+## Penyesuaian Dinamik Portal Pengesahan Sijil Awam Berasaskan Medan Borang (2026-10-19)
+- **Konteks & Permintaan Pengguna**:
+  - Maklum balas pengguna: *"dekat sini kalau form yg ada emel baru letak emel, kalau form yg ada ic baru letak ic, kalau ada dua2 baru letak dua2"* (`media_1792425039076_07d2b73a.png`).
+- **Punca Asal (Root Cause Analysis)**:
+  - Portal semakan sijil awam (`/check/[formId]`) sebelum ini menetapkan tajuk kecil, penerangan kad, label, dan contoh input secara statik ("No. Kad Pengenalan / E-mel") untuk SEMUA borang, walaupun borang tersebut hanya mengumpul e-mel sahaja atau No. IC sahaja. Ini mengelirukan responden dan mencetuskan ralat carian apabila format yang salah dimasukkan.
+- **Penyelesaian Dilaksanakan**:
+  - `lib/certificates/headers.ts`:
+    - Mentakrifkan jenis `CertificateVerificationMode = 'both' | 'ic_only' | 'email_only'`.
+    - Menambah sokongan kata kunci `mykad` pada `isIcHeader`.
+    - Membina fungsi tulen `detectVerificationMode(fields?: MinimalFormField[] | null): CertificateVerificationMode` yang menyemak jenis medan `email`, label emel, label IC, perkataan MyKad, serta corak regex IC Malaysia (`[0-9]{12}` atau `[0-9]{6}-[0-9]{2}-[0-9]{4}`).
+  - `actions/certificates.ts`:
+    - Mengimport `detectVerificationMode`.
+    - `getFormForCertificateCheck(formId)` memulangkan `verificationMode: detectVerificationMode(form.fields)` sifar-latensi daripada rekod borang Supabase sedia ada.
+  - `app/(public)/check/[formId]/page.tsx`:
+    - Menghantar `verificationMode={form.verificationMode}` kepada `<CertificateCheckClient>`.
+  - `app/(public)/check/[formId]/client.tsx`:
+    - Menerima prop `verificationMode?: CertificateVerificationMode`.
+    - Menyelaras `modeContent` (`subtitle`, `cardDesc`, `label`, `example`, `placeholder`, `hint`, `emptyToast`, `inputMode`, `type`):
+      1. `email_only`: Memaparkan "Alamat E-mel", contoh `nama@email.com`, `inputMode="email"`, ikon `Mail`, sari kata khusus e-mel, dan tip domain e-mel pada kad Not Found.
+      2. `ic_only`: Memaparkan "No. Kad Pengenalan (IC)", contoh `901234567890`, `inputMode="numeric"`, ikon `CreditCard`, sari kata khusus No. IC, dan tip 12-digit No. IC pada kad Not Found.
+      3. `both`: Mengekalkan carian fleksibel dwi-pengenalan "No. Kad Pengenalan / E-mel" dan peralihan ikon carian dinamik.
+    - Menambah `mismatchWarning`: Memberikan maklum balas interaktif proaktif jika responden menaip tanda `@` pada borang `ic_only`, atau menaip digit angka pada borang `email_only`.
+  - `tests/certificate-headers.test.ts`:
+    - Menambah 5 ujian unit baharu untuk `detectVerificationMode` (merangkumi `both`, `email_only`, `ic_only`, regex IC, MyKad, dan sandaran).
+- **Pengesahan & Kualiti**:
+  - `npm test`: 472 / 472 ujian unit lulus merentas 46 fail suite.
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm run build`: Kompilasi Next.js 16 Turbopack bersih tanpa ralat (58 laluan).
+
