@@ -9,31 +9,48 @@ export interface SheetConfig {
   accessToken?: string;
 }
 
+export async function getGoogleSheetsAuth(config: SheetConfig, readOnly = false) {
+  if (config.accessToken) {
+    const { google } = await import('googleapis');
+    const oauth2Client = new google.auth.OAuth2();
+    oauth2Client.setCredentials({ access_token: config.accessToken });
+    return oauth2Client;
+  }
+  if (config.clientEmail && config.privateKey) {
+    return new JWT({
+      email: config.clientEmail,
+      key: config.privateKey,
+      scopes: [
+        readOnly
+          ? 'https://www.googleapis.com/auth/spreadsheets.readonly'
+          : 'https://www.googleapis.com/auth/spreadsheets',
+      ],
+    });
+  }
+  throw new Error('Missing credentials (either Access Token or Service Account)');
+}
+
+export function sanitizeSheetValue(value: unknown): string | number | boolean {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'number' || typeof value === 'boolean') return value;
+  const stringValue = String(value);
+  if (
+    stringValue.startsWith('=') ||
+    stringValue.startsWith('+') ||
+    stringValue.startsWith('-') ||
+    stringValue.startsWith('@')
+  ) {
+    return "'" + stringValue;
+  }
+  return stringValue;
+}
+
 export async function appendToSheet(
   config: SheetConfig,
   data: Record<string, string | number | boolean | null | undefined>
 ) {
   try {
-    let auth;
-    if (config.accessToken) {
-      // OAuth Strategy
-      const { google } = await import('googleapis');
-      const oauth2Client = new google.auth.OAuth2();
-      oauth2Client.setCredentials({ access_token: config.accessToken });
-      auth = oauth2Client;
-    } else if (config.clientEmail && config.privateKey) {
-      // Service Account Strategy.
-      // Only the Sheets API is used here (loadInfo + addRow), so the
-      // `spreadsheets` scope alone is sufficient — no Drive scope needed.
-      auth = new JWT({
-        email: config.clientEmail,
-        key: config.privateKey,
-        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-      });
-    } else {
-      throw new Error("Missing credentials (either Access Token or Service Account)");
-    }
-
+    const auth = await getGoogleSheetsAuth(config);
     const doc = new GoogleSpreadsheet(config.sheetId, auth);
 
     await doc.loadInfo();
@@ -333,6 +350,197 @@ export async function readSheetRows(
     return { success: true, headers, rows };
   } catch (error) {
     console.error('Google Sheet Read Error:', error);
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+export interface DailyAttendanceSheetSyncParams {
+  config: SheetConfig;
+  dayNumber: number;
+  totalDays: number;
+  participantName?: string;
+  identifierLabel?: string;
+  identifierValue: string;
+  checkInTime?: string;
+  checkOutTime?: string;
+  durationHours?: number;
+  statusText?: string;
+  submissionId?: string;
+  masterSummary?: {
+    formattedTotalTime?: string;
+    totalDecimalHours?: number;
+    statusText?: string;
+  };
+}
+
+/**
+ * Sync Day 2+ attendance to a dedicated daily worksheet tab (e.g. "Hari 2", "Hari 3")
+ * in Google Spreadsheet, preventing the main sheet from being cluttered with endless columns.
+ * Also updates summary columns on the master sheet (Sheet 0).
+ */
+export async function syncDailyAttendanceToSheet(
+  params: DailyAttendanceSheetSyncParams
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const {
+      config,
+      dayNumber,
+      participantName,
+      identifierLabel,
+      identifierValue,
+      checkInTime,
+      checkOutTime,
+      durationHours,
+      statusText,
+      submissionId,
+      masterSummary,
+    } = params;
+
+    const auth = await getGoogleSheetsAuth(config);
+    const doc = new GoogleSpreadsheet(config.sheetId, auth);
+    await doc.loadInfo();
+
+    const targetTabTitle = `Hari ${dayNumber}`;
+    // Case-insensitive lookup for existing sheet
+    let daySheet = Object.values(doc.sheetsByTitle).find(
+      (s) => s.title.trim().toLowerCase() === targetTabTitle.toLowerCase()
+    );
+
+    const defaultHeaders = [
+      'Timestamp',
+      'Nama',
+      identifierLabel || 'No. IC',
+      'Masa Masuk',
+      'Masa Keluar',
+      'Jumlah Jam (Hours)',
+      'Status Kehadiran',
+    ];
+
+    if (!daySheet) {
+      daySheet = await doc.addSheet({
+        title: targetTabTitle,
+        headerValues: defaultHeaders,
+      });
+    }
+
+    await daySheet.loadHeaderRow();
+    let headers = daySheet.headerValues;
+    if (!headers || headers.length === 0) {
+      await daySheet.setHeaderRow(defaultHeaders);
+      await daySheet.loadHeaderRow();
+      headers = daySheet.headerValues;
+    }
+
+    const cleanIdentifier = identifierValue.replace(/[\s\-_/]/g, '').toLowerCase();
+    const idHeaderCandidates = [
+      identifierLabel,
+      'No. IC',
+      'No IC',
+      'IC',
+      'No. Kad Pengenalan',
+      'Kad Pengenalan',
+      'Email',
+      'Emel',
+    ].filter(Boolean) as string[];
+
+    const dayRows = await daySheet.getRows();
+    const matchedDayRow = dayRows.find((r) => {
+      for (const candidate of idHeaderCandidates) {
+        const cell = r.get(candidate);
+        if (cell) {
+          const cleanCell = String(cell).replace(/[\s\-_/]/g, '').toLowerCase();
+          if (cleanCell === cleanIdentifier) return true;
+        }
+      }
+      return false;
+    });
+
+    if (matchedDayRow) {
+      if (checkInTime) matchedDayRow.set('Masa Masuk', sanitizeSheetValue(checkInTime));
+      if (checkOutTime) matchedDayRow.set('Masa Keluar', sanitizeSheetValue(checkOutTime));
+      if (durationHours !== undefined) {
+        matchedDayRow.set('Jumlah Jam (Hours)', durationHours);
+      }
+      if (statusText) matchedDayRow.set('Status Kehadiran', sanitizeSheetValue(statusText));
+      await matchedDayRow.save();
+    } else {
+      const idKey =
+        headers.find((h) =>
+          idHeaderCandidates.some((c) => c.toLowerCase() === h.trim().toLowerCase())
+        ) ||
+        identifierLabel ||
+        'No. IC';
+
+      await daySheet.addRow({
+        Timestamp: sanitizeSheetValue(checkInTime || new Date().toISOString()),
+        Nama: sanitizeSheetValue(participantName || ''),
+        [idKey]: sanitizeSheetValue(identifierValue),
+        'Masa Masuk': sanitizeSheetValue(checkInTime || '-'),
+        'Masa Keluar': sanitizeSheetValue(checkOutTime || '-'),
+        'Jumlah Jam (Hours)': durationHours ?? 0,
+        'Status Kehadiran': sanitizeSheetValue(statusText || `Daftar Masuk (Hari ${dayNumber})`),
+      });
+    }
+
+    // Update Master Sheet (Sheet 0) with high-level summary only
+    const masterSheet = doc.sheetsByIndex[0];
+    if (masterSheet && masterSummary) {
+      try {
+        await masterSheet.loadHeaderRow();
+        const mHeaders = masterSheet.headerValues;
+
+        const summaryUpdates: Record<string, string | number> = {};
+        if (masterSummary.statusText) {
+          summaryUpdates['Status Kehadiran'] = masterSummary.statusText;
+        }
+        if (masterSummary.formattedTotalTime) {
+          summaryUpdates['Jumlah Masa Hadir'] = masterSummary.formattedTotalTime;
+        }
+        if (masterSummary.totalDecimalHours !== undefined) {
+          summaryUpdates['Jumlah Jam Keseluruhan (Total Hours)'] =
+            masterSummary.totalDecimalHours;
+        }
+
+        if (Object.keys(summaryUpdates).length > 0) {
+          const missingMasterHeaders = Object.keys(summaryUpdates).filter(
+            (k) => !mHeaders.includes(k)
+          );
+          if (missingMasterHeaders.length > 0) {
+            await masterSheet.setHeaderRow([...mHeaders, ...missingMasterHeaders]);
+            await masterSheet.loadHeaderRow();
+          }
+
+          const masterRows = await masterSheet.getRows();
+          const masterRow = masterRows.find((r) => {
+            if (submissionId) {
+              const sId = r.get('_submission_id');
+              if (sId && String(sId) === submissionId) return true;
+            }
+            for (const candidate of idHeaderCandidates) {
+              const cell = r.get(candidate);
+              if (cell) {
+                const cleanCell = String(cell).replace(/[\s\-_/]/g, '').toLowerCase();
+                if (cleanCell === cleanIdentifier) return true;
+              }
+            }
+            return false;
+          });
+
+          if (masterRow) {
+            for (const [k, v] of Object.entries(summaryUpdates)) {
+              masterRow.set(k, sanitizeSheetValue(v));
+            }
+            await masterRow.save();
+          }
+        }
+      } catch (masterErr) {
+        console.warn('[syncDailyAttendanceToSheet] Master sheet update error:', masterErr);
+      }
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('[syncDailyAttendanceToSheet] Error:', error);
     return { success: false, error: (error as Error).message };
   }
 }

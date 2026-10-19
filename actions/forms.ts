@@ -594,9 +594,6 @@ export async function submitFormAction(
         const baseRecord = records[0];
 
         if (totalDays > 1) {
-          dbData[`Masa Masuk (Hari ${nextDay})`] = formatAttendanceDateTime(nowCheckIn);
-          dbData[`Masa Keluar (Hari ${nextDay})`] = '-';
-          dbData[`Jumlah Jam (Hari ${nextDay})`] = 0;
           dbData['Status Kehadiran'] = `Daftar Masuk (Hari ${nextDay}/${totalDays})`;
         }
 
@@ -617,6 +614,54 @@ export async function submitFormAction(
             checkInTime: formatAttendanceTime(nowCheckIn),
             participantName: baseRecord?.participantName || participantName,
           };
+
+          // Sync Day X check-in to Google Sheet dedicated tab
+          if (form.googleSheetUrl && form.userId && totalDays > 1 && nextDay >= 2) {
+            try {
+              const { getSettingsByFormId } = await import('@/lib/storage/settings');
+              const { syncDailyAttendanceToSheet } = await import('@/lib/api/google-sheets');
+              const settings = await getSettingsByFormId(form.id);
+              const sheetMatch = form.googleSheetUrl.match(/[-\w]{25,}/);
+              const sheetId = sheetMatch ? sheetMatch[0] : '';
+              if (sheetId && settings) {
+                let accessToken = settings.googleAccessToken;
+                if (settings.googleRefreshToken || accessToken) {
+                  try {
+                    const { getValidAccessToken } = await import('@/lib/api/google-auth');
+                    accessToken = await getValidAccessToken({
+                      accessToken: settings.googleAccessToken,
+                      refreshToken: settings.googleRefreshToken,
+                      tokenExpiry: settings.googleTokenExpiry,
+                      userId: form.userId,
+                    });
+                  } catch {}
+                }
+                await syncDailyAttendanceToSheet({
+                  config: {
+                    sheetId,
+                    clientEmail: settings.googleClientEmail,
+                    privateKey: settings.googlePrivateKey
+                      ? formatPrivateKey(settings.googlePrivateKey)
+                      : undefined,
+                    accessToken,
+                  },
+                  dayNumber: nextDay,
+                  totalDays,
+                  participantName: baseRecord?.participantName || participantName,
+                  identifierLabel: identifierField?.label || 'No. IC',
+                  identifierValue: String(rawId).trim(),
+                  checkInTime: formatAttendanceDateTime(nowCheckIn),
+                  statusText: `Daftar Masuk (Hari ${nextDay})`,
+                  submissionId: baseRecord?.submissionId || submissionId,
+                  masterSummary: {
+                    statusText: `Daftar Masuk (Hari ${nextDay}/${totalDays})`,
+                  },
+                });
+              }
+            } catch (sheetErr) {
+              console.warn('[submitFormAction-dayX] Google Sheet sync error (non-fatal):', sheetErr);
+            }
+          }
         } catch (attErr) {
           console.warn('Attendance next day check-in record creation error:', attErr);
         }

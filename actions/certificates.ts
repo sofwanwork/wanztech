@@ -356,6 +356,69 @@ export async function checkCertificateByICOrEmail(
           }
         }
 
+        // Check if separate day tabs exist in the Google Spreadsheet: e.g. "Hari 2", "Hari 3", ... or "Day 2", "Day 3"
+        const totalDaysConfig = checkInOutConfig?.totalDays || 1;
+        const sheetsByTitle = doc.sheetsByTitle || {};
+        if (
+          totalDaysConfig > 1 ||
+          Object.keys(sheetsByTitle).some((t) => /^(?:hari|day)\s*\d+$/i.test(t.trim()))
+        ) {
+          const maxCheckDays = Math.max(totalDaysConfig, 10);
+          for (let d = 2; d <= maxCheckDays; d++) {
+            const dayTabRegex = new RegExp(`^(?:hari|day)\\s*${d}$`, 'i');
+            const daySheet = Object.values(sheetsByTitle).find((s) =>
+              s?.title && dayTabRegex.test(s.title.trim())
+            );
+            if (daySheet) {
+              try {
+                await daySheet.loadHeaderRow();
+                const dHeaders = daySheet.headerValues || [];
+                const dRows = await daySheet.getRows();
+
+                const matchedDayRow = dRows.find((r) => {
+                  for (const dh of dHeaders) {
+                    if (
+                      dh.toLowerCase().includes('ic') ||
+                      dh.toLowerCase().includes('kp') ||
+                      dh.toLowerCase().includes('email') ||
+                      dh.toLowerCase().includes('emel')
+                    ) {
+                      const v = r.get(dh);
+                      if (v) {
+                        const cleanV = isEmailSearch
+                          ? v.toString().trim().toLowerCase()
+                          : v.toString().replace(/[-\s]/g, '');
+                        if (cleanV === cleanInput) return true;
+                      }
+                    }
+                  }
+                  return false;
+                });
+
+                if (matchedDayRow) {
+                  for (const dh of dHeaders) {
+                    const dv = matchedDayRow.get(dh);
+                    if (dv !== undefined && dv !== null && dv !== '') {
+                      const trimmedHeader = dh.trim();
+                      if (/^(?:masa\s+masuk|check[\s-]?in)$/i.test(trimmedHeader)) {
+                        sheetRowData[`Masa Masuk (Hari ${d})`] = dv.toString();
+                      } else if (/^(?:masa\s+keluar|check[\s-]?out)$/i.test(trimmedHeader)) {
+                        sheetRowData[`Masa Keluar (Hari ${d})`] = dv.toString();
+                      } else if (/^(?:tarikh|date)$/i.test(trimmedHeader)) {
+                        sheetRowData[`Tarikh (Hari ${d})`] = dv.toString();
+                      } else {
+                        sheetRowData[dh] = dv.toString();
+                      }
+                    }
+                  }
+                }
+              } catch (daySheetErr) {
+                console.warn(`[certificate-check] Error reading daily sheet Hari ${d}:`, daySheetErr);
+              }
+            }
+          }
+        }
+
         const dailyCertificates = buildDailyCertificateOptions({
           records: attRecords,
           sheetRowData,

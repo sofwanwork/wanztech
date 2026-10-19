@@ -304,25 +304,36 @@ export async function submitAttendanceCheckInAction(
           accessToken,
         };
 
-        const updateData: Record<string, string | number> = totalDays > 1
-          ? {
-              [`Masa Masuk (Hari ${nextDay})`]: formatAttendanceDateTime(nowCheckIn),
-              [`Masa Keluar (Hari ${nextDay})`]: '-',
-              [`Jumlah Jam (Hari ${nextDay})`]: 0,
-              'Status Kehadiran': `Daftar Masuk (Hari ${nextDay}/${totalDays})`,
-            }
-          : {
-              'Masa Masuk (Check-In)': formatAttendanceDateTime(nowCheckIn),
-              'Masa Keluar (Check-Out)': '-',
-              'Jumlah Masa Hadir': '-',
-              'Jumlah Jam (Hours)': 0,
-              'Status Kehadiran': 'Daftar Masuk (Checked-In)',
-            };
-
-        if (baseRecord?.submissionId) {
-          await updateSheetRow(sheetConfig, '_submission_id', baseRecord.submissionId, updateData);
+        if (totalDays > 1 && nextDay >= 2) {
+          const { syncDailyAttendanceToSheet } = await import('@/lib/api/google-sheets');
+          await syncDailyAttendanceToSheet({
+            config: sheetConfig,
+            dayNumber: nextDay,
+            totalDays,
+            participantName: baseRecord?.participantName,
+            identifierLabel: baseRecord?.identifierLabel || 'No. IC',
+            identifierValue: rawIdentifier.trim(),
+            checkInTime: formatAttendanceDateTime(nowCheckIn),
+            statusText: `Daftar Masuk (Hari ${nextDay})`,
+            submissionId: baseRecord?.submissionId,
+            masterSummary: {
+              statusText: `Daftar Masuk (Hari ${nextDay}/${totalDays})`,
+            },
+          });
         } else {
-          await updateSheetRow(sheetConfig, baseRecord?.identifierLabel || 'IC', rawIdentifier.trim(), updateData);
+          const updateData: Record<string, string | number> = {
+            'Masa Masuk (Check-In)': formatAttendanceDateTime(nowCheckIn),
+            'Masa Keluar (Check-Out)': '-',
+            'Jumlah Masa Hadir': '-',
+            'Jumlah Jam (Hours)': 0,
+            'Status Kehadiran': 'Daftar Masuk (Checked-In)',
+          };
+
+          if (baseRecord?.submissionId) {
+            await updateSheetRow(sheetConfig, '_submission_id', baseRecord.submissionId, updateData);
+          } else {
+            await updateSheetRow(sheetConfig, baseRecord?.identifierLabel || 'IC', rawIdentifier.trim(), updateData);
+          }
         }
       }
     } catch (sheetErr) {
@@ -530,63 +541,76 @@ export async function submitAttendanceCheckOutAction(
           accessToken,
         };
 
-        const updateData: Record<string, string | number> = totalDays > 1
-          ? {
-              [`Masa Keluar (Hari ${dayNum})`]: formatAttendanceDateTime(now),
-              [`Jumlah Jam (Hari ${dayNum})`]: dur.decimalHours,
-              'Jumlah Masa Hadir': multiDay.formattedTotalText,
-              'Jumlah Jam Keseluruhan (Total Hours)': multiDay.totalDecimalHours,
-              'Status Kehadiran': isAllDone
+        if (totalDays > 1 && dayNum >= 2) {
+          const { syncDailyAttendanceToSheet } = await import('@/lib/api/google-sheets');
+          await syncDailyAttendanceToSheet({
+            config: sheetConfig,
+            dayNumber: dayNum,
+            totalDays,
+            participantName: record.participantName,
+            identifierLabel: record.identifierLabel || 'No. IC',
+            identifierValue: rawIdentifier.trim(),
+            checkOutTime: formatAttendanceDateTime(now),
+            durationHours: dur.decimalHours,
+            statusText: `Hadir (Hari ${dayNum})`,
+            submissionId: record.submissionId,
+            masterSummary: {
+              formattedTotalTime: multiDay.formattedTotalText,
+              totalDecimalHours: multiDay.totalDecimalHours,
+              statusText: isAllDone
                 ? `Selesai Sepenuhnya (${totalDays}/${totalDays} Hari)`
                 : `Hari ${dayNum} Selesai (${dayNum}/${totalDays} Hari)`,
-            }
-          : {
-              'Masa Keluar (Check-Out)': formatAttendanceDateTime(now),
-              'Jumlah Masa Hadir': dur.formattedText,
-              'Jumlah Jam (Hours)': dur.decimalHours,
-              'Status Kehadiran': 'Selesai (Completed)',
-            };
+            },
+          });
+        } else {
+          const updateData: Record<string, string | number> = {
+            'Masa Keluar (Check-Out)': formatAttendanceDateTime(now),
+            'Jumlah Masa Hadir': dur.formattedText,
+            'Jumlah Jam (Hours)': dur.decimalHours,
+            'Status Kehadiran': 'Selesai (Completed)',
+          };
 
-        // Try updating by submission_id first
-        let sheetRes = await updateSheetRow(
-          sheetConfig,
-          '_submission_id',
-          record.submissionId,
-          updateData
-        );
-
-        // Fallback 1: try matching by the identifier label from form/attendance record
-        if (sheetRes.success && sheetRes.updated === false && record.identifierLabel) {
-          sheetRes = await updateSheetRow(
+          // Try updating by submission_id first
+          let sheetRes = await updateSheetRow(
             sheetConfig,
-            record.identifierLabel,
-            rawIdentifier.trim(),
+            '_submission_id',
+            record.submissionId,
             updateData
           );
-        }
 
-        // Fallback 2: try common IC / identifier header names
-        if (sheetRes.success && sheetRes.updated === false) {
-          const candidateHeaders = [
-            'No. Kad Pengenalan',
-            'No Kad Pengenalan',
-            'No. IC',
-            'No IC',
-            'IC',
-            'No. KP',
-            'No KP',
-            'Kad Pengenalan',
-            'Email',
-            'Emel',
-          ];
-          for (const cand of candidateHeaders) {
+          // Fallback 1: try matching by the identifier label from form/attendance record
+          if (sheetRes.success && sheetRes.updated === false && record.identifierLabel) {
             sheetRes = await updateSheetRow(
               sheetConfig,
-              cand,
+              record.identifierLabel,
               rawIdentifier.trim(),
               updateData
             );
-            if (sheetRes.updated) break;
+          }
+
+          // Fallback 2: try common IC / identifier header names
+          if (sheetRes.success && sheetRes.updated === false) {
+            const candidateHeaders = [
+              'No. Kad Pengenalan',
+              'No Kad Pengenalan',
+              'No. IC',
+              'No IC',
+              'IC',
+              'No. KP',
+              'No KP',
+              'Kad Pengenalan',
+              'Email',
+              'Emel',
+            ];
+            for (const cand of candidateHeaders) {
+              sheetRes = await updateSheetRow(
+                sheetConfig,
+                cand,
+                rawIdentifier.trim(),
+                updateData
+              );
+              if (sheetRes.updated) break;
+            }
           }
         }
       }

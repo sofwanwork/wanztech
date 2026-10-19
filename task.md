@@ -1,3 +1,46 @@
+# Pecahan Kehadiran Berbilang Hari ke Tab Google Sheets Baharu (Dedicated Daily Worksheets for Multi-Day Attendance) ✅ SELESAI (MENUNGGU PENGESAHAN PENGGUNA SEBELUM KE VERCEL)
+
+**Matlamat**: Membolehkan kehadiran bagi Hari 2 dan seterusnya direkodkan ke dalam tab / helaian (*worksheet*) baharu secara automatik (contohnya tab `Hari 2`, `Hari 3`) di Google Spreadsheet, supaya helaian utama (Sheet 0) kekal bersih tanpa limpahan lajur yang semakin banyak ke kanan. Sistem juga akan menyelaraskan pembacaan sijil awam supaya tarikh dan kehadiran daripada tab harian tersebut dikesan secara automatik. (PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL SEHINGGA DIBERI KEBENARAN).
+
+### Pelan Pelaksanaan
+- [x] 1. Lapisan Integrasi Google Sheets (`lib/api/google-sheets.ts`):
+  - [x] 1.1 Bina fungsi pembantu `syncDailyAttendanceToSheet(params)`:
+    - Menyemak atau mencipta tab baharu bertajuk `Hari ${dayNumber}` dengan baris pengepala `[Timestamp, Nama, No. IC, Masa Masuk, Masa Keluar, Jumlah Jam (Hours), Status Kehadiran]`.
+    - Menambah baris peserta jika belum wujud pada hari tersebut (check-in), atau mengemas kini baris sedia ada (check-out).
+    - Mengemas kini ringkasan kumulatif (`Jumlah Masa Hadir`, `Jumlah Jam Keseluruhan`, `Status Kehadiran`) pada sheet utama (Sheet 0) tanpa menambah lajur harian berulang.
+- [x] 2. Penyelarasan Tindakan Kehadiran (`actions/attendance.ts` & `actions/forms.ts`):
+  - [x] 2.1 Kemas kini `submitAttendanceCheckInAction` (Hari 2+) untuk memanggil `syncDailyAttendanceToSheet`.
+  - [x] 2.2 Kemas kini `submitAttendanceCheckOutAction` (Hari 2+) untuk mengemas kini tab `Hari ${dayNum}` dan ringkasan Sheet 0.
+  - [x] 2.3 Selaraskan SCENARIO 2 dalam `submitFormAction` (`actions/forms.ts`) untuk sokongan resubmit borang pada Hari 2+.
+- [x] 3. Penyelarasan Semakan Sijil Awam (`actions/certificates.ts`):
+  - [x] 3.1 Kemas kini `checkCertificateByICOrEmail` untuk menyemak tab berasingan `Hari ${d}` / `Day ${d}` (jika wujud) dan mengekstrak tarikh/kehadiran bagi setiap hari ke dalam `sheetRowData`.
+  - [x] 3.2 Kekalkan keserasian ke belakang (*backward compatibility*) sekiranya lajur hari masih berada di Sheet 0.
+- [x] 4. Pengesahan Kualiti & Ujian:
+  - [x] 4.1 Tambah ujian unit di `tests/attendance-multiday-sheet-tabs.test.ts` (menguji penciptaan struktur data tab harian, pemetaan ke sijil harian, dan keserasian ke belakang — 7/7 lulus).
+  - [x] 4.2 Jalankan `npm run typecheck` (0 ralat TypeScript).
+  - [x] 4.3 Jalankan `npm run lint` (0 ralat ESLint).
+  - [x] 4.4 Jalankan `npm test` (semua 434 ujian unit lulus merentas 44 suite).
+  - [x] 4.5 Jalankan `npm run build` (kompilasi Next.js 16 Turbopack bersih, 58 laluan).
+- [x] 5. Dokumentasi & Pengesahan Pengguna:
+  - [x] 5.1 Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
+  - [x] 5.2 Maklumkan kepada pengguna dengan ringkas dalam Bahasa Melayu.
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Pemisahan Tab Harian Bersih (*Dedicated Daily Worksheets Architecture*)**:
+   - Untuk acara berbilang hari (`totalDays > 1`), kehadiran Hari 1 dan pendaftaran asal kekal di Helaian Utama (Sheet 0).
+   - Apabila peserta mendaftar masuk (check-in) untuk Hari 2 dan hari seterusnya, sistem memeriksa sama ada tab `Hari ${dayNumber}` telah wujud di dalam spreadsheet melalui `doc.sheetsByTitle[`Hari ${dayNumber}`]`. Jika belum wujud, sistem mencipta tab baharu secara dinamik dengan fungsi `doc.addSheet` berserta baris pengepala piawai `['Timestamp', 'Nama', 'No. IC', 'Masa Masuk', 'Masa Keluar', 'Jumlah Jam (Hours)', 'Status Kehadiran']`.
+   - Ini menghapuskan masalah limpahan lajur mendatar (*column horizontal proliferation*) pada Sheet 0 di mana puluhan lajur berulang (`Masa Masuk (Hari 2)`, `Masa Keluar (Hari 2)`, `Masa Masuk (Hari 3)`, ...) sebelum ini memanjangkan lembaran kerja.
+2. **Kemas Kini Kumulatif Helaian Utama (Sheet 0 Synchronization)**:
+   - Walaupun perincian harian disimpan di dalam tab khusus masing-masing, Sheet 0 tetap dikemas kini secara automatik pada lajur ringkasan utama: `Status Kehadiran`, `Jumlah Masa Hadir`, dan `Jumlah Jam Keseluruhan (Total Hours)`.
+   - Ini membolehkan penganjur melihat rumusan status dan jumlah jam terkumpul semua peserta secara sepintas lalu di helaian utama tanpa perlu membuka setiap helaian harian satu demi satu.
+3. **Penyelaras Pembacaan Sijil Dwiarah (*Bidirectional Certificate Scan*)**:
+   - Dalam `checkCertificateByICOrEmail` (`actions/certificates.ts`), sistem membaca Sheet 0 terlebih dahulu. Sekiranya acara tersebut mempunyai `totalDays > 1`, sistem memeriksa kehadiran tab harian (`Hari 2`, `Hari 3`, `Day 2`, dll.) melalui `doc.sheetsByTitle || {}`.
+   - Data daripada tab harian ini dipetakan ke dalam `sheetRowData` sebagai `Masa Masuk (Hari ${d})`, `Masa Keluar (Hari ${d})`, dan `Status Kehadiran (Hari ${d})`.
+   - Ini membolehkan `buildDailyCertificateOptions` mengesan kehadiran dan sebarang pembetulan tarikh (*back-date*) yang dibuat oleh penganjur di dalam tab harian tersebut secara automatik dengan 100% keserasian ke belakang bagi acara lama yang masih meletakkan lajur pada Sheet 0.
+
+
+---
+
 # Pengutamaan Tarikh Google Sheets untuk Sijil Berbilang Hari (Google Sheets Multi-Day Attendance Date Override) ✅ SELESAI (MENUNGGU PENGESAHAN PENGGUNA SEBELUM KE VERCEL)
 
 **Matlamat**: Menyelesaikan isu di mana apabila penganjur menyunting atau meletakkan tarikh undur (*back-date*) kehadiran di Google Sheets bagi Hari 2 (contohnya `Masa Masuk (Hari 2)`, `Tarikh (Hari 2)`, atau `Date Day 2`), sijil bagi Hari 2 masih memaparkan tarikh lama. Ini berlaku kerana rekod kehadiran automatik di Supabase menyekat pembacaan lajur Google Sheets (`if (!optionsMap.has(dayNum))`) dan penapis regex yang terlalu sempit. Sistem baharu mengutamakan nilai suntingan di Google Sheets berbanding rekod automatik DB Supabase dengan hierarki keutamaan yang mantap. (PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL SEHINGGA DIBERI KEBENARAN).
