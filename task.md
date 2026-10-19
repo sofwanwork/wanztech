@@ -1,3 +1,46 @@
+# Pengindahan Pemisah Seksyen & Skala Penilaian Mudah Alih (Section Separator & Rating Scale Mobile Polish) ✅ SELESAI (MENUNGGU PENGESAHAN PENGGUNA SEBELUM KE VERCEL)
+
+**Matlamat**: Memperbaiki paparan pemisah seksyen (*Section Separator*) dan skala penilaian (*Rating / Linear Scale*) pada pandangan mudah alih (*mobile view*) di `app/(public)/form/[id]/client.tsx` (`media_1792391870912_4d5a252c.jpg`) supaya: (1) garis penunjuk skala ASCII (`1-----> 6 Sangat tidak setuju Sangat Setuju`) tidak terputus dan terlipat ke berbilang baris hodoh pada skrin sempit; (2) butang skala 1-6 tidak terpotong di sebelah kanan dengan bar tatalan kelabu akibat kotak kosong `w-20`; (3) kotak pemisah seksyen dipamerkan anggun dengan aksen warna tema. (PERINGATAN: JANGAN KEMAS KINI KE VERCEL LAGI).
+
+### Pelan Pelaksanaan
+- [x] 1. Pengekstrakan & Logik Panduan Skala (Scale Guide Pure Parser):
+  - [x] 1.1 Cipta modul `lib/forms/scale-guide.ts` untuk mengesan dan menghurai rajah skala ASCII kepada model `ScaleGuide`.
+  - [x] 1.2 Uji secara menyeluruh dengan Vitest di `tests/scale-guide.test.ts` (5/5 ujian lulus).
+- [x] 2. Pengindahan Pemisah Seksyen Awam (`app/(public)/form/[id]/client.tsx`):
+  - [x] 2.1 Gayakan kontena `field.type === 'separator'` dengan sempadan aksen tema `border-l-4 border-l-primary/80` dan latar belakang kecerunan lembut.
+  - [x] 2.2 Apabila huraian mengandungi panduan skala, paparkan kad visual penunjuk skala responsif `(1) ────────► (6)` berserta lencana bulat dan label min/max seimbang yang tidak sesekali terlipat hodoh pada skrin telefon pintar.
+  - [x] 2.3 Kekalkan paparan huraian biasa dengan `text-sm text-slate-600 mt-2 leading-relaxed whitespace-pre-wrap break-words`.
+- [x] 3. Pengoptimuman Skala Penilaian (`field.type === 'rating'`):
+  - [x] 3.1 Hapuskan kotak sisi kosong `w-20` (160px ruang terbuang) yang menghimpit bulatan nombor 1-6 ke bucu kanan.
+  - [x] 3.2 Susun bulatan nombor 1-6 secara seimbang merentas 100% lebar kad (`justify-between sm:justify-center`).
+  - [x] 3.3 Paparkan label min/max di bawah bulatan (standard Google Forms) dan sembunyikan bar tatalan Windows/Android dengan `no-scrollbar`.
+- [x] 4. Penambahbaikan Editor Pembina Borang (`components/forms/fields-editor/index.tsx`):
+  - [x] 4.1 Gunakan `<Textarea>` bagi `field.type === 'separator'` untuk membolehkan penganjur menaip arahan perenggan berbilang baris dengan kekunci Enter.
+- [x] 5. Pengesahan Kualiti & Ujian:
+  - [x] 5.1 Jalankan `npm run typecheck` (0 ralat TypeScript).
+  - [x] 5.2 Jalankan `npm run lint` (0 ralat ESLint).
+  - [x] 5.3 Jalankan `npm test` (semua 406 ujian unit lulus merentas 42 fail).
+  - [x] 5.4 Jalankan `npm run build` (kompilasi Next.js 16 Turbopack bersih, 58 laluan).
+- [x] 6. Dokumentasi & Pengesahan Pengguna:
+  - [x] 6.1 Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
+  - [x] 6.2 PATUHI arahan pengguna: JANGAN kemas kini ke Vercel lagi ("jgn update ke vercel lg").
+  - [x] 6.3 Maklumkan kepada pengguna dengan ringkas dalam Bahasa Melayu untuk semakan mereka.
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Punca Garis Penunjuk Skala Pecah & Terpotong di Telefon (Scale Guide Breakdown)**:
+   - Pengguna borang di Malaysia kerap menaip panduan skala penilaian secara teks ASCII (contoh: `1----------------------> 6 Sangat tidak setuju          Sangat Setuju`).
+   - Pada skrin komputer (*desktop*), puluhan tanda sempang muat sebaris. Namun pada skrin telefon pintar yang sempit (~320px), rentetan sempang terpotong di tengah jalan dan melimpah ke 3 baris yang tidak teratur.
+   - Modul `parseScaleGuide` (`lib/forms/scale-guide.ts`) mengesan corak skala ini secara pintar dan mengekstrak nilai min, max, label min, label max, serta teks pengenalan.
+   - Sistem memaparkan kad visual adaptif `( 1 ) ────────► ( 6 )` dengan lencana bernombor, garisan anak panah cecair (*fluid gradient connector*), dan label kiri/kanan yang kekal seimbang pada sebarang kelebaran skrin tanpa sebarang tanda sempang mentah yang patah.
+2. **Penyelesaian Pemotongan Bulatan Skala Penilaian (*Rating Scale Overflow & Scrollbar Elimination*)**:
+   - Kod terdahulu menetapkan `<div className="w-20">` (80px) secara statik pada sebelah kiri dan kanan walaupun `minLabel` dan `maxLabel` kosong. Ini mencuri 160px daripada ruang kad selebar 272px, memampatkan 6 bulatan penilaian ke dalam 112px sahaja. Akibatnya, nombor 6 terpotong keluar skrin dan bar tatalan tebal Windows/Android muncul.
+   - Dengan mengalihkan label min/max ke baris bawah bulatan (mengikut piawaian industri Google Forms dan Typeform), bulatan nombor 1 hingga 6 kini mempunyai 100% lebar kad (`justify-between sm:justify-center`).
+   - Nombor 6 dan semua bulatan kini muat dengan sempurna tanpa terpotong dan tanpa sebarang bar tatalan hodoh (`no-scrollbar`).
+3. **Penaiktarafan Editor Pembina Borang (*Builder Textarea Upgrade*)**:
+   - Menggantikan input teks sebaris `<Input>` kepada `<Textarea>` pada medan `field.type === 'separator'` di `components/forms/fields-editor/index.tsx`, memudahkan penganjur memasukkan perenggan penerangan atau panduan arahan berbilang baris dengan kekunci Enter.
+
+---
+
 # Pengindahan Paparan Penerangan Borang Pandangan Mudah Alih (Mobile View Form Description Polish) ✅ SELESAI (MENUNGGU PENGESAHAN PENGGUNA SEBELUM KE VERCEL)
 
 **Matlamat**: Memperbaiki paparan penerangan borang (Form Description) pada pandangan mudah alih (*mobile view*) di `app/(public)/form/[id]/client.tsx` (`media_1792391040813_7c01dbd5.jpg`) supaya butiran program (seperti Tarikh, Masa, Tempat) tidak bertindih rapat menjadi satu blok teks padat, dengan menyuntik jarak perenggan responsif (`[&>p:not(:last-child)]:mb-2.5 sm:[&>p:not(:last-child)]:mb-2`), saiz fon adaptif (`text-sm sm:text-base`), jarak baris lega (`leading-relaxed`), dan kontras tajam pada teks tebal (`[&_strong]:text-slate-900`). (PERINGATAN: JANGAN KEMAS KINI KE VERCEL LAGI).

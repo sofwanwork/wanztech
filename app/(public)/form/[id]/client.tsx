@@ -3,6 +3,7 @@
 import { Form, FormField } from '@/lib/types';
 import Link from 'next/link';
 import { evaluateConditional } from '@/lib/forms/conditions';
+import { parseScaleGuide } from '@/lib/forms/scale-guide';
 
 import {
   Card,
@@ -1730,16 +1731,54 @@ export function PublicFormClient({
             <CardContent className="p-0">
               {currentPageFields.map((field) => {
                 if (field.type === 'separator') {
+                  const scaleGuide = parseScaleGuide(field.description);
+
                   return (
                     <div
                       key={field.id}
-                      className="py-6 px-6 bg-slate-50 border-b border-gray-100 last:border-b-0"
+                      className="py-5 sm:py-6 px-6 bg-gradient-to-r from-slate-50/90 via-slate-50/50 to-white border-b border-gray-100 last:border-b-0 border-l-4 border-l-primary/80 transition-colors"
                     >
-                      <h3 className="text-lg font-semibold text-gray-900">{field.label}</h3>
-                      {field.description && (
-                        <p className="text-sm text-gray-500 mt-1 whitespace-pre-wrap">
-                          {field.description}
-                        </p>
+                      <h3 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
+                        {field.label}
+                      </h3>
+                      {scaleGuide ? (
+                        <div className="mt-3.5 bg-white/95 rounded-2xl p-4 border border-slate-200/90 shadow-xs">
+                          {scaleGuide.intro && (
+                            <p className="text-sm text-slate-700 font-medium leading-relaxed mb-3">
+                              {scaleGuide.intro}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-2 sm:gap-3 py-1 px-1">
+                            {/* Min Badge */}
+                            <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-slate-100 border border-slate-300 font-bold text-slate-800 flex items-center justify-center text-xs sm:text-sm shrink-0 shadow-xs">
+                              {scaleGuide.min}
+                            </div>
+
+                            {/* Connecting Arrow */}
+                            <div className="flex-1 flex items-center relative mx-1">
+                              <div className="w-full h-0.5 bg-gradient-to-r from-slate-300 via-slate-400 to-slate-500 rounded-full" />
+                              <div className="w-0 h-0 border-y-[5px] border-y-transparent border-l-[7px] border-l-slate-500 shrink-0 -ml-1" />
+                            </div>
+
+                            {/* Max Badge */}
+                            <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-slate-100 border border-slate-300 font-bold text-slate-800 flex items-center justify-center text-xs sm:text-sm shrink-0 shadow-xs">
+                              {scaleGuide.max}
+                            </div>
+                          </div>
+
+                          {(scaleGuide.minLabel || scaleGuide.maxLabel) && (
+                            <div className="flex justify-between items-center text-xs sm:text-sm font-semibold mt-2.5 px-1 text-slate-600">
+                              <span className="text-left max-w-[48%] leading-tight">{scaleGuide.minLabel}</span>
+                              <span className="text-right max-w-[48%] leading-tight">{scaleGuide.maxLabel}</span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        field.description && (
+                          <p className="text-sm text-slate-600 mt-2 leading-relaxed whitespace-pre-wrap break-words">
+                            {field.description}
+                          </p>
+                        )
                       )}
                     </div>
                   );
@@ -1987,20 +2026,11 @@ export function PublicFormClient({
                       <RadioGroup
                         value={formData[field.id]?.toString() || ''}
                         onValueChange={(val) => handleInputChange(field.id, val)}
-                        className="w-full pt-4 overflow-x-auto"
+                        className="w-full pt-4"
                       >
-                        <div className="flex items-end justify-between min-w-[300px] gap-4">
-                          {/* Min Label */}
-                          <div className="flex flex-col justify-end pb-1 w-20">
-                            {field.ratingConfig?.minLabel && (
-                              <span className="text-sm text-gray-500 font-medium leading-tight">
-                                {field.ratingConfig.minLabel}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Scale */}
-                          <div className="flex justify-center gap-3 sm:gap-6 flex-1 px-2">
+                        <div className="flex flex-col w-full">
+                          {/* Scale Circles */}
+                          <div className="flex items-center justify-between sm:justify-center gap-2 sm:gap-6 w-full px-1 overflow-x-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-1">
                             {Array.from(
                               {
                                 length:
@@ -2010,30 +2040,29 @@ export function PublicFormClient({
                               },
                               (_, i) => i + (field.ratingConfig?.min || 1)
                             ).map((val) => (
-                              <div key={val} className="flex flex-col items-center gap-3">
+                              <div key={val} className="flex flex-col items-center gap-2.5 shrink-0 min-w-[28px] sm:min-w-0">
                                 <Label
                                   htmlFor={`${field.id}-${val}`}
-                                  className="text-sm font-medium cursor-pointer text-gray-600"
+                                  className="text-sm font-semibold cursor-pointer text-slate-700 hover:text-primary transition-colors"
                                 >
                                   {val}
                                 </Label>
                                 <RadioGroupItem
                                   value={val.toString()}
                                   id={`${field.id}-${val}`}
-                                  className="h-6 w-6 border-slate-300 text-primary data-[state=checked]:border-primary"
+                                  className="h-6 w-6 border-slate-300 text-primary data-[state=checked]:border-primary transition-transform active:scale-90"
                                 />
                               </div>
                             ))}
                           </div>
 
-                          {/* Max Label */}
-                          <div className="flex flex-col justify-end pb-1 w-20 text-right">
-                            {field.ratingConfig?.maxLabel && (
-                              <span className="text-sm text-gray-500 font-medium leading-tight">
-                                {field.ratingConfig.maxLabel}
-                              </span>
-                            )}
-                          </div>
+                          {/* Min / Max Labels underneath (Google Forms standard) */}
+                          {(field.ratingConfig?.minLabel || field.ratingConfig?.maxLabel) && (
+                            <div className="flex justify-between items-center text-xs sm:text-sm text-slate-500 font-medium mt-3 px-1">
+                              <span className="text-left max-w-[48%] leading-tight">{field.ratingConfig?.minLabel || ''}</span>
+                              <span className="text-right max-w-[48%] leading-tight">{field.ratingConfig?.maxLabel || ''}</span>
+                            </div>
+                          )}
                         </div>
                       </RadioGroup>
                     )}

@@ -9,6 +9,7 @@ import {
 } from '@/lib/forms/conditions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -229,18 +230,26 @@ function SortableField({
                   ? 'Image Caption (Optional)'
                   : 'Description (Optional)'}
             </Label>
-            <Input
-              id={`field-desc-${field.id}`}
-              value={field.description || ''}
-              onChange={(e) => updateField(index, { description: e.target.value })}
-              placeholder={
-                field.type === 'separator'
-                  ? 'Add more details or instructions...'
-                  : field.type === 'image'
+            {field.type === 'separator' ? (
+              <Textarea
+                id={`field-desc-${field.id}`}
+                value={field.description || ''}
+                onChange={(e) => updateField(index, { description: e.target.value })}
+                placeholder="Add more details, instructions, or scale guides..."
+                className="min-h-[70px] text-sm resize-y"
+              />
+            ) : (
+              <Input
+                id={`field-desc-${field.id}`}
+                value={field.description || ''}
+                onChange={(e) => updateField(index, { description: e.target.value })}
+                placeholder={
+                  field.type === 'image'
                     ? 'Caption for the image (Optional)'
                     : 'Help text or instructions for this question'
-              }
-            />
+                }
+              />
+            )}
           </div>
 
           {field.type === 'image' && (
