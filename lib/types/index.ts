@@ -8,6 +8,7 @@ export type {
   FormFieldType,
   ProductItem,
   RatingConfig,
+  GridConfig,
   ConditionalConfig,
   ConditionOperator,
   ConditionRule,

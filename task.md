@@ -1,3 +1,49 @@
+# Sokongan Soalan Grid Skala Pelbagai Pilihan (Multiple Choice Grid for Scale) ✅ SELESAI (MENUNGGU PENGESAHAN PENGGUNA SEBELUM KE VERCEL)
+
+**Matlamat**: Menambah jenis soalan baharu `grid` (*Multiple Choice Grid / Likert Scale Matrix*) ke dalam KlikForm:
+1. Membolehkan penganjur membuat soalan matriks skala dengan senarai baris pernyataan (*rows*) dan lajur skala (*columns/scale*) berserta label min/max di Form Builder.
+2. Memaparkan jadual grid elegan di desktop dan susunan kad adaptif (*Adaptive Mobile Stack*) yang mesra sentuhan dan sifar tatalan mendatar di telefon pintar.
+3. Menyelaras pengesahan borang awam (*client & server-side validation*), penyegerakan baris ke lajur berasingan Google Sheets (`[Tajuk] [Baris]`), serta sokongan pautan sunting (*edit link*).
+
+### Pelan Pelaksanaan
+- [x] 1. Lapisan Model Data & Jenis TypeScript:
+  - [x] 1.1 Tambah jenis `grid` pada `FormFieldType` dan antara muka `GridConfig` di `lib/types/forms.ts`.
+  - [x] 1.2 Re-eksport `GridConfig` pada `lib/types/index.ts`.
+- [x] 2. Modul Pembantu Grid & Pengesahan:
+  - [x] 2.1 Cipta modul `lib/forms/grid.ts` untuk utiliti meratakan jawapan grid bagi Google Sheets (`flattenGridResponses`), membina semula jawapan dari snapshot (`unflattenGridResponses`), dan mengesahkan kelengkapan baris (`isGridComplete`, `isGridPartiallyFilled`).
+  - [x] 2.2 Kemas kini `lib/forms/validate-submission.ts` untuk mengesahkan medan `grid` (setiap baris wajib diisi jika `required: true`).
+  - [x] 2.3 Tambah ujian unit di `tests/grid-field.test.ts` (10/10 ujian lulus).
+- [x] 3. Antaramuka Editor Pembina Borang (`components/forms/fields-editor/index.tsx`):
+  - [x] 3.1 Tambah pilihan `Multiple Choice Grid (Scale)` dalam dropdown jenis medan.
+  - [x] 3.2 Bina panel konfigurasi Grid: editor baris pernyataan (tambah, edit, padam baris), pratetap skala pantas (1-5, 1-7, 1-10, Kepuasan, Persetujuan, Kekerapan), editor lajur tersuai, dan input label Min/Max.
+- [x] 4. Antaramuka Borang Awam (`app/(public)/form/[id]/client.tsx`):
+  - [x] 4.1 Sokong penyimpanan jawapan grid di dalam `formData[field.id]` sebagai `{ [row]: columnValue }`.
+  - [x] 4.2 Paparan Desktop (`hidden md:block`): Jadual grid matriks simetri dengan pengepala skala, label min/max, dan bulatan radio interaktif.
+  - [x] 4.3 Paparan Mudah Alih (`block md:hidden`): Kad bertindan pintar (*Adaptive Mobile Stack*) dengan susunan butang skala 1-5 mesra sentuhan, penunjuk baris dijawab, sifar limpahan mendatar.
+  - [x] 4.4 Selaras pengiraan kemajuan (`validateField`, `filledRequired`) dan penghantaran borang (`handleSubmit`) agar setiap baris dipetakan ke Google Sheets.
+  - [x] 4.5 Selaras sokongan pautan sunting (*edit link prefill*) di `app/(public)/edit/[token]/page.tsx` & `actions/edit-response.ts`.
+- [x] 5. Pengesahan Kualiti & Ujian:
+  - [x] 5.1 Jalankan `npm run typecheck` (0 ralat TypeScript).
+  - [x] 5.2 Jalankan `npm run lint` (0 ralat ESLint).
+  - [x] 5.3 Jalankan `npm test` (semua 416 ujian unit lulus merentas 43 fail).
+  - [x] 5.4 Jalankan `npm run build` (kompilasi Next.js 16 Turbopack bersih, 58 laluan).
+- [x] 6. Dokumentasi & Pengesahan:
+  - [x] 6.1 Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
+  - [x] 6.2 Maklumkan kepada pengguna dengan ringkas dalam Bahasa Melayu.
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Pemetaan Lajur Google Sheets Dinamik (*Individual Row Flattening*)**:
+   - Berbanding menyimpan keseluruhan matriks sebagai objek JSON yang tidak boleh dianalisis secara langsung oleh penganjur, fungsi `flattenGridResponses` memecahkan jawapan setiap baris pernyataan kepada kunci berformat `formatGridRowKey(field.label, row)` (contoh: `Penilaian Kursus [Penceramah Jelas] = 5`).
+   - Sistem auto-sync pengepala Google Sheets (`sheet.setHeaderRow`) secara automatik membina lajur baharu bagi setiap baris pernyataan, menghasilkan spreadsheet kemas yang sama seperti Google Forms.
+2. **Seni Bina Dwi-Antaramuka Responsif (*Responsive Dual-Layout UX*)**:
+   - *Desktop (`hidden md:block`)*: Matriks jadual `<table>` berstruktur simetri dengan lajur skala seimbang, pengepala label min/max, dan bulatan radio interaktif.
+   - *Mudah Alih (`block md:hidden`)*: Susunan kad bertindan adaptif (*Adaptive Mobile Stack*). Setiap pernyataan diletakkan dalam sub-kad kemas dengan butang sentuhan skala di bawahnya (lebar 100%, ketinggian sentuhan 40px `h-10`, penunjuk kemajuan baris `X / Y dijawab`). Ini menghapuskan 100% masalah limpahan dan tatalan mendatar hodoh yang sering berlaku pada Google Forms di telefon pintar.
+3. **Pengesahan Menyeluruh & Pautan Sunting (*Validation & Edit Link Support*)**:
+   - `validateField` (klien) dan `validateSubmission` (pelayan & edit-link) memastikan semua baris dijawab apabila `required: true`.
+   - `unflattenGridResponses` membina semula struktur `{ [row]: columnValue }` daripada snapshot pangkalan data dan Google Sheets pada halaman `/edit/[token]`, membolehkan responden menyunting jawapan grid sedia ada secara lancar.
+
+---
+
 # Penghapusan Tatalan Mendatar & Pengoptimuman Ketinggian Mudah Alih Borang (Lock Horizontal Scroll & Mobile Vertical Height Optimization) ✅ SELESAI (MENUNGGU PENGESAHAN PENGGUNA SEBELUM KE VERCEL)
 
 **Matlamat**: Menyelesaikan aduan pengguna ("kenapa boleh scroll kiri dan kanan, atas dan bawah, di mobile view, sy nak fix tanpa scroll kecuali question byk" - `media_1792392998295_0ef2b0b8.png`) supaya: (1) menghapuskan 100% tatalan kiri-kanan (*horizontal scroll / overscroll bounce*) pada peranti mudah alih; (2) mengoptimumkan ketinggian menegak dan padding borang supaya soalan ringkas (1-4 soalan) muat sepenuhnya di dalam satu skrin mudah alih tanpa perlu menatal atas-bawah, dan hanya menatal apabila soalan banyak; (3) menghapuskan "ghost padding" 48px dan gap 24px daripada shadcn `<Card>` pada kad soalan awam. (PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL LAGI).

@@ -14,6 +14,7 @@
  */
 
 import { evaluateConditional } from '@/lib/forms/conditions';
+import { isGridComplete, unflattenGridResponses } from '@/lib/forms/grid';
 import type { FormField } from '@/lib/types/forms';
 
 export interface SubmissionValidationResult {
@@ -52,6 +53,16 @@ export function validateSubmission(
 
   for (const field of fields) {
     if (isLayoutOnlyField(field)) continue;
+
+    if (field.type === 'grid') {
+      const gridAnswers = unflattenGridResponses(field, inputData);
+      if (field.required && !isGridComplete(field.gridConfig, gridAnswers)) {
+        if (evaluateConditional(field, byId, fields)) {
+          return { ok: false, error: `${field.label} requires a response in each row.` };
+        }
+      }
+      continue;
+    }
 
     const value = inputData[field.label] ?? inputData[field.id];
 

@@ -22,7 +22,8 @@ export type FormFieldType =
   | 'pagebreak'
   | 'rating'
   | 'product'
-  | 'image';
+  | 'image'
+  | 'grid';
 
 /**
  * Product item for product field type
@@ -43,6 +44,20 @@ export interface RatingConfig {
   min: number;
   max: number;
   minLabel?: string;
+  maxLabel?: string;
+}
+
+/**
+ * Multiple choice grid (Likert scale / matrix) configuration
+ */
+export interface GridConfig {
+  /** Row statements/prompts to be rated */
+  rows: string[];
+  /** Scale columns / rating choices (e.g. ['1', '2', '3', '4', '5']) */
+  columns: string[];
+  /** Optional descriptive label for the lowest rating (first column) */
+  minLabel?: string;
+  /** Optional descriptive label for the highest rating (last column) */
   maxLabel?: string;
 }
 
@@ -105,6 +120,7 @@ export interface FormField {
   options?: string[]; // For select, checkbox, radio
   products?: ProductItem[];
   ratingConfig?: RatingConfig;
+  gridConfig?: GridConfig;
   conditional?: ConditionalConfig;
   validation?: ValidationConfig;
   imageUrl?: string;

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getEditToken } from '@/lib/storage/edit-tokens';
 import { getFormById } from '@/lib/storage/forms';
+import { unflattenGridResponses } from '@/lib/forms/grid';
 import { PublicFormClient } from '../../form/[id]/client';
 import { AlertCircle } from 'lucide-react';
 import type { Metadata } from 'next';
@@ -49,6 +50,13 @@ export default async function EditResponsePage({ params }: PageProps) {
   // field id so PublicFormClient prefills correctly.
   const initialValues: Record<string, unknown> = {};
   for (const field of form.fields) {
+    if (field.type === 'grid') {
+      const gridAnswers = unflattenGridResponses(field, lookup.row.snapshot);
+      if (Object.keys(gridAnswers).length > 0) {
+        initialValues[field.id] = gridAnswers;
+      }
+      continue;
+    }
     const v = lookup.row.snapshot[field.label];
     if (v !== undefined && v !== null && v !== '') {
       initialValues[field.id] = v;

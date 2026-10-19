@@ -7,6 +7,7 @@ import { getSettingsByFormId } from '@/lib/storage/settings';
 import { updateSheetRow } from '@/lib/api/google-sheets';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { sanitizeHtml } from '@/lib/utils';
+import { validateSubmission } from '@/lib/forms/validate-submission';
 
 function formatPrivateKey(key: string) {
   let clean = key.trim();
@@ -89,33 +90,10 @@ export async function submitEditedResponseAction(
     Object.assign(inputData, formDataObj);
   }
 
-  // Reuse the same "required + minLength + maxLength + pattern" validation
-  // as the new-submission path (without conditional skipping).
-  for (const field of form.fields) {
-    const value = inputData[field.label] ?? inputData[field.id];
-    if (field.required && !value && value !== 0 && value !== false) {
-      return { success: false, error: `${field.label} is required.` };
-    }
-    if (typeof value === 'string') {
-      if (field.validation?.minLength && value.length < field.validation.minLength) {
-        return { success: false, error: `${field.label} is too short.` };
-      }
-      if (field.validation?.maxLength && value.length > field.validation.maxLength) {
-        return { success: false, error: `${field.label} is too long.` };
-      }
-      if (field.validation?.pattern) {
-        try {
-          const MAX = 1000;
-          const test = value.length > MAX ? value.slice(0, MAX) : value;
-          const regex = new RegExp(field.validation.pattern);
-          if (!regex.test(test)) {
-            return { success: false, error: `${field.label} format is invalid.` };
-          }
-        } catch {
-          /* ignore invalid regex */
-        }
-      }
-    }
+  // Validate against the form schema using the unified validator
+  const validation = validateSubmission(form.fields, inputData);
+  if (!validation.ok) {
+    return { success: false, error: validation.error ?? 'Validation failed.' };
   }
 
   // Sanitize rich-text-ish inputs the same way submitFormAction would.

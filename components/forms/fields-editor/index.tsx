@@ -7,6 +7,7 @@ import {
   normalizeConditional,
   operatorNeedsValue,
 } from '@/lib/forms/conditions';
+import { createDefaultGridConfig, GRID_PRESET_SCALES } from '@/lib/forms/grid';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -195,7 +196,14 @@ function SortableField({
               <Label htmlFor={`field-type-${field.id}`}>Type</Label>
               <Select
                 value={field.type}
-                onValueChange={(val) => updateField(index, { type: val as FormField['type'] })}
+                onValueChange={(val) => {
+                  const newType = val as FormField['type'];
+                  const patch: Partial<FormField> = { type: newType };
+                  if (newType === 'grid' && !field.gridConfig) {
+                    patch.gridConfig = createDefaultGridConfig();
+                  }
+                  updateField(index, patch);
+                }}
               >
                 <SelectTrigger id={`field-type-${field.id}`}>
                   <SelectValue />
@@ -214,6 +222,7 @@ function SortableField({
 
                   <SelectItem value="time">Time</SelectItem>
                   <SelectItem value="rating">Linear Scale (Rating)</SelectItem>
+                  <SelectItem value="grid">Multiple Choice Grid (Scale)</SelectItem>
                   <SelectItem value="separator">Section / Text</SelectItem>
                   <SelectItem value="pagebreak">Page Break (Multi-page)</SelectItem>
                   <SelectItem value="image">Image Display</SelectItem>
@@ -371,6 +380,239 @@ function SortableField({
                         },
                       })
                     }
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {field.type === 'grid' && (
+            <div className="space-y-5 p-4 sm:p-5 bg-slate-50/80 rounded-xl border border-slate-200">
+              {/* Quick Scale Presets */}
+              <div>
+                <Label className="text-xs font-semibold text-slate-700 uppercase tracking-wider block mb-2">
+                  Pratetap Skala Pantas (Quick Scale Presets)
+                </Label>
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                  {GRID_PRESET_SCALES.map((preset) => (
+                    <Button
+                      key={preset.id}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        updateField(index, {
+                          gridConfig: {
+                            rows: field.gridConfig?.rows?.length
+                              ? field.gridConfig.rows
+                              : ['Statement 1', 'Statement 2', 'Statement 3'],
+                            columns: [...preset.columns],
+                            minLabel: preset.minLabel || '',
+                            maxLabel: preset.maxLabel || '',
+                          },
+                        });
+                      }}
+                      className="text-xs h-7 px-2.5 bg-white hover:bg-primary/5 hover:text-primary hover:border-primary/40 transition-all font-medium"
+                    >
+                      {preset.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Rows / Statements Editor */}
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    Baris Pernyataan (Statements / Rows)
+                  </Label>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    {field.gridConfig?.rows?.length || 0} Baris
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {(field.gridConfig?.rows || ['Statement 1', 'Statement 2', 'Statement 3']).map((row, rIdx) => (
+                    <div key={rIdx} className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-400 w-5 text-right shrink-0">
+                        {rIdx + 1}.
+                      </span>
+                      <Input
+                        value={row}
+                        placeholder={`Statement ${rIdx + 1}`}
+                        onChange={(e) => {
+                          const newRows = [...(field.gridConfig?.rows || ['Statement 1', 'Statement 2', 'Statement 3'])];
+                          newRows[rIdx] = e.target.value;
+                          updateField(index, {
+                            gridConfig: {
+                              ...createDefaultGridConfig(),
+                              ...field.gridConfig,
+                              rows: newRows,
+                            },
+                          });
+                        }}
+                        className="h-9 text-sm bg-white"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          const newRows = (field.gridConfig?.rows || []).filter((_, i) => i !== rIdx);
+                          updateField(index, {
+                            gridConfig: {
+                              ...createDefaultGridConfig(),
+                              ...field.gridConfig,
+                              rows: newRows.length ? newRows : ['Statement 1'],
+                            },
+                          });
+                        }}
+                        disabled={(field.gridConfig?.rows || []).length <= 1}
+                        className="h-9 w-9 text-slate-400 hover:text-red-500 hover:bg-red-50 shrink-0"
+                        title="Padam baris"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const currentRows = field.gridConfig?.rows || ['Statement 1', 'Statement 2', 'Statement 3'];
+                    updateField(index, {
+                      gridConfig: {
+                        ...createDefaultGridConfig(),
+                        ...field.gridConfig,
+                        rows: [...currentRows, `Statement ${currentRows.length + 1}`],
+                      },
+                    });
+                  }}
+                  className="w-full mt-1.5 h-8 text-xs border-dashed border-slate-300 text-slate-600 hover:text-primary hover:border-primary/50"
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1" />
+                  Tambah Baris (Add Row)
+                </Button>
+              </div>
+
+              {/* Columns / Scale Editor */}
+              <div className="space-y-2.5 pt-1 border-t border-slate-200/80">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    Lajur Skala (Scale Columns)
+                  </Label>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    {field.gridConfig?.columns?.length || 0} Lajur
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {(field.gridConfig?.columns || ['1', '2', '3', '4', '5']).map((col, cIdx) => (
+                    <div key={cIdx} className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-400 w-5 text-right shrink-0">
+                        {cIdx + 1}.
+                      </span>
+                      <Input
+                        value={col}
+                        placeholder={`Option ${cIdx + 1}`}
+                        onChange={(e) => {
+                          const newCols = [...(field.gridConfig?.columns || ['1', '2', '3', '4', '5'])];
+                          newCols[cIdx] = e.target.value;
+                          updateField(index, {
+                            gridConfig: {
+                              ...createDefaultGridConfig(),
+                              ...field.gridConfig,
+                              columns: newCols,
+                            },
+                          });
+                        }}
+                        className="h-9 text-sm bg-white"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          const newCols = (field.gridConfig?.columns || []).filter((_, i) => i !== cIdx);
+                          updateField(index, {
+                            gridConfig: {
+                              ...createDefaultGridConfig(),
+                              ...field.gridConfig,
+                              columns: newCols.length ? newCols : ['1', '2'],
+                            },
+                          });
+                        }}
+                        disabled={(field.gridConfig?.columns || []).length <= 2}
+                        className="h-9 w-9 text-slate-400 hover:text-red-500 hover:bg-red-50 shrink-0"
+                        title="Padam lajur"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const currentCols = field.gridConfig?.columns || ['1', '2', '3', '4', '5'];
+                    const nextVal = String(currentCols.length + 1);
+                    updateField(index, {
+                      gridConfig: {
+                        ...createDefaultGridConfig(),
+                        ...field.gridConfig,
+                        columns: [...currentCols, nextVal],
+                      },
+                    });
+                  }}
+                  className="w-full mt-1.5 h-8 text-xs border-dashed border-slate-300 text-slate-600 hover:text-primary hover:border-primary/50"
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1" />
+                  Tambah Lajur (Add Column)
+                </Button>
+              </div>
+
+              {/* Min / Max Labels for Scale Ends */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-slate-200/80">
+                <div className="space-y-1.5">
+                  <Label htmlFor={`grid-min-label-${field.id}`} className="text-xs text-slate-600 font-medium">
+                    Label Skala Rendah ({field.gridConfig?.columns?.[0] || '1'})
+                  </Label>
+                  <Input
+                    id={`grid-min-label-${field.id}`}
+                    placeholder="contoh: Sangat Tidak Setuju"
+                    value={field.gridConfig?.minLabel || ''}
+                    onChange={(e) =>
+                      updateField(index, {
+                        gridConfig: {
+                          ...createDefaultGridConfig(),
+                          ...field.gridConfig,
+                          minLabel: e.target.value,
+                        },
+                      })
+                    }
+                    className="h-9 text-xs bg-white"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor={`grid-max-label-${field.id}`} className="text-xs text-slate-600 font-medium">
+                    Label Skala Tinggi ({field.gridConfig?.columns?.[(field.gridConfig?.columns?.length || 1) - 1] || '5'})
+                  </Label>
+                  <Input
+                    id={`grid-max-label-${field.id}`}
+                    placeholder="contoh: Sangat Setuju"
+                    value={field.gridConfig?.maxLabel || ''}
+                    onChange={(e) =>
+                      updateField(index, {
+                        gridConfig: {
+                          ...createDefaultGridConfig(),
+                          ...field.gridConfig,
+                          maxLabel: e.target.value,
+                        },
+                      })
+                    }
+                    className="h-9 text-xs bg-white"
                   />
                 </div>
               </div>

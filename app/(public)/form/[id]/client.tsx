@@ -4,6 +4,7 @@ import { Form, FormField } from '@/lib/types';
 import Link from 'next/link';
 import { evaluateConditional } from '@/lib/forms/conditions';
 import { parseScaleGuide } from '@/lib/forms/scale-guide';
+import { flattenGridResponses, isGridComplete } from '@/lib/forms/grid';
 
 import {
   Card,
@@ -501,6 +502,15 @@ export function PublicFormClient({
       // Only append visible fields
       visibleFields.forEach((field) => {
         let value = formData[field.id];
+
+        if (field.type === 'grid') {
+          const flattened = flattenGridResponses(field, value);
+          Object.entries(flattened).forEach(([k, v]) => {
+            formDataToSend.append(k, v);
+          });
+          return;
+        }
+
         if (value instanceof Date) {
           value = format(value, 'yyyy-MM-dd');
         } else if (Array.isArray(value)) {
@@ -658,6 +668,19 @@ export function PublicFormClient({
           }
         }
       }, 400); // Wait briefly for UI to update before scrolling
+    } else if (field && field.type === 'grid') {
+      if (isGridComplete(field.gridConfig, finalValue)) {
+        setTimeout(() => {
+          const index = visibleFields.findIndex(f => f.id === id);
+          if (index !== -1 && index < visibleFields.length - 1) {
+            const nextField = visibleFields[index + 1];
+            const element = document.getElementById(`field-container-${nextField.id}`);
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }
+        }, 400);
+      }
     }
   };
 
@@ -1129,7 +1152,14 @@ export function PublicFormClient({
   // Check validity (only visible inputs)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const validateField = (field: FormField, value: any): string | null => {
-    if (field.type === 'separator' || field.type === 'image') return null;
+    if (field.type === 'separator' || field.type === 'image' || field.type === 'pagebreak') return null;
+
+    if (field.type === 'grid') {
+      if (field.required && !isGridComplete(field.gridConfig, value)) {
+        return `Please answer all rows in "${field.label}"`;
+      }
+      return null;
+    }
 
     // Required Check
     if (
@@ -1175,6 +1205,9 @@ export function PublicFormClient({
   const filledRequired = visibleFields.filter((f) => {
     if (!f.required) return false;
     const value = formData[f.id];
+    if (f.type === 'grid') {
+      return isGridComplete(f.gridConfig, value);
+    }
     return value !== undefined && value !== null && value !== '' && (!Array.isArray(value) || value.length > 0);
   }).length;
   const progressPercentage = totalRequired === 0 ? 100 : Math.round((filledRequired / totalRequired) * 100);
@@ -2065,6 +2098,214 @@ export function PublicFormClient({
                         </div>
                       </RadioGroup>
                     )}
+
+                    {field.type === 'grid' && (() => {
+                      const gridConfig = field.gridConfig || {
+                        rows: ['Pernyataan 1', 'Pernyataan 2', 'Pernyataan 3'],
+                        columns: ['1', '2', '3', '4', '5'],
+                        minLabel: 'Sangat Tidak Setuju',
+                        maxLabel: 'Sangat Setuju',
+                      };
+                      const rows = gridConfig.rows && gridConfig.rows.length > 0
+                        ? gridConfig.rows
+                        : ['Pernyataan 1', 'Pernyataan 2', 'Pernyataan 3'];
+                      const columns = gridConfig.columns && gridConfig.columns.length > 0
+                        ? gridConfig.columns
+                        : ['1', '2', '3', '4', '5'];
+                      const currentAnswers = (formData[field.id] as Record<string, string>) || {};
+                      const isShortColumns = columns.every((col) => col.trim().length <= 4);
+                      const answeredRowsCount = rows.filter((r) => !!currentAnswers[r]).length;
+
+                      const handleSelect = (row: string, col: string) => {
+                        const updated = { ...currentAnswers, [row]: col };
+                        handleInputChange(field.id, updated);
+                      };
+
+                      return (
+                        <div className="w-full space-y-3 pt-2">
+                          {/* Desktop Matrix Table (hidden on mobile) */}
+                          <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-2xs">
+                            <table className="w-full border-collapse text-left text-sm">
+                              <thead>
+                                <tr className="border-b border-slate-200 bg-slate-50/80">
+                                  <th className="py-3.5 px-4 font-semibold text-slate-700 w-2/5">
+                                    <span className="sr-only">Pernyataan</span>
+                                  </th>
+                                  {columns.map((col, idx) => (
+                                    <th
+                                      key={idx}
+                                      className="py-3 px-2 text-center font-semibold text-slate-700"
+                                      style={{ width: `${60 / Math.max(columns.length, 1)}%` }}
+                                    >
+                                      <div className="flex flex-col items-center justify-center">
+                                        <span className="text-sm font-semibold text-slate-800">{col}</span>
+                                        {idx === 0 && gridConfig.minLabel && (
+                                          <span className="text-[11px] font-normal text-slate-500 mt-0.5 leading-tight text-center max-w-[85px]">
+                                            {gridConfig.minLabel}
+                                          </span>
+                                        )}
+                                        {idx === columns.length - 1 && gridConfig.maxLabel && (
+                                          <span className="text-[11px] font-normal text-slate-500 mt-0.5 leading-tight text-center max-w-[85px]">
+                                            {gridConfig.maxLabel}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100">
+                                {rows.map((row, rIdx) => {
+                                  const selectedVal = currentAnswers[row];
+                                  const isRowAnswered = !!selectedVal;
+                                  return (
+                                    <tr
+                                      key={rIdx}
+                                      className={cn(
+                                        'transition-colors hover:bg-slate-50/80',
+                                        rIdx % 2 === 1 ? 'bg-slate-50/30' : 'bg-white',
+                                        isRowAnswered && 'bg-primary/[0.015]'
+                                      )}
+                                    >
+                                      <td className="py-3.5 px-4 text-slate-800 font-medium text-sm leading-snug">
+                                        {row}
+                                      </td>
+                                      {columns.map((col, cIdx) => {
+                                        const isChecked = selectedVal === col;
+                                        return (
+                                          <td key={cIdx} className="py-3.5 px-2 text-center align-middle">
+                                            <label
+                                              htmlFor={`grid-${field.id}-${rIdx}-${cIdx}`}
+                                              className="inline-flex items-center justify-center p-2 rounded-full cursor-pointer hover:bg-slate-100/80 transition-colors"
+                                            >
+                                              <input
+                                                type="radio"
+                                                id={`grid-${field.id}-${rIdx}-${cIdx}`}
+                                                name={`grid-${field.id}-${rIdx}`}
+                                                value={col}
+                                                checked={isChecked}
+                                                onChange={() => handleSelect(row, col)}
+                                                className="h-4 w-4 text-primary border-slate-300 focus:ring-primary focus:ring-2 cursor-pointer transition-transform active:scale-90"
+                                              />
+                                              <span className="sr-only">{`${row}: ${col}`}</span>
+                                            </label>
+                                          </td>
+                                        );
+                                      })}
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          {/* Mobile Adaptive Stack (zero horizontal overflow) */}
+                          <div className="block md:hidden space-y-2.5">
+                            {/* Mobile row counter badge if > 1 row */}
+                            {rows.length > 1 && (
+                              <div className="flex items-center justify-between text-xs text-slate-500 font-medium px-1">
+                                <span>Kemajuan Baris:</span>
+                                <span className={cn(
+                                  'font-semibold',
+                                  answeredRowsCount === rows.length ? 'text-emerald-600' : 'text-slate-700'
+                                )}>
+                                  {answeredRowsCount} / {rows.length} dijawab
+                                </span>
+                              </div>
+                            )}
+
+                            {rows.map((row, rIdx) => {
+                              const selectedVal = currentAnswers[row];
+                              const isRowAnswered = !!selectedVal;
+                              return (
+                                <div
+                                  key={rIdx}
+                                  className={cn(
+                                    'p-3 rounded-xl border transition-all',
+                                    isRowAnswered
+                                      ? 'border-primary/40 bg-primary/[0.02] shadow-2xs'
+                                      : 'border-slate-200/90 bg-white'
+                                  )}
+                                >
+                                  {/* Row Statement Title */}
+                                  <div className="flex items-start justify-between gap-2 mb-2.5">
+                                    <span className="text-sm font-semibold text-slate-800 leading-snug">
+                                      {row}
+                                    </span>
+                                    {isRowAnswered && (
+                                      <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                                    )}
+                                  </div>
+
+                                  {/* Scale Selection */}
+                                  {isShortColumns ? (
+                                    <div className="space-y-1.5">
+                                      <div className="flex items-center justify-between gap-1.5 w-full">
+                                        {columns.map((col, cIdx) => {
+                                          const isChecked = selectedVal === col;
+                                          return (
+                                            <button
+                                              key={cIdx}
+                                              type="button"
+                                              onClick={() => handleSelect(row, col)}
+                                              className={cn(
+                                                'flex-1 h-10 rounded-lg text-sm font-semibold transition-all active:scale-95 flex items-center justify-center cursor-pointer',
+                                                isChecked
+                                                  ? 'bg-primary text-white shadow-xs ring-2 ring-primary/20'
+                                                  : 'bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300'
+                                              )}
+                                              aria-pressed={isChecked}
+                                            >
+                                              {col}
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+
+                                      {/* Min / Max Labels under scale row */}
+                                      {(gridConfig.minLabel || gridConfig.maxLabel) && (
+                                        <div className="flex justify-between items-center text-[11px] text-slate-500 font-medium px-0.5 pt-0.5">
+                                          <span className="text-left leading-tight max-w-[48%]">
+                                            {gridConfig.minLabel || ''}
+                                          </span>
+                                          <span className="text-right leading-tight max-w-[48%]">
+                                            {gridConfig.maxLabel || ''}
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    /* Longer text scale labels (e.g. Setuju / Tidak Setuju) */
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                                      {columns.map((col, cIdx) => {
+                                        const isChecked = selectedVal === col;
+                                        return (
+                                          <button
+                                            key={cIdx}
+                                            type="button"
+                                            onClick={() => handleSelect(row, col)}
+                                            className={cn(
+                                              'w-full py-2 px-3 rounded-lg text-xs font-medium text-left transition-all active:scale-98 flex items-center justify-between cursor-pointer',
+                                              isChecked
+                                                ? 'bg-primary text-white shadow-xs'
+                                                : 'bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100'
+                                            )}
+                                            aria-pressed={isChecked}
+                                          >
+                                            <span className="truncate pr-2">{col}</span>
+                                            {isChecked && <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })()}
                     {field.type === 'product' && (
                       <div className="space-y-4 pt-2">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
