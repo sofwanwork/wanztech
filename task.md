@@ -1,4 +1,4 @@
-# Pembetulan Aksesibiliti & Label Borang Awam (Fix Incorrect Use of <label for=FORM_ELEMENT>) ✅ SELESAI (MENUNGGU PENGESAHAN PENGGUNA SEBELUM KE VERCEL)
+# Pembetulan Aksesibiliti & Label Borang Awam (Fix Incorrect Use of <label for=FORM_ELEMENT>) ✅ SELESAI (LIVE DI VERCEL)
 
 **Matlamat**: Memperbaiki isu Chrome DevTools / Aksesibiliti `Incorrect use of <label for=FORM_ELEMENT>` (2 isu dikesan pada soalan komposit/kumpulan seperti Skala Penilaian / Rating dan Multiple Choice Grid). Label tajuk soalan sebelum ini meletakkan atribut `htmlFor="field-input-${field.id}"` secara mandatori pada SEMUA jenis soalan, sedangkan soalan kumpulan (seperti `rating`, `grid`, `checkbox`, `radio`, `file`, `product`) tidak mempunyai elemen input tunggal dengan ID tersebut. Sistem akan membezakan jenis medan input tunggal (`text`, `email`, `number`, `textarea`, `select`, `date`, `time`) dengan soalan kumpulan supaya atribut `for` sentiasa sah dan tiada elemen terputus (*broken label association*). (PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL SEHINGGA DIBERI KEBENARAN).
 
@@ -35,7 +35,7 @@
 
 ---
 
-# Pecahan Kehadiran Berbilang Hari ke Tab Google Sheets Baharu (Dedicated Daily Worksheets for Multi-Day Attendance) ✅ SELESAI (MENUNGGU PENGESAHAN PENGGUNA SEBELUM KE VERCEL)
+# Pecahan Kehadiran Berbilang Hari ke Tab Google Sheets Baharu (Dedicated Daily Worksheets for Multi-Day Attendance) ✅ SELESAI (LIVE DI VERCEL)
 
 **Matlamat**: Membolehkan kehadiran bagi Hari 2 dan seterusnya direkodkan ke dalam tab / helaian (*worksheet*) baharu secara automatik (contohnya tab `Hari 2`, `Hari 3`) di Google Spreadsheet, supaya helaian utama (Sheet 0) kekal bersih tanpa limpahan lajur yang semakin banyak ke kanan. Sistem juga akan menyelaraskan pembacaan sijil awam supaya tarikh dan kehadiran daripada tab harian tersebut dikesan secara automatik. (PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL SEHINGGA DIBERI KEBENARAN).
 
@@ -78,7 +78,7 @@
 
 ---
 
-# Pengutamaan Tarikh Google Sheets untuk Sijil Berbilang Hari (Google Sheets Multi-Day Attendance Date Override) ✅ SELESAI (MENUNGGU PENGESAHAN PENGGUNA SEBELUM KE VERCEL)
+# Pengutamaan Tarikh Google Sheets untuk Sijil Berbilang Hari (Google Sheets Multi-Day Attendance Date Override) ✅ SELESAI (LIVE DI VERCEL)
 
 **Matlamat**: Menyelesaikan isu di mana apabila penganjur menyunting atau meletakkan tarikh undur (*back-date*) kehadiran di Google Sheets bagi Hari 2 (contohnya `Masa Masuk (Hari 2)`, `Tarikh (Hari 2)`, atau `Date Day 2`), sijil bagi Hari 2 masih memaparkan tarikh lama. Ini berlaku kerana rekod kehadiran automatik di Supabase menyekat pembacaan lajur Google Sheets (`if (!optionsMap.has(dayNum))`) dan penapis regex yang terlalu sempit. Sistem baharu mengutamakan nilai suntingan di Google Sheets berbanding rekod automatik DB Supabase dengan hierarki keutamaan yang mantap. (PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL SEHINGGA DIBERI KEBENARAN).
 
@@ -121,7 +121,7 @@
 
 ---
 
-# Sokongan Soalan Grid Skala Pelbagai Pilihan (Multiple Choice Grid for Scale) ✅ SELESAI (MENUNGGU PENGESAHAN PENGGUNA SEBELUM KE VERCEL)
+# Sokongan Soalan Grid Skala Pelbagai Pilihan (Multiple Choice Grid for Scale) ✅ SELESAI (LIVE DI VERCEL)
 
 **Matlamat**: Menambah jenis soalan baharu `grid` (*Multiple Choice Grid / Likert Scale Matrix*) ke dalam KlikForm:
 1. Membolehkan penganjur membuat soalan matriks skala dengan senarai baris pernyataan (*rows*) dan lajur skala (*columns/scale*) berserta label min/max di Form Builder.
@@ -167,7 +167,7 @@
 
 ---
 
-# Penghapusan Tatalan Mendatar & Pengoptimuman Ketinggian Mudah Alih Borang (Lock Horizontal Scroll & Mobile Vertical Height Optimization) ✅ SELESAI (MENUNGGU PENGESAHAN PENGGUNA SEBELUM KE VERCEL)
+# Penghapusan Tatalan Mendatar & Pengoptimuman Ketinggian Mudah Alih Borang (Lock Horizontal Scroll & Mobile Vertical Height Optimization) ✅ SELESAI (LIVE DI VERCEL)
 
 **Matlamat**: Menyelesaikan aduan pengguna ("kenapa boleh scroll kiri dan kanan, atas dan bawah, di mobile view, sy nak fix tanpa scroll kecuali question byk" - `media_1792392998295_0ef2b0b8.png`) supaya: (1) menghapuskan 100% tatalan kiri-kanan (*horizontal scroll / overscroll bounce*) pada peranti mudah alih; (2) mengoptimumkan ketinggian menegak dan padding borang supaya soalan ringkas (1-4 soalan) muat sepenuhnya di dalam satu skrin mudah alih tanpa perlu menatal atas-bawah, dan hanya menatal apabila soalan banyak; (3) menghapuskan "ghost padding" 48px dan gap 24px daripada shadcn `<Card>` pada kad soalan awam. (PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL LAGI).
 
@@ -221,7 +221,7 @@
 
 ---
 
-# Pengindahan Pemisah Seksyen & Skala Penilaian Mudah Alih (Section Separator & Rating Scale Mobile Polish) ✅ SELESAI (MENUNGGU PENGESAHAN PENGGUNA SEBELUM KE VERCEL)
+# Pengindahan Pemisah Seksyen & Skala Penilaian Mudah Alih (Section Separator & Rating Scale Mobile Polish) ✅ SELESAI (LIVE DI VERCEL)
 
 **Matlamat**: Memperbaiki paparan pemisah seksyen (*Section Separator*) dan skala penilaian (*Rating / Linear Scale*) pada pandangan mudah alih (*mobile view*) di `app/(public)/form/[id]/client.tsx` (`media_1792391870912_4d5a252c.jpg`) supaya: (1) garis penunjuk skala ASCII (`1-----> 6 Sangat tidak setuju Sangat Setuju`) tidak terputus dan terlipat ke berbilang baris hodoh pada skrin sempit; (2) butang skala 1-6 tidak terpotong di sebelah kanan dengan bar tatalan kelabu akibat kotak kosong `w-20`; (3) kotak pemisah seksyen dipamerkan anggun dengan aksen warna tema. (PERINGATAN: JANGAN KEMAS KINI KE VERCEL LAGI).
 
@@ -264,7 +264,7 @@
 
 ---
 
-# Pengindahan Paparan Penerangan Borang Pandangan Mudah Alih (Mobile View Form Description Polish) ✅ SELESAI (MENUNGGU PENGESAHAN PENGGUNA SEBELUM KE VERCEL)
+# Pengindahan Paparan Penerangan Borang Pandangan Mudah Alih (Mobile View Form Description Polish) ✅ SELESAI (LIVE DI VERCEL)
 
 **Matlamat**: Memperbaiki paparan penerangan borang (Form Description) pada pandangan mudah alih (*mobile view*) di `app/(public)/form/[id]/client.tsx` (`media_1792391040813_7c01dbd5.jpg`) supaya butiran program (seperti Tarikh, Masa, Tempat) tidak bertindih rapat menjadi satu blok teks padat, dengan menyuntik jarak perenggan responsif (`[&>p:not(:last-child)]:mb-2.5 sm:[&>p:not(:last-child)]:mb-2`), saiz fon adaptif (`text-sm sm:text-base`), jarak baris lega (`leading-relaxed`), dan kontras tajam pada teks tebal (`[&_strong]:text-slate-900`). (PERINGATAN: JANGAN KEMAS KINI KE VERCEL LAGI).
 
