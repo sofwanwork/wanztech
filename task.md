@@ -1,6 +1,6 @@
-# Pembetulan Herotan Seretan Pemisah Halaman & Lapisan DragOverlay Pembina Borang (Fix Page Break Drag Scaling Distortion & Add DragOverlay) ✅ SELESAI
+# Pembetulan Herotan Seretan Pemisah Halaman & Lapisan DragOverlay Pembina Borang (Fix Page Break Drag Scaling Distortion & Add DragOverlay) ✅ SELESAI (LIVE DI VERCEL)
 
-**Matlamat**: Menyelesaikan aduan pengguna ("bila drag page break jadi macam tu, tak lawa dia punya ghost" - `media_1792422249727_e55fef48.png`): (1) Memperbaiki herotan menegak melampau (vertical stretching/warping) apabila elemen Pemisah Halaman (Page Break) yang berketinggian ~40px diseret melintasi kad soalan yang berketinggian ~250px; (2) Membalut elemen Pemisah Halaman dengan kad putih legap bersempadan putus-putus (`border-dashed border-primary/35`) supaya teks kad di bawahnya tidak bocor/bercampur aduk semasa seretan; (3) Mengintegrasikan lapisan terapung `<DragOverlay dropAnimation={null}>` di dalam `<DndContext>` untuk pratonton bayang seretan (*ghost preview*) yang kemas, profesional, dan bergaya moden. (PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL SEHINGGA DIBERI KEBENARAN).
+**Matlamat**: Menyelesaikan aduan pengguna ("bila drag page break jadi macam tu, tak lawa dia punya ghost" - `media_1792422249727_e55fef48.png`): (1) Memperbaiki herotan menegak melampau (vertical stretching/warping) apabila elemen Pemisah Halaman (Page Break) yang berketinggian ~40px diseret melintasi kad soalan yang berketinggian ~250px; (2) Membalut elemen Pemisah Halaman dengan kad putih legap bersempadan putus-putus (`border-dashed border-primary/35`) supaya teks kad di bawahnya tidak bocor/bercampur aduk semasa seretan; (3) Mengintegrasikan lapisan terapung `<DragOverlay dropAnimation={null}>` di dalam `<DndContext>` untuk pratonton bayang seretan (*ghost preview*) yang kemas, profesional, dan bergaya moden.
 
 ### Pelan Pelaksanaan
 - [x] 1. Pembaikan Transformasi Seretan (`components/forms/fields-editor/index.tsx`):
@@ -17,7 +17,8 @@
   - [x] 3.4 Jalankan `npm run build` (kompilasi Next.js 16 Turbopack bersih, 58 laluan).
 - [x] 4. Dokumentasi & Pengesahan Pengguna:
   - [x] 4.1 Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
-  - [x] 4.2 Maklumkan kepada pengguna dengan ringkas dalam Bahasa Melayu.
+  - [x] 4.2 Tolak komit ke GitHub dan laksanakan pelancaran Vercel Pengeluaran (`dpl_H5sUZyCfnXdLwqF3rBKGRgmFqdHv`).
+  - [x] 4.3 Maklumkan kepada pengguna dengan ringkas dalam Bahasa Melayu.
 
 ### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
 1. **Punca Asal Herotan Seretan Pemisah Halaman (Root Cause of Drag Scaling Distortion)**:
@@ -31,9 +32,9 @@
 
 ---
 
-# Penaiktarafan Antaramuka Semakan Sijil Awam & Pengesanan Lajur Emel Pintar (Redesign Certificate Check Page & Smart Email Header Detection) ✅ SELESAI
+# Penaiktarafan Antaramuka Semakan Sijil Awam & Pengesanan Lajur Emel Pintar (Redesign Certificate Check Page & Smart Email Header Detection) ✅ SELESAI (LIVE DI VERCEL)
 
-**Matlamat**: Menyelesaikan aduan pengguna ("cantikkan halaman ni" merujuk kepada portal semakan sijil awam `/check/[formId]` yang sebelum ini berlatar belakang pudar dan memaparkan kotak amaran merah teknikal "Email field not found in Google Sheet"): (1) mereka bentuk semula antaramuka semakan sijil awam dengan visual studio moden; (2) mengesan lajur emel dalam Google Sheets secara fleksibel; (3) menyediakan kad maklum balas kontekstual yang mesra pengguna. (PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL SEHINGGA DIBERI KEBENARAN).
+**Matlamat**: Menyelesaikan aduan pengguna ("cantikkan halaman ni" merujuk kepada portal semakan sijil awam `/check/[formId]` yang sebelum ini berlatar belakang pudar dan memaparkan kotak amaran merah teknikal "Email field not found in Google Sheet"): (1) mereka bentuk semula antaramuka semakan sijil awam dengan visual studio moden; (2) mengesan lajur emel dalam Google Sheets secara fleksibel; (3) menyediakan kad maklum balas kontekstual yang mesra pengguna.
 
 ### Pelan Pelaksanaan
 - [x] 1. Pengesanan Lajur Emel Pintar (`lib/certificates/headers.ts` & `actions/certificates.ts`):
