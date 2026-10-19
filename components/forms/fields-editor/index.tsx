@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Trash2, GripVertical, Plus, Copy, List, Columns3 } from 'lucide-react';
+import { Trash2, GripVertical, Plus, Copy, List, Columns3, Check } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { cn } from '@/lib/utils';
 import { isScaleLikeOptions } from '@/lib/forms/scale-guide';
@@ -59,6 +59,7 @@ interface SortableFieldProps {
   updateField: (index: number, updates: Partial<FormField>) => void;
   removeField: (index: number) => void;
   duplicateField: (index: number) => void;
+  insertPageBreak?: (afterIndex: number) => void;
 }
 
 function SortableField({
@@ -68,6 +69,7 @@ function SortableField({
   updateField,
   removeField,
   duplicateField,
+  insertPageBreak,
 }: SortableFieldProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: field.id,
@@ -102,6 +104,7 @@ function SortableField({
   const norm = normalizeConditional(field.conditional);
   const rulesCount = norm?.rules?.length ?? 0;
   const isConditionalActive = rulesCount > 0;
+  const hasNextPageBreak = allFields[index + 1]?.type === 'pagebreak';
 
   // Page break renders as a distinct divider, not a normal question card —
   // no label/description/type editor (those confused users). Still draggable
@@ -166,11 +169,35 @@ function SortableField({
             <GripVertical className="h-4 w-4 text-slate-400 group-hover:text-slate-700" />
           </div>
           <span className="text-sm font-medium">Question {index + 1}</span>
-          <div className="flex items-center gap-1 ml-auto">
+          <div className="flex items-center gap-1.5 ml-auto">
+            {hasNextPageBreak ? (
+              <span
+                className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg text-xs font-semibold bg-primary/10 text-primary border border-primary/20 shrink-0"
+                title="Pemisah halaman aktif terus di bawah soalan ini"
+              >
+                <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                <span className="hidden sm:inline">Pemisah Aktif</span>
+                <span className="sm:hidden text-[10px]">Pemisah</span>
+              </span>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 px-2 sm:px-2.5 text-xs font-semibold text-slate-700 hover:text-primary hover:border-primary/40 hover:bg-primary/5 bg-white shadow-2xs rounded-lg flex items-center gap-1.5 cursor-pointer transition-all border-slate-200 shrink-0"
+                onClick={() => insertPageBreak?.(index)}
+                title="Tambah Pemisah Halaman (Page Break) terus di bawah soalan ini"
+                aria-label="Tambah pemisah halaman selepas soalan ini"
+              >
+                <Plus className="h-3.5 w-3.5 text-primary" />
+                <span className="hidden sm:inline">Pemisah Halaman</span>
+                <span className="sm:hidden text-[11px]">Break</span>
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0 cursor-pointer"
               onClick={() => duplicateField(index)}
               title="Duplicate"
               aria-label="Duplicate question"
@@ -180,7 +207,7 @@ function SortableField({
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0 cursor-pointer"
               onClick={() => removeField(index)}
               title="Delete"
               aria-label="Delete question"
@@ -962,6 +989,26 @@ function SortableField({
               </AccordionItem>
             </Accordion>
           )}
+
+          {/* Quick Page Break shortcut at the bottom of question card */}
+          {!hasNextPageBreak && (
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+              <span className="text-[11px] text-slate-400 truncate">
+                Mahu jadikan soalan seterusnya pada halaman baharu?
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => insertPageBreak?.(index)}
+                className="h-7 px-2.5 text-xs font-medium text-slate-600 hover:text-primary hover:bg-primary/5 rounded-md flex items-center gap-1 cursor-pointer shrink-0"
+                title="Tambah pemisah halaman di bawah soalan ini"
+              >
+                <Plus className="h-3.5 w-3.5 text-primary" />
+                <span>+ Tambah Pemisah di sini</span>
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -1201,6 +1248,17 @@ export function FieldsEditor({ fields, onChange }: FieldsEditorProps) {
     ]);
   };
 
+  const insertPageBreak = (afterIndex: number) => {
+    const newFields = [...fields];
+    newFields.splice(afterIndex + 1, 0, {
+      id: uuidv4(),
+      type: 'pagebreak',
+      label: 'Page Break',
+      required: false,
+    });
+    onChange(newFields);
+  };
+
   const updateField = (index: number, updates: Partial<FormField>) => {
     const newFields = [...fields];
     newFields[index] = { ...newFields[index], ...updates };
@@ -1256,6 +1314,7 @@ export function FieldsEditor({ fields, onChange }: FieldsEditorProps) {
               updateField={updateField}
               removeField={removeField}
               duplicateField={duplicateField}
+              insertPageBreak={insertPageBreak}
             />
           ))}
         </SortableContext>

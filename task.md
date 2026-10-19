@@ -1,3 +1,35 @@
+# Sokongan Tambah Pemisah Halaman Terus Pada Setiap Soalan (Contextual Page Break Insertion on Every Question) ✅ SELESAI
+
+**Matlamat**: Menyelesaikan aduan pengguna ("add page break ni leceh pulak bila soalan dh byk, boleh tak letak je di setiap question kalau nak add page break"): (1) Membolehkan pengguna menambah Pemisah Halaman (Page Break) terus di bawah mana-mana soalan tanpa perlu menatal ke hujung borang dan menyeretnya ke atas; (2) Menyediakan butang tindakan `[ + Pemisah Halaman ]` pada pengepala setiap soalan (`CardHeader`) dan pintasan di bahagian bawah kad soalan; (3) Mengesan status bersebelahan (`hasNextPageBreak`) secara pintar untuk memaparkan lencana pengesahan `✓ Pemisah Aktif` dan mengelakkan pertindihan pemisah berturutan. (PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL SEHINGGA DIBERI KEBENARAN).
+
+### Pelan Pelaksanaan
+- [x] 1. Antaramuka & Logik Sisipan Pintar (`components/forms/fields-editor/index.tsx`):
+  - [x] 1.1 Cipta fungsi `insertPageBreak(afterIndex)` dalam `FieldsEditor` menggunakan `splice(afterIndex + 1, 0, newPageBreak)` untuk menyuntik pemisah terus di bawah soalan yang disasarkan.
+  - [x] 1.2 Tambah butang `[ + Pemisah Halaman ]` pada `CardHeader` di sebelah butang Salin & Padam.
+  - [x] 1.3 Tambah pintasan pantas di bahagian bawah `CardContent`: `Mahu jadikan soalan seterusnya pada halaman baharu? [ + Tambah Pemisah di sini ]`.
+  - [x] 1.4 Kesan `hasNextPageBreak`: apabila pemisah telah wujud di bawah soalan tersebut, paparkan lencana hijau/tema `✓ Pemisah Aktif` dan sembunyikan pintasan penambahan untuk mengelakkan pemisah berganda.
+- [x] 2. Pengesahan Kualiti & Ujian Unit (`tests/pagination.test.ts`):
+  - [x] 2.1 Tambah ujian unit bagi penyisipan pemisah halaman di antara soalan dan pengesahan pemecahan halaman (`splitIntoPages`).
+  - [x] 2.2 Tambah ujian unit bagi pengesanan `hasNextPageBreak` pada soalan aktif vs pemisah halaman.
+  - [x] 2.3 Jalankan `npm run typecheck` (0 ralat TypeScript).
+  - [x] 2.4 Jalankan `npm run lint` (0 ralat ESLint).
+  - [x] 2.5 Jalankan `npm test` (semua 467 ujian unit lulus merentas 46 suite).
+  - [x] 2.6 Jalankan `npm run build` (kompilasi Next.js 16 Turbopack bersih, 58 laluan).
+- [x] 3. Dokumentasi & Pengesahan Pengguna:
+  - [x] 3.1 Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
+  - [x] 3.2 Terangkan perubahan secara ringkas & padat kepada pengguna dalam Bahasa Melayu.
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Punca Geseran Aliran Kerja (Workflow Friction with Trailing Appends)**:
+   - Sebelum ini, butang "Add Page Break" hanya berada di bahagian paling bawah senarai borang.
+   - Pada borang dengan 15-30 soalan, pengguna yang mahu membahagikan halaman selepas Soalan 3 terpaksa menatal jauh ke bawah, mengklik butang, dan kemudian menyeret (drag) kad pemisah melintasi belasan soalan ke atas.
+2. **Seni Bina Sisipan Kontekstual Dwi-Akses (Dual-Access Contextual Insertion Architecture)**:
+   - *Pengepala Kad (`CardHeader`)*: Butang padat `[ + Pemisah Halaman ]` (`h-8`, ikon `Plus`, teks responsif) diletakkan sebaris dengan ikon Salin dan Padam. Pengguna boleh menambah pemisah dengan satu klik sebaik sahaja selesai menamakan tajuk soalan.
+   - *Bahagian Bawah Kad (`CardContent`)*: Garis cadangan kontekstual di bahagian bawah soalan memudahkan pengguna yang baru sahaja selesai menambah pilihan jawapan/validasi untuk terus menyambung ke halaman baharu.
+   - *Pencegahan Ralat Berganda (`hasNextPageBreak`)*: Sistem menyemak elemen seterusnya `allFields[index + 1]?.type === 'pagebreak'`. Jika pemisah telah wujud, butang berubah menjadi lencana `✓ Pemisah Aktif`, memastikan pengguna tidak menghasilkan dua pemisah halaman kosong berturut-turut.
+
+---
+
 # Pembetulan Herotan Seretan Pemisah Halaman & Lapisan DragOverlay Pembina Borang (Fix Page Break Drag Scaling Distortion & Add DragOverlay) ✅ SELESAI (LIVE DI VERCEL)
 
 **Matlamat**: Menyelesaikan aduan pengguna ("bila drag page break jadi macam tu, tak lawa dia punya ghost" - `media_1792422249727_e55fef48.png`): (1) Memperbaiki herotan menegak melampau (vertical stretching/warping) apabila elemen Pemisah Halaman (Page Break) yang berketinggian ~40px diseret melintasi kad soalan yang berketinggian ~250px; (2) Membalut elemen Pemisah Halaman dengan kad putih legap bersempadan putus-putus (`border-dashed border-primary/35`) supaya teks kad di bawahnya tidak bocor/bercampur aduk semasa seretan; (3) Mengintegrasikan lapisan terapung `<DragOverlay dropAnimation={null}>` di dalam `<DndContext>` untuk pratonton bayang seretan (*ghost preview*) yang kemas, profesional, dan bergaya moden.

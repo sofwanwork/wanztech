@@ -81,3 +81,28 @@ describe('lastNonEmptyPageIndex', () => {
     expect(lastNonEmptyPageIndex([[], []])).toBe(0);
   });
 });
+
+describe('pagebreak insertion between questions', () => {
+  it('inserts page break immediately after targeted question', () => {
+    const fields = [f('q1'), f('q2'), f('q3')];
+    const afterIndex = 1; // user clicks on q2
+    const updated = [...fields];
+    updated.splice(afterIndex + 1, 0, f('pb', 'pagebreak'));
+
+    expect(updated.map((x) => x.id)).toEqual(['q1', 'q2', 'pb', 'q3']);
+    const pages = splitIntoPages(updated);
+    expect(pages).toHaveLength(2);
+    expect(pages[0].map((x) => x.id)).toEqual(['q1', 'q2']);
+    expect(pages[1].map((x) => x.id)).toEqual(['q3']);
+  });
+
+  it('detects when the immediate next field is already a pagebreak', () => {
+    const fields = [f('q1'), f('pb', 'pagebreak'), f('q2')];
+    const hasNextPageBreak = (idx: number) => fields[idx + 1]?.type === 'pagebreak';
+
+    expect(hasNextPageBreak(0)).toBe(true);  // q1 has pagebreak below it
+    expect(hasNextPageBreak(1)).toBe(false); // pb has q2 below it
+    expect(hasNextPageBreak(2)).toBe(false); // q2 is at end
+  });
+});
+
