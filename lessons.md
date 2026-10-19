@@ -591,3 +591,13 @@
   - **Penyorokan Bersyarat (`{!result?.found && <SearchCard />}`)**: Sorokkan keseluruhan kad borang carian secara automatik sebaik sahaja `result?.found === true`. Layar serta-merta bertukar menjadi paparan khusus sijil (*Certificate-First View*) tanpa sebarang gangguan elemen carian di atasnya.
   - **Penyelarasan Sari Kata Berasaskan Status**: Tukar sari kata arahan carian kepada status pengesahan berjaya ("Sijil rasmi anda telah berjaya disahkan dan sedia untuk dimuat turun.") apabila sijil wujud.
   - **Pintasan Semakan Semula Dwi-Akses**: Sediakan butang `[ 🔄 Semak Peserta Lain ]` pada bar atas dan `[ 🔄 Semak Sijil Peserta Lain ]` pada kad perincian kiri. Mengklik butang ini akan mengosongkan status hasil carian (`setResult(null)`), memulihkan semula kotak carian dengan animasi pudar lembut, dan memfokuskan kursor ke input secara automatik.
+
+
+- **Pencegahan Herotan Rapat & Pemotongan Teks Pada Tab Pemilih Harian (*Cramped Selector Tabs & Ellipsis Prevention*)**:
+  (1) **Punca Masalah ("kenapa macam rapat sgt")**:
+  - Menggabungkan label pilihan dengan rentetan tarikh penuh ke dalam satu butang pil mendatar (contohnya `Semua Hari (Penuh) (October 7, 2026 - October 19, 2026)` yang mengandungi 56 aksara).
+  - Tanpa `whitespace-nowrap`, teks butang terlipat kepada 2 baris di bahagian tanda sempang `-`, menyebabkan butang membengkak ke bawah dan menolak dinding sempadan kanan kad secara ketat ("rapat sgt").
+  - Pada masa yang sama, di dalam kad perincian kiri, kelebaran rentetan julat tarikh yang panjang memampatkan label ke kiri sehingga terpotong menjadi elipsis `Semua Hari (...`.
+  (2) **Penyelesaian Seni Bina Bersih**:
+  - **Pemisahan Peranan Butang Tab vs Paparan Tarikh**: Tab sub-header bertindak sebagai penukar pantas ringkas (`[ 🏅 Hari 1 ]`, `[ 🏅 Hari 2 ]`, `[ 🏅 Semua Hari (Penuh) ]`) dengan `whitespace-nowrap shrink-0` dan `justify-between`. Tarikh penuh tidak perlu disumbat ke dalam teks butang pil kerana ia sedia terpapar secara automatik pada sari kata header di atasnya dan pada kad perincian di sebelah kiri.
+  - **Susunan Bertindan Kad Perincian Kiri (`flex-col gap-0.5`)**: Pada senarai pilihan kad kiri, pisahkan nama sijil (baris atas) dan tarikh penuh (baris bawah) secara bertindan. Ini menghapuskan 100% masalah pemotongan teks elipsis (`Semua Hari (...`) dan memberi ruang pernafasan yang lapang dan elegan pada semua saiz skrin.

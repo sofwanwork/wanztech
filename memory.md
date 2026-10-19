@@ -3389,4 +3389,22 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - `npm run lint`: 0 ralat / 0 amaran ESLint.
   - `npm run build`: Kompilasi Next.js 16 Turbopack bersih tanpa sebarang ralat (58 laluan).
 
+## Pengoptimuman Tab Pemilih Sijil Harian & Pencegahan Herotan Rapat (2026-10-20)
+- **Konteks & Permintaan Pengguna**:
+  - Maklum balas pengguna: *"kenapa macam rapat sgt"* berserta bulatan merah pada butang `Semua Hari (Penuh) (October 7, 2026 - October 19, 2026)` yang terlipat kepada 2 baris dan menghimpit sempadan kanan kad pratonton secara ketat (`media_1792426944975_4cb4e59a.png`).
+- **Punca Asal (Root Cause Analysis)**:
+  - Di dalam sub-header pratonton langsung (`app/(public)/check/[formId]/client.tsx`), label pilihan sijil digabungkan dengan tarikh penuh `{opt.label} ({opt.formattedDate})`. Untuk pilihan gabungan, rentetan ini mencapai 56 aksara (`Semua Hari (Penuh) (October 7, 2026 - October 19, 2026)`).
+  - Tanpa `whitespace-nowrap`, pelayar memecahkan teks selepas tanda sempang, memaksa bahagian tarikh ke baris kedua dan membengkakkan ketinggian butang serta menolaknya rapat ke sempadan kanan kad.
+  - Pada kad perincian kiri, kelebaran teks tarikh mendatar menolak tajuk sehingga terpotong menjadi elipsis `Semua Hari (...`.
+- **Penyelesaian Dilaksanakan**:
+  - `app/(public)/check/[formId]/client.tsx`:
+    - **Tab Sub-Header Ringkas & Lapang**: Memaparkan `opt.label` sahaja (`[ 🏅 Hari 1 ]`, `[ 🏅 Hari 2 ]`, `[ 🏅 Semua Hari (Penuh) ]`) dengan `whitespace-nowrap shrink-0` dan kontena `justify-between gap-3`. Ini menjimatkan ~300px ruang mendatar dan menghalang sebarang pemecahan baris hodoh. Tarikh penuh dipaparkan secara automatik pada sari kata tajuk di atasnya dan melalui atribut `title`.
+    - **Susunan Bertindan Kad Perincian Kiri**: Mengubah butang senarai pilihan kehadiran kepada susunan 2 baris (`flex-col gap-0.5`). Baris 1 memaparkan tajuk penuh `Semua Hari (Penuh)` dan lencana `Aktif`, Baris 2 memaparkan julat tarikh penuh di bawahnya. Ini menghapuskan 100% isu pemotongan teks elipsis.
+- **Pengesahan & Kualiti**:
+  - `npm test`: 472 / 472 ujian unit lulus merentas 46 fail suite.
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm run build`: Kompilasi Next.js 16 Turbopack bersih tanpa sebarang ralat (58 laluan).
+
+
 

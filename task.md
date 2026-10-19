@@ -1,3 +1,39 @@
+# Pengoptimuman Tab Pemilih Sijil Harian & Pencegahan Herotan Rapat (Fix Cramped Multi-Day Certificate Selector Tabs & Ellipsis) ✅ SELESAI
+
+**Matlamat**: Menyelesaikan aduan pengguna ("kenapa macam rapat sgt" - `media_1792426944975_4cb4e59a.png` di mana butang pemilih sijil harian `Semua Hari (Penuh) (October 7, 2026 - October 19, 2026)` terlipat kepada 2 baris dan menghimpit sempadan kanan kad pratonton secara ketat): (1) Memisahkan teks nama sijil dengan rentetan tarikh panjang pada tab sub-header pratonton langsung supaya hanya memaparkan lencana kemas `[ 🏅 Hari 1 ]`, `[ 🏅 Hari 2 ]`, `[ 🏅 Semua Hari (Penuh) ]` berserta `whitespace-nowrap shrink-0` dan paparan tarikh pada tooltip & sari kata; (2) Menyusun pilihan sijil kehadiran pada kad perincian kiri secara bertindan (*stacked flex-col*) supaya tajuk `Semua Hari (Penuh)` tidak lagi terpotong dengan tanda elipsis (`Semua Hari (...`); (3) Menyediakan jarak pernafasan (*breathing room*) yang lapang dan seimbang merentas semua resolusi skrin. (PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL SEHINGGA DIBERI KEBENARAN).
+
+### Pelan Pelaksanaan
+- [x] 1. Penambahbaikan Sub-Header Tab Pratonton Langsung (`app/(public)/check/[formId]/client.tsx`):
+  - [x] 1.1 Buang penggabungan rentetan tarikh mentah panjang `({opt.formattedDate})` daripada butang pil di sub-header; gunakan `opt.label` yang ringkas, bersih, dan anggun.
+  - [x] 1.2 Letakkan `whitespace-nowrap shrink-0` untuk menghalang sebarang pemecahan baris hodoh (*ugly two-line text wrapping*).
+  - [x] 1.3 Gunakan `justify-between gap-3 flex-wrap sm:flex-nowrap` bersama `px-4 sm:px-6` supaya butang tidak lagi menghimpit dinding kanan kad secara rapat ("rapat sgt").
+  - [x] 1.4 Tambah ikon `Award` mikro dan atribut `title={`${opt.label} • ${opt.formattedDate}`}` untuk aksesibiliti.
+- [x] 2. Penambahbaikan Kad Perincian Kiri:
+  - [x] 2.1 Ubah susunan butang pilihan kehadiran kepada susunan bertindan 2 baris (`flex flex-col gap-0.5`): Baris 1 memaparkan nama penuh sijil berserta lencana `Aktif`, Baris 2 memaparkan tarikh penuh di bawahnya.
+  - [x] 2.2 Menghapuskan 100% masalah pemotongan teks tajuk elipsis (`Semua Hari (...`).
+- [x] 3. Pengesahan Kualiti & Ujian:
+  - [x] 3.1 Jalankan `npm run typecheck` (0 ralat TypeScript).
+  - [x] 3.2 Jalankan `npm run lint` (0 ralat ESLint).
+  - [x] 3.3 Jalankan `npm test` (semua 472 ujian unit lulus merentas 46 suite).
+  - [x] 3.4 Jalankan `npm run build` (kompilasi Next.js 16 Turbopack bersih, 58 laluan).
+- [x] 4. Dokumentasi & Pengesahan Pengguna:
+  - [x] 4.1 Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
+  - [x] 4.2 PATUHI arahan pengguna: JANGAN kemas kini ke Vercel lagi sehingga diarahkan.
+  - [x] 4.3 Maklumkan kepada pengguna dengan ringkas dalam Bahasa Melayu.
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Punca Utama Paparan Menjadi Rapat & Terlipat ("rapat sgt")**:
+   - Di dalam sub-header pratonton sijil langsung, kod terdahulu menggabungkan label sijil dengan tarikh penuh: `{opt.label} ({opt.formattedDate})`.
+   - Bagi pilihan gabungan semua hari, tarikhnya ialah rentetan julat panjang: `"October 7, 2026 - October 19, 2026"`.
+   - Apabila digabungkan, teks butang menjadi `"Semua Hari (Penuh) (October 7, 2026 - October 19, 2026)"` (56 aksara!).
+   - Tanpa `whitespace-nowrap`, pelayar memecahkan teks selepas tanda sempang `-`, memaksa `October 19, 2026)` ke baris kedua di dalam butang pil kecil. Ditambah pula dengan ketiadaan margin kanan pada flex scroll container, butang tersebut tertolak rapat dan melekat terus pada sempadan kanan kad.
+2. **Seni Bina Pemisahan Maklumat & Paparan Bersih**:
+   - Tab sub-header bertindak sebagai penukar pantas (*quick switcher tabs*): memaparkan `opt.label` sahaja (`Hari 1`, `Hari 2`, `Semua Hari (Penuh)`). Ini menjimatkan lebih 300px ruang mendatar dan menghasilkan reka bentuk yang kemas, profesional, dan lapang.
+   - Perincian tarikh penuh dipaparkan secara automatik pada sari kata di atasnya (`Live Preview • High Resolution • October 7, 2026 - October 19, 2026`) dan pada kad perincian di sebelah kiri.
+   - Pada kad sebelah kiri, pemecahan kepada susunan 2 baris (`flex-col`) memastikan nama sijil dan julat tarikh penuh mempunyai ruang tersendiri tanpa sebarang pemotongan elipsis.
+
+---
+
 # Sorokkan Kad Carian Automatik Selepas Sijil Ditemui (Auto-Hide Search Box When Certificate Found) ✅ SELESAI
 
 **Matlamat**: Menyelesaikan aduan pengguna ("yg tu bila dh keluar sijil boleh tak auto hide, maksudnya keluar sijil sahaja" - `media_1792426318854_180222fc.png`): (1) Menyembunyikan kad borang carian semakan ("Semakan Rekod Peserta") secara automatik sebaik sahaja rekod sijil peserta ditemui (`result?.found === true`), supaya hanya bahagian e-Sijil (kad perincian, butang muat turun, dan pratonton sijil) yang terpapar sepenuhnya di skrin tanpa perlu menatal melepasi kotak carian; (2) Mengemas kini sari kata pengepala apabila sijil ditemui kepada *"Sijil rasmi anda telah berjaya disahkan dan sedia untuk dimuat turun."*; (3) Menyediakan butang tindakan pantas `[ 🔄 Semak Peserta Lain ]` di bahagian atas dan pada kad perincian untuk membolehkan semakan semula dengan mudah. (PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL SEHINGGA DIBERI KEBENARAN).

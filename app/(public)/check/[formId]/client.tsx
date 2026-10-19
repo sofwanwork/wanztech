@@ -626,22 +626,29 @@ export function CertificateCheckClient({
                                 key={idx}
                                 type="button"
                                 onClick={() => setSelectedCertIndex(idx)}
-                                className={`w-full text-left p-2.5 rounded-xl text-xs transition-all border flex items-center justify-between gap-2 cursor-pointer ${
+                                className={`w-full text-left p-2.5 rounded-xl text-xs transition-all border flex flex-col gap-0.5 cursor-pointer ${
                                   isSelected
-                                    ? 'bg-emerald-600 text-white border-emerald-700 font-semibold shadow-2xs'
+                                    ? 'bg-emerald-600 text-white border-emerald-700 font-semibold shadow-xs'
                                     : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200/80'
                                 }`}
                               >
-                                <span className="flex items-center gap-1.5 truncate">
-                                  <Award
-                                    className={`w-3.5 h-3.5 shrink-0 ${
-                                      isSelected ? 'text-white' : 'text-emerald-600'
-                                    }`}
-                                  />
-                                  <span className="truncate">{opt.label}</span>
-                                </span>
+                                <div className="flex items-center justify-between gap-2 w-full">
+                                  <span className="flex items-center gap-1.5 font-semibold">
+                                    <Award
+                                      className={`w-3.5 h-3.5 shrink-0 ${
+                                        isSelected ? 'text-white' : 'text-emerald-600'
+                                      }`}
+                                    />
+                                    <span>{opt.label}</span>
+                                  </span>
+                                  {isSelected && (
+                                    <span className="text-[10px] bg-emerald-700/80 text-white px-1.5 py-0.2 rounded font-normal shrink-0">
+                                      Aktif
+                                    </span>
+                                  )}
+                                </div>
                                 <span
-                                  className={`text-[10px] shrink-0 ${
+                                  className={`text-[11px] pl-5 leading-tight ${
                                     isSelected ? 'text-emerald-100 font-normal' : 'text-slate-500'
                                   }`}
                                 >
@@ -787,26 +794,37 @@ export function CertificateCheckClient({
                 </CardHeader>
 
                 {dailyOptions && (
-                  <div className="px-4 sm:px-6 py-2.5 bg-slate-50 border-b border-slate-200/80 flex items-center gap-2 overflow-x-auto no-scrollbar">
-                    <span className="text-xs font-semibold text-slate-600 shrink-0 flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Pilih Sijil:</span>
-                    </span>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {dailyOptions.map((opt, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => setSelectedCertIndex(idx)}
-                          className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
-                            selectedCertIndex === idx
-                              ? 'bg-emerald-600 text-white font-semibold shadow-2xs'
-                              : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
-                          }`}
-                        >
-                          {opt.label} ({opt.formattedDate})
-                        </button>
-                      ))}
+                  <div className="px-4 sm:px-6 py-2.5 bg-slate-50/90 border-b border-slate-200/80 flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Pilih Sijil:</span>
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 max-w-full">
+                      {dailyOptions.map((opt, idx) => {
+                        const isSelected = selectedCertIndex === idx;
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setSelectedCertIndex(idx)}
+                            title={`${opt.label} • ${opt.formattedDate}`}
+                            className={`px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap shrink-0 transition-all cursor-pointer flex items-center gap-1.5 ${
+                              isSelected
+                                ? 'bg-emerald-600 text-white font-semibold shadow-xs ring-2 ring-emerald-600/20'
+                                : 'bg-white border border-slate-200/90 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-2xs'
+                            }`}
+                          >
+                            <Award
+                              className={`w-3.5 h-3.5 shrink-0 ${
+                                isSelected ? 'text-white' : 'text-emerald-600'
+                              }`}
+                            />
+                            <span>{opt.label}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
