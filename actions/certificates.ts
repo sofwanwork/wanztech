@@ -8,7 +8,7 @@ import { headers as getNextHeaders } from 'next/headers';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { encrypt } from '@/lib/encryption';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
-import { isIcHeader } from '@/lib/certificates/headers';
+import { isIcHeader, isEmailHeader } from '@/lib/certificates/headers';
 import type { DailyCertificateOption } from '@/lib/types';
 
 export interface CertificateCheckResult {
@@ -21,6 +21,8 @@ export interface CertificateCheckResult {
   /** The participant's real IC from the sheet (independent of search method). */
   ic?: string;
   error?: string;
+  /** Missing essential column in sheet (e.g. form only collected IC, but user searched email) */
+  missingField?: 'email' | 'ic' | 'name';
   attendanceIneligible?: boolean;
   attendanceDetails?: {
     status: 'no_record' | 'not_checked_out' | 'insufficient_hours';
@@ -147,17 +149,32 @@ export async function checkCertificateByICOrEmail(
     
     let targetColumnIndex = -1;
     if (isEmailSearch) {
-      targetColumnIndex = headers.findIndex((h) => {
-        const lower = h.toLowerCase().trim();
-        return lower === 'email' || lower === 'e-mel' || lower === 'e-mail' || lower.includes('emel') || lower.includes('alamat e-mel');
-      });
+      targetColumnIndex = headers.findIndex(isEmailHeader);
+      // Fallback: check if any field in form.fields has type 'email' and match its label
+      if (targetColumnIndex === -1 && form.fields) {
+        const emailField = form.fields.find((f) => f.type === 'email');
+        if (emailField) {
+          targetColumnIndex = headers.findIndex(
+            (h) => h.trim().toLowerCase() === emailField.label.trim().toLowerCase()
+          );
+        }
+      }
       if (targetColumnIndex === -1) {
-        return { found: false, error: 'Email field not found in Google Sheet' };
+        return { found: false, missingField: 'email', error: 'Email field not found in Google Sheet' };
       }
     } else {
       targetColumnIndex = headers.findIndex(isIcHeader);
+      // Fallback: check if any field label in form.fields matches IC pattern
+      if (targetColumnIndex === -1 && form.fields) {
+        const icField = form.fields.find((f) => isIcHeader(f.label));
+        if (icField) {
+          targetColumnIndex = headers.findIndex(
+            (h) => h.trim().toLowerCase() === icField.label.trim().toLowerCase()
+          );
+        }
+      }
       if (targetColumnIndex === -1) {
-        return { found: false, error: 'IC field not found in Google Sheet' };
+        return { found: false, missingField: 'ic', error: 'IC field not found in Google Sheet' };
       }
     }
 
@@ -176,7 +193,7 @@ export async function checkCertificateByICOrEmail(
     );
 
     if (nameColumnIndex === -1) {
-      return { found: false, error: 'Name field not found in Google Sheet' };
+      return { found: false, missingField: 'name', error: 'Name field not found in Google Sheet' };
     }
 
     // Get all rows and search

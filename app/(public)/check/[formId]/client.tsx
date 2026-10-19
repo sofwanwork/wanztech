@@ -25,6 +25,14 @@ import {
   Maximize2,
   ShieldCheck,
   Calendar,
+  Mail,
+  CreditCard,
+  Sparkles,
+  X,
+  AlertCircle,
+  HelpCircle,
+  RefreshCw,
+  FileText,
 } from 'lucide-react';
 import {
   Dialog,
@@ -69,6 +77,7 @@ export function CertificateCheckClient({
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CertificateCheckResult | null>(null);
 
+  const inputRef = useRef<HTMLInputElement>(null);
   const certificateRef = useRef<HTMLDivElement>(null);
   const hiddenCertificateRef = useRef<HTMLDivElement>(null);
   const previewWrapperRef = useRef<HTMLDivElement>(null);
@@ -296,64 +305,129 @@ export function CertificateCheckClient({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-white to-primary/10 py-12 px-4">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen min-h-[100dvh] bg-slate-50 relative flex flex-col justify-between py-8 sm:py-12 md:py-16 px-4 overflow-x-hidden selection:bg-primary/20 selection:text-primary">
+      {/* Ambient background decoration */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-gradient-to-b from-primary/10 via-primary/5 to-transparent blur-3xl pointer-events-none -z-10" />
+      <div className="absolute top-24 right-1/4 w-80 h-80 bg-emerald-400/5 rounded-full blur-3xl pointer-events-none -z-10" />
+      <div className="absolute top-48 left-1/4 w-80 h-80 bg-blue-400/5 rounded-full blur-3xl pointer-events-none -z-10" />
+
+      <div className="max-w-6xl mx-auto w-full flex-1">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4 shadow-2xs border border-primary/20">
-            <Award className="h-8 w-8 text-primary" />
+        <div className="text-center mb-8 sm:mb-10 max-w-3xl mx-auto">
+          {/* Floating dual-ring badge */}
+          <div className="relative inline-flex mb-4 group">
+            <div className="absolute -inset-1.5 bg-gradient-to-r from-primary/30 to-purple-600/30 rounded-3xl blur-md opacity-75 group-hover:opacity-100 transition duration-500" />
+            <div className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-white shadow-xl shadow-primary/10 ring-1 ring-slate-900/5 flex items-center justify-center text-primary">
+              <Award className="h-8 w-8 sm:h-9 sm:w-9 text-primary transition-transform duration-300 group-hover:scale-105" />
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-md ring-2 ring-white">
+                <ShieldCheck className="w-3.5 h-3.5" />
+              </div>
+            </div>
           </div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 tracking-tight leading-snug sm:leading-tight max-w-3xl sm:max-w-4xl mx-auto whitespace-pre-line break-words [text-wrap:balance]">
+
+          {/* Portal tag badge */}
+          <div className="flex items-center justify-center mb-3">
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20 shadow-2xs">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Portal Semakan E-Sijil Rasmi</span>
+            </span>
+          </div>
+
+          {/* Form Title */}
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight leading-snug sm:leading-tight whitespace-pre-line break-words [text-wrap:balance]">
             {formTitle}
           </h1>
-          <p className="text-slate-600 mt-2.5 text-sm sm:text-base [text-wrap:balance]">
-            Verify & Download Your E-Certificate
+          <p className="text-slate-600 mt-2.5 text-sm sm:text-base [text-wrap:balance] max-w-xl mx-auto leading-relaxed">
+            Sahkan kehadiran dan muat turun e-sijil rasmi anda dengan memasukkan No. Kad Pengenalan atau E-mel pendaftaran.
           </p>
+
           {minHoursRequired && minHoursRequired > 0 ? (
-            <div className="mt-3">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-semibold border border-emerald-200/80 shadow-2xs">
+            <div className="mt-3.5">
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-800 text-xs font-semibold border border-emerald-200/80 shadow-2xs">
                 <Clock className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Attendance Requirement: Minimum {minHoursRequired} Hours</span>
+                <span>Syarat Kehadiran: Minimum {minHoursRequired} Jam</span>
               </span>
             </div>
           ) : null}
         </div>
 
-        {/* Check Form - Center this if no result yes */}
+        {/* Check Form - Center this if no result */}
         <div
-          className={`transition-all duration-500 ${result?.found ? 'mb-8' : 'max-w-lg mx-auto'}`}
+          className={`transition-all duration-500 ${result?.found ? 'mb-8' : 'max-w-xl mx-auto'}`}
         >
-          <Card className="border border-slate-200/80 shadow-md rounded-2xl p-6 gap-5 bg-white">
+          <Card className="border border-slate-200/90 shadow-xl shadow-slate-200/50 rounded-3xl p-6 sm:p-8 gap-5 bg-white/95 backdrop-blur-xl">
             <CardHeader className="p-0 gap-1.5">
-              <CardTitle className="text-lg font-bold text-slate-900">Certificate Verification</CardTitle>
-              <CardDescription className="text-sm text-slate-500">
-                Enter your IC number or Email to verify and download certificate
+              <div className="flex items-center gap-2 text-primary font-semibold text-xs tracking-wider uppercase">
+                <FileText className="w-4 h-4" />
+                <span>Pengesahan Sijil • Verification</span>
+              </div>
+              <CardTitle className="text-xl sm:text-2xl font-bold text-slate-900">
+                Semakan Rekod Peserta
+              </CardTitle>
+              <CardDescription className="text-xs sm:text-sm text-slate-500">
+                Masukkan No. Kad Pengenalan atau E-mel yang digunakan semasa pendaftaran program.
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0 space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="ic" className="text-xs font-semibold uppercase tracking-wider text-slate-700">IC Number / Email</Label>
-                <Input
-                  id="ic"
-                  placeholder="Example: 901234567890 or email@domain.com"
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleCheck()}
-                  className="h-12 text-base sm:text-lg rounded-xl border-slate-200 focus-visible:ring-primary/20"
-                />
+                <Label htmlFor="ic" className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center justify-between">
+                  <span>No. Kad Pengenalan / E-mel</span>
+                  <span className="text-[11px] font-normal text-slate-400 lowercase">cth: 901234567890</span>
+                </Label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    {identifier.includes('@') ? (
+                      <Mail className="h-5 w-5 text-primary transition-colors" />
+                    ) : /^\d+$/.test(identifier.replace(/[-\s]/g, '')) && identifier.length > 0 ? (
+                      <CreditCard className="h-5 w-5 text-primary transition-colors" />
+                    ) : (
+                      <Search className="h-5 w-5 text-slate-400" />
+                    )}
+                  </div>
+                  <Input
+                    ref={inputRef}
+                    id="ic"
+                    placeholder="Contoh: 901020015566 atau nama@email.com"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleCheck()}
+                    className="h-13 pl-11 pr-10 text-base sm:text-lg rounded-2xl border-slate-200 bg-slate-50/60 hover:bg-white focus:bg-white focus-visible:ring-primary/20 shadow-xs transition-all"
+                  />
+                  {identifier.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIdentifier('');
+                        inputRef.current?.focus();
+                      }}
+                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                      title="Padam"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-500 flex items-center gap-1.5 pt-0.5">
+                  <span>💡</span>
+                  <span>Masukkan No. IC tanpa sempang (<code>-</code>) atau alamat e-mel pendaftaran rasmi.</span>
+                </p>
               </div>
             </CardContent>
             <CardFooter className="p-0">
-              <Button onClick={handleCheck} disabled={loading} className="w-full h-12 rounded-xl text-base font-medium shadow-md shadow-primary/20">
+              <Button
+                onClick={handleCheck}
+                disabled={loading}
+                className="w-full h-13 rounded-2xl text-base font-semibold bg-gradient-to-r from-primary via-primary/95 to-primary text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 active:scale-[0.99] transition-all cursor-pointer"
+              >
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Verifying...
+                    Mengesahkan Rekod...
                   </>
                 ) : (
                   <>
                     <Search className="mr-2 h-5 w-5" />
-                    Verify Certificate
+                    Sahkan E-Sijil Sekarang
                   </>
                 )}
               </Button>
@@ -366,7 +440,7 @@ export function CertificateCheckClient({
           <div className="grid md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 items-start">
             {/* Left: Result Details */}
             <div className="md:col-span-1 space-y-4">
-              <Card className="border border-emerald-100 shadow-xl rounded-2xl p-0 gap-0 overflow-hidden bg-gradient-to-b from-emerald-50/90 via-emerald-50/40 to-white">
+              <Card className="border border-emerald-100 shadow-xl rounded-3xl p-0 gap-0 overflow-hidden bg-gradient-to-b from-emerald-50/90 via-emerald-50/40 to-white">
                 <CardContent className="p-6 text-center">
                   <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-100/90 text-emerald-600 shadow-2xs border border-emerald-200/70 mb-3">
                     <CheckCircle2 className="h-7 w-7 text-emerald-600" />
@@ -493,7 +567,7 @@ export function CertificateCheckClient({
 
             {/* Right: Certificate Preview */}
             <div className="md:col-span-2">
-              <Card className="border border-slate-200/80 shadow-xl rounded-2xl p-0 gap-0 overflow-hidden bg-white">
+              <Card className="border border-slate-200/80 shadow-xl rounded-3xl p-0 gap-0 overflow-hidden bg-white">
                 <CardHeader className="px-4 sm:px-6 py-3.5 bg-white border-b border-slate-200/80 flex flex-row items-center justify-between gap-3 space-y-0">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
@@ -687,58 +761,160 @@ export function CertificateCheckClient({
         )}
 
         {result && !result.found && (
-          <div className="max-w-lg mx-auto">
+          <div className="max-w-xl mx-auto mt-6 animate-in fade-in slide-in-from-bottom-3 duration-400">
             {result.attendanceIneligible && result.attendanceDetails ? (
-              <Card className="border border-amber-200/90 shadow-lg bg-amber-50/90">
-                <CardContent className="pt-6 text-center space-y-4">
-                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-amber-100 mb-1">
+              <Card className="border border-amber-200/90 shadow-xl shadow-amber-500/5 bg-gradient-to-b from-amber-50/90 via-white to-amber-50/30 rounded-3xl p-6 sm:p-7">
+                <CardContent className="p-0 text-center space-y-4">
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-amber-100 text-amber-700 border border-amber-200/80 mb-1 shadow-2xs">
                     <Clock className="h-7 w-7 text-amber-600" />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-amber-950 mb-1.5">
                       {result.attendanceDetails.status === 'not_checked_out'
-                        ? 'Check-Out Incomplete'
+                        ? 'Daftar Keluar (Check-Out) Belum Lengkap'
                         : result.attendanceDetails.status === 'no_record'
-                        ? 'No Attendance Record'
-                        : 'Attendance Hours Requirement Not Met'}
+                        ? 'Tiada Rekod Kehadiran Ditemui'
+                        : 'Syarat Jam Kehadiran Tidak Mencukupi'}
                     </h3>
                     <p className="text-xs text-amber-900/90 max-w-md mx-auto leading-relaxed">
                       {result.error}
                     </p>
                   </div>
 
-                  <div className="bg-white/90 p-4 rounded-xl border border-amber-200 text-left text-xs space-y-2 max-w-sm mx-auto shadow-2xs">
+                  <div className="bg-white/95 p-4 rounded-2xl border border-amber-200/80 text-left text-xs space-y-2 max-w-sm mx-auto shadow-2xs">
                     <div className="flex justify-between items-center py-1 border-b border-amber-100">
-                      <span className="text-muted-foreground">Minimum Requirement:</span>
-                      <span className="font-bold text-slate-900">{result.attendanceDetails.requiredHours} Hours</span>
+                      <span className="text-muted-foreground">Syarat Jam Minimum:</span>
+                      <span className="font-bold text-slate-900">{result.attendanceDetails.requiredHours} Jam</span>
                     </div>
                     {result.attendanceDetails.status === 'insufficient_hours' && (
                       <>
                         <div className="flex justify-between items-center py-1 border-b border-amber-100">
-                          <span className="text-muted-foreground">Your Total Attendance:</span>
+                          <span className="text-muted-foreground">Jumlah Kehadiran Anda:</span>
                           <span className="font-bold text-amber-800">{result.attendanceDetails.attendedFormatted}</span>
                         </div>
                         <div className="flex justify-between items-center py-1">
-                          <span className="text-muted-foreground">Shortfall:</span>
-                          <span className="font-bold text-rose-600">Short by {result.attendanceDetails.shortfallText}</span>
+                          <span className="text-muted-foreground">Kekurangan:</span>
+                          <span className="font-bold text-rose-600">Kurang {result.attendanceDetails.shortfallText}</span>
                         </div>
                       </>
                     )}
                   </div>
 
                   <p className="text-[11px] text-amber-800/80 italic">
-                    Please contact the event secretariat if you have special permission or an exemption from the organizer.
+                    Sila hubungi pihak urusetia / penganjur program sekiranya anda mempunyai kebenaran khas atau pengecualian.
                   </p>
                 </CardContent>
               </Card>
-            ) : (
-              <Card className="border-0 shadow-lg bg-red-50">
-                <CardContent className="pt-6 text-center">
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mb-4">
-                    <XCircle className="h-6 w-6 text-red-600" />
+            ) : result.missingField === 'email' || result.error?.toLowerCase().includes('email field not found') ? (
+              /* Missing Email column in Google Sheet */
+              <Card className="border border-amber-200/90 shadow-xl shadow-amber-500/5 bg-gradient-to-b from-amber-50/90 via-white to-amber-50/30 rounded-3xl p-6 sm:p-7 text-center">
+                <CardContent className="p-0 space-y-3">
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-amber-100 text-amber-700 border border-amber-200/80 mb-1 shadow-2xs">
+                    <AlertCircle className="h-7 w-7 text-amber-600" />
                   </div>
-                  <h3 className="text-lg font-semibold text-red-800 mb-2">Certificate Not Found</h3>
-                  <p className="text-red-600">{result.error || 'IC / Email not found in records'}</p>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900 mb-1">
+                      Carian E-mel Tidak Tersedia
+                    </h3>
+                    <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
+                      Rekod kehadiran bagi borang ini menggunakan <strong>Nombor Kad Pengenalan (No. IC)</strong> sebagai pengenalan utama. Sila gunakan No. IC anda untuk menyemak sijil.
+                    </p>
+                  </div>
+
+                  <div className="pt-2">
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setIdentifier('');
+                        setResult(null);
+                        inputRef.current?.focus();
+                      }}
+                      className="h-11 px-5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-medium shadow-md shadow-amber-600/20 text-xs sm:text-sm transition-all cursor-pointer"
+                    >
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      Gunakan Nombor Kad Pengenalan (No. IC)
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : result.missingField === 'ic' || result.error?.toLowerCase().includes('ic field not found') ? (
+              /* Missing IC column in Google Sheet */
+              <Card className="border border-blue-200/90 shadow-xl shadow-blue-500/5 bg-gradient-to-b from-blue-50/90 via-white to-blue-50/30 rounded-3xl p-6 sm:p-7 text-center">
+                <CardContent className="p-0 space-y-3">
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-blue-100 text-blue-700 border border-blue-200/80 mb-1 shadow-2xs">
+                    <Mail className="h-7 w-7 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900 mb-1">
+                      Carian No. IC Tidak Tersedia
+                    </h3>
+                    <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
+                      Rekod kehadiran bagi borang ini menggunakan <strong>Alamat E-mel</strong> sebagai pengenalan utama. Sila gunakan alamat e-mel anda untuk menyemak sijil.
+                    </p>
+                  </div>
+
+                  <div className="pt-2">
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setIdentifier('');
+                        setResult(null);
+                        inputRef.current?.focus();
+                      }}
+                      className="h-11 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-md shadow-blue-600/20 text-xs sm:text-sm transition-all cursor-pointer"
+                    >
+                      <Mail className="w-4 h-4 mr-2" />
+                      Gunakan Alamat E-mel
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              /* Participant Not Found */
+              <Card className="border border-rose-200/80 shadow-xl shadow-rose-500/5 bg-gradient-to-b from-rose-50/70 via-white to-rose-50/20 rounded-3xl p-6 sm:p-7 text-center">
+                <CardContent className="p-0 space-y-4">
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 border border-rose-200/80 mb-1 shadow-2xs">
+                    <XCircle className="h-7 w-7 text-rose-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900 mb-1">
+                      Rekod Sijil Tidak Ditemui
+                    </h3>
+                    <p className="text-xs sm:text-sm text-rose-800/90 max-w-md mx-auto leading-relaxed">
+                      Tiada rekod kehadiran dijumpai untuk carian{' '}
+                      <span className="font-semibold text-rose-950 font-mono bg-rose-100/80 px-2 py-0.5 rounded-md">
+                        {identifier}
+                      </span>.
+                    </p>
+                  </div>
+
+                  <div className="bg-white/95 p-4 rounded-2xl border border-rose-100/90 text-left text-xs space-y-2 max-w-md mx-auto shadow-2xs text-slate-600">
+                    <div className="font-semibold text-slate-800 text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                      <HelpCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                      <span>Panduan & Tindakan:</span>
+                    </div>
+                    <ul className="space-y-1.5 pl-4 list-disc text-slate-600 leading-relaxed text-xs">
+                      <li>Pastikan No. Kad Pengenalan dimasukkan tanpa tanda sempang (contoh: <code>901020015566</code>).</li>
+                      <li>Pastikan alamat e-mel dieja dengan tepat seperti semasa mengisi borang program.</li>
+                      <li>Sila hubungi pihak urusetia / penganjur jika kehadiran anda belum dimuat naik ke dalam sistem.</li>
+                    </ul>
+                  </div>
+
+                  <div className="pt-2">
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setIdentifier('');
+                        setResult(null);
+                        inputRef.current?.focus();
+                      }}
+                      variant="outline"
+                      className="h-10 px-4 text-xs font-semibold rounded-xl border-slate-300 text-slate-700 hover:bg-slate-50 transition-all cursor-pointer"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5 mr-1.5 text-slate-500" />
+                      Cuba Carian Baharu
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -893,6 +1069,12 @@ export function CertificateCheckClient({
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Official Verification Footer */}
+      <footer className="mt-12 sm:mt-16 text-center text-xs text-slate-500 flex flex-wrap items-center justify-center gap-2 pt-6 border-t border-slate-200/70 max-w-6xl mx-auto w-full">
+        <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+        <span>Sistem Pengesahan E-Sijil Digital Selamat • Dikuasakan oleh <strong className="text-slate-700 font-semibold">KlikForm</strong></span>
+      </footer>
     </div>
   );
 }

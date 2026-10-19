@@ -3284,3 +3284,39 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - Vercel Deployment ID: `dpl_DDvTo9K7odKgpNTUQoPQ5VNheS9i`.
   - Domain Pengeluaran: `https://www.klikform.com` (HTTP 200 OK).
   - Status: Selesai & Beroperasi Penuh di Pengeluaran.
+
+## Reka Bentuk Semula Halaman Semakan E-Sijil (`/check/[formId]`) & Pengecaman Lajur E-mel Mantap (2026-10-19)
+- **Konteks & Permintaan Pengguna**:
+  - Pengguna berkongsi tangkapan skrin halaman semakan e-sijil (`/check/[formId]`) yang kelihatan ringkas/pudar dan memaparkan kotak merah kasar *"Certificate Not Found / Email field not found in Google Sheet"* selepas memasukkan e-mel, dengan arahan: *"cantikkan halaman ni"*.
+- **Punca Asal (Root Cause Analysis)**:
+  1. *Pengesanan Lajur E-mel Yang Terhad*:
+     - Logik carian lajur e-mel di `actions/certificates.ts` hanya menyemak `lower === 'email'` (padanan tepat) atau `lower.includes('emel')`.
+     - Sekiranya lajur spreadsheet dinamakan `"Email Address"`, `"Alamat Email"`, atau `"Email Peserta"`, semakan gagal dan mencetuskan ralat `"Email field not found in Google Sheet"`.
+  2. *Ketiadaan Panduan Kontekstual untuk Borang Berasaskan No. IC*:
+     - Sekiranya sesuatu acara hanya mengumpulkan No. IC peserta (tiada medan e-mel), peserta yang mencuba mencari melalui e-mel disajikan dengan ralat sistem mentah *"Email field not found in Google Sheet"*, bukannya panduan mesra untuk menggunakan No. IC.
+  3. *Estetika Antara Muka Pengguna*:
+     - Latar belakang putih/pudar tanpa kedalaman visual, ikon kecil tanpa pencahayaan, input tanpa ikon status, butang asas, dan kotak ralat merah kaku di bawah kad carian.
+- **Penyelesaian Dilaksanakan**:
+  - `lib/certificates/headers.ts`:
+    - Membina pembantu `isEmailHeader(h: string): boolean` yang menyokong variasi Bahasa Melayu & Inggeris: `email`, `e-mel`, `e-mail`, `emel`, `mail`, `alamat e-mel`, `email address`, `alamat emel`, `user email`, `emel peserta`, dan regex perkataan terasing `/\b(email|emel|mail)\b/i`.
+  - `actions/certificates.ts`:
+    - Menggunakan `isEmailHeader` untuk carian lajur e-mel.
+    - Menambah sandaran automatik ke definisi medan borang (`form.fields.find(f => f.type === 'email')`).
+    - Menambah sifat `missingField?: 'email' | 'ic' | 'name'` pada antara muka `CertificateCheckResult`.
+  - `app/(public)/check/[formId]/client.tsx`:
+    - **Latar Belakang Ambien**: `bg-slate-50` dengan *gradient mesh* atas dan bulatan kabur lembut (blur orbs) untuk rasa mewah dan rasmi.
+    - **Pengepala Portal Rasmi**: Lencana terapung berkembar (`Award` + `ShieldCheck`), lencana status *"Portal Semakan E-Sijil Rasmi"*, tipografi tajuk tebal seimbang (`[text-wrap:balance]`), dan arahan mesra.
+    - **Kad Carian Moden**: Kontena kaca berkontur `rounded-3xl border border-slate-200/90 bg-white/95 backdrop-blur-xl shadow-xl`. Input carian pintar dengan penukaran ikon masa nyata (`Mail` jika `@`, `CreditCard` jika nombor, atau `Search`), butang pemadam pantas `X`, dan panduan format. Butang sahkan sijil berkilat dengan status memuatkan dinamik.
+    - **Kad Maklum Balas Kontekstual (Menggantikan Kotak Merah Kasar)**:
+      - *Ketiadaan lajur e-mel*: Kad lembut ambar memaklumkan borang menggunakan No. IC berserta butang 1-klik `[ Gunakan Nombor Kad Pengenalan (No. IC) ]`.
+      - *Ketiadaan lajur IC*: Kad lembut biru memaklumkan borang menggunakan E-mel berserta butang 1-klik `[ Gunakan Alamat E-mel ]`.
+      - *Tiada rekod*: Kad rose lembut dengan ringkasan carian dan senarai panduan semakan mesra pengguna (semak sengketa, ejaan e-mel, dan hubungi urusetia).
+    - **Penyelarasan Sudut Kad**: Semua kad keputusan dan pratonton dinaik taraf ke `rounded-3xl` yang selaras.
+    - **Kaki Halaman (Footer)**: Ditambah pengesahan digital selamat KlikForm.
+  - `tests/certificate-headers.test.ts`:
+    - Menambah 4 suite ujian unit baharu untuk `isEmailHeader` (padanan standard, padanan majmuk MY/EN, kepekaan huruf, dan penolakan lajur tidak berkaitan).
+- **Pengesahan & Kualiti**:
+  - `npm test`: 465 / 465 ujian unit lulus merentas 46 fail suite.
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm run build`: Kompilasi Next.js 16 Turbopack bersih tanpa sebarang ralat (58 laluan).

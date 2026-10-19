@@ -21,3 +21,20 @@ export function isIcHeader(h: string): boolean {
     /\bkp\b/.test(lower)
   );
 }
+
+/** Matches common Email column headers (MY + EN variants). */
+export function isEmailHeader(h: string): boolean {
+  const lower = h.toLowerCase().trim();
+  return (
+    lower === 'email' ||
+    lower === 'e-mel' ||
+    lower === 'e-mail' ||
+    lower === 'emel' ||
+    lower === 'mail' ||
+    lower.includes('email') ||
+    lower.includes('emel') ||
+    lower.includes('e-mail') ||
+    lower.includes('e-mel') ||
+    /\b(email|emel|mail)\b/i.test(lower)
+  );
+}

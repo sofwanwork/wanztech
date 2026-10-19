@@ -2102,3 +2102,58 @@
 - **Domain Pengeluaran**: `https://www.klikform.com` (HTTP 200 OK)
 - **Status Akhir**: SELESAI & LIVE DI PENGELUARAN (VERCEL).
 
+---
+
+# Penambahbaikan Reka Bentuk Halaman Semakan E-Sijil (`/check/[formId]`) & Pengecaman Lajur E-mel Mantap (Certificate Check Page Redesign & Robust Email Search)
+
+**Matlamat**: Mempercantikkan halaman semakan e-sijil awam (`/check/[formId]`) agar tampak premium, moden, dipercayai (seperti portal sijil rasmi kementerian/korporat), dan mesra pengguna. Pada masa yang sama, menyelesaikan isu teknikal "Email field not found in Google Sheet" dengan meluaskan pengesanan pengepala e-mel (`isEmailHeader`) dan memaparkan mesej ralat/panduan kontekstual yang elegan dan membantu sekiranya rekod atau lajur tidak ditemui. (PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL SEHINGGA DIBERI KEBENARAN).
+
+### Pelan Pelaksanaan
+- [x] 1. Lapisan Pengesanan Pengepala E-mel Mantap (`lib/certificates/headers.ts` & `actions/certificates.ts`):
+  - [x] 1.1 Cipta pembantu `isEmailHeader(h: string): boolean` di `lib/certificates/headers.ts` yang menyokong variasi Bahasa Melayu & Inggeris: `email`, `e-mel`, `e-mail`, `emel`, `mail`, `alamat e-mel`, `email address`, `alamat emel`, `user email`, dan regex kata terasing `/\b(email|emel|mail)\b/i`.
+  - [x] 1.2 Kemas kini `actions/certificates.ts` untuk menggunakan `isEmailHeader`. Tambah sokongan padanan label medan dari `form.fields` (jika medan bertipe `email`) sekiranya nama lajur tersuai digunakan.
+  - [x] 1.3 Perhalusi mesej ralat kembali (`CertificateCheckResult.missingField`) supaya mesra pengguna dan membezakan antara ketiadaan lajur vs tiada rekod peserta.
+- [x] 2. Reka Bentuk Semula Antara Muka Pengguna Semakan Sijil (`app/(public)/check/[formId]/client.tsx`):
+  - [x] 2.1 **Latar Belakang & Kanvas Moden**: Tambah latar belakang ambien elegan dengan *gradient mesh* lembut, efek *subtle top glow*, dan motif keselamatan e-sijil rasmi.
+  - [x] 2.2 **Pengepala Portal Rasmi**: Reka bentuk lencana ikon terapung dwilapisan dengan pencahayaan lembut (`Award` & `ShieldCheck`), lencana status *"Portal Rasmi E-Sijil"*, tipografi tajuk borang bertenaga dan seimbang (`[text-wrap:balance]`), serta panduan arahan yang jelas.
+  - [x] 2.3 **Kad Semakan & Input Carian Pintar**:
+    - Kad kontena kaca moden (`rounded-3xl border border-slate-200/90 bg-white/95 backdrop-blur-xl shadow-xl`).
+    - Input carian pintar dengan ikon dinamik (bertukar secara automatik ke `Mail` jika ada `@`, `CreditCard` jika nombor, atau `Search` lalai).
+    - Butang pemadam pantas (`X`) untuk mengosongkan teks dengan 1-klik.
+    - Butang semakan premium berkilau/gradien dengan status memuatkan dinamik (*spinner*).
+  - [x] 2.4 **Kad Ralat & Tiada Rekod Yang Elegan (Menggantikan Kotak Merah Kasar)**:
+    - Reka bentuk kad lembut bertema amber/blue/rose dengan ikon status moden.
+    - Mesej penjelasan kontekstual:
+      - Jika lajur e-mel tiada: Maklumkan dengan jelas bahawa borang menggunakan No. IC dan sediakan butang pantas `[ Gunakan No. Kad Pengenalan ]`.
+      - Jika lajur No. IC tiada: Maklumkan dengan jelas bahawa borang menggunakan E-mel dan sediakan butang pantas `[ Gunakan Alamat E-mel ]`.
+      - Jika tiada rekod: Paparkan panduan semakan (pastikan tiada sengketa, ejaan tepat, atau hubungi pihak urusetia program).
+  - [x] 2.5 **Penyelarasan Kad Keputusan Dijumpai (`result.found`)**:
+    - Selaraskan kad hijau maklumat peserta dan pratonton studio interaktif supaya sepadan dengan reka bentuk moden `rounded-3xl` yang seragam.
+  - [x] 2.6 **Kaki Halaman (Footer)**: Tambah footer rasmi pengesahan sijil digital selamat KlikForm.
+- [x] 3. Pengesahan Kualiti & Ujian:
+  - [x] 3.1 Cipta ujian unit untuk `isEmailHeader` dan integrasi carian lajur e-mel di `tests/certificate-headers.test.ts` (10/10 lulus).
+  - [x] 3.2 Jalankan `npm test` dan sahkan semua ujian lulus (465/465 ujian lulus merentas 46 fail suite).
+  - [x] 3.3 Jalankan `npm run typecheck` (0 ralat TypeScript).
+  - [x] 3.4 Jalankan `npm run lint` (0 ralat / 0 amaran ESLint).
+  - [x] 3.5 Jalankan `npm run build` (Next.js 16 Turbopack bersih, 58 laluan).
+- [ ] 4. Dokumentasi:
+  - [ ] 4.1 Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
+  - [ ] 4.2 Tunjukkan hasil semakan kepada pengguna dalam Bahasa Melayu yang padat.
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Punca Asal Ralat "Email field not found in Google Sheet"**:
+   - Logik padanan lajur terdahulu di `actions/certificates.ts` hanya menyemak `lower === 'email' || lower === 'e-mel' || lower === 'e-mail' || lower.includes('emel') || lower.includes('alamat e-mel')`.
+   - Sekiranya helaian Google Sheet menggunakan tajuk seperti `"Email Address"`, `"Alamat Email"`, `"User Email"`, atau `"Email Peserta"`, semakan `lower === 'email'` (padanan tepat) dan `lower.includes('emel')` gagal, menyebabkan sistem menganggap lajur e-mel tidak wujud walaupun ia sebenarnya ada di dalam spreadsheet.
+   - Selain itu, bagi borang yang sememangnya tidak mengumpulkan e-mel (hanya No. IC), mesej ralat teknikal mentah dipaparkan terus kepada pengguna tanpa sebarang panduan untuk menggunakan No. IC.
+2. **Penyelesaian Pengecaman Pengepala E-mel Mantap (`isEmailHeader`)**:
+   - Pengecam `isEmailHeader` merangkumi semua variasi Bahasa Melayu & Inggeris, frasa majmuk (`Email Address`, `Alamat Email`, `Alamat E-mel`, `Emel Peserta`), serta sandaran pintar ke konfigurasi medan borang (`form.fields.find(f => f.type === 'email')`).
+   - Penambahan sifat `missingField?: 'email' | 'ic' | 'name'` pada `CertificateCheckResult` membolehkan antara muka pengguna membezakan secara tepat antara ketiadaan lajur spesifik dengan ketiadaan rekod peserta.
+3. **Peningkatan Visual Portal Semakan Sijil (Modern & Official Aesthetic)**:
+   - **Kanvas & Latar Belakang**: Latar ambien `bg-slate-50` dengan *gradient top glow* dan bulatan kabur lembut (blur orbs) menghapuskan rupa laman kosong yang pudar.
+   - **Lencana & Pengepala**: Lencana dwilapisan terapung dengan ikon `Award` + `ShieldCheck`, lencana pengesahan *"Portal Semakan E-Sijil Rasmi"*, dan tipografi tajuk yang kukuh.
+   - **Carian Pintar Dinamik**: Medan input mengesan input pengguna secara masa nyata (ikon `Mail` apabila menaip `@`, ikon `CreditCard` apabila menaip digit nombor kad pengenalan, butang pemadam pantas `X`, dan panduan format).
+   - **Kad Maklum Balas Kontekstual Berprofil Tinggi**: Menggantikan kotak merah kaku lama dengan kad lembut berkontur `rounded-3xl`:
+     - *Ketiadaan lajur e-mel*: Kad amaran lembut (amber) menerangkan borang menggunakan No. IC dan menyediakan butang tindakan 1-klik `[ Gunakan Nombor Kad Pengenalan ]`.
+     - *Ketiadaan lajur IC*: Kad panduan biru menerangkan borang menggunakan E-mel dan menyediakan butang 1-klik `[ Gunakan Alamat E-mel ]`.
+     - *Tiada rekod kehadiran*: Kad rose lembut dengan ringkasan carian dan senarai panduan semakan mesra pengguna.
+
