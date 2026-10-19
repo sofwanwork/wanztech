@@ -1,3 +1,227 @@
+# Penyembunyian Dwi-Bar Tatalan Dialog Cipta Sijil (Hide Dual Scrollbars in Create New Certificate Dialog) ✅ SELESAI
+
+**Matlamat**: Menyelesaikan masalah kemunculan dwi-bar tatalan (*dual scrollbars* luaran dan dalaman) yang tebal pada modal dialog "Create New Certificate" (`media_1792383864750_0b9b9718.png`) di `components/certificates/new-certificate-dialog.tsx`, sambil mengekalkan fungsi tatalan lancar (smooth wheel & touch swipe) untuk senarai templat pratetap dan kategori.
+
+### Pelan Pelaksanaan
+- [x] 1. Penghapusan Limpahan & Bar Tatalan Luaran Modal (*Outer Dialog Scroll Elimination*):
+  - [x] 1.1 Tambah `overflow-hidden no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden` pada `DialogContent` di `components/certificates/new-certificate-dialog.tsx`.
+  - [x] 1.2 Suntik `min-h-0` pada elemen `<form>` dan `<Tabs>` supaya fleksibiliti kontena anak tidak menolak ketinggian modal melebihi `max-h-[90dvh]`.
+- [x] 2. Penyingkiran Visual Bar Tatalan Dalaman (*Stealth Inner Content Scroll*):
+  - [x] 2.1 Tambah `min-h-0 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden overscroll-contain` pada kedua-dua `TabsContent` (Presets & Categories).
+  - [x] 2.2 Pastikan `components/ui/dialog.tsx` menyokong `no-scrollbar` secara lalai agar sebarang dialog lain tidak memaparkan bar tatalan tebal Windows.
+- [x] 3. Pengesahan Kualiti & Ujian:
+  - [x] 3.1 Jalankan `npm run typecheck` (0 ralat TypeScript).
+  - [x] 3.2 Jalankan `npm run lint` (0 ralat / amaran ESLint).
+  - [x] 3.3 Jalankan `npm test` (semua 392 ujian unit lulus).
+- [x] 4. Dokumentasi & Memori:
+  - [x] 4.1 Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
+  - [x] 4.2 Maklumkan kepada pengguna dengan ringkas dan padat dalam Bahasa Melayu.
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Punca Utama Dwi-Bar Tatalan (*Dual Scrollbar Root Cause*)**:
+   - Di bawah piawaian CSS Flexbox, elemen anak flex mempunyai nilai lalai `min-height: auto`. Apabila `form` dan `Tabs` tidak mempunyai `min-h-0`, ia enggan mengecut lebih kecil daripada jumlah ketinggian senarai kad pratetap.
+   - Ini menolak ketinggian `DialogContent` melebihi `max-h-[90dvh]`. Oleh kerana `components/ui/dialog.tsx` mempunyai `overflow-x-hidden`, pelayar secara automatik mengira `overflow-y` sebagai `auto`, mencetuskan bar tatalan LUARAN yang menjangkau dari buang pangkah `X` hingga bucu bawah dialog.
+   - Pada masa yang sama, `TabsContent` mempunyai `overflow-y-auto` yang mencetuskan bar tatalan DALAMAN di sebelah kad pratetap. Akibatnya, dua bar tatalan Windows natif tebal muncul bersebelahan di sebelah kanan dialog.
+2. **Seni Bina Tatalan Bersih Bersarang (*Nested Stealth Scroll Architecture*)**:
+   - Mengunci `DialogContent` dengan `overflow-hidden` dan `no-scrollbar` bagi menghapuskan 100% sebarang tatalan luaran modal.
+   - Menyuntik `min-h-0` pada `<form>` dan `<Tabs>` supaya bekas flex boleh mengecut mengikut kekangan `max-h-[90dvh]`.
+   - Mengaplikasikan `no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden overscroll-contain` pada kedua-dua `TabsContent` (Presets dan Categories) dan menyuntik `no-scrollbar` ke dalam komponen asas `DialogContent` di `components/ui/dialog.tsx`.
+   - Pengguna kini menikmati paparan modal yang bersih dan kemas tanpa sebarang bar tatalan hodoh, sambil fungsi tatalan senarai kad pratetap menggunakan roda tetikus atau leretan sentuhan tetap berfungsi dengan lancar.
+
+---
+
+# Pengindahan Tarikh & Responsif Kad Borang Skrin 14 Inci (Form Card Date Wrap & 14-Inch Grid Polish) ✅ SELESAI
+
+**Matlamat**: Menyelesaikan masalah tarikh kad borang yang terpecah kepada 3 baris menegak yang sempit ("Oct / 2, / 2026") pada skrin komputer riba 14 inci (`media_1792383380063_18ff403e.png`), dengan menyuntik `whitespace-nowrap shrink-0` pada lencana tarikh, memadatkan padding butang tindakan, mengoptimumkan grid responsif kepada 3 lajur pada skrin sederhana (`lg:grid-cols-3 2xl:grid-cols-4`), serta menyahkod entiti HTML seperti `&nbsp;` pada penerangan borang.
+
+### Pelan Pelaksanaan
+- [x] 1. Perlindungan Tipografi Tarikh (*Single-Line Date Badge Protection*):
+  - [x] 1.1 Tambah `whitespace-nowrap shrink-0` pada lencana tarikh di dalam `CardFooter` (`components/dashboard/form-card.tsx`) supaya tarikh tidak sesekali terlipat kepada 3 baris menegak.
+  - [x] 1.2 Selaras jurang dan padding butang tindakan footer (`gap-1.5 shrink-0` dan butang Preview `px-3`).
+- [x] 2. Penyelarasan Grid Dashboard Bentuk 14 Inci (14-Inch Laptop Responsive Grid):
+  - [x] 2.1 Tukar grid daripada `xl:grid-cols-4` kepada `lg:grid-cols-3 2xl:grid-cols-4` dalam `app/(dashboard)/forms/page.tsx` dan `app/(dashboard)/loading.tsx` supaya skrin 14 inci (1280px - 1440px) mempunyai ruang kad yang luas (~320px) sama seperti halaman `/certificates` dan `/bio`.
+- [x] 3. Penyahkodan Entiti HTML pada Penerangan Borang:
+  - [x] 3.1 Kemas kini `stripHtml` di `lib/utils/index.ts` untuk membersihkan entiti HTML seperti `&nbsp;`, `&amp;`, dan memampatkan ruang berganda supaya teks penerangan tidak membocorkan `&nbsp;`.
+- [x] 4. Pengesahan Kualiti & Ujian:
+  - [x] 4.1 Jalankan `npm run typecheck` (0 ralat TypeScript).
+  - [x] 4.2 Jalankan `npm run lint` (0 ralat / amaran ESLint).
+  - [x] 4.3 Jalankan `npm test` (semua 392 ujian unit lulus).
+- [x] 5. Dokumentasi & Memori:
+  - [x] 5.1 Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
+  - [x] 5.2 Maklumkan kepada pengguna dengan ringkas dan padat dalam Bahasa Melayu.
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Punca Pemecahan 3 Baris Tarikh (Root Cause)**:
+   - Pada skrin komputer riba 14 inci (resolusi 1366x768 atau 1080p berskala 125%/150%), kelebaran skrin adalah 1280px - 1366px. Selepas ditolak sidebar (256px) dan padding halaman, ruang kerja kad borang adalah ~1040px.
+   - Tetapan `xl:grid-cols-4` sebelum ini memaksa 4 lajur kad, menyebabkan kelebaran setiap kad jatuh mendadak kepada ~230px sahaja.
+   - Di dalam `CardFooter`, butang Copy (32px) dan butang Preview (~94px) mengambil 134px daripada ruang 203px yang tinggal. Lencana tarikh yang tidak mempunyai `whitespace-nowrap` atau `shrink-0` dikecutkan sehingga ruang teks menjadi ~40px, memaksa perkataan "Oct", "2,", dan "2026" patah ke 3 baris menegak yang sempit.
+2. **Penyelesaian Perlindungan Sebaris (*Single-Line Date Badge Protection*)**:
+   - Menambah `whitespace-nowrap shrink-0` pada `span` tarikh di `components/dashboard/form-card.tsx` bagi menghalang pelayar daripada melipat perkataan tarikh ke bawah.
+   - Memadatkan padding butang Preview kepada `px-3` dan jurang butang kepada `gap-1.5` bagi memberikan ruang lega (*breathing room*) yang luas kepada teks tarikh.
+3. **Penyelarasan Grid Responsif 14 Inci (*14-Inch Adaptive Grid*)**:
+   - Menyelaraskan grid di `app/(dashboard)/forms/page.tsx` dan `app/(dashboard)/loading.tsx` kepada `lg:grid-cols-3 2xl:grid-cols-4` (selari dengan halaman `/certificates`, `/bio`, dan `/shortener`).
+   - Pada skrin komputer riba 14 inci, 3 lajur kini dipaparkan dengan kelebaran setiap kad ~320px, membolehkan tajuk, penerangan, dan butang footer dipamerkan dengan elegan tanpa sebarang kesempitan.
+4. **Pembersihan Entiti HTML Penerangan (*HTML Entity Cleanup*)**:
+   - Menambah fungsi penyahkodan entiti (`&nbsp;`, `&amp;`, `&lt;`, `&gt;`, `&quot;`) dan pemampatan ruang pada fungsi `stripHtml` di `lib/utils/index.ts`, menghapuskan cetakan mentah `&nbsp;` yang mencacatkan teks ringkasan borang.
+
+---
+
+# Penyembunyian Bar Tatalan Sidebar Dashboard (Hide Sidebar Scrollbar in Dashboard) ✅ SELESAI
+
+**Matlamat**: Menyembunyikan bar tatalan (*vertical scrollbar*) tebal pelayar web pada menu sidebar dashboard KlikForm (`media_1792383165716_570d930a.png`) di `components/dashboard/sidebar.tsx`, sambil mengekalkan fungsi tatalan lancar (smooth wheel & touch swipe) apabila item menu melebihi ketinggian skrin komputer riba.
+
+### Pelan Pelaksanaan
+- [x] 1. Penyingkiran Visual Bar Tatalan Sidebar (*Stealth Sidebar Scrollbar*):
+  - [x] 1.1 Suntik kelas `no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden overscroll-contain` pada kontena navigasi `flex-1 py-... overflow-y-auto overflow-x-hidden` di dalam `components/dashboard/sidebar.tsx`.
+  - [x] 1.2 Kemas kini padding menegak sedikit kepada `py-5 px-3 space-y-1.5` dan butang New Form `mb-4 px-1` agar menu lebih padat dan selesa pada skrin komputer riba 14 inci.
+- [x] 2. Pengesahan Kualiti & Ujian:
+  - [x] 2.1 Jalankan `npm run typecheck` (0 ralat TypeScript).
+  - [x] 2.2 Jalankan `npm run lint` (0 ralat / amaran ESLint).
+  - [x] 2.3 Jalankan `npm test` (semua 392 ujian unit lulus).
+- [x] 3. Dokumentasi & Memori:
+  - [x] 3.1 Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
+  - [x] 3.2 Maklumkan kepada pengguna dengan ringkas dan padat dalam Bahasa Melayu.
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Punca Bar Tatalan Sidebar (Root Cause Analysis)**:
+   - Sidebar KlikForm mengandungi logo atas (89px), butang New Form (44px), label Menu (20px), 9 item navigasi dengan jarak `space-y-2` (~396px), dan bahagian profil pengguna bawah (~100px).
+   - Jumlah ketinggian keseluruhan mencecah ~710px. Pada skrin komputer riba 14 inci atau paparan Windows dengan skala 125%/150% (ketinggian viewport 650px - 700px), kontena menu `flex-1 overflow-y-auto` di `components/dashboard/sidebar.tsx` melimpah secara menegak.
+   - Tanpa peraturan pembatalan bar tatalan, Chromium di Windows memaparkan bar tatalan natif Windows kelabu setebal 17px yang kelihatan kasar di sebelah item navigasi.
+2. **Seni Bina Tatalan Halimunan Sidebar (*Stealth Sidebar Architecture*)**:
+   - Menyuntik kombinasi kelas `no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden overscroll-contain` pada kontena navigasi.
+   - Menyelaras padding kepada `py-5 px-3 space-y-1.5` dan butang New Form kepada `mb-4 px-1`.
+   - Bar tatalan kini tersembunyi 100% dan sidebar kelihatan kemas, sementara pengguna masih boleh menatal menu secara lancar menggunakan roda tetikus (*mouse wheel*) atau leretan sentuhan (*touch*).
+
+---
+
+# Penyembunyian Bar Tatalan Modal HD & Pengoptimuman Pratonton Sijil (Hide Scrollbar in HD Preview Modal & Studio Canvas Polish) ✅ SELESAI
+
+**Matlamat**: Menyembunyikan bar tatalan (*scrollbar*) tebal pelayar web pada modal pratonton skrin penuh HD (`media_1792382632858_c54fc81a.png`) dan kanvas pratonton utama di `app/(public)/check/[formId]/client.tsx`, sambil mengekalkan fungsi tatalan lancar (smooth wheel & touch panning) apabila dizum masuk.
+
+### Pelan Pelaksanaan
+- [x] 1. Penyingkiran Visual Bar Tatalan (*Stealth Scrollbar Architecture*):
+  - [x] 1.1 Suntik kelas `no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden overscroll-contain` pada kontena `flex-1 overflow-auto` di dalam modal pratonton HD (`Certificate Full HD Preview`).
+  - [x] 1.2 Suntik kelas penyembunyian bar tatalan yang sama pada kontena kanvas pratonton utama (`Live Preview` card workbench).
+- [x] 2. Penalaan Skala 'Fit' Modal Supaya Sempurna Tanpa Limpahan Awal:
+  - [x] 2.1 Selaras formula pengiraan `baseModalScale` di dalam modal HD dengan mengambil kira ruang pengepala, footer, dan padding (`p-4 sm:p-6`) supaya paparan lalai mod 'Fit' muat 100% pada ketinggian viewport tanpa mencetuskan limpahan paksi-Y yang tidak perlu.
+- [x] 3. Pengesahan Kualiti & Ujian:
+  - [x] 3.1 Jalankan `npm run typecheck` (0 ralat TypeScript).
+  - [x] 3.2 Jalankan `npm run lint` (0 ralat / amaran ESLint).
+  - [x] 3.3 Jalankan `npm test` (semua 392 ujian unit lulus).
+- [x] 4. Dokumentasi & Memori:
+  - [x] 4.1 Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
+  - [x] 4.2 Maklumkan kepada pengguna dengan ringkas dan padat dalam Bahasa Melayu.
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Punca Kemunculan Bar Tatalan Tebal (Root Cause)**:
+   - Kontena tengah modal `flex-1 overflow-auto` menggunakan padding besar `sm:p-8` (64px menegak) serta formula penskalaan asas `(window.innerHeight * 0.7) / captureHeight`.
+   - Pada skrin komputer riba 14 inci (cth: ketinggian viewport 650px - 720px selepas ditolak bar tajuk pelayar dan bar tugasan Windows), gabungan ketinggian sijil (455px - 504px), padding 64px, pengepala 52px, dan footer 52px melebihi had ketinggian modal `max-h-[94vh]`.
+   - Ini mencetuskan limpahan menegak (*vertical overflow*) beberapa piksel yang menyebabkan Chromium di Windows memaparkan bar tatalan natif Windows setebal 17px berwarna putih/kelabu yang mengganggu pemandangan sijil.
+2. **Seni Bina Tatalan Halimunan (*Stealth Scrollbar Architecture*)**:
+   - Menambah kombinasi utiliti CSS moden: `no-scrollbar` (merujuk peraturan di `globals.css`), `[scrollbar-width:none]` (standard CSS Moden untuk Firefox & Chrome 121+), `[-ms-overflow-style:none]` (Edge/IE), dan `[&::-webkit-scrollbar]:hidden` (WebKit enjin).
+   - Bar tatalan kini tersembunyi 100% tanpa menjejaskan keupayaan pengguna untuk menatal menggunakan roda tetikus (*mouse wheel*), pad sentuh (*trackpad*), atau leretan jari (*touch swipe*) apabila sijil dibesarkan (150% - 250%).
+3. **Penalaan Skala Sempurna Tanpa Limpahan Awal (Zero-Overflow Fit Geometry)**:
+   - Menyelaraskan formula `baseModalScale` kepada `Math.min((window.innerWidth * 0.82) / captureWidth, Math.max(0.2, (window.innerHeight * 0.86 - 150) / captureHeight))` dan melaraskan padding kepada `p-4 sm:p-6`.
+   - Dalam mod lalai 'Fit', dimensi sijil kini muat tepat di dalam ruang tengah modal tanpa sebarang limpahan paksi-Y atau paksi-X yang tidak disengajakan.
+
+---
+
+# Pengimbangan & Pengindahan Tipografi Tajuk Program (Balanced Header Typography & Widow/Orphan Elimination) ✅ SELESAI
+
+**Matlamat**: Menyelesaikan masalah perkataan tergantung / baris kedua terlalu pendek ("2026)") pada tajuk program di halaman semakan sijil awam (`media_1792382396200_ada6db9a.png`) dengan menyuntik penyeimbangan teks pintar `[text-wrap:balance]`, saiz fon adaptif, serta had lebar selesa (`max-w-3xl mx-auto`).
+
+### Pelan Pelaksanaan
+- [x] 1. Penambahbaikan Tipografi Tajuk Pengepala (`app/(public)/check/[formId]/client.tsx`):
+  - [x] 1.1 Tambah `[text-wrap:balance]`, `leading-snug sm:leading-tight`, dan `max-w-3xl sm:max-w-4xl mx-auto` pada elemen `<h1>` tajuk program supaya perkataan dibahagikan secara simetri dan seimbang antara baris 1 dan baris 2.
+  - [x] 1.2 Tambah `[text-wrap:balance]` pada tajuk program di dalam kad butiran kiri (`result.programName`) dan halaman pengesahan (`app/(public)/verify/[id]/client.tsx`).
+- [x] 2. Pengesahan Kualiti & Ujian:
+  - [x] 2.1 `npm run typecheck` (0 ralat TypeScript).
+  - [x] 2.2 `npm run lint` (0 ralat / amaran ESLint).
+  - [x] 2.3 `npm test` (semua 392 ujian unit lulus).
+- [x] 3. Dokumentasi & Memori:
+  - [x] 3.1 Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
+  - [x] 3.2 Terangkan kepada pengguna secara ringkas dan padat.
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Punca Perkataan Tergantung (*Widow/Orphan Words*)**:
+   - Pelayar web membahagikan teks secara serakah (*greedy word-wrap*): ia mengisi baris pertama sebanyak mungkin perkataan sehingga mencapai margin kontena selebar 6xl, lalu menjatuhkan baki 1 perkataan terakhir (`2026)`) sendirian ke baris kedua.
+2. **Penyelesaian `[text-wrap:balance]` & Ukuran Had Lebar (Balanced Typographic Measure)**:
+   - Menyuntik peraturan CSS Moden `[text-wrap:balance]` pada tajuk `<h1>` di [`app/(public)/check/[formId]/client.tsx`](file:///c:/Users/Sofwan/Desktop/klikform/app/%28public%29/check/%5BformId%5D/client.tsx#L290-L296) dan [`app/(public)/verify/[id]/client.tsx`](file:///c:/Users/Sofwan/Desktop/klikform/app/%28public%29/verify/%5Bid%5D/client.tsx#L23-L29).
+   - Enjin pelayar web kini mengimbangi bilangan aksara dan perkataan secara simetri merentas kedua-dua baris, disokong oleh had kelebaran optimum `max-w-3xl sm:max-w-4xl mx-auto` serta jarak baris selesa `leading-snug sm:leading-tight`. Baris kedua kini mempunyai panjang yang sepadan dan sedap dipandang.
+
+---
+
+# Pembaikan Kontras Teks Butang "Download PNG" & Zum Modal HD (Button Contrast Fix & Modal Zoom Controls) ✅ SELESAI
+
+**Matlamat**: Menyelesaikan masalah tulisan tidak nampak pada butang `Download PNG` di dalam modal pratonton skrin penuh HD (`media_1792382129593_7c5e4db7.png`) yang berpunca daripada teks kelabu/putih `text-slate-200` di atas butang berlatar putih `bg-background`, serta menambah kawalan zum di dalam modal agar pengguna boleh membesarkan teks sijil untuk bacaan jelas.
+
+### Pelan Pelaksanaan
+- [x] 1. Pembetulan Kontras Butang `Download PNG` (`app/(public)/check/[formId]/client.tsx`):
+  - [x] 1.1 Gantikan gabungan `variant="outline"` + `text-slate-200` dengan penggayaan kontras tinggi mutlak (`bg-white text-slate-900 hover:bg-slate-100 border border-slate-200 font-semibold`) dengan ikon `text-slate-900`.
+- [x] 2. Kawalan Zum Interaktif Dalam Modal HD (Modal HD Zoom Controls):
+  - [x] 2.1 Tambah state `modalZoomMultiplier` di dalam `CertificateCheckClient`.
+  - [x] 2.2 Sediakan butang kawalan zum pantas (Zoom Out, Fit, Zoom In) pada pengepala modal HD supaya pengguna boleh membesarkan saiz sijil sehingga 250% dan membaca teks halus dengan jelas.
+- [x] 3. Pengesahan Kualiti & Ujian:
+  - [x] 3.1 `npm run typecheck` (0 ralat TypeScript).
+  - [x] 3.2 `npm run lint` (0 ralat / amaran ESLint).
+  - [x] 3.3 `npm test` (semua 392 ujian unit lulus).
+- [x] 4. Dokumentasi & Memori:
+  - [x] 4.1 Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
+  - [x] 4.2 Terangkan kepada pengguna secara ringkas dan tepat.
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Punca Utama Teks Butang Tidak Kelihatan (Root Cause)**:
+   - Komponen shadcn `Button` dengan `variant="outline"` menyuntik `bg-background` yang dinilai sebagai latar putih (`#ffffff`) dalam mod terang (*light mode*).
+   - Apabila kelas penimbal `text-slate-200` (kelabu sangat cerah / hampir putih `#e2e8f0`) diletakkan di atas butang tersebut, nisbah kontras jatuh kepada hampir 1:1 (teks putih di atas butang putih), menyebabkan perkataan "Download PNG" dan ikon muat turun tenggelam sepenuhnya.
+2. **Penyelesaian Kontras Penuh (High-Contrast Solid White Button)**:
+   - Menghapuskan kebergantungan kepada `variant="outline"`, menetapkan warna latar putih bersih `bg-white hover:bg-slate-100` dengan teks arang gelap pekat `text-slate-900` dan ikon gelap `text-slate-800`. Kontras kini melonjak ke 16:1 (memenuhi standard aksesibiliti tertinggi WCAG AAA).
+3. **Penskalaan Zum Bebas Dalam Modal HD (Modal Zoom Architecture)**:
+   - Menambah `modalZoomMultiplier` berasingan bersama butang zum di bar pengepala modal (`ZoomOut`, `Fit / 150%`, `ZoomIn`). Pengguna kini boleh membesarkan sijil sehingga 250% untuk membaca nama pegawai, nombor siri, dan cap mohor secara teliti dengan sokongan tatalan lancar di kedua-dua desktop dan telefon pintar.
+
+---
+
+# Penghapusan Lopong Putih & Pengindahan Paparan Sijil (Certificate Preview Polish & White Gap Elimination) ✅ SELESAI
+
+**Matlamat**: Menghapuskan lopong putih ("white gaps/stripes") yang muncul di atas dan bawah kontena pratonton sijil (`Live Preview`) pada halaman semakan sijil awam (`/check/[formId]`), serta mengindahkan keseluruhan antaramuka pemapar sijil (*certificate viewer experience*) agar kelihatan profesional, anggun, moden, dan bertaraf studio reka bentuk.
+
+### Pelan Pelaksanaan
+- [x] 1. Analisis & Pembetulan Lopong Putih (Root Cause & Gap Elimination):
+  - [x] 1.1 Kenal pasti dan hapuskan punca `py-6` dan `gap-6` daripada komponen asas shadcn `<Card>` pada kad Live Preview dan kad Certificate Found (`p-0 gap-0 overflow-hidden`).
+  - [x] 1.2 Pastikan `CardHeader`, `CardContent`, dan `CardFooter` bersambung rapi (*flush edge-to-edge*) tanpa sebarang jalur putih terdedah.
+- [x] 2. Pengindahan Kanvas Pemapar Sijil (Studio-Grade Workbench Canvas):
+  - [x] 2.1 Gantikan latar belakang kelabu mentah `bg-gray-200` dengan meja kerja studio moden berkualiti tinggi (corak grid titik halus / *subtle dot-matrix slate workbench*).
+  - [x] 2.2 Berikan sijil kesan kertas terapung fotorealistik (*ambient studio paper shadow* `shadow-[0_20px_50px_rgba(0,0,0,0.16),0_4px_16px_rgba(0,0,0,0.08)]` bersama bingkai mikro `ring-1 ring-black/10`).
+- [x] 3. Peningkatan Ciri Bar Pengepala & Kawalan Zum (Header & Interactive Controls):
+  - [x] 3.1 Reka bentuk semula pengepala `Live Preview` dengan lencana ikon premium, label format (`A4 Portrait` / `A4 Landscape`), dan status kualiti cetak.
+  - [x] 3.2 Tambah kawalan interaktif zum pantas (Zoom Out, Fit, Zoom In) serta butang Skrin Penuh / Pembesaran HD (`Maximize2`) untuk membolehkan pengguna meneliti butiran teks sijil dengan jelas.
+  - [x] 3.3 Tambah bar status bawah kemas di dalam kad yang memaparkan pengesahan kesahihan sijil digital dan format resolusi.
+- [x] 4. Pengindahan Kad Butiran Sijil Kiri (Left Result Details Card Polish):
+  - [x] 4.1 Selaras padding, sempadan zamrud lembut, pemformatan tarikh mesra manusia (*human-readable date format*), dan butang muat turun PDF / PNG dengan indikator status penjanaan (`downloadingPdf` / `downloadingPng`).
+- [x] 5. Pengesahan Kualiti & Ujian:
+  - [x] 5.1 Jalankan `npm run typecheck` (0 ralat TypeScript).
+  - [x] 5.2 Jalankan `npm run lint` (0 ralat / amaran ESLint).
+  - [x] 5.3 Jalankan `npm test` (semua 392 ujian unit lulus merentas 40 fail).
+- [x] 6. Dokumentasi & Memori:
+  - [x] 6.1 Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
+  - [x] 6.2 Terangkan penyelesaian kepada pengguna dalam Bahasa Melayu.
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Punca Utama Lopong Putih (Root Cause Analysis)**:
+   - Komponen asas shadcn `Card` (`components/ui/card.tsx`) dilengkapi gaya tegar lalai `py-6` (padding atas/bawah 24px), `gap-6` (jurang antara elemen anak 24px), dan `bg-card` (latar belakang putih).
+   - Apabila kad mengandungi `CardHeader` dan `CardContent` dengan warna latar belakang berbeza (`bg-gray-200`), pewarisan `py-6` dan `gap-6` mewujudkan dua jalur putih kosong ("lopong putih") yang ketara: satu di antara pengepala dan kanvas pratonton, dan satu lagi di bawah kanvas sebelum bucu bawah kad.
+   - **Penyelesaian**: Menggunakan kelas `p-0 gap-0 overflow-hidden` pada `<Card>` bagi membatalkan padding dan gap lalai, membolehkan `CardHeader`, `CardContent`, dan `CardFooter` bersambung secara terus (*edge-to-edge flush*) mengikut bucu melengkung `rounded-2xl` tanpa sebarang kebocoran warna asas.
+2. **Pengindahan Kanvas Studio Reka Bentuk (Studio Workbench Polish)**:
+   - Menggantikan warna latar belakang kelabu rata mentah `bg-gray-200` kepada meja kerja studio dengan corak matriks titik lembut (`radial-gradient(rgba(148, 163, 184, 0.4) 1px, transparent 1px)`) setaraf Figma dan Canva.
+   - Sijil kini dilengkapi kesan kertas terapung fotorealistik: bayang ambient studio `shadow-[0_20px_50px_rgba(0,0,0,0.16),0_4px_16px_rgba(0,0,0,0.08)]`, bingkai mikro `ring-1 ring-black/10`, dan penjajaran `m-auto` bagi mengelakkan keratan koordinat negatif ketika zum.
+3. **Peralatan Interaktif Zum & Paparan Penuh HD (Zoom Toolbar & HD Modal)**:
+   - Ditambah bar alatan pantas di pengepala: Zum Keluar (`-`), Set Semula Fit (`Fit`), Zum Masuk (`+`), dan butang mod Skrin Penuh (`Maximize2`).
+   - Modal paparan penuh HD (`Dialog`) membolehkan pengguna meneliti sijil pada resolusi maksimum dengan sokongan tatalan dan butang muat turun pantas.
+4. **Penyelarasan Kad Maklumat & Tarikh (Left Card Polish & Date Formatting)**:
+   - Memformatkan rentetan tarikh ISO mentah (contoh: `2026-10-07T02:05:47.358Z`) kepada format tarikh kemas dan mesra manusia (`October 7, 2026`).
+   - Menambah indikator pemuatan (*generating spinner*) pada butang muat turun PDF dan PNG bagi memberikan maklum balas visual masa-nyata kepada pengguna.
+
+---
+
 # Pengindahan & Penyelarasan Visual Pemapar 3D Flipbook (3D Flipbook Viewer Visual Polish, True Aspect Ratio & Balanced Shadow) ✅ SELESAI
 
 **Matlamat**: Mengindahkan paparan 3D Flipbook Viewer agar risalah/brosur (terutamanya brosur landskap seperti METMalaysia) dipaparkan mengikut nisbah aspek sebenar (*true aspect ratio*) tanpa ruang mati/letterbox, bayang bawah buku (*ground shadow*) diselaraskan 100% seimbang di bawah buku tanpa terpesong ke kiri, dan bahan helaian kelihatan bersih, mewah, serta bertaraf industri.

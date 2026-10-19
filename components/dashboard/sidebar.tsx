@@ -207,8 +207,8 @@ export function DashboardSidebar({ profile, onNavigate, isMobile = false }: Side
       </div>
 
       {/* Main Navigation */}
-      <div className="flex-1 py-6 px-3 space-y-2 overflow-y-auto overflow-x-hidden">
-        <div className="mb-6 px-1">
+      <div className="flex-1 py-5 px-3 space-y-1.5 overflow-y-auto overflow-x-hidden no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden overscroll-contain">
+        <div className="mb-4 px-1">
           <form
             action={() => {
               startCreate(async () => {

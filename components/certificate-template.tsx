@@ -29,11 +29,16 @@ export function CertificateTemplate({
   const uppercaseName = name.toUpperCase();
 
   const formattedDate = date
-    ? new Date(date).toLocaleDateString('en-US', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      })
+    ? (() => {
+        const parsed = new Date(date);
+        return !isNaN(parsed.getTime())
+          ? parsed.toLocaleDateString('en-US', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            })
+          : date;
+      })()
     : undefined;
 
   // Use custom JSON template if available

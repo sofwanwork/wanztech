@@ -103,7 +103,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
       </div>
 
       {/* Grid Content */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
         {forms.length === 0 && (
           <div className="col-span-full flex flex-col items-center justify-center py-24 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
             {query ? (

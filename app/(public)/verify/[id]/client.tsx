@@ -22,11 +22,13 @@ export function VerifyClient({ certificateId, formData }: VerifyClientProps) {
         <div className="max-w-lg mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4 shadow-2xs border border-primary/20">
               <Award className="h-8 w-8 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 whitespace-pre-line break-words">{formData.title}</h1>
-            <p className="text-gray-600 mt-2">Certificate Verification</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight leading-snug max-w-md mx-auto whitespace-pre-line break-words [text-wrap:balance]">
+              {formData.title}
+            </h1>
+            <p className="text-slate-600 mt-2 text-sm [text-wrap:balance]">Certificate Verification</p>
           </div>
 
           <Card className="border-0 shadow-lg bg-blue-50">

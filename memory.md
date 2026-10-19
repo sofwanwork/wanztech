@@ -75,6 +75,21 @@
 - **HD Output**: `scale: 3` for crisp rendering, `image/jpeg` at `0.7` quality with `'FAST'` compression for small file sizes.
 - **Sub-pixel White Borders**: Forced `scrollY: 0`, `scrollX: 0` and `+2` overlapping pixels to override rounding gaps.
 - **Portrait Orientation**: Dynamically bound `isPortrait` evaluations, proportional percentage constraints, shrinking canvas widths for tall elements.
+- **Public Certificate Preview UI & Gap Elimination (2026-10-19)**:
+  - Eliminated "lopong putih" (white bands/gaps) caused by shadcn `Card` default `py-6 gap-6` by applying `p-0 gap-0 overflow-hidden` on the card container.
+  - Replaced flat unstyled `bg-gray-200` canvas with a modern studio workbench featuring a subtle dot matrix (`radial-gradient(rgba(148, 163, 184, 0.4) 1px, transparent 1px)`).
+  - Floating paper drop shadow (`shadow-[0_20px_50px_rgba(0,0,0,0.16),0_4px_16px_rgba(0,0,0,0.08)]`) and micro border ring (`ring-1 ring-black/10`).
+  - Added interactive toolbar with Zoom Out (`-`), Fit (`Fit`), Zoom In (`+`), and Fullscreen HD Preview Modal (`Dialog`).
+  - Added human-readable date formatting (`October 7, 2026` instead of raw ISO timestamp `2026-10-07T02:05:47.358Z`).
+  - Added download generation spinners (`downloadingPdf` / `downloadingPng`) with instant tactile feedback.
+  - Fixed "Download PNG" contrast issue in HD Preview Modal: Replaced `variant="outline"` (which injected white `bg-background` underneath `text-slate-200`) with high-contrast `bg-white text-slate-900 border border-slate-200 font-semibold`.
+  - Added dedicated Zoom Out (`-`), Fit / 150%, and Zoom In (`+`) controls inside the HD Fullscreen Modal (`modalZoomMultiplier` up to 250%) for inspecting certificate details.
+  - Balanced Header Typography: Eliminated orphaned words on line 2 (e.g. dangling `2026)`) by applying `[text-wrap:balance]`, `leading-snug sm:leading-tight`, and `max-w-3xl sm:max-w-4xl mx-auto` on the page heading (`app/(public)/check/[formId]/client.tsx` and `app/(public)/verify/[id]/client.tsx`).
+  - Stealth Scrollbar Architecture (2026-10-19): Completely hid native Windows/Chromium scrollbars in HD Preview Modal, workbench canvas, and Dashboard Sidebar navigation (`no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden overscroll-contain`) while preserving smooth touch/wheel panning; refined `baseModalScale` geometry and compact sidebar spacing (`py-5 px-3 space-y-1.5`) to eliminate visual clutter on 14-inch laptop viewports.
+  - Form Card 14-Inch Grid & Date Wrap Polish (2026-10-19): Eliminated awkward 3-line vertical date wrapping ("Oct / 2, / 2026") on 14-inch laptop screens by adding `whitespace-nowrap shrink-0` to the date badge, tightening footer button padding (`px-3`), aligning the forms dashboard grid to `lg:grid-cols-3 2xl:grid-cols-4` (comfortable ~320px width per card on laptops, matching `/certificates` and `/bio`), and decoding raw HTML entities (`&nbsp;`, `&amp;`) in `stripHtml` for clean card previews.
+  - Dialog Dual-Scrollbar Elimination (2026-10-19): Eliminated dual nested scrollbars in "Create New Certificate" modal (`components/certificates/new-certificate-dialog.tsx`) by equipping `DialogContent` with `overflow-hidden`, adding `min-h-0` to flex child containers (`form`, `Tabs`), suppressing inner `TabsContent` scrollbars with `no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden overscroll-contain`, and injecting universal `no-scrollbar` into `components/ui/dialog.tsx`.
+  - Multi-Day Date String Support (2026-10-19): Upgraded `CertificateTemplate` in `components/certificate-template.tsx` to safely handle custom/multi-day date strings (e.g. `7, 8 Oktober 2027` or `7 - 8 Oktober 2027`) by falling back to the raw string if `new Date(date)` is NaN, preventing `Invalid Date` crashes and allowing flexible event dates.
+
 
 ## Builder Interface
 - **NaN Input Prevention**: Number inputs use `Number(val) || 0` fallbacks to prevent `parseInt("") => NaN` crashes.

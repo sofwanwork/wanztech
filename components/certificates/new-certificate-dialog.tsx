@@ -95,7 +95,7 @@ export function NewCertificateDialog({ children }: NewCertificateDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-2xl max-h-[90dvh] flex flex-col">
+      <DialogContent className="sm:max-w-2xl max-h-[90dvh] flex flex-col overflow-hidden no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         <DialogHeader className="shrink-0">
           <DialogTitle className="text-xl flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-amber-500" />
@@ -106,11 +106,11 @@ export function NewCertificateDialog({ children }: NewCertificateDialogProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
           <Tabs
             value={activeTab}
             onValueChange={(val) => setActiveTab(val as 'presets' | 'categories')}
-            className="flex-1 flex flex-col overflow-hidden"
+            className="flex-1 min-h-0 flex flex-col overflow-hidden"
           >
             <TabsList className="grid grid-cols-2 w-full mb-4 shrink-0">
               <TabsTrigger value="presets" className="gap-2">
@@ -124,7 +124,10 @@ export function NewCertificateDialog({ children }: NewCertificateDialogProps) {
             </TabsList>
 
             {/* Tab 1: Presets */}
-            <TabsContent value="presets" className="flex-1 overflow-y-auto pr-1">
+            <TabsContent
+              value="presets"
+              className="flex-1 min-h-0 overflow-y-auto pr-1 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden overscroll-contain"
+            >
               <RadioGroup
                 value={selectedPreset}
                 onValueChange={setSelectedPreset}
@@ -169,7 +172,10 @@ export function NewCertificateDialog({ children }: NewCertificateDialogProps) {
             </TabsContent>
 
             {/* Tab 2: Categories */}
-            <TabsContent value="categories" className="flex-1 overflow-y-auto pr-1">
+            <TabsContent
+              value="categories"
+              className="flex-1 min-h-0 overflow-y-auto pr-1 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden overscroll-contain"
+            >
               <RadioGroup
                 value={selectedCategory}
                 onValueChange={setSelectedCategory}

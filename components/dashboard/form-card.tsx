@@ -123,19 +123,22 @@ export function FormCard({ form }: FormCardProps) {
         </div>
       </CardContent>
 
-      <CardFooter className="p-5 pt-3 border-t border-gray-50 flex items-center justify-between">
-        <span className="text-xs text-gray-400 font-medium bg-gray-50 px-2 py-1 rounded-md" suppressHydrationWarning>
+      <CardFooter className="px-5 py-3 border-t border-gray-50 flex items-center justify-between gap-2">
+        <span
+          className="text-xs text-gray-400 font-medium bg-gray-50 px-2.5 py-1 rounded-md whitespace-nowrap shrink-0"
+          suppressHydrationWarning
+        >
           {new Date(form.createdAt).toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
             year: 'numeric',
           })}
         </span>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 shrink-0">
           <Button
             size="sm"
             variant="outline"
-            className="h-8 w-8 p-0 text-gray-400 border-gray-200 hover:bg-gray-100 hover:text-gray-900 rounded-full transition-all"
+            className="h-8 w-8 p-0 text-gray-400 border-gray-200 hover:bg-gray-100 hover:text-gray-900 rounded-full transition-all shrink-0"
             onClick={handleCopyLink}
             title="Copy Form Link"
           >
@@ -149,11 +152,12 @@ export function FormCard({ form }: FormCardProps) {
             href={form.shortCode ? `/s/${form.shortCode}` : `/form/${form.id}`}
             target="_blank"
             onClick={(e) => e.stopPropagation()}
+            className="shrink-0"
           >
             <Button
               size="sm"
               variant="outline"
-              className="h-8 text-primary border-primary/20 hover:bg-primary/5 hover:text-primary gap-1.5 rounded-full px-4 transition-all hover:pr-5"
+              className="h-8 text-primary border-primary/20 hover:bg-primary/5 hover:text-primary gap-1.5 rounded-full px-3 transition-all"
             >
               Preview <ExternalLink className="h-3.5 w-3.5" />
             </Button>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Card,
   CardContent,
@@ -12,11 +12,26 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Award, Search, Download, Loader2, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import {
+  Award,
+  Search,
+  Download,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  ShieldCheck,
+} from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { checkCertificateByICOrEmail, CertificateCheckResult } from '@/actions/certificates';
-import { useRef } from 'react';
-// import html2canvas from 'html2canvas-pro';
-// import { jsPDF } from 'jspdf';
 import { CertificateTemplate } from '@/components/certificate-template';
 import { toast } from 'sonner';
 import { resolveCategoryTemplateId } from '@/lib/certificates/category';
@@ -55,7 +70,13 @@ export function CertificateCheckClient({
   const certificateRef = useRef<HTMLDivElement>(null);
   const hiddenCertificateRef = useRef<HTMLDivElement>(null);
   const previewWrapperRef = useRef<HTMLDivElement>(null);
-  const [previewScale, setPreviewScale] = useState(0.5);
+
+  const [baseFitScale, setBaseFitScale] = useState(0.5);
+  const [zoomMultiplier, setZoomMultiplier] = useState(1);
+  const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
+  const [modalZoomMultiplier, setModalZoomMultiplier] = useState(1);
+  const [downloadingPng, setDownloadingPng] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   // Pick the template based on the respondent's category answer; fall back to
   // the form's default template when there's no category mapping/match.
@@ -85,12 +106,17 @@ export function CertificateCheckClient({
     const wrapper = previewWrapperRef.current;
     if (!wrapper) return;
     const update = () => {
-      const available = wrapper.clientWidth - 32; // subtract px-4 padding (16px * 2)
+      const padding = window.innerWidth < 640 ? 32 : 48;
+      const available = wrapper.clientWidth - padding;
       if (available <= 0) return;
-      const maxHeight = Math.min(520, window.innerHeight * 0.6);
+      // Allow generous preview height on desktop so portrait certificates are legible and fill the card nicely
+      const maxHeight =
+        window.innerWidth < 640
+          ? Math.min(480, window.innerHeight * 0.6)
+          : Math.min(620, Math.max(480, window.innerHeight * 0.65));
       const fitWidth = available / captureWidth;
       const fitHeight = maxHeight / captureHeight;
-      setPreviewScale(Math.min(fitWidth, fitHeight));
+      setBaseFitScale(Math.min(fitWidth, fitHeight));
     };
     update();
     const ro = new ResizeObserver(update);
@@ -102,6 +128,21 @@ export function CertificateCheckClient({
     };
   }, [captureWidth, captureHeight, result?.found]);
 
+  const effectiveScale = baseFitScale * zoomMultiplier;
+
+  const formattedDate = result?.date
+    ? (() => {
+        const d = new Date(result.date);
+        return !isNaN(d.getTime())
+          ? d.toLocaleDateString('en-US', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            })
+          : result.date;
+      })()
+    : null;
+
   const handleCheck = async () => {
     if (!identifier.trim()) {
       toast.error('Please enter your IC number or Email');
@@ -110,10 +151,12 @@ export function CertificateCheckClient({
 
     setLoading(true);
     setResult(null);
+    setZoomMultiplier(1);
 
     try {
       const checkResult = await checkCertificateByICOrEmail(formId, identifier.trim());
       setResult(checkResult);
+      setZoomMultiplier(1);
     } catch {
       toast.error('Error verifying certificate');
     } finally {
@@ -123,6 +166,7 @@ export function CertificateCheckClient({
 
   const handleDownloadPNG = async () => {
     if (!hiddenCertificateRef.current || !result?.name) return;
+    setDownloadingPng(true);
 
     try {
       const html2canvas = (await import('html2canvas-pro')).default;
@@ -167,11 +211,14 @@ export function CertificateCheckClient({
     } catch (error) {
       console.error('Download error:', error);
       toast.error('Failed to download certificate');
+    } finally {
+      setDownloadingPng(false);
     }
   };
 
   const handleDownloadPDF = async () => {
     if (!hiddenCertificateRef.current || !result?.name) return;
+    setDownloadingPdf(true);
 
     try {
       const html2canvas = (await import('html2canvas-pro')).default;
@@ -230,6 +277,8 @@ export function CertificateCheckClient({
     } catch (error) {
       console.error('PDF Download error:', error);
       toast.error('Failed to download PDF');
+    } finally {
+      setDownloadingPdf(false);
     }
   };
 
@@ -238,11 +287,15 @@ export function CertificateCheckClient({
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4 shadow-2xs border border-primary/20">
             <Award className="h-8 w-8 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 whitespace-pre-line break-words">{formTitle}</h1>
-          <p className="text-gray-600 mt-2">Verify & Download Your E-Certificate</p>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 tracking-tight leading-snug sm:leading-tight max-w-3xl sm:max-w-4xl mx-auto whitespace-pre-line break-words [text-wrap:balance]">
+            {formTitle}
+          </h1>
+          <p className="text-slate-600 mt-2.5 text-sm sm:text-base [text-wrap:balance]">
+            Verify & Download Your E-Certificate
+          </p>
           {minHoursRequired && minHoursRequired > 0 ? (
             <div className="mt-3">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-semibold border border-emerald-200/80 shadow-2xs">
@@ -257,28 +310,28 @@ export function CertificateCheckClient({
         <div
           className={`transition-all duration-500 ${result?.found ? 'mb-8' : 'max-w-lg mx-auto'}`}
         >
-          <Card className="border-0 shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-lg">Certificate Verification</CardTitle>
-              <CardDescription>
+          <Card className="border border-slate-200/80 shadow-md rounded-2xl p-6 gap-5 bg-white">
+            <CardHeader className="p-0 gap-1.5">
+              <CardTitle className="text-lg font-bold text-slate-900">Certificate Verification</CardTitle>
+              <CardDescription className="text-sm text-slate-500">
                 Enter your IC number or Email to verify and download certificate
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-0 space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="ic">IC Number / Email</Label>
+                <Label htmlFor="ic" className="text-xs font-semibold uppercase tracking-wider text-slate-700">IC Number / Email</Label>
                 <Input
                   id="ic"
                   placeholder="Example: 901234567890 or email@domain.com"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleCheck()}
-                  className="h-12 text-lg"
+                  className="h-12 text-base sm:text-lg rounded-xl border-slate-200 focus-visible:ring-primary/20"
                 />
               </div>
             </CardContent>
-            <CardFooter>
-              <Button onClick={handleCheck} disabled={loading} className="w-full h-12">
+            <CardFooter className="p-0">
+              <Button onClick={handleCheck} disabled={loading} className="w-full h-12 rounded-xl text-base font-medium shadow-md shadow-primary/20">
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -297,47 +350,81 @@ export function CertificateCheckClient({
 
         {/* Result Section */}
         {result?.found && (
-          <div className="grid md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="grid md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 items-start">
             {/* Left: Result Details */}
             <div className="md:col-span-1 space-y-4">
-              <Card className="border-0 shadow-lg bg-green-50">
-                <CardContent className="pt-6 text-center">
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-green-100 mb-4">
-                    <CheckCircle2 className="h-6 w-6 text-green-600" />
+              <Card className="border border-emerald-100 shadow-xl rounded-2xl p-0 gap-0 overflow-hidden bg-gradient-to-b from-emerald-50/90 via-emerald-50/40 to-white">
+                <CardContent className="p-6 text-center">
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-100/90 text-emerald-600 shadow-2xs border border-emerald-200/70 mb-3">
+                    <CheckCircle2 className="h-7 w-7 text-emerald-600" />
                   </div>
-                  <h3 className="text-lg font-semibold text-green-800 mb-2">Certificate Found!</h3>
-                  <div className="text-left bg-white/50 p-4 rounded-lg text-sm space-y-2 mb-4">
+                  <h3 className="text-lg font-bold text-emerald-950 mb-0.5">Certificate Found!</h3>
+                  <p className="text-xs text-emerald-700/90 mb-4">Participant record verified</p>
+
+                  <div className="text-left bg-white/95 p-4 rounded-xl border border-emerald-100 shadow-2xs text-sm space-y-3 mb-5">
                     <div>
-                      <span className="font-medium text-green-800 block">Name:</span>
-                      <span className="text-gray-900">{result.name}</span>
+                      <span className="text-[11px] font-semibold text-emerald-800 uppercase tracking-wider block mb-0.5">
+                        Name
+                      </span>
+                      <span className="font-medium text-slate-900 break-words block leading-snug">
+                        {result.name}
+                      </span>
                     </div>
-                    <div>
-                      <span className="font-medium text-green-800 block">Program:</span>
-                      <span className="text-gray-900">{result.programName}</span>
+                    <div className="pt-2 border-t border-slate-100">
+                      <span className="text-[11px] font-semibold text-emerald-800 uppercase tracking-wider block mb-0.5">
+                        Program
+                      </span>
+                      <span className="font-medium text-slate-900 break-words block leading-snug [text-wrap:balance]">
+                        {result.programName}
+                      </span>
                     </div>
-                    {result.date && (
-                      <div>
-                        <span className="font-medium text-green-800 block">Date:</span>
-                        <span className="text-gray-900">{result.date}</span>
+                    {formattedDate && (
+                      <div className="pt-2 border-t border-slate-100">
+                        <span className="text-[11px] font-semibold text-emerald-800 uppercase tracking-wider block mb-0.5">
+                          Date
+                        </span>
+                        <span className="font-medium text-slate-900 block">
+                          {formattedDate}
+                        </span>
                       </div>
                     )}
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     <Button
                       onClick={handleDownloadPDF}
-                      className="w-full bg-green-600 hover:bg-green-700"
+                      disabled={downloadingPdf || downloadingPng}
+                      className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl shadow-md shadow-emerald-600/20 transition-all active:scale-[0.98]"
                     >
-                      <Download className="mr-2 h-4 w-4" />
-                      Download PDF
+                      {downloadingPdf ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Generating PDF...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="mr-2 h-4 w-4" />
+                          Download PDF
+                        </>
+                      )}
                     </Button>
                     <Button
                       onClick={handleDownloadPNG}
+                      disabled={downloadingPdf || downloadingPng}
                       variant="outline"
-                      className="w-full border-green-600 text-green-600 hover:bg-green-50"
+                      className="w-full h-11 border-emerald-600 text-emerald-700 hover:bg-emerald-50 font-medium rounded-xl transition-all active:scale-[0.98]"
                     >
-                      <Download className="mr-2 h-4 w-4" />
-                      Download PNG
+                      {downloadingPng ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Generating PNG...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="mr-2 h-4 w-4" />
+                          Download PNG
+                        </>
+                      )}
                     </Button>
                   </div>
                 </CardContent>
@@ -346,33 +433,101 @@ export function CertificateCheckClient({
 
             {/* Right: Certificate Preview */}
             <div className="md:col-span-2">
-              <Card className="border-0 shadow-lg">
-                <CardHeader className="bg-gray-50 border-b">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Award className="h-4 w-4 text-primary" />
-                    Live Preview
-                  </CardTitle>
+              <Card className="border border-slate-200/80 shadow-xl rounded-2xl p-0 gap-0 overflow-hidden bg-white">
+                <CardHeader className="px-4 sm:px-6 py-3.5 bg-white border-b border-slate-200/80 flex flex-row items-center justify-between gap-3 space-y-0">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
+                      <Award className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-base font-semibold text-slate-900 leading-none">
+                          Live Preview
+                        </CardTitle>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80 shrink-0">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          Ready
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 truncate">
+                        {isPortrait ? 'Portrait (A4)' : 'Landscape (A4)'} • High Resolution
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Interactive Toolbar */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setZoomMultiplier((prev) => Math.max(0.6, +(prev - 0.15).toFixed(2)))}
+                      disabled={zoomMultiplier <= 0.6}
+                      title="Zoom Out"
+                      className="h-8 w-8 rounded-lg border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                    >
+                      <ZoomOut className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setZoomMultiplier(1)}
+                      title="Reset to Fit"
+                      className="h-8 px-2.5 text-xs font-medium rounded-lg border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100 min-w-[42px]"
+                    >
+                      {zoomMultiplier === 1 ? 'Fit' : `${Math.round(zoomMultiplier * 100)}%`}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setZoomMultiplier((prev) => Math.min(2.0, +(prev + 0.15).toFixed(2)))}
+                      disabled={zoomMultiplier >= 2.0}
+                      title="Zoom In"
+                      className="h-8 w-8 rounded-lg border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                    >
+                      <ZoomIn className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setIsFullscreenOpen(true)}
+                      title="Full Screen Preview"
+                      className="h-8 w-8 rounded-lg border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                    >
+                      <Maximize2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </CardHeader>
-                <CardContent className="p-0 bg-gray-200">
+
+                <CardContent className="p-0 bg-slate-100/90 relative overflow-hidden">
                   {/* Stable measurement wrapper - ref here so available width is consistent */}
                   <div ref={previewWrapperRef} className="w-full">
-                    {/* Center the scaled certificate with padding */}
-                    <div className="flex justify-center w-full bg-gray-200 py-8 px-4">
+                    {/* Modern Studio Workbench canvas with subtle dot grid */}
+                    <div
+                      className="flex justify-center items-center w-full min-h-[480px] sm:min-h-[560px] max-h-[72vh] overflow-auto py-8 px-4 select-none no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden overscroll-contain"
+                      style={{
+                        backgroundImage: 'radial-gradient(rgba(148, 163, 184, 0.4) 1px, transparent 1px)',
+                        backgroundSize: '20px 20px',
+                      }}
+                    >
                       {/* Outer frame that tracks the actual scaled dimensions */}
                       <div
-                        className="relative"
+                        className="relative m-auto transition-[width,height] duration-200 ease-out"
                         style={{
-                          width: `${captureWidth * previewScale}px`,
-                          height: `${captureHeight * previewScale}px`,
+                          width: `${Math.round(captureWidth * effectiveScale)}px`,
+                          height: `${Math.round(captureHeight * effectiveScale)}px`,
                         }}
                       >
                         {/* Full-size certificate scaled down via transform */}
                         <div
-                          className="absolute top-0 left-0 origin-top-left shadow-2xl"
+                          className="absolute top-0 left-0 origin-top-left rounded-[3px] bg-white ring-1 ring-black/10 shadow-[0_20px_50px_rgba(0,0,0,0.16),0_4px_16px_rgba(0,0,0,0.08)]"
                           style={{
                             width: `${captureWidth}px`,
                             height: `${captureHeight}px`,
-                            transform: `scale(${previewScale})`,
+                            transform: `scale(${effectiveScale})`,
                           }}
                         >
                           <div ref={certificateRef} className="w-full h-full">
@@ -392,9 +547,23 @@ export function CertificateCheckClient({
                     </div>
                   </div>
                 </CardContent>
+
+                <CardFooter className="px-4 sm:px-6 py-3 bg-slate-50/90 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+                  <div className="flex items-center gap-1.5 font-medium text-slate-600">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                    <span>Verified e-Certificate • Ready for instant download</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-400">
+                    <span>{captureWidth} × {captureHeight}px</span>
+                    <span>•</span>
+                    <span className="font-mono">300 DPI Output</span>
+                  </div>
+                </CardFooter>
               </Card>
-              <p className="text-center text-xs text-muted-foreground mt-2">
-                * Download link will save the image as displayed above
+
+              <p className="text-center text-xs text-muted-foreground mt-2.5 flex items-center justify-center gap-1.5">
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+                <span>Authentic certificate verified directly from organizer database</span>
               </p>
             </div>
 
@@ -484,6 +653,149 @@ export function CertificateCheckClient({
             )}
           </div>
         )}
+
+        {/* Fullscreen HD Preview Modal */}
+        <Dialog open={isFullscreenOpen} onOpenChange={(open) => {
+          setIsFullscreenOpen(open);
+          if (open) setModalZoomMultiplier(1);
+        }}>
+          <DialogContent
+            showCloseButton={true}
+            className="max-w-5xl w-[95vw] max-h-[94vh] p-0 gap-0 overflow-hidden flex flex-col bg-slate-950 border-slate-800 text-white rounded-2xl shadow-2xl"
+          >
+            <DialogHeader className="px-5 py-3.5 bg-slate-900/90 border-b border-slate-800/80 flex flex-row items-center justify-between text-white shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
+                  <Award className="h-4 w-4" />
+                </div>
+                <DialogTitle className="text-base font-semibold text-white">
+                  Certificate Full HD Preview
+                </DialogTitle>
+              </div>
+
+              {/* Modal Zoom Controls */}
+              <div className="flex items-center gap-1.5 mr-6">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setModalZoomMultiplier((prev) => Math.max(0.6, +(prev - 0.2).toFixed(2)))}
+                  disabled={modalZoomMultiplier <= 0.6}
+                  title="Zoom Out"
+                  className="h-8 w-8 rounded-lg border border-slate-750 bg-slate-800/90 text-slate-200 hover:text-white hover:bg-slate-700"
+                >
+                  <ZoomOut className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setModalZoomMultiplier((prev) => (prev === 1 ? 1.5 : 1))}
+                  title={modalZoomMultiplier === 1 ? 'Zoom to 150%' : 'Reset to Fit'}
+                  className="h-8 px-2.5 text-xs font-medium rounded-lg border border-slate-750 bg-slate-800/90 text-slate-200 hover:text-white hover:bg-slate-700 min-w-[42px]"
+                >
+                  {modalZoomMultiplier === 1 ? 'Fit' : `${Math.round(modalZoomMultiplier * 100)}%`}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setModalZoomMultiplier((prev) => Math.min(2.5, +(prev + 0.2).toFixed(2)))}
+                  disabled={modalZoomMultiplier >= 2.5}
+                  title="Zoom In"
+                  className="h-8 w-8 rounded-lg border border-slate-750 bg-slate-800/90 text-slate-200 hover:text-white hover:bg-slate-700"
+                >
+                  <ZoomIn className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </DialogHeader>
+            <div className="flex-1 overflow-auto p-4 sm:p-6 flex items-center justify-center bg-slate-950 select-none no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden overscroll-contain">
+              {result?.found && (() => {
+                const baseModalScale =
+                  typeof window !== 'undefined'
+                    ? Math.min(
+                        (window.innerWidth * 0.82) / captureWidth,
+                        Math.max(0.2, (window.innerHeight * 0.86 - 150) / captureHeight)
+                      )
+                    : 0.65;
+                const effectiveModalScale = baseModalScale * modalZoomMultiplier;
+                return (
+                  <div
+                    className="relative m-auto transition-[width,height] duration-200 ease-out rounded-[3px] bg-white shadow-2xl ring-1 ring-white/10"
+                    style={{
+                      width: `${Math.round(captureWidth * effectiveModalScale)}px`,
+                      height: `${Math.round(captureHeight * effectiveModalScale)}px`,
+                    }}
+                  >
+                    <div
+                      className="absolute top-0 left-0 origin-top-left bg-white"
+                      style={{
+                        width: `${captureWidth}px`,
+                        height: `${captureHeight}px`,
+                        transform: `scale(${effectiveModalScale})`,
+                      }}
+                    >
+                      <CertificateTemplate
+                        type={templateId || 'classic'}
+                        name={result.name || ''}
+                        program={formTitle || ''}
+                        date={result.date}
+                        id="dialog-preview"
+                        customTemplateData={activeTemplate}
+                        ic={result.ic || (identifier.includes('@') ? '' : identifier)}
+                        formId={formId}
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+            <div className="px-5 py-3 bg-slate-900/95 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400 shrink-0">
+              <span className="flex items-center gap-1.5 text-slate-300">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                <span>Crystal Clear HD Render</span>
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  onClick={handleDownloadPDF}
+                  disabled={downloadingPdf || downloadingPng}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white h-8 text-xs font-semibold rounded-lg shadow-xs"
+                >
+                  {downloadingPdf ? (
+                    <>
+                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="mr-1.5 h-3.5 w-3.5" />
+                      Download PDF
+                    </>
+                  )}
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleDownloadPNG}
+                  disabled={downloadingPdf || downloadingPng}
+                  className="bg-white hover:bg-slate-100 text-slate-900 border border-slate-200 h-8 text-xs font-semibold rounded-lg shadow-xs"
+                >
+                  {downloadingPng ? (
+                    <>
+                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin text-slate-800" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="mr-1.5 h-3.5 w-3.5 text-slate-800" />
+                      Download PNG
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

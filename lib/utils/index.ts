@@ -19,10 +19,19 @@ export function getProxiedImageUrl(url: string) {
   return url;
 }
 
-// Strip HTML tags for plain text display (e.g., card previews)
+// Strip HTML tags and decode common entities for plain text display (e.g., card previews)
 export function stripHtml(html: string): string {
   if (!html) return '';
-  return html.replace(/<[^>]*>/g, '').trim();
+  return html
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 // Basic sanitization for Rich Text to prevent XSS
