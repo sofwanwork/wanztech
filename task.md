@@ -1,3 +1,60 @@
+# Pembetulan Herotan Seretan Pemisah Halaman & Lapisan DragOverlay Pembina Borang (Fix Page Break Drag Scaling Distortion & Add DragOverlay) ✅ SELESAI
+
+**Matlamat**: Menyelesaikan aduan pengguna ("bila drag page break jadi macam tu, tak lawa dia punya ghost" - `media_1792422249727_e55fef48.png`): (1) Memperbaiki herotan menegak melampau (vertical stretching/warping) apabila elemen Pemisah Halaman (Page Break) yang berketinggian ~40px diseret melintasi kad soalan yang berketinggian ~250px; (2) Membalut elemen Pemisah Halaman dengan kad putih legap bersempadan putus-putus (`border-dashed border-primary/35`) supaya teks kad di bawahnya tidak bocor/bercampur aduk semasa seretan; (3) Mengintegrasikan lapisan terapung `<DragOverlay dropAnimation={null}>` di dalam `<DndContext>` untuk pratonton bayang seretan (*ghost preview*) yang kemas, profesional, dan bergaya moden. (PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL SEHINGGA DIBERI KEBENARAN).
+
+### Pelan Pelaksanaan
+- [x] 1. Pembaikan Transformasi Seretan (`components/forms/fields-editor/index.tsx`):
+  - [x] 1.1 Gantikan `CSS.Transform.toString(transform)` dengan `CSS.Translate.toString(transform)` pada `SortableField` untuk mengekalkan nisbah aspek (*aspect ratio*) asal dan menghapuskan pengganda skala `scaleY` (~700%) semasa penyeretan.
+  - [x] 1.2 Gayakan elemen Pemisah Halaman (`field.type === 'pagebreak'`) sebagai kad kontena legap (`bg-white border-2 border-dashed border-primary/35 rounded-2xl`) berserta lencana `Pemisah Halaman (Page Break)`, ikon seretan, dan butang padam, dengan penunjuk seretan aktif `isDragging && 'opacity-25 scale-[0.98]'`.
+- [x] 2. Integrasi Lapisan Pratonton Seretan (`<DragOverlay>`):
+  - [x] 2.1 Tambah status `activeId`, pengendali `handleDragStart`, `handleDragCancel`, dan selaraskan `handleDragEnd` di dalam `FieldsEditor`.
+  - [x] 2.2 Letakkan komponen `<DragOverlay dropAnimation={null}>` di dalam `<DndContext>`.
+  - [x] 2.3 Render kad terapung berkualiti tinggi (`shadow-2xl ring-4 ring-primary/15 cursor-grabbing`) untuk Pemisah Halaman dan kad ringkasan soalan semasa diseret.
+- [x] 3. Pengesahan Kualiti & Ujian:
+  - [x] 3.1 Jalankan `npm run typecheck` (0 ralat TypeScript).
+  - [x] 3.2 Jalankan `npm run lint` (0 ralat ESLint).
+  - [x] 3.3 Jalankan `npm test` (semua 465 ujian unit lulus merentas 46 suite).
+  - [x] 3.4 Jalankan `npm run build` (kompilasi Next.js 16 Turbopack bersih, 58 laluan).
+- [x] 4. Dokumentasi & Pengesahan Pengguna:
+  - [x] 4.1 Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
+  - [x] 4.2 Maklumkan kepada pengguna dengan ringkas dalam Bahasa Melayu.
+
+### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
+1. **Punca Asal Herotan Seretan Pemisah Halaman (Root Cause of Drag Scaling Distortion)**:
+   - Pustaka `@dnd-kit/sortable` secara lalai menggunakan fungsi pembantu `CSS.Transform.toString(transform)`.
+   - Objek `transform` mengandungi nilai `scaleX` dan `scaleY` yang dikira secara automatik berdasarkan perbezaan dimensi fizikal antara elemen yang sedang diseret dengan elemen sasaran yang sedang dihover.
+   - Apabila elemen Pemisah Halaman yang berketebalan ~40px dihover di atas Kad Soalan yang berketinggian ~250px, `@dnd-kit` menyuntik pengganda `scaleY` sebesar ~600% hingga 700% ke dalam atribut CSS `transform: translate3d(...) scale(1, 6.5)`. Ini meregangkan teks dan sempadan elemen seperti akordion yang herot ("tak lawa dia punya ghost").
+   - Dengan beralih kepada `CSS.Translate.toString(transform)`, sistem hanya memohon anjakan kedudukan `translate3d(x, y, 0)` tanpa sebarang penskalaan, mengekalkan nisbah dan saiz fizikal elemen secara mutlak.
+2. **Penyelesaian Lapisan Seretan Elegan (`<DragOverlay>` UX)**:
+   - Apabila pengguna menyeret Pemisah Halaman, elemen asal di dalam senarai kekal sebagai penanda kedudukan lutsinar lembut (`opacity-25 scale-[0.98]`).
+   - Lapisan `<DragOverlay>` merender kad klon terapung yang timbul dengan bayang lembut berkontras tinggi (`shadow-2xl ring-4 ring-primary/15 cursor-grabbing opacity-95`), menghapuskan sepenuhnya masalah teks bertindih dan kebocoran warna daripada kad di bawahnya.
+
+---
+
+# Penaiktarafan Antaramuka Semakan Sijil Awam & Pengesanan Lajur Emel Pintar (Redesign Certificate Check Page & Smart Email Header Detection) ✅ SELESAI
+
+**Matlamat**: Menyelesaikan aduan pengguna ("cantikkan halaman ni" merujuk kepada portal semakan sijil awam `/check/[formId]` yang sebelum ini berlatar belakang pudar dan memaparkan kotak amaran merah teknikal "Email field not found in Google Sheet"): (1) mereka bentuk semula antaramuka semakan sijil awam dengan visual studio moden; (2) mengesan lajur emel dalam Google Sheets secara fleksibel; (3) menyediakan kad maklum balas kontekstual yang mesra pengguna. (PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL SEHINGGA DIBERI KEBENARAN).
+
+### Pelan Pelaksanaan
+- [x] 1. Pengesanan Lajur Emel Pintar (`lib/certificates/headers.ts` & `actions/certificates.ts`):
+  - [x] 1.1 Cipta pembantu `isEmailHeader(header)` yang menyokong variasi Bahasa Melayu dan Inggeris (`email`, `e-mel`, `e-mail`, `emel`, `mail`, `alamat emel`, `email address`, dll.).
+  - [x] 1.2 Kemas kini `checkCertificateByICOrEmail` untuk menggunakan `isEmailHeader` serta sandaran kepada jenis medan `email` dalam konfigurasi borang.
+  - [x] 1.3 Pulangkan metadata `missingField?: 'email' | 'ic' | 'name'` dalam `CertificateCheckResult`.
+- [x] 2. Mereka Bentuk Semula Antaramuka Semakan Sijil Awam (`app/(public)/check/[formId]/client.tsx`):
+  - [x] 2.1 Tambah latar belakang ambien dengan bebola cahaya lembut (*glow orbs*) dan lencana pengesahan rasmi.
+  - [x] 2.2 Ikon input dinamik: beralih secara pintar antara Mail (apabila `@` ditaip), CreditCard (apabila angka ditaip), dan Search (lalai) berserta butang padam `X`.
+  - [x] 2.3 Kad ralat kontekstual: kad ambar bagi ketiadaan lajur emel dengan butang 1-klik `[ Gunakan Nombor Kad Pengenalan ]`, kad biru bagi ketiadaan lajur IC dengan butang 1-klik `[ Gunakan Alamat E-mel ]`, dan kad mawar dengan panduan format jika peserta tidak ditemui.
+  - [x] 2.4 Naik taraf kad keputusan dan pratonton kepada gaya glassmorphic `rounded-3xl` moden.
+- [x] 3. Pengesahan Kualiti & Ujian:
+  - [x] 3.1 Cipta ujian unit di `tests/certificate-headers.test.ts` (10/10 ujian lulus).
+  - [x] 3.2 Jalankan `npm run typecheck`, `npm run lint`, dan `npm test` (465/465 ujian lulus).
+  - [x] 3.3 Jalankan `npm run build` (bersih 58 laluan).
+- [x] 4. Dokumentasi & Pengesahan Pengguna:
+  - [x] 4.1 Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
+  - [x] 4.2 Maklumkan kepada pengguna dengan ringkas dalam Bahasa Melayu.
+
+---
+
 # Pembetulan Pepijat Tahun Sijil Terpapar 2001 (Fix 2001 Year Parsing Bug) ✅ SELESAI (LIVE DI VERCEL)
 
 **Matlamat**: Memperbaiki pepijat tarikh pada e-Sijil dan sari kata pratonton awam yang memaparkan tahun `2001` (contohnya `October 7, 2001` dan `October 8, 2001`) dan bukannya tahun sebenar `2026`. (PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL SEHINGGA DIBERI KEBENARAN).
@@ -2156,4 +2213,29 @@
      - *Ketiadaan lajur e-mel*: Kad amaran lembut (amber) menerangkan borang menggunakan No. IC dan menyediakan butang tindakan 1-klik `[ Gunakan Nombor Kad Pengenalan ]`.
      - *Ketiadaan lajur IC*: Kad panduan biru menerangkan borang menggunakan E-mel dan menyediakan butang 1-klik `[ Gunakan Alamat E-mel ]`.
      - *Tiada rekod kehadiran*: Kad rose lembut dengan ringkasan carian dan senarai panduan semakan mesra pengguna.
+
+---
+
+# Pembaikan Herotan "Ghost" Seretan Pemisah Halaman (Fix Page Break Drag Ghost Distortion & Overlay)
+
+**Matlamat**: Menyelesaikan masalah herotan visual (*warping / vertical scaling distortion*) apabila menyeret elemen pemisah halaman (*Page Break*) di dalam Form Builder (`components/forms/fields-editor/index.tsx`). Pada masa yang sama, mencantikkan paparan *ghost / drag overlay* pemisah halaman dengan latar belakang putih berkontur padu, sempadan putus-putus (*dashed border*), lencana rasmi, dan kesan bayang terapung 3D supaya tidak telus atau bertindih hodoh di atas kad soalan lain. (PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL SEHINGGA DIBERI KEBENARAN).
+
+### Pelan Pelaksanaan
+- [ ] 1. Pembaikan Skala Transformasi `@dnd-kit` (`components/forms/fields-editor/index.tsx`):
+  - [ ] 1.1 Gantikan `CSS.Transform.toString(transform)` dengan `CSS.Translate.toString(transform)` pada `SortableField`. Ini menghapuskan pengiraan `scaleX`/`scaleY` daripada `@dnd-kit/utilities` yang memanjangkan fon `PAGE BREAK` secara herot apabila bertindih dengan kad soalan yang lebih tinggi.
+- [ ] 2. Reka Bentuk Semula Antara Muka Pemisah Halaman (*Page Break Element*):
+  - [ ] 2.1 Tukar kontena pemisah halaman daripada `<div>` telus asas kepada kad pemisah berpenebat padat (`bg-white border-2 border-dashed border-primary/30 rounded-2xl p-3 sm:p-3.5 shadow-xs`).
+  - [ ] 2.2 Tambah lencana kemas `Pemisah Halaman (Page Break)` dengan teks bantuan agar tidak tembus pandang atau bercampur dengan teks soalan di bawahnya.
+- [ ] 3. Pelaksanaan *DragOverlay* & Keadaan *Ghost* Pintar:
+  - [ ] 3.1 Integrasikan `DragOverlay` daripada `@dnd-kit/core` bersama `activeId`, `handleDragStart`, dan `handleDragCancel`.
+  - [ ] 3.2 Apabila sesuatu elemen sedang diseret (`isDragging`), paparkan slot penunjuk kedudukan lembut (`opacity-30 scale-[0.98]`).
+  - [ ] 3.3 Pada `DragOverlay`, paparkan kad klon terapung berkilat dengan `shadow-2xl ring-2 ring-primary/40 rounded-2xl cursor-grabbing` yang kemas mengikut kursor pengguna.
+- [ ] 4. Pengesahan Kualiti & Ujian:
+  - [ ] 4.1 Jalankan `npm test` untuk memastikan semua ujian lulus.
+  - [ ] 4.2 Jalankan `npm run typecheck` (0 ralat TypeScript).
+  - [ ] 4.3 Jalankan `npm run lint` (0 ralat ESLint).
+  - [ ] 4.4 Jalankan `npm run build` (Next.js 16 Turbopack bersih).
+- [ ] 5. Dokumentasi:
+  - [ ] 5.1 Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
+  - [ ] 5.2 Terangkan pembaikan secara ringkas kepada pengguna dalam Bahasa Melayu.
 

@@ -40,6 +40,8 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -67,12 +69,14 @@ function SortableField({
   removeField,
   duplicateField,
 }: SortableFieldProps) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: field.id,
   });
 
+  // Use CSS.Translate instead of CSS.Transform to prevent aspect-ratio scaling
+  // distortion when dragging elements of varying heights (e.g. PageBreak ~40px vs Card ~250px)
   const style = {
-    transform: CSS.Transform.toString(transform),
+    transform: CSS.Translate.toString(transform),
     transition,
   };
 
@@ -104,41 +108,58 @@ function SortableField({
   // so it can be positioned between fields, and deletable.
   if (field.type === 'pagebreak') {
     return (
-      <div ref={setNodeRef} style={style} className="relative group">
-        <div className="flex items-center gap-2 py-1">
-          <div
-            {...attributes}
-            {...listeners}
-            suppressHydrationWarning
-            className="cursor-move touch-none hover:bg-slate-200/60 p-1 rounded transition-colors"
-          >
-            <GripVertical className="h-4 w-4 text-slate-400 group-hover:text-slate-700" />
+      <div
+        ref={setNodeRef}
+        style={style}
+        className={cn(
+          'relative group my-2 transition-all',
+          isDragging && 'opacity-25 scale-[0.98]'
+        )}
+      >
+        <div className="bg-white border-2 border-dashed border-primary/35 hover:border-primary/70 rounded-2xl p-3 sm:p-3.5 shadow-xs transition-all flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div
+              {...attributes}
+              {...listeners}
+              suppressHydrationWarning
+              className="cursor-grab active:cursor-grabbing touch-none hover:bg-slate-100 p-1.5 rounded-lg transition-colors text-slate-400 hover:text-slate-700"
+              title="Tarik untuk susun semula pemisah halaman"
+            >
+              <GripVertical className="h-4 w-4" />
+            </div>
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20 shrink-0">
+                Pemisah Halaman (Page Break)
+              </span>
+              <span className="text-xs text-slate-500 truncate hidden sm:inline">
+                Soalan di bawah garisan ini akan bermula pada halaman baharu
+              </span>
+            </div>
           </div>
-          <span className="h-px flex-1 bg-primary/30" />
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-primary whitespace-nowrap">
-            Page Break
-          </span>
-          <span className="h-px flex-1 bg-primary/30" />
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg shrink-0 cursor-pointer"
             onClick={() => removeField(index)}
-            title="Delete page break"
-            aria-label="Delete page break"
+            title="Padam pemisah halaman"
+            aria-label="Padam pemisah halaman"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
-        <p className="text-[11px] text-muted-foreground text-center -mt-0.5">
-          Fields below this line start a new page. Place it between questions.
-        </p>
       </div>
     );
   }
 
   return (
-    <div ref={setNodeRef} style={style} className="relative group">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        'relative group transition-all',
+        isDragging && 'opacity-25 scale-[0.99]'
+      )}
+    >
       <Card>
         <CardHeader className="py-3 px-4 bg-muted/30 flex flex-row items-center gap-2">
           <div {...attributes} {...listeners} suppressHydrationWarning className="cursor-move touch-none hover:bg-slate-200/60 p-1 -ml-1 rounded transition-colors" id={index === 0 ? "tour-drag-handle" : undefined}>
@@ -1114,9 +1135,12 @@ function ConditionalLogicEditor({
 interface FieldsEditorProps {
   fields: FormField[];
   onChange: (fields: FormField[]) => void;
-}export function FieldsEditor({ fields, onChange }: FieldsEditorProps) {
+}
+
+export function FieldsEditor({ fields, onChange }: FieldsEditorProps) {
   // Initialize mounted state directly to avoid useEffect setState
   const [mounted, setMounted] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   // Use useLayoutEffect alternative or just set directly
   useEffect(() => {
@@ -1136,12 +1160,24 @@ interface FieldsEditorProps {
     })
   );
 
+  const activeField = activeId ? fields.find((f) => f.id === activeId) : null;
+  const activeIndex = activeId ? fields.findIndex((f) => f.id === activeId) : -1;
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
+  const handleDragCancel = () => {
+    setActiveId(null);
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    setActiveId(null);
 
-    if (active.id !== over?.id) {
+    if (over && active.id !== over.id) {
       const oldIndex = fields.findIndex((f) => f.id === active.id);
-      const newIndex = fields.findIndex((f) => f.id === over?.id);
+      const newIndex = fields.findIndex((f) => f.id === over.id);
       onChange(arrayMove(fields, oldIndex, newIndex));
     }
   };
@@ -1198,8 +1234,19 @@ interface FieldsEditorProps {
 
   return (
     <div className="space-y-4">
-      <DndContext id="form-fields-dnd-context" sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext id="form-fields-sortable-context" items={fields.map((f) => f.id)} strategy={verticalListSortingStrategy}>
+      <DndContext
+        id="form-fields-dnd-context"
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragCancel={handleDragCancel}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          id="form-fields-sortable-context"
+          items={fields.map((f) => f.id)}
+          strategy={verticalListSortingStrategy}
+        >
           {fields.map((field, index) => (
             <SortableField
               key={field.id}
@@ -1212,6 +1259,47 @@ interface FieldsEditorProps {
             />
           ))}
         </SortableContext>
+
+        <DragOverlay dropAnimation={null}>
+          {activeField ? (
+            activeField.type === 'pagebreak' ? (
+              <div className="bg-white border-2 border-primary rounded-2xl p-3 sm:p-3.5 shadow-2xl ring-4 ring-primary/15 flex items-center justify-between gap-3 cursor-grabbing opacity-95">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="p-1.5 rounded-lg text-primary">
+                    <GripVertical className="h-4 w-4" />
+                  </div>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-primary text-white shadow-xs shrink-0">
+                      Pemisah Halaman (Page Break)
+                    </span>
+                    <span className="text-xs text-slate-500 truncate hidden sm:inline">
+                      Soalan di bawah garisan ini akan bermula pada halaman baharu
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white border-2 border-primary/50 rounded-xl shadow-2xl ring-4 ring-primary/10 cursor-grabbing opacity-95 overflow-hidden">
+                <div className="py-3 px-4 bg-slate-50 flex items-center justify-between gap-2 border-b border-slate-100">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <GripVertical className="h-4 w-4 text-primary shrink-0" />
+                    <span className="text-xs font-bold px-2 py-0.5 rounded bg-primary/10 text-primary uppercase shrink-0">
+                      Soalan {activeIndex + 1} • {activeField.type}
+                    </span>
+                    <span className="text-sm font-semibold text-slate-800 truncate">
+                      {activeField.label || '(Tanpa Tajuk)'}
+                    </span>
+                  </div>
+                  {activeField.required && (
+                    <span className="text-[11px] text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-full border border-red-100 shrink-0">
+                      Wajib
+                    </span>
+                  )}
+                </div>
+              </div>
+            )
+          ) : null}
+        </DragOverlay>
       </DndContext>
 
       <div className="flex flex-col gap-2">
