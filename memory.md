@@ -3409,3 +3409,36 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
 
 
 
+
+## Pembaikan Muat Turun Kod QR & Penghapusan Cache Kanvas Lapuk (2026-10-26)
+- **Konteks & Laporan Pengguna**:
+  - Maklum balas pengguna: *"dekat qr builder ni, bila sy scan di website okay je, tapi bila download dan scan balik, dia tak direct link yg sy letak"*.
+  - Pengguna mendapati apabila mengimbas pratonton kod QR di skrin laman web, ia berjaya menghala ke pautan yang dimasukkan (contohnya Google Maps). Namun, apabila memuat turun fail PNG/SVG dan mengimbasnya semula, ia tidak menghala ke pautan tersebut (menghala ke pautan lama/lalai seperti `https://klikform.com`).
+- **Punca Asal (Root Cause Analysis)**:
+  1. **Pepijat Stale Canvas Cache dalam `qr-code-styling`**:
+     - `QrCustomizer` (`components/forms/qr-customizer/index.tsx`) dikonfigurasikan dengan `type: 'svg'` untuk paparan SVG di skrin.
+     - Pustaka `qr-code-styling` menyimpan cache dalaman `this._domCanvas` dan `this._canvasDrawingPromise`. Apabila kaedah muat turun PNG dipanggil kali pertama, ia melukis kod QR pada kanvas tersebut.
+     - Apabila pengguna menukar URL, kaedah `.update(...)` dalam pustaka HANYA melukis semula SVG di skrin (apabila `type === 'svg'`) dan langsung **TIDAK PERNAH** memadam atau melukis semula kanvas `this._domCanvas`.
+     - Oleh itu, pada sebarang muat turun seterusnya, pustaka mengembalikan kanvas lapuk (*stale canvas*) yang mengandungi kod QR pautan terdahulu/lalai (`https://klikform.com`).
+  2. **Ketiadaan Quiet Zone / Margin Piawaian ISO/IEC 18004**:
+     - Secara lalai, `margin: 0` digunakan. Pada paparan web, kod QR dikelilingi oleh kad putih `<Card className="p-6">` (padding 24px) yang bertindak sebagai quiet zone, membolehkan kamera telefon mengimbas dengan lancar.
+     - Namun apabila fail PNG/SVG dimuat turun, corak penjuru hitam mencecah tepi 0px fail. Apabila dibuka dalam pemapar foto bertema gelap atau dicetak, pengimbas kamera gagal mengecam kedudukan penjuru kod QR kerana tiada zon penampan putih 4-modul.
+  3. **Mutasi 'Race Condition' dalam `handleDownload`**:
+     - Sebelum ini, `handleDownload` memutasi objek `qrCode` paparan skrin (`update({ width: 2000 })`), memanggil muat turun, kemudian segera mengecilkannya kembali ke 300px di dalam blok `finally` sebelum proses lukisan kanvas tak segerak selesai sepenuhnya.
+- **Penyelesaian Dilaksanakan**:
+  1. **Instans Muat Turun Khusus Baharu (*Stateless Dedicated Download Instance*)**:
+     - Menghapuskan sepenuhnya mutasi terhadap instans paparan skrin `qrCode`.
+     - Setiap kali pengguna menekan butang muat turun, fungsi `handleDownload` mencipta instans baharu `new QRCodeStylingConstructor(...)` secara khusus untuk muat turun tersebut dengan URL terkini `cleanUrl = (url || '').trim() || 'https://klikform.com'`.
+  2. **Render Terus ke Kanvas untuk PNG High Res (2000x2000px)**:
+     - Menetapkan `type: 'canvas'` secara langsung untuk muat turun PNG. Kod QR dilukis terus ke resolusi kanvas penuh 2000x2000px tanpa melalui penukaran tak segerak SVG-ke-imej yang mempunyai pepijat cache kanvas.
+     - Menetapkan `type: 'svg'` untuk muat turun vektor SVG.
+  3. **Penetapan Quiet Zone Piawaian ISO/IEC 18004**:
+     - Menetapkan `margin: Math.max(20, Math.round(resolution * 0.04))` (80px pada PNG 2000px, 12px pada SVG dan pratonton). Sempadan putih yang mencukupi menjamin kod QR boleh diimbas 100% tepat oleh mana-mana telefon pintar pada sebarang latar belakang paparan atau cetakan.
+  4. **Pembersihan URL & Status Muat Turun**:
+     - Menggunakan `cleanUrl` dengan pemotongan ruang kosong (`.trim()`) di `components/forms/qr-customizer/index.tsx` dan `app/(dashboard)/qr-builder/client.tsx`.
+     - Menambah status `downloadingFormat` (`'png' | 'svg'`) dengan ikon pemutar `<Loader2 className="animate-spin" />` dan menyahdayakan butang muat turun semasa proses eksport berlangsung.
+- **Pengesahan & Kualiti**:
+  - `npm test`: 480 / 480 ujian unit lulus merentas 47 fail suite (termasuk 4 ujian unit baharu di `tests/qr-builder.test.ts`).
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm run build`: Kompilasi Next.js 16 Turbopack bersih tanpa sebarang ralat (58 laluan).

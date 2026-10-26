@@ -43,6 +43,10 @@ export function QrCustomizer({ url, settings, onSettingsChange }: QrCustomizerPr
   const qrRef = useRef<HTMLDivElement>(null);
   const [qrCode, setQrCode] = useState<QRCodeStyling | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [downloadingFormat, setDownloadingFormat] = useState<'png' | 'svg' | null>(null);
+
+  // Clean URL to prevent whitespace issues (e.g. copied trailing spaces)
+  const cleanUrl = (url || '').trim() || 'https://klikform.com';
 
   // Use props or default values
   const dotsColor = settings?.dotsColor || '#000000';
@@ -66,7 +70,7 @@ export function QrCustomizer({ url, settings, onSettingsChange }: QrCustomizerPr
   const supabase = createClient();
   const [isUploading, setIsUploading] = useState(false);
 
-  // Initialize QR Code Styling
+  // Initialize QR Code Styling for preview
   useEffect(() => {
     import('qr-code-styling').then((QRCodeStylingConstructor) => {
       const QRCodeStyling = QRCodeStylingConstructor.default;
@@ -74,8 +78,9 @@ export function QrCustomizer({ url, settings, onSettingsChange }: QrCustomizerPr
         width: 300,
         height: 300,
         type: 'svg',
-        data: url,
+        data: cleanUrl,
         image: logo,
+        margin: 12, // Standard quiet zone
         dotsOptions: {
           color: dotsColor,
           type: dotsType,
@@ -105,8 +110,9 @@ export function QrCustomizer({ url, settings, onSettingsChange }: QrCustomizerPr
   useEffect(() => {
     if (!qrCode) return;
     qrCode.update({
-      data: url,
+      data: cleanUrl,
       image: logo,
+      margin: 12,
       dotsOptions: {
         color: dotsColor,
         type: dotsType,
@@ -121,7 +127,7 @@ export function QrCustomizer({ url, settings, onSettingsChange }: QrCustomizerPr
         color: backgroundColor,
       },
     });
-  }, [qrCode, url, logo, dotsColor, dotsType, cornersColor, cornersType, backgroundColor]);
+  }, [qrCode, cleanUrl, logo, dotsColor, dotsType, cornersColor, cornersType, backgroundColor]);
 
   const deleteOldLogo = async (url: string) => {
     try {
@@ -150,8 +156,6 @@ export function QrCustomizer({ url, settings, onSettingsChange }: QrCustomizerPr
         reader.onload = (event) => {
           if (event.target?.result) {
             setLogoPreview(event.target.result as string);
-            // Also set as logo temporarily so user sees it change immediately
-            // setLogo(event.target.result as string); // Removed: Use logoPreview
           }
         };
         reader.readAsDataURL(file);
@@ -209,7 +213,6 @@ export function QrCustomizer({ url, settings, onSettingsChange }: QrCustomizerPr
     const oldLogoUrl = settings?.logo;
     updateSetting('logo', undefined);
     setLogoPreview(null);
-    // setLogo(undefined); // Removed
 
     if (oldLogoUrl) {
       await deleteOldLogo(oldLogoUrl);
@@ -217,28 +220,53 @@ export function QrCustomizer({ url, settings, onSettingsChange }: QrCustomizerPr
     }
   };
 
-  const handleDownload = async (format: 'png' | 'svg', resolution: number = 1000) => {
-    if (!qrCode) return;
+  const handleDownload = async (format: 'png' | 'svg', resolution: number = 2000) => {
+    if (downloadingFormat) return;
     try {
-      // Temporarily update size for high-res download
-      if (format === 'png' && resolution > 300) {
-        await qrCode.update({ width: resolution, height: resolution });
-      }
+      setDownloadingFormat(format);
 
-      await qrCode.download({
+      const QRCodeStylingConstructor = (await import('qr-code-styling')).default;
+
+      // Always create a fresh, dedicated instance for download.
+      // This completely eliminates qr-code-styling's internal _domCanvas caching bug
+      // where subsequent PNG downloads return the stale canvas of the previous download.
+      const downloadInstance = new QRCodeStylingConstructor({
+        width: format === 'png' ? resolution : 300,
+        height: format === 'png' ? resolution : 300,
+        type: format === 'svg' ? 'svg' : 'canvas',
+        data: cleanUrl,
+        image: logo,
+        // Crucial: 4-module equivalent quiet zone according to ISO/IEC 18004.
+        // For 2000px PNG: 80px margin (4%). For 300px SVG: 12px margin.
+        margin: format === 'png' ? Math.max(20, Math.round(resolution * 0.04)) : 12,
+        dotsOptions: {
+          color: dotsColor,
+          type: dotsType,
+        },
+        cornersSquareOptions: {
+          color: cornersColor,
+          type: cornersType,
+        },
+        backgroundOptions: {
+          color: backgroundColor,
+        },
+        imageOptions: {
+          crossOrigin: 'anonymous',
+          margin: format === 'png' ? Math.round(resolution * 0.015) : 8,
+        },
+      });
+
+      await downloadInstance.download({
         name: 'custom-qr-code',
         extension: format,
       });
 
       toast.success(`QR Code downloaded as ${format.toUpperCase()}`);
     } catch (err) {
-      console.error(err);
+      console.error('Download error:', err);
       toast.error('Failed to download QR Code');
     } finally {
-      // Revert preview size
-      if (format === 'png' && resolution > 300 && qrCode) {
-        await qrCode.update({ width: 300, height: 300 });
-      }
+      setDownloadingFormat(null);
     }
   };
 
@@ -415,11 +443,40 @@ export function QrCustomizer({ url, settings, onSettingsChange }: QrCustomizerPr
         </Card>
 
         <div className="flex flex-col gap-2 w-full max-w-xs">
-          <Button onClick={() => handleDownload('png', 2000)} className="w-full">
-            <Download className="h-4 w-4 mr-2" /> Download High Res PNG
+          <Button
+            onClick={() => handleDownload('png', 2000)}
+            className="w-full"
+            disabled={!!downloadingFormat}
+          >
+            {downloadingFormat === 'png' ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Downloading PNG...
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4 mr-2" />
+                Download High Res PNG
+              </>
+            )}
           </Button>
-          <Button onClick={() => handleDownload('svg')} variant="outline" className="w-full">
-            <ImageIcon className="h-4 w-4 mr-2" /> Download SVG (Vector)
+          <Button
+            onClick={() => handleDownload('svg')}
+            variant="outline"
+            className="w-full"
+            disabled={!!downloadingFormat}
+          >
+            {downloadingFormat === 'svg' ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Downloading SVG...
+              </>
+            ) : (
+              <>
+                <ImageIcon className="h-4 w-4 mr-2" />
+                Download SVG (Vector)
+              </>
+            )}
           </Button>
         </div>
         <p className="text-xs text-muted-foreground text-center px-4">

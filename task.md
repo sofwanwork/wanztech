@@ -1,60 +1,49 @@
-# Format Pengeluaran Sijil Acara Berbilang Hari (Multi-Day Certificate Mode: Daily Only vs Full Only vs Both) ✅ SELESAI
+# Pembaikan Muat Turun Kod QR (QR Builder Download Stale Link & Missing Quiet Zone Fix) ✅ SELESAI
 
-**Matlamat**: Menyelesaikan permintaan pengguna ("tapi kan kalau semua hari (penuh) tu kalau user nak baru ada, maksudnya salah satu, sama ada sijil harian atau penuh"):
-(1) Menambah konfigurasi mod pengeluaran sijil berbilang hari `multiDayCertMode?: 'both' | 'daily_only' | 'full_only'` dalam `CheckInOutConfig` (`lib/types/forms.ts` & `lib/types/index.ts`);
-(2) Memperkemas fungsi `buildDailyCertificateOptions` (`lib/forms/attendance.ts`) supaya menapis sijil mengikut mod yang dipilih oleh penganjur:
-  - `daily_only`: Hanya sijil harian (Hari 1, Hari 2, dll). Pilihan "Semua Hari (Penuh)" tidak dijana;
-  - `full_only`: Hanya satu sijil penuh/gabungan (Semua Hari). Sijil harian diabaikan;
-  - `both`: Menjana kedua-dua sijil harian dan sijil penuh supaya peserta boleh memilih;
-(3) Menghubungkan `actions/certificates.ts` dengan konfigurasi borang `checkInOutConfig?.multiDayCertMode` (lalai: `daily_only` untuk acara berbilang hari tanpa pilihan);
-(4) Menambah panel antaramuka pemilih mod sijil berbilang hari yang elegan, responsif, dan mesra pengguna di Form Builder (`app/builder/[id]/client.tsx`) di bawah seksyen Program Duration apabila `totalDays > 1`;
-(5) Menambah ujian unit komprehensif bagi ketiga-tiga mod di `tests/certificate-multiday-options.test.ts`;
-(6) Memastikan 100% keserasian ke belakang bagi borang 1 hari dan konfigurasi sedia ada.
-(PERINGATAN KETAT: JANGAN KEMAS KINI KE VERCEL SEHINGGA DIBERI KEBENARAN).
+**Masalah Pengguna**:
+Pengguna melaporkan: "dekat qr builder ni, bila sy scan di website okay je, tapi bila download dan scan balik, dia tak direct link yg sy letak" (Bila imbas di laman web berjaya terus ke pautan, tetapi apabila fail dimuat turun dan diimbas semula, ia tidak menghala ke pautan yang diletakkan).
 
-### Pelan Pelaksanaan
-- [x] 1. Lapisan Model Data & Jenis TypeScript (`lib/types/forms.ts` & `lib/types/index.ts`):
-  - [x] 1.1 Tentukan jenis `MultiDayCertMode = 'both' | 'daily_only' | 'full_only'`.
-  - [x] 1.2 Tambah `multiDayCertMode?: MultiDayCertMode` ke dalam antara muka `CheckInOutConfig`.
-  - [x] 1.3 Re-eksport `MultiDayCertMode` pada barrel `lib/types/index.ts`.
-- [x] 2. Logik Penjanaan Sijil Berbilang Hari (`lib/forms/attendance.ts` & `actions/certificates.ts`):
-  - [x] 2.1 Terima parameter `multiDayCertMode?: MultiDayCertMode` dalam `buildDailyCertificateOptions`.
-  - [x] 2.2 Laksana penapisan mengikut mod:
-    - Jika `multiDayCertMode === 'daily_only'`, pulangkan `dailyOptions` sahaja tanpa `Semua Hari (Penuh)`.
-    - Jika `multiDayCertMode === 'full_only'`, pulangkan `[combinedOption]` sahaja.
-    - Jika `multiDayCertMode === 'both'`, gabungkan `dailyOptions` dan `combinedOption`.
-  - [x] 2.3 Kemas kini `actions/certificates.ts` untuk menghantar `checkInOutConfig?.multiDayCertMode || 'daily_only'` bagi acara berbilang hari.
-- [x] 3. Antaramuka Form Builder (`app/builder/[id]/client.tsx`):
-  - [x] 3.1 Tambah bahagian pemilih mod sijil berbilang hari di bawah Tempoh Program apabila `totalDays > 1`.
-  - [x] 3.2 Sediakan 3 kad pilihan interaktif:
-    - `Sijil Harian Sahaja` (Lalai - Hari 1, Hari 2 dll, tiada sijil gabungan)
-    - `Sijil Penuh Sahaja` (Hanya 1 sijil penuh merangkumi semua hari)
-    - `Kedua-duanya` (Sijil harian & penuh serentak untuk pilihan peserta)
-  - [x] 3.3 Gayakan dengan kad bersempadan dinamik, lencana status, ikon yang jelas, dan penerangan ringkas.
-- [x] 4. Pengesahan Kualiti & Ujian Unit (`tests/certificate-multiday-options.test.ts`):
-  - [x] 4.1 Tambah ujian unit untuk mod `daily_only`.
-  - [x] 4.2 Tambah ujian unit untuk mod `full_only`.
-  - [x] 4.3 Tambah ujian unit untuk mod `both`.
-  - [x] 4.4 Jalankan `npm run typecheck` (0 ralat TypeScript).
-  - [x] 4.5 Jalankan `npm run lint` (0 ralat ESLint).
-  - [x] 4.6 Jalankan `npm test` (semua 476 ujian lulus merentas 46 fail).
-  - [x] 4.7 Jalankan `npm run build` (kompilasi Next.js 16 Turbopack bersih, 58 laluan).
-- [x] 5. Dokumentasi & Pengesahan Pengguna:
-  - [x] 5.1 Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
-  - [x] 5.2 PATUHI arahan pengguna: JANGAN kemas kini ke Vercel lagi sehingga diarahkan.
-  - [x] 5.3 Maklumkan kepada pengguna dengan ringkas dalam Bahasa Melayu.
+**Punca Asal Ralat (Root Causes)**:
+1. **Pepijat Stale Canvas Cache dalam `qr-code-styling`**:
+   - Komponen `QrCustomizer` diinisialisasikan dengan mod `type: 'svg'` untuk paparan SVG di skrin.
+   - Pustaka `qr-code-styling` menyimpan cache dalaman `this._domCanvas` dan `this._canvasDrawingPromise`.
+   - Apabila fungsi muat turun PNG pertama kali dipanggil, ia mencipta `this._domCanvas` dan melukis kod QR pada kanvas tersebut.
+   - Walau bagaimanapun, kerana `type` ialah `'svg'`, kaedah `.update(...)` HANYA mengemas kini SVG di skrin (`this._setupSvg()`) dan **TIDAK PERNAH** memadam atau melukis semula `this._domCanvas`!
+   - Akibatnya, pada sebarang muat turun seterusnya (atau jika pengguna menukar URL selepas memuat turun kali pertama), pustaka mengembalikan kanvas lama yang lapuk (*stale canvas* yang mengandungi pautan lama seperti `https://klikform.com`). Apabila diimbas, fail PNG tersebut menghala ke pautan lama, bukan pautan baharu yang pengguna masukkan!
+2. **Ketiadaan Quiet Zone / Margin (`margin: 0`)**:
+   - Secara lalai dalam `QRCodeStyling`, `margin: 0` digunakan.
+   - Pada paparan web, kod QR berada di dalam kad putih `<Card className="p-6">` (margin 24px) yang bertindak sebagai zon penampan (quiet zone) semula jadi, membolehkan kamera telefon mengimbas dengan mudah.
+   - Namun apabila fail PNG atau SVG dimuat turun, corak penjuru hitam (*finder patterns*) mencecah ke sempadan 0px fail imej tanpa sebarang sempadan putih. Apabila fail dibuka dalam pemapar imej yang bertema gelap atau dicetak, ketiadaan zon penampan 4-modul (piawaian ISO/IEC 18004) menyebabkan pengimbas kamera gagal mengecam atau gagal memproses pautan dengan betul.
+3. **Mutasi dan 'Race Condition' dalam `handleDownload`**:
+   - `handleDownload` memutasi objek `qrCode` paparan skrin (`update({ width: 2000 })`), memanggil muat turun, kemudian segera mengecilkannya kembali ke 300px di dalam blok `finally`. Kerana `.update()` adalah segerak (synchronous) tetapi proses lukisan kanvas adalah tak segerak (asynchronous), mutasi ini mencetuskan konflik saiz dan ralat render.
+4. **Pembersihan URL (*Whitespace Trimming*)**:
+   - URL yang disalin dari mesej sering mempunyai ruang kosong di hujung/hadapan (*trailing spaces*), menyebabkan sesetengah pengimbas mudah alih menganggapnya teks carian mentah dan bukannya pautan terus.
+
+**Pelan Tindakan**:
+- [x] 1. Siasat dan rancang seni bina pembaikan muat turun kod QR.
+- [x] 2. Reka bentuk semula fungsi muat turun dalam `components/forms/qr-customizer/index.tsx`:
+  - [x] 2.1 Cipta instans muat turun khusus (*fresh dedicated instance*) secara dinamik setiap kali muat turun ditekan dengan `data: cleanUrl`, memastikan tiada cache lama atau pergantungan pada `this._domCanvas` yang lapuk.
+  - [x] 2.2 Untuk PNG: Gunakan `type: 'canvas'` terus dengan resolusi sebenar (contohnya 2000x2000px) dan zon penampan margin yang kemas (`margin: 80` pada 2000px) dengan warna latar yang sah.
+  - [x] 2.3 Untuk SVG: Gunakan `type: 'svg'` dengan margin zon penampan yang tepat (`margin: 12`) supaya imej vektor boleh diimbas dengan lancar di mana-mana latar belakang.
+  - [x] 2.4 Elakkan sebarang mutasi terhadap instans paparan skrin `qrCode` sedia ada.
+  - [x] 2.5 Tambah margin (quiet zone) pada instans paparan skrin `qrCode` (`margin: 12`) untuk konsistensi visual.
+  - [x] 2.6 Tambah pembersihan URL (`url.trim()`) dan status penunjuk muat turun (*loading spinner*) untuk maklum balas pengguna yang lancar.
+- [x] 3. Semak dan optimumkan `app/(dashboard)/qr-builder/client.tsx` untuk memastikan URL diproses dengan bersih dan konsisten.
+- [x] 4. Pengesahan Kualiti & Ujian:
+  - [x] 4.1 Tambah ujian unit di `tests/qr-builder.test.ts`.
+  - [x] 4.2 Jalankan ujian unit penuh `npm test` (480/480 ujian lulus merentas 47 suite).
+  - [x] 4.3 Jalankan `npm run typecheck` (0 ralat TypeScript).
+  - [x] 4.4 Jalankan `npm run lint` (0 ralat ESLint).
+  - [x] 4.5 Jalankan `npm run build` (kompilasi Next.js 16 Turbopack bersih, 58 laluan).
+- [x] 5. Kemas kini dokumentasi `task.md`, `lessons.md`, dan `memory.md`.
+- [x] 6. Maklumkan kepada pengguna punca masalah dan penyelesaian yang dilaksanakan dengan padat dalam Bahasa Melayu.
 
 ### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
-1. **Punca Isu & Keperluan Pengguna**:
-   - Sebelum ini, apabila acara berbilang hari (`totalDays > 1`) dikonfigurasikan, sistem secara automatik menjana pilihan sijil harian (`Hari 1`, `Hari 2`) DAN sijil gabungan `Semua Hari (Penuh)` serentak.
-   - Penganjur acara kursus/bengkel/seminar di Malaysia seringkali mempunyai dasar pengeluaran sijil yang khusus:
-     - Sesetengah acara bengkel modular hanya mengeluarkan sijil bagi setiap hari dihadiri (contoh: Hari 1 - Asas, Hari 2 - Lanjutan) dan TIDAK mahu sijil gabungan "Semua Hari".
-     - Sesetengah persidangan/seminar berbilang hari hanya mengeluarkan SATU sijil kehadiran penuh untuk keseluruhan program dan TIDAK mahu sijil harian yang berpecah-belah.
-     - Sesetengah penganjur mahu kedua-duanya sekali gus.
-   - Pengguna meminta: *"kalau semua hari (penuh) tu kalau user nak baru ada, maksudnya salah satu, sama ada sijil harian atau penuh"*.
-2. **Seni Bina Tiga Mod Sijil Berbilang Hari (`MultiDayCertMode`)**:
-   - `daily_only` (Lalai untuk multi-day): Sijil harian sahaja (`[Hari 1, Hari 2, ...]`). Pilihan gabungan "Semua Hari (Penuh)" langsung tidak dijana.
-   - `full_only`: Hanya satu sijil gabungan penuh dikembalikan (`[Semua Hari (Penuh)]`). Pada portal semakan awam `/check/[formId]`, sistem mengesan `dailyCertificates.length === 1` lalu menyembunyikan tab pemilih dan terus memaparkan sijil tunggal tersebut dengan julat tarikh penuh acara secara bersih.
-   - `both`: Menjana `[Hari 1, Hari 2, ..., Semua Hari (Penuh)]` untuk penganjur yang mahu memberi kebebasan kepada peserta memuat turun mana-mana format.
-3. **Penyimpanan Sifar-Migrasi (Zero-Migration JSONB Persistence)**:
-   - Medan `multiDayCertMode` disimpan di bawah `attendanceSettings.checkInOut` yang disirikan ke dalam lajur `forms.attendance_settings` (JSONB) di Supabase. Tiada perubahan skema SQL diperlukan dan 100% selamat untuk pangkalan data pengeluaran.
+1. **Pemisahan Lengkap Antara Paparan Langsung vs Enjin Muat Turun**:
+   - Paparan skrin menggunakan instans `qrCode` (`type: 'svg'`) yang dioptimumkan untuk rendering vektor pantas dan tajam dalam pelayar.
+   - Panggilan muat turun tidak lagi memutasi objek paparan skrin. Sebaliknya, instans muat turun baharu dibina serta-merta dengan data URL terkini.
+   - Ini menghapuskan sepenuhnya isu *stale canvas cache* dalam `qr-code-styling` di mana kanvas lama tidak pernah dipadamkan selepas muat turun kali pertama.
+2. **Kepatuhan Quiet Zone Piawaian Antarabangsa (ISO/IEC 18004)**:
+   - Kod QR memerlukan zon penampan minimum 4-modul pada sekelilingnya.
+   - Sebelum ini, `margin: 0` menyebabkan fail imej PNG yang dimuat turun tidak mempunyai sempadan putih. Ini menyebabkan kamera telefon gagal mengimbas apabila pengguna membuka gambar dalam *gallery viewer* bertema gelap (dark mode).
+   - Kini, formula `Math.max(20, Math.round(resolution * 0.04))` (80px bagi PNG 2000px, 12px bagi SVG) menyertakan sempadan latar belakang yang bersih, membolehkan sebarang kamera telefon mengimbas dengan 100% ketepatan.

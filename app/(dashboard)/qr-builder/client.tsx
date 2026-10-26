@@ -27,14 +27,20 @@ export default function QrBuilderClient({ initialData }: QrBuilderClientProps) {
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
-    if (!url) {
+    const trimmedUrl = url.trim();
+    if (!trimmedUrl) {
       toast.error('Please enter a URL');
       return;
     }
 
     setIsSaving(true);
     try {
-      const res = await createOrUpdateQRCode(initialData?.id, title, url, settings);
+      const res = await createOrUpdateQRCode(
+        initialData?.id,
+        title.trim() || 'Untitled QR',
+        trimmedUrl,
+        settings
+      );
 
       if (res.success) {
         toast.success('QR Code saved successfully');
@@ -129,7 +135,7 @@ export default function QrBuilderClient({ initialData }: QrBuilderClientProps) {
               </CardHeader>
               <CardContent className="px-0 lg:px-6">
                 <QrCustomizer
-                  url={url || 'https://klikform.com'}
+                  url={url}
                   settings={settings}
                   onSettingsChange={setSettings}
                 />

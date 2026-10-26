@@ -609,3 +609,16 @@
   (2) **Penyelesaian Seni Bina Bersih**:
   - **Pemisahan Peranan Butang Tab vs Paparan Tarikh**: Tab sub-header bertindak sebagai penukar pantas ringkas (`[ 🏅 Hari 1 ]`, `[ 🏅 Hari 2 ]`, `[ 🏅 Semua Hari (Penuh) ]`) dengan `whitespace-nowrap shrink-0` dan `justify-between`. Tarikh penuh tidak perlu disumbat ke dalam teks butang pil kerana ia sedia terpapar secara automatik pada sari kata header di atasnya dan pada kad perincian di sebelah kiri.
   - **Susunan Bertindan Kad Perincian Kiri (`flex-col gap-0.5`)**: Pada senarai pilihan kad kiri, pisahkan nama sijil (baris atas) dan tarikh penuh (baris bawah) secara bertindan. Ini menghapuskan 100% masalah pemotongan teks elipsis (`Semua Hari (...`) dan memberi ruang pernafasan yang lapang dan elegan pada semua saiz skrin.
+
+
+- **Pepijat Stale Canvas Cache dalam `qr-code-styling` & Keperluan Quiet Zone ISO/IEC 18004**:
+  (1) **Punca Masalah ("bila sy scan di website okay je, tapi bila download dan scan balik, dia tak direct link yg sy letak")**:
+  - Apabila pustaka `qr-code-styling` diinisialisasikan dengan `type: 'svg'`, ia mencipta dan menyimpan objek kanvas dalaman `this._domCanvas` dan `this._canvasDrawingPromise` apabila muat turun PNG dipanggil kali pertama.
+  - Namun, kaedah `.update(...)` dalam `qr-code-styling` HANYA mengemas kini SVG di skrin apabila `type === 'svg'` dan langsung **TIDAK PERNAH** memadam atau melukis semula kanvas `this._domCanvas`.
+  - Jika pengguna menguji muat turun sebelum memasukkan pautan sebenar, atau menukar URL selepas muat turun kali pertama: paparan skrin mengemas kini SVG (menyebabkan imbasan di monitor skrin berjaya menghala ke pautan baharu), tetapi panggilan muat turun seterusnya mengembalikan kanvas lapuk (*stale cached canvas*) yang masih memegang kod QR pautan lama/lalai (`https://klikform.com`).
+  - Selain itu, `margin: 0` menyebabkan tiada sebarang zon penampan (*quiet zone*) pada fail imej PNG/SVG yang dimuat turun (corak penjuru hitam mencecah tepi 0px fail), menyebabkan kamera telefon gagal mengesan corak penjuru apabila dilihat dalam pemapar imej bertema gelap atau dicetak.
+  (2) **Penyelesaian Seni Bina Eksport Bebas-Status (*Stateless Dedicated Export Instance*)**:
+  - **Instans Muat Turun Khusus Baharu**: Jangan sesekali memutasi instans paparan skrin `qrCode` sedia ada. Sebaliknya, setiap kali pengguna menekan butang muat turun, cipta instans `new QRCodeStylingConstructor(...)` yang segar khusus untuk eksport tersebut dengan nilai `cleanUrl` (`url.trim()`) terkini.
+  - **Render Terus ke Kanvas untuk PNG**: Tetapkan `type: 'canvas'` secara eksplisit untuk eksport PNG supaya ia dilukis terus ke kanvas 2000x2000px tanpa melalui penukaran tak segerak SVG-ke-imej yang rapuh.
+  - **Quiet Zone Piawaian ISO/IEC 18004**: Tetapkan `margin: format === 'png' ? Math.max(20, Math.round(resolution * 0.04)) : 12` (contohnya 80px pada 2000px PNG) bersama warna latar belakang `backgroundColor`. Ini menjamin kod QR sentiasa mempunyai sempadan putih yang cukup untuk dikesan dengan tepat oleh mana-mana pengimbas telefon pintar pada sebarang latar belakang.
+  - **Pemberitahuan Status Muat Turun**: Sediakan status penunjuk `downloadingFormat` (`'png' | 'svg'`) dengan ikon `<Loader2 className="animate-spin" />` dan sekat klik berganda (*disable double-click*) semasa proses penjanaan sedang berjalan.
