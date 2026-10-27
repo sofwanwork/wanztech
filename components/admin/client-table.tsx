@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { AdminClientItem } from '@/actions/admin';
+import { AdminClientItem, deleteClientAction } from '@/actions/admin';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +22,15 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Search,
   Filter,
   Copy,
@@ -32,8 +41,11 @@ import {
   Users,
   FileText,
   Send,
+  Trash2,
+  Loader2,
 } from 'lucide-react';
 import { EditSubscriptionDialog } from './edit-subscription-dialog';
+import { PRIMARY_ADMIN_EMAIL } from '@/lib/auth/admin';
 import { SubscriptionTier, SubscriptionStatus } from '@/lib/types/subscription';
 import { toast } from 'sonner';
 
@@ -51,6 +63,32 @@ export function ClientTable({ initialClients }: ClientTableProps) {
   // Dialog state
   const [selectedClient, setSelectedClient] = useState<AdminClientItem | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  // Delete Dialog state
+  const [clientToDelete, setClientToDelete] = useState<AdminClientItem | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteClient = async () => {
+    if (!clientToDelete) return;
+    setIsDeleting(true);
+    try {
+      const res = await deleteClientAction(clientToDelete.id);
+      if (!res.success) {
+        toast.error(res.error || 'Gagal memadam klien');
+        return;
+      }
+      setClients((prev) => prev.filter((c) => c.id !== clientToDelete.id));
+      toast.success(`Klien ${clientToDelete.fullName} berjaya dipadam secara kekal.`);
+      setDeleteDialogOpen(false);
+      setClientToDelete(null);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Ralat semasa memadam klien';
+      toast.error(msg);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // Filter clients
   const filteredClients = useMemo(() => {
@@ -351,15 +389,32 @@ export function ClientTable({ initialClients }: ClientTableProps) {
 
                       {/* Tindakan */}
                       <TableCell className="text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleOpenEdit(client)}
-                          className="h-8 text-xs font-medium text-slate-700 border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors"
-                        >
-                          <Edit className="h-3 w-3 mr-1.5" />
-                          Urus Pelan
-                        </Button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenEdit(client)}
+                            className="h-8 text-xs font-medium text-slate-700 border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors"
+                          >
+                            <Edit className="h-3 w-3 mr-1.5" />
+                            Urus Pelan
+                          </Button>
+
+                          {client.email.toLowerCase().trim() !== PRIMARY_ADMIN_EMAIL.toLowerCase().trim() && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setClientToDelete(client);
+                                setDeleteDialogOpen(true);
+                              }}
+                              className="h-8 w-8 p-0 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                              title="Padam Klien"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -377,6 +432,49 @@ export function ClientTable({ initialClients }: ClientTableProps) {
         onOpenChange={setDialogOpen}
         onSuccess={handleSubscriptionUpdated}
       />
+
+      {/* Delete Confirmation Alert Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent className="sm:max-w-[450px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <span className="p-1.5 bg-rose-100 text-rose-600 rounded-lg">
+                <Trash2 className="h-4 w-4" />
+              </span>
+              Padam Klien Secara Kekal?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-slate-600 pt-2 leading-relaxed">
+              Adakah anda pasti mahu memadam akaun{' '}
+              <strong className="text-slate-900 font-semibold">{clientToDelete?.fullName}</strong> (
+              <span className="font-mono text-xs text-slate-800">{clientToDelete?.email}</span>)?
+              <br />
+              <br />
+              <span className="text-rose-600 font-medium block bg-rose-50 border border-rose-200 rounded-lg p-2.5 text-xs">
+                Amaran: Tindakan ini tidak boleh diundur. Semua borang ({clientToDelete?.formsCount || 0}),
+                respons ({clientToDelete?.totalSubmissions || 0}), dan langganan akan dipadam serta-merta.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 gap-2">
+            <AlertDialogCancel disabled={isDeleting}>Batal</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteClient}
+              disabled={isDeleting}
+              className="bg-rose-600 hover:bg-rose-700 text-white font-medium"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                  Memadam...
+                </>
+              ) : (
+                'Ya, Padam Klien'
+              )}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

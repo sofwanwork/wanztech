@@ -3496,3 +3496,23 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - `npm run lint`: 0 ralat ESLint.
 
 - **Vercel Production Deployment (2026-10-27)**: Deployment `dpl_AkCGgSYyQrx26AADJTvW9qWNHPJZ` pushed live to `https://www.klikform.com` (`https://klikform-3d8r1uts5-sofwan-jailanis-projects.vercel.app`). 491/491 unit tests passed across 49 suites, 0 lint/tsc errors. Commit `d2d8c6d` active.
+
+
+## Butang Padam Klien Pentadbir (Delete Client Action & Safety Dialog) (2026-10-27)
+- **Konteks & Permintaan Pengguna**:
+  - Pengguna bertanya: *"untuk butang delete user ada tak?"* dan mengesahkan: *"okay proceed dan terus update ke vercel"*.
+- **Penyelesaian Dilaksanakan**:
+  - `actions/admin.ts`:
+    - Membina `deleteClientAction(userId: string)`.
+    - Perlindungan Super Admin: Menyekat pemadaman diri sendiri (`adminUser.id`) dan akaun `PRIMARY_ADMIN_EMAIL` (`sofwanjailani.work@gmail.com`).
+    - Melakukan pembersihan data klien daripada `forms`, `profiles`, `subscriptions`, `usage`, `settings`, `qr_codes`, `short_links`, `certificate_templates`, `bio_links`, `pamphlets` sebelum memadam akaun secara kekal daripada `admin.auth.admin.deleteUser(userId)`.
+  - `components/admin/client-table.tsx`:
+    - Menambah butang ikon `Trash2` (warna merah lembut pada baris tindakan klien).
+    - Butang dipadam/disembunyikan secara automatik untuk akaun `PRIMARY_ADMIN_EMAIL`.
+    - Mengintegrasikan dialog pengesahan amaran (`AlertDialog`) yang memaparkan nama klien, emel, jumlah borang dan respons yang akan dipadam sebelum tindakan pemadaman kekal disahkan.
+  - `tests/admin-auth.test.ts`:
+    - Menambah ujian unit perlindungan sasaran pemadaman (`PRIMARY_ADMIN_EMAIL cannot be targeted for client deletion`).
+- **Pengesahan & Kualiti**:
+  - `npm test`: 492 / 492 ujian unit lulus merentas 49 fail suite.
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat ESLint.

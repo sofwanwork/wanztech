@@ -1,7 +1,7 @@
 'use server';
 
 import { createAdminClient } from '@/utils/supabase/admin';
-import { verifyAdminSession } from '@/lib/auth/admin';
+import { verifyAdminSession, PRIMARY_ADMIN_EMAIL } from '@/lib/auth/admin';
 import { SubscriptionTier, SubscriptionStatus } from '@/lib/types/subscription';
 import { revalidatePath } from 'next/cache';
 
@@ -262,3 +262,65 @@ export async function updateClientSubscriptionAction(params: {
     return { success: false, error: message };
   }
 }
+
+/**
+ * Permanently delete a client from Supabase Auth and all associated records.
+ * Protected by verifyAdminSession().
+ * Strictly prevents deletion of Super Admin accounts.
+ */
+export async function deleteClientAction(userId: string): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  try {
+    const adminUser = await verifyAdminSession();
+
+    if (!userId) {
+      return { success: false, error: 'ID Pengguna diperlukan' };
+    }
+
+    // Super Admin self-deletion prevention
+    if (userId === adminUser.id) {
+      return { success: false, error: 'Anda tidak boleh memadam akaun Super Admin anda sendiri!' };
+    }
+
+    const admin = createAdminClient();
+
+    // Check target user to guarantee we never delete PRIMARY_ADMIN_EMAIL
+    const { data: targetData, error: targetError } = await admin.auth.admin.getUserById(userId);
+    if (targetError || !targetData?.user) {
+      return { success: false, error: 'Pengguna tidak ditemui' };
+    }
+
+    const targetEmail = targetData.user.email?.toLowerCase().trim();
+    if (targetEmail === PRIMARY_ADMIN_EMAIL.toLowerCase().trim()) {
+      return { success: false, error: 'Tidak dibenarkan memadam akaun Super Admin!' };
+    }
+
+    // Delete related rows that might not have ON DELETE CASCADE
+    await Promise.allSettled([
+      admin.from('forms').delete().eq('user_id', userId),
+      admin.from('profiles').delete().eq('id', userId),
+      admin.from('subscriptions').delete().eq('user_id', userId),
+      admin.from('usage').delete().eq('user_id', userId),
+      admin.from('settings').delete().eq('user_id', userId),
+      admin.from('qr_codes').delete().eq('user_id', userId),
+      admin.from('short_links').delete().eq('user_id', userId),
+      admin.from('certificate_templates').delete().eq('user_id', userId),
+      admin.from('bio_links').delete().eq('user_id', userId),
+      admin.from('pamphlets').delete().eq('user_id', userId),
+    ]);
+
+    // Finally delete from Auth users
+    const { error: deleteError } = await admin.auth.admin.deleteUser(userId);
+    if (deleteError) throw deleteError;
+
+    revalidatePath('/admin');
+
+    return { success: true };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Gagal memadam klien';
+    return { success: false, error: message };
+  }
+}
+

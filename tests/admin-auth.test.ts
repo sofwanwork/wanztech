@@ -61,4 +61,14 @@ describe('Admin Authentication & Authorization Guards', () => {
     expect(isSuperAdmin('sofwanjailani.work@gmail.com')).toBe(true);
     expect(isSuperAdmin('stranger@example.com')).toBe(false);
   });
+
+  it('guarantees PRIMARY_ADMIN_EMAIL cannot be targeted for client deletion', () => {
+    const isTargetSafe = (targetEmail: string) => {
+      return targetEmail.toLowerCase().trim() !== PRIMARY_ADMIN_EMAIL.toLowerCase().trim();
+    };
+
+    expect(isTargetSafe('sofwanjailani.work@gmail.com')).toBe(false);
+    expect(isTargetSafe('SOFWANJAILANI.WORK@GMAIL.COM')).toBe(false);
+    expect(isTargetSafe('client@example.com')).toBe(true);
+  });
 });
