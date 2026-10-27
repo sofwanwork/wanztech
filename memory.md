@@ -3494,3 +3494,5 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - `npm test`: 491 / 491 ujian unit lulus merentas 49 fail suite.
   - `npm run typecheck`: 0 ralat TypeScript.
   - `npm run lint`: 0 ralat ESLint.
+
+- **Vercel Production Deployment (2026-10-27)**: Deployment `dpl_AkCGgSYyQrx26AADJTvW9qWNHPJZ` pushed live to `https://www.klikform.com` (`https://klikform-3d8r1uts5-sofwan-jailanis-projects.vercel.app`). 491/491 unit tests passed across 49 suites, 0 lint/tsc errors. Commit `d2d8c6d` active.
