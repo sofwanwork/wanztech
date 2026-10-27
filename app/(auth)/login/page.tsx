@@ -100,7 +100,7 @@ export default function LoginPage() {
 
   async function handleSignUp() {
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -114,9 +114,17 @@ export default function LoginPage() {
 
     if (error) {
       toast.error(error.message);
+    } else if (data?.user?.identities && data.user.identities.length === 0) {
+      // Supabase anti-enumeration: returns empty identities when email already exists
+      toast.error('Emel ini telah pun berdaftar. Sila log masuk atau gunakan "Continue with Google".');
+      setActiveTab('login');
+    } else if (data?.session) {
+      // Auto-confirmed session
+      toast.success('Pendaftaran berjaya! Sedang log masuk...');
+      router.push(getSafeLoginRedirect());
     } else {
       setSignupSuccess(true);
-      toast.success('Account created! Please verify your email.');
+      toast.success('Akaun berjaya dicipta! Sila semak emel anda.');
     }
     setLoading(false);
   }
@@ -196,11 +204,13 @@ export default function LoginPage() {
                   <div className="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
                     <CheckCircle2 className="h-8 w-8 text-green-600" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Check your inbox</h3>
-                  <p className="text-gray-500 mb-6">
-                    We&apos;ve sent a verification link to{' '}
-                    <span className="font-semibold text-gray-900">{email}</span>. Please confirm
-                    your account to log in.
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Semak Peti Masuk Anda</h3>
+                  <p className="text-gray-500 mb-3 text-sm">
+                    Pautan pengesahan telah dihantar ke{' '}
+                    <span className="font-semibold text-gray-900">{email}</span>. Sila sahkan akaun anda untuk log masuk.
+                  </p>
+                  <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2.5 mb-6 max-w-sm">
+                    <strong>Perhatian:</strong> Sila pastikan anda menyemak folder <strong>Spam / Junk Mail</strong> sekiranya emel tidak muncul dalam Inbox utama.
                   </p>
                   <Button
                     onClick={() => {

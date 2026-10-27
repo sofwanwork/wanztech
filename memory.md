@@ -3442,3 +3442,55 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - `npm run typecheck`: 0 ralat TypeScript.
   - `npm run lint`: 0 ralat / 0 amaran ESLint.
   - `npm run build`: Kompilasi Next.js 16 Turbopack bersih tanpa sebarang ralat (58 laluan).
+
+
+## Admin Dashboard Pengurusan Klien & Langganan Pentadbir (2026-10-27)
+- **Konteks & Keperluan Pengguna**:
+  - Permintaan pengguna: *"boleh ke buat admin dashboard, utk urus client"* dan pengesahan syarat sekatan ketat: *"proceed, cuma yg boleh access admin hanya sofwanjailani.work@gmail.com"*.
+- **Penyelesaian Seni Bina Dilaksanakan**:
+  1. **Keselamatan 3-Lapisan (Defense in Depth)**:
+     - `lib/auth/admin.ts`:
+       - Mentakrifkan `PRIMARY_ADMIN_EMAIL = 'sofwanjailani.work@gmail.com'`.
+       - Fungsi `isSuperAdmin(email?: string | null)` dengan pengesanan huruf besar/kecil (case-insensitive) dan pemotongan ruang kosong (`.trim().toLowerCase()`). Menyokong penambahan emel melalui pemboleh ubah persekitaran `ADMIN_EMAILS`.
+       - Fungsi pengawal pelayan `verifyAdminSession()` yang menyemak sesi pengguna Supabase Auth dan mengarahkan pengguna bukan admin keluar ke `/forms`.
+     - `proxy.ts`:
+       - Menambah laluan `'/admin'` ke dalam `protectedRoutes`.
+       - Menapis sebarang permintaan `pathname.startsWith('/admin')` di peringkat Edge. Jika emel pengguna bukan admin yang sah, pelayar diarahkan serta-merta ke `/forms` tanpa memuatkan sebarang data sulit.
+     - `components/dashboard/sidebar.tsx`:
+       - Pautan menu "Admin Panel" dengan ikon `ShieldCheck` hanya dipaparkan dalam bar sisi sekiranya `profile.isAdmin === true`. Pengguna biasa langsung tidak melihat pautan ini.
+     - `lib/types/common.ts` & `lib/storage/forms.ts`:
+       - Menambah `email` dan `isAdmin` pada antara muka `Profile`.
+  2. **Server Actions (`actions/admin.ts`)**:
+     - `getAdminStatsAction()`: Mengira metrik utama pentadbir secara selari: Jumlah Klien, Bilangan Klien Pro, Bilangan Klien Enterprise, Klien Percuma, Jumlah Borang dicipta, Total Respons (*submissions*), dan Jumlah Hasil Transaksi BCL.my yang berjaya.
+     - `getAdminClientsAction()`: Menggabungkan senarai pengguna Supabase Auth (`admin.auth.admin.listUsers`) dengan jadual `profiles`, `subscriptions`, `forms`, dan `usage` untuk menghasilkan senarai klien lengkap dengan statistik sebenar.
+     - `updateClientSubscriptionAction({ userId, tier, status, currentPeriodEnd })`: Membolehkan pentadbir menukar pelan langganan (Free, Pro, Enterprise), status (Active, Expired, Cancelled), dan tarikh luput langganan secara manual menggunakan *Service Role*.
+  3. **Antara Muka Pengguna Admin (`app/(admin)/admin/`)**:
+     - `app/(admin)/layout.tsx`: Susun atur khusus pentadbir dengan bar navigasi atas bertema gelap, lencana Super Admin, petunjuk status emel pentadbir yang sedang log masuk, dan butang pantas kembali ke Dashboard Klien.
+     - `app/(admin)/admin/page.tsx`: Halaman utama yang memaparkan 6 kad metrik statistik dan jadual pengurusan klien.
+     - `components/admin/client-table.tsx`: Jadual klien responsif dengan kotak carian langsung (nama, emel, username), penapis pelan (Free, Pro, Enterprise), penapis status (Active, Expired, Cancelled), bilangan borang & respons, dan butang "Salin Emel".
+     - `components/admin/edit-subscription-dialog.tsx`: Modal pengurusan pelan dengan pemilihan tier, status, pemilih tarikh luput, dan pintasan pantas (`+ 1 Bulan`, `+ 1 Tahun`, `Lifetime` sehingga 2099).
+- **Pengesahan & Kualiti**:
+  - `tests/admin-auth.test.ts`: 7 ujian unit kelayakan dan sekatan keselamatan pentadbir lulus.
+  - `tests/admin-actions.test.ts`: 4 ujian unit pemprosesan data dan carian klien lulus.
+  - `npm test`: 491 / 491 ujian unit lulus merentas 49 fail suite.
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm run build`: Kompilasi Next.js 16 Turbopack bersih tanpa sebarang ralat (laluan `/admin` dinamik diiktiraf).
+
+
+## Pembaikan Pengendalian Pendaftaran Emel Supabase & Pencegahan Perangkap Emel Tidak Diterima (2026-10-27)
+- **Konteks & Laporan Pengguna**:
+  - Pengguna melaporkan: *"kenapa sy register tak dapat email ya"*.
+- **Punca Asal Ralat (Root Cause Analysis)**:
+  - Semakan pengkalan data mendapati akaun `sofwanjailani.work@gmail.com` sememangnya sudah pun berdaftar dalam pangkalan data KlikForm melalui Google OAuth (`providers: ['google']`) sejak 27 Ogos 2026 dan status emelnya sudah pun disahkan (`email_confirmed_at` aktif).
+  - Dalam Supabase Auth, apabila seseorang cuba mendaftar semula (`signUp()`) menggunakan emel yang sudah wujud, Supabase mengembalikan status tanpa ralat (`error: null`) tetapi dengan array identiti kosong (`data.user.identities: []`) untuk mencegah serangan *email enumeration*. Supabase **LANGSUNG TIDAK MENGHANTAR** sebarang emel pengesahan baharu.
+  - Sebelum ini, fungsi `handleSignUp()` di `app/(auth)/login/page.tsx` hanya memeriksa `if (error)`. Oleh kerana `error` adalah `null`, sistem tersilap menganggap pendaftaran baru berjaya lalu memaparkan *"Account created! Please verify your email"*, menyebabkan pengguna menunggu emel yang sebenarnya tidak pernah dihantar.
+- **Penyelesaian Dilaksanakan**:
+  - `app/(auth)/login/page.tsx`:
+    - Mengemaskini `handleSignUp()` untuk memeriksa `data.user.identities.length === 0`. Jika emel sudah wujud, sistem segera memberi maklum balas jelas: *"Emel ini telah pun berdaftar. Sila log masuk atau gunakan 'Continue with Google'"* dan menukar tab aktif ke *Login*.
+    - Menambah pengesanan `data.session` (untuk auto-confirmed signups) supaya pengguna terus dibawa masuk ke dashboard tanpa tersekat pada skrin verifikasi.
+    - Menambah makluman proaktif pada kad verifikasi emel supaya pengguna memeriksa folder **Spam / Junk Mail** jika menggunakan emel baharu.
+- **Pengesahan & Kualiti**:
+  - `npm test`: 491 / 491 ujian unit lulus merentas 49 fail suite.
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat ESLint.

@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { Form, Profile } from '@/lib/types';
+import { isSuperAdmin } from '@/lib/auth/admin';
 import { cache } from 'react';
 
 // Helper to get user ID
@@ -299,12 +300,23 @@ export async function getProfile(): Promise<Profile | undefined> {
   const { supabase, user } = await getUser();
   const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
 
-  if (error || !data) return undefined;
+  if (error || !data) {
+    return {
+      id: user.id,
+      username: user.email?.split('@')[0] || 'user',
+      full_name: (user.user_metadata?.full_name as string) || user.email?.split('@')[0] || 'User',
+      avatar_url: user.user_metadata?.avatar_url as string | undefined,
+      email: user.email,
+      isAdmin: isSuperAdmin(user.email),
+    };
+  }
 
   return {
     id: data.id,
     username: data.username,
     full_name: data.full_name,
     avatar_url: data.avatar_url,
+    email: user.email,
+    isAdmin: isSuperAdmin(user.email),
   };
 }

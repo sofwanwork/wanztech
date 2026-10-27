@@ -622,3 +622,24 @@
   - **Render Terus ke Kanvas untuk PNG**: Tetapkan `type: 'canvas'` secara eksplisit untuk eksport PNG supaya ia dilukis terus ke kanvas 2000x2000px tanpa melalui penukaran tak segerak SVG-ke-imej yang rapuh.
   - **Quiet Zone Piawaian ISO/IEC 18004**: Tetapkan `margin: format === 'png' ? Math.max(20, Math.round(resolution * 0.04)) : 12` (contohnya 80px pada 2000px PNG) bersama warna latar belakang `backgroundColor`. Ini menjamin kod QR sentiasa mempunyai sempadan putih yang cukup untuk dikesan dengan tepat oleh mana-mana pengimbas telefon pintar pada sebarang latar belakang.
   - **Pemberitahuan Status Muat Turun**: Sediakan status penunjuk `downloadingFormat` (`'png' | 'svg'`) dengan ikon `<Loader2 className="animate-spin" />` dan sekat klik berganda (*disable double-click*) semasa proses penjanaan sedang berjalan.
+
+
+- **Supabase Auth Duplicate Signup Trap & Anti-Enumeration (`identities.length === 0`)**:
+  - *Root Cause of Missing Signup Emails*: When a user attempts to sign up via `supabase.auth.signUp()` with an email that is already registered in `auth.users` (for example, previously registered via Google OAuth), Supabase returns `{ data: { user: ..., session: null }, error: null }` where `data.user.identities` is an empty array (`[]`). Supabase intentionally suppresses the error and **DOES NOT SEND ANY CONFIRMATION EMAIL** to prevent malicious email enumeration.
+  - *Frontend Trap*: If frontend authentication code only checks `if (error)` and assumes `else` means a successful registration, it flashes a misleading *"Account created! Please check your email"* message. The user waits indefinitely for an email that was never dispatched.
+  - *Standard Solution*: Always inspect the returned identities array:
+    ```ts
+    const { data, error } = await supabase.auth.signUp(...);
+    if (error) {
+      toast.error(error.message);
+    } else if (data?.user?.identities && data.user.identities.length === 0) {
+      // Email is already registered
+      toast.error('Emel ini telah pun berdaftar. Sila log masuk atau gunakan "Continue with Google".');
+      setActiveTab('login');
+    } else if (data?.session) {
+      // User auto-confirmed
+      router.push('/forms');
+    } else {
+      setSignupSuccess(true);
+    }
+    ```

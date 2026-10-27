@@ -1,49 +1,58 @@
-# Pembaikan Muat Turun Kod QR (QR Builder Download Stale Link & Missing Quiet Zone Fix) ✅ SELESAI
+# Pembangunan Admin Dashboard untuk Pengurusan Klien (KlikForm) ✅ SELESAI
 
-**Masalah Pengguna**:
-Pengguna melaporkan: "dekat qr builder ni, bila sy scan di website okay je, tapi bila download dan scan balik, dia tak direct link yg sy letak" (Bila imbas di laman web berjaya terus ke pautan, tetapi apabila fail dimuat turun dan diimbas semula, ia tidak menghala ke pautan yang diletakkan).
+**Objektif**:
+Membina Admin Dashboard berpusat khusus untuk pengurusan klien KlikForm (senarai klien, semakan penggunaan, dan pengurusan pelan langganan manual) dengan kawalan keselamatan ketat di mana **HANYA** emel `sofwanjailani.work@gmail.com` dibenarkan mengaksesnya.
 
-**Punca Asal Ralat (Root Causes)**:
-1. **Pepijat Stale Canvas Cache dalam `qr-code-styling`**:
-   - Komponen `QrCustomizer` diinisialisasikan dengan mod `type: 'svg'` untuk paparan SVG di skrin.
-   - Pustaka `qr-code-styling` menyimpan cache dalaman `this._domCanvas` dan `this._canvasDrawingPromise`.
-   - Apabila fungsi muat turun PNG pertama kali dipanggil, ia mencipta `this._domCanvas` dan melukis kod QR pada kanvas tersebut.
-   - Walau bagaimanapun, kerana `type` ialah `'svg'`, kaedah `.update(...)` HANYA mengemas kini SVG di skrin (`this._setupSvg()`) dan **TIDAK PERNAH** memadam atau melukis semula `this._domCanvas`!
-   - Akibatnya, pada sebarang muat turun seterusnya (atau jika pengguna menukar URL selepas memuat turun kali pertama), pustaka mengembalikan kanvas lama yang lapuk (*stale canvas* yang mengandungi pautan lama seperti `https://klikform.com`). Apabila diimbas, fail PNG tersebut menghala ke pautan lama, bukan pautan baharu yang pengguna masukkan!
-2. **Ketiadaan Quiet Zone / Margin (`margin: 0`)**:
-   - Secara lalai dalam `QRCodeStyling`, `margin: 0` digunakan.
-   - Pada paparan web, kod QR berada di dalam kad putih `<Card className="p-6">` (margin 24px) yang bertindak sebagai zon penampan (quiet zone) semula jadi, membolehkan kamera telefon mengimbas dengan mudah.
-   - Namun apabila fail PNG atau SVG dimuat turun, corak penjuru hitam (*finder patterns*) mencecah ke sempadan 0px fail imej tanpa sebarang sempadan putih. Apabila fail dibuka dalam pemapar imej yang bertema gelap atau dicetak, ketiadaan zon penampan 4-modul (piawaian ISO/IEC 18004) menyebabkan pengimbas kamera gagal mengecam atau gagal memproses pautan dengan betul.
-3. **Mutasi dan 'Race Condition' dalam `handleDownload`**:
-   - `handleDownload` memutasi objek `qrCode` paparan skrin (`update({ width: 2000 })`), memanggil muat turun, kemudian segera mengecilkannya kembali ke 300px di dalam blok `finally`. Kerana `.update()` adalah segerak (synchronous) tetapi proses lukisan kanvas adalah tak segerak (asynchronous), mutasi ini mencetuskan konflik saiz dan ralat render.
-4. **Pembersihan URL (*Whitespace Trimming*)**:
-   - URL yang disalin dari mesej sering mempunyai ruang kosong di hujung/hadapan (*trailing spaces*), menyebabkan sesetengah pengimbas mudah alih menganggapnya teks carian mentah dan bukannya pautan terus.
+---
 
-**Pelan Tindakan**:
-- [x] 1. Siasat dan rancang seni bina pembaikan muat turun kod QR.
-- [x] 2. Reka bentuk semula fungsi muat turun dalam `components/forms/qr-customizer/index.tsx`:
-  - [x] 2.1 Cipta instans muat turun khusus (*fresh dedicated instance*) secara dinamik setiap kali muat turun ditekan dengan `data: cleanUrl`, memastikan tiada cache lama atau pergantungan pada `this._domCanvas` yang lapuk.
-  - [x] 2.2 Untuk PNG: Gunakan `type: 'canvas'` terus dengan resolusi sebenar (contohnya 2000x2000px) dan zon penampan margin yang kemas (`margin: 80` pada 2000px) dengan warna latar yang sah.
-  - [x] 2.3 Untuk SVG: Gunakan `type: 'svg'` dengan margin zon penampan yang tepat (`margin: 12`) supaya imej vektor boleh diimbas dengan lancar di mana-mana latar belakang.
-  - [x] 2.4 Elakkan sebarang mutasi terhadap instans paparan skrin `qrCode` sedia ada.
-  - [x] 2.5 Tambah margin (quiet zone) pada instans paparan skrin `qrCode` (`margin: 12`) untuk konsistensi visual.
-  - [x] 2.6 Tambah pembersihan URL (`url.trim()`) dan status penunjuk muat turun (*loading spinner*) untuk maklum balas pengguna yang lancar.
-- [x] 3. Semak dan optimumkan `app/(dashboard)/qr-builder/client.tsx` untuk memastikan URL diproses dengan bersih dan konsisten.
-- [x] 4. Pengesahan Kualiti & Ujian:
-  - [x] 4.1 Tambah ujian unit di `tests/qr-builder.test.ts`.
-  - [x] 4.2 Jalankan ujian unit penuh `npm test` (480/480 ujian lulus merentas 47 suite).
-  - [x] 4.3 Jalankan `npm run typecheck` (0 ralat TypeScript).
-  - [x] 4.4 Jalankan `npm run lint` (0 ralat ESLint).
-  - [x] 4.5 Jalankan `npm run build` (kompilasi Next.js 16 Turbopack bersih, 58 laluan).
-- [x] 5. Kemas kini dokumentasi `task.md`, `lessons.md`, dan `memory.md`.
-- [x] 6. Maklumkan kepada pengguna punca masalah dan penyelesaian yang dilaksanakan dengan padat dalam Bahasa Melayu.
+### Kawalan Akses & Keselamatan
+- **Akses Terhad**: Akses pentadbir dihadkan secara eksklusif kepada `sofwanjailani.work@gmail.com` (dengan sokongan tambahan pilihan melalui `ADMIN_EMAILS` dalam persekitaran).
+- **Pertahanan 3-Lapisan (Defense in Depth)**:
+  1. *Edge/Proxy Layer* (`proxy.ts`): Sekat sebarang cubaan capaian ke `/admin*` jika pengguna bukan admin, arahkan ke `/forms`.
+  2. *Layout / Server Component Layer* (`app/(admin)/layout.tsx`): Semakan sesi selamat melalui `verifyAdminSession()`.
+  3. *Server Action Layer* (`actions/admin.ts`): Semak identiti sebelum sebarang mutasi data menggunakan `createAdminClient()`.
+
+---
+
+### Pelan Tindakan
+
+- [x] 1. **Modul Keselamatan & Pengesahan Admin**
+  - [x] 1.1 Bina modul pembantu `lib/auth/admin.ts` (`isSuperAdmin`, `verifyAdminSession`, `PRIMARY_ADMIN_EMAIL`).
+  - [x] 1.2 Kemas kini `proxy.ts` untuk melindungi laluan `/admin*` dan menapis akses mengikut emel yang dibenarkan.
+  - [x] 1.3 Kemas kini `components/dashboard/sidebar.tsx` untuk memaparkan pautan "Admin Panel" secara eksklusif hanya kepada `sofwanjailani.work@gmail.com`.
+
+- [x] 2. **Server Actions & Pengurusan Data Klien (`actions/admin.ts`)**
+  - [x] 2.1 Bina fungsi `getAdminStatsAction` untuk metrik keseluruhan (Jumlah Klien, Bilangan Pro/Enterprise, Jumlah Borang, Jumlah Submissions, dan Hasil Transaksi).
+  - [x] 2.2 Bina fungsi `getAdminClientsAction` dengan agregasi data Auth Users, Subscriptions, Profiles, Bilangan Borang, dan Bilangan Submissions.
+  - [x] 2.3 Bina fungsi `updateClientSubscriptionAction` untuk menaik taraf / mengubah pelan klien, tarikh tamat tempoh (`current_period_end`), dan status secara manual.
+
+- [x] 3. **Antara Muka Pengguna Admin Dashboard (`app/(admin)/admin/`)**
+  - [x] 3.1 Bina susun atur khusus `app/(admin)/layout.tsx` dengan bar navigasi pentadbir, lencana Super Admin, butang kembali ke Dashboard Klien, dan petunjuk status emel admin.
+  - [x] 3.2 Bina halaman utama `app/(admin)/admin/page.tsx` dengan kad-kad statistik dan komponen pengurusan klien.
+  - [x] 3.3 Bina komponen jadual klien `components/admin/client-table.tsx` (maklumat pengguna, status langganan, jumlah borang, tarikh daftar, carian, dan penapis pelan/status).
+  - [x] 3.4 Bina dialog pengurusan pelan `components/admin/edit-subscription-dialog.tsx` (tukar tier Free/Pro/Enterprise, status aktif/luput, dan tarikh luput tersuai / pintasan +1 bulan, +1 tahun, Seumur Hidup).
+
+- [x] 4. **Ujian & Pengesahan Kualiti**
+  - [x] 4.1 Tambah ujian unit di `tests/admin-auth.test.ts` (menguji kelayakan `sofwanjailani.work@gmail.com` dan sekatan emel lain).
+  - [x] 4.2 Tambah ujian unit tindakan data admin `tests/admin-actions.test.ts`.
+  - [x] 4.3 Jalankan `npm test` (491/491 ujian lulus merentas 49 fail suite).
+  - [x] 4.4 Jalankan `npm run typecheck` (0 ralat TypeScript).
+  - [x] 4.5 Jalankan `npm run lint` (0 ralat / 0 amaran ESLint).
+  - [x] 4.6 Jalankan `npm run build` (Next.js 16 build bersih, laluan `/admin` berjaya dikompilasi).
+
+- [x] 5. **Dokumentasi & Memori**
+  - [x] 5.1 Kemas kini `memory.md` dengan laluan `/admin`, protokol keselamatan, dan keupayaan pengurusan klien.
+  - [x] 5.2 Kemas kini `task.md` dan laporkan hasil kepada pengguna.
+
+---
 
 ### Keputusan Seni Bina & Reviu (Architectural Decisions & Review)
-1. **Pemisahan Lengkap Antara Paparan Langsung vs Enjin Muat Turun**:
-   - Paparan skrin menggunakan instans `qrCode` (`type: 'svg'`) yang dioptimumkan untuk rendering vektor pantas dan tajam dalam pelayar.
-   - Panggilan muat turun tidak lagi memutasi objek paparan skrin. Sebaliknya, instans muat turun baharu dibina serta-merta dengan data URL terkini.
-   - Ini menghapuskan sepenuhnya isu *stale canvas cache* dalam `qr-code-styling` di mana kanvas lama tidak pernah dipadamkan selepas muat turun kali pertama.
-2. **Kepatuhan Quiet Zone Piawaian Antarabangsa (ISO/IEC 18004)**:
-   - Kod QR memerlukan zon penampan minimum 4-modul pada sekelilingnya.
-   - Sebelum ini, `margin: 0` menyebabkan fail imej PNG yang dimuat turun tidak mempunyai sempadan putih. Ini menyebabkan kamera telefon gagal mengimbas apabila pengguna membuka gambar dalam *gallery viewer* bertema gelap (dark mode).
-   - Kini, formula `Math.max(20, Math.round(resolution * 0.04))` (80px bagi PNG 2000px, 12px bagi SVG) menyertakan sempadan latar belakang yang bersih, membolehkan sebarang kamera telefon mengimbas dengan 100% ketepatan.
+1. **Model Keselamatan Berlapis (Zero Data Leakage for Non-Admins)**:
+   - Emel pentadbir `sofwanjailani.work@gmail.com` ditetapkan sebagai nilai lalai utama (`PRIMARY_ADMIN_EMAIL`) dalam `lib/auth/admin.ts`.
+   - Sebarang permintaan tanpa pengesahan emel ini disekat pada peringkat `proxy.ts`, dihalang pada peringkat susun atur `app/(admin)/layout.tsx`, dan disahkan semula dalam setiap *Server Action* sebelum `createAdminClient()` dilaksanakan.
+   - Pautan "Admin Panel" dalam menu bar sisi (`DashboardSidebar`) hanya disuntik sekiranya `profile.isAdmin === true`. Pengguna biasa langsung tidak melihat menu tersebut.
+2. **Pengurusan Pelan Fleksibel (Instant Tier Provisioning)**:
+   - Dialog "Urus Pelan" membolehkan pentadbir menukar status akaun klien (Free, Pro, Enterprise) dan status (Active, Expired, Cancelled) secara langsung tanpa perlu melalui gerbang pembayaran manual.
+   - Pintasan pantas disediakan untuk kemudahan pentadbir: `+ 1 Bulan`, `+ 1 Tahun`, atau `Lifetime` (2099-12-31).
+3. **Agregasi Data Pantas (Service Role Data Joining)**:
+   - Pengguna auth (`auth.admin.listUsers`) digabungkan dengan jadual `profiles`, `subscriptions`, `forms`, dan `usage` secara selari untuk memaparkan statistik penggunaan sebenar bagi setiap klien.

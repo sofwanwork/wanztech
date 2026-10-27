@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import { isSuperAdmin } from '@/lib/auth/admin';
 
 // Security: Prevent open redirect attacks by ensuring redirect path is always
 // a relative path (starts with / but not //) and not a full external URL.
@@ -12,7 +13,7 @@ function getSafeRedirectPath(path: string, fallback = '/forms'): string {
 }
 
 // Routes that require authentication
-const protectedRoutes = ['/dashboard', '/builder', '/settings', '/certificates', '/qr-builder', '/forms', '/shortener', '/responses', '/audit', '/bio', '/bio-builder', '/pamphlets', '/pamphlet-builder'];
+const protectedRoutes = ['/dashboard', '/builder', '/settings', '/certificates', '/qr-builder', '/forms', '/shortener', '/responses', '/audit', '/bio', '/bio-builder', '/pamphlets', '/pamphlet-builder', '/admin'];
 
 // Routes that are always public
 const publicRoutes = ['/login', '/form', '/s', '/check', '/verify', '/api', '/bio/', '/b/', '/present', '/p/', '/pamphlet'];
@@ -107,6 +108,13 @@ export async function proxy(request: NextRequest) {
             const loginUrl = new URL('/login', request.url);
             loginUrl.searchParams.set('redirect', getSafeRedirectPath(pathname));
             return NextResponse.redirect(loginUrl);
+        }
+
+        // Admin route guard: Restrict /admin routes strictly to authorized super admin
+        if (pathname.startsWith('/admin')) {
+            if (!isSuperAdmin(user.email)) {
+                return NextResponse.redirect(new URL('/forms', request.url));
+            }
         }
     } catch {
         // Catch any unexpected errors during auth check

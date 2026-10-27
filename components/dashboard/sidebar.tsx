@@ -18,6 +18,7 @@ import {
   ScrollText,
   Sparkles,
   BookOpen,
+  ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createFormAction } from '@/actions/forms';
@@ -113,6 +114,16 @@ export function DashboardSidebar({ profile, onNavigate, isMobile = false }: Side
       icon: ScrollText,
       active: pathname === '/audit',
     },
+    ...(profile?.isAdmin
+      ? [
+          {
+            title: 'Admin Panel',
+            href: '/admin',
+            icon: ShieldCheck,
+            active: pathname.startsWith('/admin'),
+          },
+        ]
+      : []),
   ];
 
   const [showArrow, setShowArrow] = useState(false);
