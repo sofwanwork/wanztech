@@ -19,9 +19,21 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AdminClientItem, updateClientSubscriptionAction } from '@/actions/admin';
 import { SubscriptionTier, SubscriptionStatus } from '@/lib/types/subscription';
-import { Loader2, Calendar, ShieldCheck, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
+import {
+  Loader2,
+  Calendar,
+  ShieldCheck,
+  Sparkles,
+  CheckCircle2,
+  Clock,
+  CalendarPlus,
+  RotateCcw,
+  User,
+  Info,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -51,10 +63,11 @@ export function EditSubscriptionDialog({
   // Sync state when client opens
   const handleOpenChange = (isOpen: boolean) => {
     if (isOpen && client) {
-      setTier(client.tier || 'free');
+      // Default to pro if client was previously enterprise or pro, else free
+      const safeTier: SubscriptionTier = client.tier === 'enterprise' ? 'pro' : (client.tier || 'free');
+      setTier(safeTier);
       setStatus(client.status || 'active');
       if (client.currentPeriodEnd) {
-        // Format to YYYY-MM-DD for date input
         const d = new Date(client.currentPeriodEnd);
         if (!isNaN(d.getTime())) {
           setExpiryDate(d.toISOString().split('T')[0]);
@@ -74,33 +87,61 @@ export function EditSubscriptionDialog({
       now.setMonth(now.getMonth() + 1);
       setExpiryDate(now.toISOString().split('T')[0]);
       setStatus('active');
-      // If user was free, auto-upgrade to PRO when adding time
-      if (tier === 'free') {
-        setTier('pro');
-      }
+      if (tier === 'free') setTier('pro');
     } else if (preset === '1year') {
       now.setFullYear(now.getFullYear() + 1);
       setExpiryDate(now.toISOString().split('T')[0]);
       setStatus('active');
-      if (tier === 'free') {
-        setTier('pro');
-      }
+      if (tier === 'free') setTier('pro');
     } else if (preset === 'lifetime') {
       setExpiryDate('2099-12-31');
       setStatus('active');
-      if (tier === 'free') {
-        setTier('pro');
-      }
+      if (tier === 'free') setTier('pro');
     } else if (preset === 'clear') {
       setExpiryDate('');
     }
+  };
+
+  const getExpiryBadge = () => {
+    if (!expiryDate) return null;
+    if (expiryDate.startsWith('2099')) {
+      return {
+        label: 'Seumur Hidup (Lifetime)',
+        className: 'bg-purple-100 text-purple-700 border-purple-200',
+      };
+    }
+    const exp = new Date(`${expiryDate}T23:59:59`);
+    const now = new Date();
+    const diffDays = Math.ceil((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+    const formatted = exp.toLocaleDateString('ms-MY', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+
+    if (diffDays < 0) {
+      return {
+        label: `${formatted} (Telah Luput)`,
+        className: 'bg-rose-100 text-rose-700 border-rose-200',
+      };
+    }
+    if (diffDays === 0) {
+      return {
+        label: `${formatted} (Luput Hari Ini)`,
+        className: 'bg-amber-100 text-amber-700 border-amber-200',
+      };
+    }
+    return {
+      label: `${formatted} (${diffDays} hari lagi)`,
+      className: 'bg-slate-100 text-slate-700 border-slate-200',
+    };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!client) return;
 
-    // Safety check: If user sets an expiry date in the future but tier is free, remind or auto-promote to PRO
     let finalTier = tier;
     if (tier === 'free' && expiryDate) {
       finalTier = 'pro';
@@ -142,41 +183,61 @@ export function EditSubscriptionDialog({
 
   if (!client) return null;
 
+  const expiryBadge = getExpiryBadge();
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden no-scrollbar">
-        <form onSubmit={handleSubmit}>
+      <DialogContent className="sm:max-w-[490px] p-0 overflow-hidden no-scrollbar rounded-2xl sm:rounded-3xl border border-slate-250 shadow-2xl">
+        <form onSubmit={handleSubmit} className="flex flex-col">
           {/* Header */}
-          <div className="bg-slate-900 text-white p-5 border-b border-slate-800">
-            <div className="flex items-center gap-2 text-primary mb-1">
-              <ShieldCheck className="h-5 w-5 text-indigo-400" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-indigo-300">
-                Pengurusan Langganan Pentadbir
-              </span>
+          <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white p-5 sm:p-6 border-b border-slate-800/80 relative">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-400/25 text-indigo-300 text-[10px] font-bold uppercase tracking-wider mb-3">
+              <ShieldCheck className="h-3.5 w-3.5 text-indigo-400" />
+              <span>Pengurusan Langganan Pentadbir</span>
             </div>
-            <DialogHeader>
-              <DialogTitle className="text-xl font-bold text-white">
-                {client.fullName}
-              </DialogTitle>
-              <DialogDescription className="text-slate-400 text-xs">
-                {client.email} • ID: <span className="font-mono text-slate-300">{client.id.substring(0, 8)}...</span>
-              </DialogDescription>
-            </DialogHeader>
+
+            <div className="flex items-center gap-3.5">
+              <Avatar className="h-11 w-11 border border-white/15 bg-slate-800 text-white font-bold text-sm shrink-0 shadow-inner">
+                <AvatarImage src={client.avatarUrl} alt={client.fullName} />
+                <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-violet-600 text-white font-bold text-sm">
+                  {client.fullName ? client.fullName.charAt(0).toUpperCase() : 'U'}
+                </AvatarFallback>
+              </Avatar>
+
+              <div className="min-w-0 flex-1">
+                <DialogHeader>
+                  <DialogTitle className="text-lg sm:text-xl font-bold text-white tracking-tight leading-snug truncate">
+                    {client.fullName || 'Nama Klien'}
+                  </DialogTitle>
+                  <DialogDescription className="text-slate-400 text-xs flex items-center gap-2 mt-0.5 truncate">
+                    <span className="truncate">{client.email}</span>
+                    <span className="text-slate-600 shrink-0">•</span>
+                    <span className="font-mono text-[10px] bg-slate-800/90 text-slate-300 px-1.5 py-0.5 rounded border border-slate-700/60 shrink-0">
+                      ID: {client.id.substring(0, 8)}...
+                    </span>
+                  </DialogDescription>
+                </DialogHeader>
+              </div>
+            </div>
           </div>
 
-          <div className="p-5 space-y-4 bg-white text-slate-900">
-            {/* Pelan Langganan (Tier Selector Cards) */}
-            <div className="space-y-1.5">
+          {/* Form Body */}
+          <div className="p-5 sm:p-6 space-y-4 bg-white text-slate-900">
+            {/* Pelan Langganan (2 Cards: FREE vs PRO) */}
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label className="text-xs font-bold text-slate-700 uppercase">
+                <Label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
                   Pilih Pelan / Tier
                 </Label>
-                <span className="text-[11px] font-semibold text-indigo-600 uppercase">
-                  Semasa: {tier}
+                <span className="text-[11px] font-semibold text-slate-500 uppercase">
+                  Semasa:{' '}
+                  <span className={cn('font-bold', client.tier === 'pro' ? 'text-indigo-600' : 'text-slate-700')}>
+                    {client.tier || 'FREE'}
+                  </span>
                 </span>
               </div>
 
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 {/* Free Card */}
                 <button
                   type="button"
@@ -185,16 +246,31 @@ export function EditSubscriptionDialog({
                     setExpiryDate('');
                   }}
                   className={cn(
-                    'p-3 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer',
+                    'p-3.5 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer relative group',
                     tier === 'free'
-                      ? 'border-slate-800 bg-slate-900 text-white shadow-sm ring-2 ring-slate-800'
-                      : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                      ? 'border-slate-900 bg-slate-900 text-white shadow-md ring-2 ring-slate-900/15'
+                      : 'border-slate-200/90 bg-slate-50/70 hover:bg-slate-100 text-slate-800 hover:border-slate-300'
                   )}
                 >
-                  <span className="text-xs font-bold uppercase tracking-wider">Free</span>
-                  <span className={cn('text-[11px] mt-1', tier === 'free' ? 'text-slate-300' : 'text-slate-500')}>
-                    Percuma Asas
-                  </span>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1.5">
+                      <User className={cn('h-4 w-4', tier === 'free' ? 'text-slate-300' : 'text-slate-500')} />
+                      <span className="text-sm font-bold tracking-wider uppercase">Free</span>
+                    </div>
+                    {tier === 'free' ? (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                    ) : (
+                      <div className="h-4 w-4 rounded-full border border-slate-300 group-hover:border-slate-400 shrink-0" />
+                    )}
+                  </div>
+                  <div>
+                    <p className={cn('text-xs font-semibold', tier === 'free' ? 'text-slate-200' : 'text-slate-700')}>
+                      Percuma Asas
+                    </p>
+                    <p className={cn('text-[11px] mt-0.5', tier === 'free' ? 'text-slate-400' : 'text-slate-500')}>
+                      Borang terhad • Tiada had masa
+                    </p>
+                  </div>
                 </button>
 
                 {/* Pro Card */}
@@ -205,138 +281,153 @@ export function EditSubscriptionDialog({
                     if (!expiryDate) applyPreset('1month');
                   }}
                   className={cn(
-                    'p-3 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer',
+                    'p-3.5 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer relative group',
                     tier === 'pro'
-                      ? 'border-sky-600 bg-sky-50 text-sky-950 shadow-sm ring-2 ring-sky-500'
-                      : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                      ? 'border-indigo-600 bg-gradient-to-br from-indigo-50/90 via-sky-50/40 to-white text-indigo-950 shadow-md ring-2 ring-indigo-500/25'
+                      : 'border-slate-200/90 bg-white hover:bg-indigo-50/30 text-slate-800 hover:border-indigo-200'
                   )}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-sky-600">Pro</span>
-                    <Sparkles className="h-3.5 w-3.5 text-sky-600" />
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1.5">
+                      <Sparkles className={cn('h-4 w-4', tier === 'pro' ? 'text-indigo-600' : 'text-slate-500')} />
+                      <span className="text-sm font-bold tracking-wider uppercase text-indigo-600">Pro</span>
+                    </div>
+                    {tier === 'pro' ? (
+                      <CheckCircle2 className="h-4 w-4 text-indigo-600 shrink-0" />
+                    ) : (
+                      <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-200/60">
+                        Akses Penuh
+                      </span>
+                    )}
                   </div>
-                  <span className={cn('text-[11px] mt-1', tier === 'pro' ? 'text-sky-800 font-medium' : 'text-slate-500')}>
-                    Pelan Pro
-                  </span>
-                </button>
-
-                {/* Enterprise Card */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTier('enterprise');
-                    if (!expiryDate) applyPreset('1year');
-                  }}
-                  className={cn(
-                    'p-3 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer',
-                    tier === 'enterprise'
-                      ? 'border-purple-600 bg-purple-50 text-purple-950 shadow-sm ring-2 ring-purple-500'
-                      : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
-                  )}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-purple-600">Enterprise</span>
-                    <ShieldCheck className="h-3.5 w-3.5 text-purple-600" />
+                  <div>
+                    <p className={cn('text-xs font-semibold', tier === 'pro' ? 'text-indigo-950 font-bold' : 'text-slate-700')}>
+                      Pelan Pro (Akses Penuh)
+                    </p>
+                    <p className={cn('text-[11px] mt-0.5', tier === 'pro' ? 'text-indigo-800/80 font-medium' : 'text-slate-500')}>
+                      Borang tanpa had • e-Sijil & Sheets
+                    </p>
                   </div>
-                  <span className={cn('text-[11px] mt-1', tier === 'enterprise' ? 'text-purple-800 font-medium' : 'text-slate-500')}>
-                    Akses VIP
-                  </span>
                 </button>
               </div>
             </div>
 
             {/* Status Langganan */}
-            <div className="space-y-1.5">
-              <Label htmlFor="status-select" className="text-xs font-bold text-slate-700 uppercase">
-                Status Langganan
+            <div className="space-y-1.5 pt-1">
+              <Label htmlFor="status-select" className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+                Status Akaun & Akses
               </Label>
               <Select value={status} onValueChange={(val) => setStatus(val as SubscriptionStatus)}>
-                <SelectTrigger id="status-select" className="w-full h-10 border-slate-200">
+                <SelectTrigger id="status-select" className="w-full h-10 border-slate-200/90 rounded-xl bg-slate-50/40 focus:ring-indigo-500">
                   <SelectValue placeholder="Pilih Status" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xl">
                   <SelectItem value="active" className="text-emerald-700 font-medium">
-                    ✓ Active (Aktif & Dibenarkan Akses Penuh)
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+                      <span>Aktif (Dibenarkan Akses Penuh)</span>
+                    </div>
                   </SelectItem>
                   <SelectItem value="expired" className="text-rose-700 font-medium">
-                    ✕ Expired (Tamat Tempoh)
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-rose-500 shrink-0" />
+                      <span>Tamat Tempoh (Akses Disekat)</span>
+                    </div>
                   </SelectItem>
                   <SelectItem value="cancelled" className="text-amber-700 font-medium">
-                    ⚠ Cancelled (Dibatalkan)
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
+                      <span>Dibatalkan</span>
+                    </div>
                   </SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {/* Tarikh Luput */}
-            <div className="space-y-2 pt-1">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="expiry-input" className="text-xs font-bold text-slate-700 uppercase flex items-center gap-1.5">
+            <div className="space-y-2 pt-1 border-t border-slate-100">
+              <div className="flex items-center justify-between pt-1">
+                <Label htmlFor="expiry-input" className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
                   <Calendar className="h-3.5 w-3.5 text-slate-500" />
                   Tarikh Luput Langganan
                 </Label>
-                {expiryDate && (
-                  <span className="text-[11px] text-slate-500 font-medium">
-                    {new Date(expiryDate).toLocaleDateString('ms-MY', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                    })}
+                {expiryBadge && (
+                  <span className={cn('text-[11px] px-2 py-0.5 rounded-full border font-medium', expiryBadge.className)}>
+                    {expiryBadge.label}
                   </span>
                 )}
               </div>
 
-              <Input
-                id="expiry-input"
-                type="date"
-                value={expiryDate}
-                onChange={(e) => {
-                  setExpiryDate(e.target.value);
-                  if (e.target.value && tier === 'free') {
-                    setTier('pro');
-                  }
-                }}
-                className="h-10 border-slate-200"
-              />
+              <div className="flex items-center gap-2">
+                <Input
+                  id="expiry-input"
+                  type="date"
+                  value={expiryDate}
+                  onChange={(e) => {
+                    setExpiryDate(e.target.value);
+                    if (e.target.value && tier === 'free') {
+                      setTier('pro');
+                    }
+                  }}
+                  className="h-10 border-slate-200/90 rounded-xl flex-1 bg-slate-50/40 focus:ring-indigo-500"
+                />
+                {expiryDate && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => applyPreset('clear')}
+                    className="h-10 px-2.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 text-xs rounded-xl shrink-0"
+                    title="Kosongkan Tarikh"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5 mr-1" />
+                    Reset
+                  </Button>
+                )}
+              </div>
 
-              {/* Informative notice if Free tier has expiry */}
+              {/* Informative notice if Free tier has no expiry */}
               {tier === 'free' && !expiryDate && (
-                <p className="text-[11px] text-slate-500 flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3 text-slate-400 shrink-0" />
-                  Pelan Free tiada tarikh tamat. Pilih PRO atau klik pintasan untuk aktifkan had masa.
-                </p>
+                <div className="flex items-start gap-1.5 p-2 rounded-xl bg-slate-50 border border-slate-200/60 text-slate-600 text-[11px] leading-relaxed">
+                  <Info className="h-3.5 w-3.5 text-slate-400 shrink-0 mt-0.5" />
+                  <span>Pelan Free tiada tarikh tamat. Pilih <strong>PRO</strong> atau klik mana-mana pintasan di bawah untuk menetapkan tempoh aktif.</span>
+                </div>
               )}
 
               {/* Quick Presets */}
               <div className="pt-1">
-                <p className="text-[11px] text-slate-500 mb-1.5 font-medium">Pintasan Pantas (Auto-Upgrade ke PRO):</p>
-                <div className="grid grid-cols-3 gap-1.5">
+                <p className="text-[11px] text-slate-500 mb-1.5 font-medium flex items-center justify-between">
+                  <span>Pintasan Pantas (Auto-Upgrade ke PRO):</span>
+                </p>
+                <div className="grid grid-cols-3 gap-2">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="text-xs h-8 text-slate-700 border-slate-200 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 transition-colors"
+                    className="text-xs h-8.5 rounded-xl text-slate-700 border-slate-200 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 font-medium transition-colors cursor-pointer"
                     onClick={() => applyPreset('1month')}
                   >
+                    <CalendarPlus className="h-3 w-3 mr-1 text-indigo-500" />
                     + 1 Bulan
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="text-xs h-8 text-slate-700 border-slate-200 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 transition-colors"
+                    className="text-xs h-8.5 rounded-xl text-slate-700 border-slate-200 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 font-medium transition-colors cursor-pointer"
                     onClick={() => applyPreset('1year')}
                   >
+                    <Clock className="h-3 w-3 mr-1 text-indigo-500" />
                     + 1 Tahun
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="text-xs h-8 font-semibold text-purple-700 border-purple-200 hover:bg-purple-50 transition-colors"
+                    className="text-xs h-8.5 rounded-xl font-bold text-purple-700 bg-purple-50/60 border-purple-200/90 hover:bg-purple-100 hover:border-purple-300 transition-colors cursor-pointer"
                     onClick={() => applyPreset('lifetime')}
                   >
-                    <Sparkles className="h-3 w-3 mr-1 text-purple-600" />
+                    <Sparkles className="h-3 w-3 mr-1 text-purple-600 fill-purple-200" />
                     Lifetime
                   </Button>
                 </div>
@@ -345,12 +436,12 @@ export function EditSubscriptionDialog({
           </div>
 
           {/* Footer */}
-          <DialogFooter className="bg-slate-50 border-t border-slate-200 p-4 flex sm:justify-between items-center gap-2">
+          <DialogFooter className="bg-slate-50/90 border-t border-slate-150 p-4 sm:px-6 flex sm:justify-between items-center gap-2">
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className="text-slate-600 hover:text-slate-900"
+              className="text-slate-600 hover:text-slate-900 rounded-xl"
               onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
             >
@@ -360,11 +451,11 @@ export function EditSubscriptionDialog({
               type="submit"
               size="sm"
               disabled={isSubmitting}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-sm px-4"
+              className="bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-semibold shadow-md shadow-indigo-500/20 rounded-xl px-5 h-9.5 cursor-pointer"
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Menyimpan...
                 </>
               ) : (

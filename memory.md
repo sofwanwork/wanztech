@@ -3533,3 +3533,29 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
 
 - **Vercel Production Deployment (2026-10-27)**: Deployment `dpl_95RPi3TxmhBQTiidNfU9Kt7sXGxp` pushed live to `https://www.klikform.com` (`https://klikform-k393b2s8n-sofwan-jailanis-projects.vercel.app`). 492/492 unit tests passed across 49 suites, 0 lint/tsc errors, clean 59 routes. Commit `041d6b3` active.
 
+## Penambahbaikan UI Modal Langganan Pentadbir & Penutupan Tier Enterprise (2026-10-28)
+- **Konteks & Maklum Balas Pengguna**:
+  - Pengguna meminta: *"cantikkan pop up ni pastu tier enterprise ni tak perlu ada lagi, tutup dulu"*.
+- **Penyelesaian Seni Bina Dilaksanakan**:
+  - `components/admin/edit-subscription-dialog.tsx`:
+    1. **Penutupan Tier Enterprise**: Mengeluarkan kad `ENTERPRISE` daripada antaramuka modal. Susun atur kini menggunakan 2 lajur simetri (`grid-cols-2`) yang luas dan seimbang bagi `FREE` dan `PRO`.
+    2. **Estetika Visual Header**:
+       - Latar belakang gradien obsidian (`from-slate-950 via-slate-900 to-indigo-950`) dengan lencana keselamatan Super Admin.
+       - Avatar huruf awal klien bergradien ungu/indigo untuk personalisasi.
+       - Paparan nama, emel, dan badge ID mono yang kemas.
+    3. **Kad Pilihan Pelan (Free vs Pro)**:
+       - **FREE**: Kad obsidian gelap elegan apabila dipilih, dilengkapi lencana penanda, penerangan jelas "Percuma Asas", "Borang terhad • Tiada had masa".
+       - **PRO**: Kad gradien indigo/sky dengan ikon `Sparkles` bersinar, lencana "Akses Penuh", penerangan "Borang tanpa had • e-Sijil & Sheets".
+    4. **Status & Tarikh Luput Pintar**:
+       - Dropdown status akaun dengan penunjuk titik warna (hijau untuk aktif, merah untuk tamat, jingga untuk batal).
+       - Badge dinamik hari baki relatif (contoh: `15 Nov 2026 (18 hari lagi)`, `Seumur Hidup (Lifetime)`, atau `Telah Luput`).
+       - Butang pantas `Reset` tarikh bagi memudahkan pentadbir mengosongkan tarikh dengan 1-klik.
+       - Butang pintasan pantas dengan ikon moden (`CalendarPlus` untuk `+ 1 Bulan`, `Clock` untuk `+ 1 Tahun`, `Sparkles` untuk `Lifetime`).
+    5. **Footer Moden**:
+       - Butang "Simpan Perubahan" bergradien ungu-indigo (`from-indigo-600 via-indigo-600 to-violet-600`) dengan bayang-bayang bercahaya lembut dan ikon status.
+- **Pengesahan & Kualiti**:
+  - `npm test`: 492 / 492 ujian unit lulus (100%).
+  - `npm run lint` & `npm run typecheck`: 0 ralat / 0 amaran.
+  - `npm run build`: Kompilasi Turbopack Next.js 16 bersih dan berjaya.
+
+

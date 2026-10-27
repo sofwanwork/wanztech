@@ -56,3 +56,25 @@ Membina Admin Dashboard berpusat khusus untuk pengurusan klien KlikForm (senarai
    - Pintasan pantas disediakan untuk kemudahan pentadbir: `+ 1 Bulan`, `+ 1 Tahun`, atau `Lifetime` (2099-12-31).
 3. **Agregasi Data Pantas (Service Role Data Joining)**:
    - Pengguna auth (`auth.admin.listUsers`) digabungkan dengan jadual `profiles`, `subscriptions`, `forms`, dan `usage` secara selari untuk memaparkan statistik penggunaan sebenar bagi setiap klien.
+
+---
+
+# Penambahbaikan UI Modal Langganan & Penutupan Tier Enterprise 🔄 SEDANG BERJALAN
+
+**Objektif**:
+Memperkemas dan mencantikkan reka bentuk modal dialog pengurusan langganan (`EditSubscriptionDialog`), serta menutup/membuang pilihan tier `Enterprise` buat masa ini supaya hanya memaparkan pilihan `FREE` dan `PRO` secara seimbang (2 lajur).
+
+- [x] 1. **Kemas Kini & Reka Bentuk Semula `EditSubscriptionDialog`**:
+  - [x] 1.1 Tutup / alih keluar kad pilihan `Enterprise` daripada antaramuka modal.
+  - [x] 1.2 Ubah susun atur kad pilihan pelan kepada 2 lajur (`grid-cols-2`) yang seimbang, kemas dan luas untuk `FREE` dan `PRO`.
+  - [x] 1.3 Tingkatkan estetika visual header: kemasan gradien gelap, avatar huruf awal klien, lencana keselamatan, dan ID klien yang elegan.
+  - [x] 1.4 Cantikkan kad `FREE` (tema obsidian/gelap bila aktif) dan `PRO` (gradien indigo/sky dengan ikon `Sparkles` dan lencana "Akses Penuh").
+  - [x] 1.5 Perhalusi dropdown status, pemilih tarikh luput berserta pratonton hari baki relatif, dan bar butang pintasan pantas (`+ 1 Bulan`, `+ 1 Tahun`, `Lifetime`, `Kosongkan`).
+  - [x] 1.6 Cantikkan butang tindakan footer ("Batal" dan "Simpan Perubahan" bergradien moden).
+- [x] 2. **Ujian & Pengesahan**:
+  - [x] 2.1 Jalankan ujian unit `npm test` untuk memastikan tiada sebarang regresi (492/492 lulus).
+  - [x] 2.2 Jalankan `npm run lint` dan `npm run typecheck` (0 ralat/amaran).
+  - [x] 2.3 Jalankan `npm run build` untuk pengesahan Turbopack (berjaya dikompilasi).
+- [ ] 3. **Dokumentasi & Memori**:
+  - [ ] 3.1 Kemas kini `memory.md` dan `lessons.md`.
+  - [ ] 3.2 Laporkan kepada pengguna.
