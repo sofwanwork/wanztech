@@ -45,7 +45,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { EditSubscriptionDialog } from './edit-subscription-dialog';
-import { PRIMARY_ADMIN_EMAIL } from '@/lib/auth/admin';
+import { PRIMARY_ADMIN_EMAIL } from '@/lib/auth/admin-shared';
 import { SubscriptionTier, SubscriptionStatus } from '@/lib/types/subscription';
 import { toast } from 'sonner';
 

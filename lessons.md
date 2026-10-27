@@ -643,3 +643,11 @@
       setSignupSuccess(true);
     }
     ```
+
+- **Next.js Turbopack Client & Middleware Boundary Isolation (`next/headers` Trap)**:
+  - *Symptom*: Turbopack build fails with: `Error: You're importing a module that depends on "next/headers". This API is only available in Server Components in the App Router, but you are using it in the Pages Router / Client Component`.
+  - *Root Cause*: Placing pure constants or predicate functions (`PRIMARY_ADMIN_EMAIL`, `isSuperAdmin`) in the same file (`lib/auth/admin.ts`) as server-only functions (`verifyAdminSession` calling `createClient()` from `@/utils/supabase/server`). When a `"use client"` component (`client-table.tsx`) or Edge middleware (`proxy.ts`) imports the constant, Turbopack traces transitive dependencies and attempts to bundle `next/headers` into the client/edge environment.
+  - *Architectural Isolation Protocol*:
+    1. Separate pure constants and universal predicates into a dedicated `lib/auth/admin-shared.ts` (or `*-shared.ts`) that contains zero server/node dependencies.
+    2. Re-export them in `lib/auth/admin.ts` (`export * from './admin-shared'`) alongside server-only guards like `verifyAdminSession()`.
+    3. Client Components and Edge middleware import strictly from `@/lib/auth/admin-shared`, guaranteeing that server-only APIs (`next/headers`, `cookies()`) are never pulled into browser or edge bundles.

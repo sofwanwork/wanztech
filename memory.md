@@ -3516,3 +3516,17 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - `npm test`: 492 / 492 ujian unit lulus merentas 49 fail suite.
   - `npm run typecheck`: 0 ralat TypeScript.
   - `npm run lint`: 0 ralat ESLint.
+
+## Pengasingan Sempadan Modul Pentadbir Turbopack (Admin Module Boundary Isolation) (2026-10-27)
+- **Konteks & Punca Masalah (Turbopack Build Failure)**:
+  - Vercel deployment mengalami ralat binaan Turbopack: `You're importing a module that depends on "next/headers". This API is only available in Server Components in the App Router, but you are using it in the Pages Router / Client Component`.
+  - Puncanya ialah `components/admin/client-table.tsx` (Client Component) dan `proxy.ts` (Edge Middleware) mengimport pemalar `PRIMARY_ADMIN_EMAIL` / `isSuperAdmin` daripada `lib/auth/admin.ts`. Kerana `lib/auth/admin.ts` turut mengandungi `verifyAdminSession()` yang memanggil `createClient()` daripada `@/utils/supabase/server` (yang mengimport `next/headers`), Turbopack menarik `next/headers` ke dalam bundle pelayar dan Edge.
+- **Penyelesaian Seni Bina Dilaksanakan**:
+  - `lib/auth/admin-shared.ts`: Memisahkan pemalar tulen (`PRIMARY_ADMIN_EMAIL`) dan fungsi logik (`getAdminEmails`, `isSuperAdmin`) tanpa sebarang kebergantungan pelayan/Node.
+  - `lib/auth/admin.ts`: Mengeksport semula semua fungsi daripada `admin-shared.ts` dan mengekalkan `verifyAdminSession()` khusus untuk komponen pelayan.
+  - Mengemas kini `components/admin/client-table.tsx`, `proxy.ts`, dan `lib/storage/forms.ts` untuk mengimport terus daripada `@/lib/auth/admin-shared`.
+- **Pengesahan & Kualiti**:
+  - `npm test`: 492 / 492 ujian lulus merentas 49 fail suite.
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat ESLint.
+  - `npm run build`: Kompilasi Next.js 16 Turbopack berjaya 100% tanpa sebarang ralat (36 halaman statik dijana, laluan `/admin` dinamik disahkan).

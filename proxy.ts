@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
-import { isSuperAdmin } from '@/lib/auth/admin';
+import { isSuperAdmin } from '@/lib/auth/admin-shared';
 
 // Security: Prevent open redirect attacks by ensuring redirect path is always
 // a relative path (starts with / but not //) and not a full external URL.

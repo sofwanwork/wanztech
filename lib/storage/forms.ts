@@ -1,7 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { Form, Profile } from '@/lib/types';
-import { isSuperAdmin } from '@/lib/auth/admin';
+import { isSuperAdmin } from '@/lib/auth/admin-shared';
 import { cache } from 'react';
 
 // Helper to get user ID
