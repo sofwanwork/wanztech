@@ -651,3 +651,8 @@
     1. Separate pure constants and universal predicates into a dedicated `lib/auth/admin-shared.ts` (or `*-shared.ts`) that contains zero server/node dependencies.
     2. Re-export them in `lib/auth/admin.ts` (`export * from './admin-shared'`) alongside server-only guards like `verifyAdminSession()`.
     3. Client Components and Edge middleware import strictly from `@/lib/auth/admin-shared`, guaranteeing that server-only APIs (`next/headers`, `cookies()`) are never pulled into browser or edge bundles.
+
+- **Shadcn Dialog Dark Header & Perimeter White Border Traps (`border-0` vs `border-border`)**:
+  - *Symptom*: User sees an awkward, glowing, high-contrast white border ("bold putih") around the perimeter of the modal dialog, especially tracing around dark headers.
+  - *Root Cause*: Shadcn `DialogContent` injects the class `border` by default (`border: 1px solid var(--border)` where `--border` is light grey `#e5e7eb`). Against the dark backdrop overlay (`bg-black/50`) and dark header backgrounds (`bg-slate-950`), `#e5e7eb` stands out sharply as a white line. Furthermore, `bg-background` (`#ffffff`) on `DialogContent` causes subpixel curvature anti-aliasing to bleed a 1px white fringe around the dark header's top corners.
+  - *Solution*: Explicitly override `DialogContent` with `border-0 bg-slate-950 shadow-2xl shadow-black/50`. This removes the outer light border entirely and matches the dialog container's base color to the dark header, letting the natural elevation shadow float the dialog seamlessly against the dimmed overlay.

@@ -187,7 +187,7 @@ export function EditSubscriptionDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[490px] p-0 overflow-hidden no-scrollbar rounded-2xl sm:rounded-3xl border border-slate-250 shadow-2xl">
+      <DialogContent className="sm:max-w-[490px] p-0 overflow-hidden no-scrollbar rounded-2xl sm:rounded-3xl border-0 bg-slate-950 shadow-2xl shadow-black/50">
         <form onSubmit={handleSubmit} className="flex flex-col">
           {/* Header */}
           <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white p-5 sm:p-6 border-b border-slate-800/80 relative">
@@ -436,7 +436,7 @@ export function EditSubscriptionDialog({
           </div>
 
           {/* Footer */}
-          <DialogFooter className="bg-slate-50/90 border-t border-slate-150 p-4 sm:px-6 flex sm:justify-between items-center gap-2">
+          <DialogFooter className="bg-slate-50/90 border-t border-slate-100 p-4 sm:px-6 flex sm:justify-between items-center gap-2">
             <Button
               type="button"
               variant="ghost"

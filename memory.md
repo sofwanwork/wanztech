@@ -3560,5 +3560,23 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
 
 - **Vercel Production Deployment (2026-10-28)**: Deployment `dpl_7WGfC1B9wHNN1VgYZ5E8pbcKKsQ1` pushed live to `https://www.klikform.com` (`https://klikform-f5mxy2nkd-sofwan-jailanis-projects.vercel.app`). 492/492 unit tests passed across 49 suites, 0 lint/tsc errors, clean 59 routes. Commit `d1eb158` active.
 
+## Pembuangan Garisan Putih Perimeter Modal ("Bold Putih") (2026-10-28)
+- **Konteks & Maklum Balas Pengguna**:
+  - Pengguna bertanya: *"kenapa ada bold putih ya di keliling pop up"*.
+- **Punca Asal Ralat (Root Cause Analysis)**:
+  - Komponen asas shadcn `DialogContent` (`components/ui/dialog.tsx`) menyuntik kelas `border` secara lalai (`border: 1px solid var(--border)` di mana `--border` bernilai `#e5e7eb`).
+  - Berlatarbelakangkan tindanan gelap (`DialogOverlay bg-black/50`) dan pengepala modal yang gelap (`bg-slate-950`), garisan `#e5e7eb` ini menghasilkan kontras putih yang sangat ketara ("bold putih") di sekeliling keseluruhan bingkai popup.
+  - Selain itu, kelas `border-slate-250` yang diletakkan sebelum ini bukanlah kelas sah dalam Tailwind CSS v4, menyebabkan ia tidak membatalkan warna `border` lalai.
+- **Penyelesaian Dilaksanakan**:
+  - Mengemaskini `DialogContent` dalam `components/admin/edit-subscription-dialog.tsx`:
+    - Menggantikan `border` dengan `border-0`.
+    - Menetapkan latar belakang kontena dialog kepada `bg-slate-950` untuk menghapuskan sebarang pembiasan subpixel pada bucu melengkung header.
+    - Menggunakan bayang-bayang kedalaman `shadow-2xl shadow-black/50` untuk menghasilkan kesan terapung yang bersih dan profesional tanpa sebarang garisan putih tajam.
+    - Membetulkan kelas sempadan footer `border-slate-100`.
+- **Pengesahan & Kualiti**:
+  - `npm test`: 492 / 492 ujian unit lulus.
+  - `npm run lint` & `npm run typecheck`: 0 ralat.
+
+
 
 
