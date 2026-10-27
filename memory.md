@@ -3530,3 +3530,6 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
   - `npm run typecheck`: 0 ralat TypeScript.
   - `npm run lint`: 0 ralat ESLint.
   - `npm run build`: Kompilasi Next.js 16 Turbopack berjaya 100% tanpa sebarang ralat (36 halaman statik dijana, laluan `/admin` dinamik disahkan).
+
+- **Vercel Production Deployment (2026-10-27)**: Deployment `dpl_95RPi3TxmhBQTiidNfU9Kt7sXGxp` pushed live to `https://www.klikform.com` (`https://klikform-k393b2s8n-sofwan-jailanis-projects.vercel.app`). 492/492 unit tests passed across 49 suites, 0 lint/tsc errors, clean 59 routes. Commit `041d6b3` active.
+
