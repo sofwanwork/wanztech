@@ -2,7 +2,9 @@
 
 import { useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Form } from '@/lib/types';
+import { duplicateFormAction } from '@/actions/forms';
 import {
   Card,
   CardContent,
@@ -12,7 +14,18 @@ import {
   CardFooter,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, QrCode, Loader2, Copy, Check } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  ExternalLink,
+  QrCode,
+  Loader2,
+  Copy,
+  Check,
+  CopyPlus,
+  MoreVertical,
+  Pencil,
+} from 'lucide-react';
+import { toast } from 'sonner';
 import { getProxiedImageUrl, stripHtml } from '@/lib/utils';
 
 interface FormCardProps {
@@ -20,10 +33,40 @@ interface FormCardProps {
 }
 
 export function FormCard({ form }: FormCardProps) {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [isDuplicating, setIsDuplicating] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const isNavigatingRef = useRef(false);
   const builderHref = `/builder/${form.id}`;
+
+  const handleDuplicate = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isDuplicating) return;
+
+    setMenuOpen(false);
+    setIsDuplicating(true);
+    try {
+      const res = await duplicateFormAction(form.id);
+      if (!res.success || !res.formId) {
+        toast.error(res.error || 'Failed to duplicate form.');
+        return;
+      }
+      toast.success(`Duplicated "${res.title}"`, {
+        action: {
+          label: 'Open Builder',
+          onClick: () => router.push(`/builder/${res.formId}`),
+        },
+      });
+      router.refresh();
+    } catch {
+      toast.error('Failed to duplicate form. Please try again.');
+    } finally {
+      setIsDuplicating(false);
+    }
+  };
 
   const handleCopyLink = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -76,16 +119,18 @@ export function FormCard({ form }: FormCardProps) {
           </div>
         )}
 
-        {/* Loading Overlay */}
-        {isLoading && (
-          <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-20 flex flex-col items-center justify-center">
+        {/* Loading / Duplicating Overlay */}
+        {(isLoading || isDuplicating) && (
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-20 flex flex-col items-center justify-center">
             <Loader2 className="h-8 w-8 text-primary animate-spin mb-2" />
-            <span className="text-sm font-medium text-gray-900">Opening Builder...</span>
+            <span className="text-sm font-medium text-gray-900">
+              {isDuplicating ? 'Duplicating Form...' : 'Opening Builder...'}
+            </span>
           </div>
         )}
 
         {/* Overlay with Quick Actions (Hover) - Only show if not loading */}
-        {!isLoading && (
+        {!isLoading && !isDuplicating && (
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-3 backdrop-blur-[2px]">
             <Button
               asChild
@@ -101,11 +146,66 @@ export function FormCard({ form }: FormCardProps) {
 
       {/* Card Content */}
       <CardHeader className="p-5 pb-3 overflow-hidden">
-        <div className="flex justify-between items-start gap-2 overflow-hidden">
-          <CardTitle className="line-clamp-2 break-words whitespace-pre-line text-lg font-semibold text-gray-900 leading-tight max-w-[calc(100%-8px)]">
+        <div className="flex justify-between items-start gap-2">
+          <CardTitle className="line-clamp-2 break-words whitespace-pre-line text-lg font-semibold text-gray-900 leading-tight min-w-0 flex-1">
             {form.title}
           </CardTitle>
-          {/* Option menu trigger could go here */}
+          <Popover open={menuOpen} onOpenChange={setMenuOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 shrink-0 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 -mr-1.5 -mt-0.5 cursor-pointer"
+                onClick={(e) => e.stopPropagation()}
+                aria-label="Form options"
+                title="More actions"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-44 p-1.5 rounded-lg border-slate-200 shadow-md">
+              <div className="flex flex-col gap-0.5">
+                <Link
+                  href={builderHref}
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded-md transition-colors"
+                >
+                  <Pencil className="h-3.5 w-3.5 text-slate-500" />
+                  Edit Form
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleDuplicate}
+                  disabled={isDuplicating}
+                  className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-violet-50 hover:text-violet-900 rounded-md transition-colors text-left w-full cursor-pointer disabled:opacity-50"
+                >
+                  <CopyPlus className="h-3.5 w-3.5 text-violet-700" />
+                  Duplicate Form
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    handleCopyLink(e);
+                    setMenuOpen(false);
+                  }}
+                  className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded-md transition-colors text-left w-full cursor-pointer"
+                >
+                  <Copy className="h-3.5 w-3.5 text-slate-500" />
+                  Copy Form Link
+                </button>
+                <Link
+                  href={form.shortCode ? `/s/${form.shortCode}` : `/form/${form.id}`}
+                  target="_blank"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded-md transition-colors"
+                >
+                  <ExternalLink className="h-3.5 w-3.5 text-slate-500" />
+                  Open Preview
+                </Link>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
         <CardDescription className="line-clamp-2 text-sm mt-1.5 text-gray-500 h-10 leading-relaxed overflow-hidden max-w-[calc(100%-8px)]">
           {stripHtml(form.description || '') || 'No description provided for this form.'}

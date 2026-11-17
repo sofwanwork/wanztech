@@ -1,5 +1,23 @@
 # Project Memory
 
+## Ciri Duplicate Borang (Duplicate Form on My Forms & Form Builder) - 2026-11-17
+
+- **Punca Isu & Permintaan Pengguna**:
+  - Pengguna meminta berserta tangkapan skrin kad borang My Forms: *"boleh ke nak tambah feature utk copy paste atau dubplicate form"* dan mengesahkan *"okay proceed"*.
+- **Tindakan Pembaikan**:
+  1. `lib/forms/duplicate.ts`: Tambah fungsi tulen `buildDuplicatedTitle` (menjana `(Copy)`, `(Copy 2)`, dst.) dan `cloneFormForDuplication` yang menyalin semua soalan, logik bersyarat, tema, muka depan, mesej terima kasih, butang arah semula, tetapan e-sijil, kehadiran, QR, notifikasi responden, edit link, dan PDPA sambil menjana ID baharu bagi borang/soalan/produk, memetakan semula semua rujukan silang `fieldId`, mengosongkan `shortCode` serta `rotatingQr.secret`, dan menggunakan `googleSheetUrl` baharu yang berasingan.
+  2. `lib/types/audit.ts` & `lib/audit/format.ts`: Tambah jenis tindakan `'form.duplicate'` (`Form duplicated`).
+  3. `actions/forms.ts`: Ekstrak pembantu `autoCreateSheetUrl` (dikongsi bersama `createFormAction`) dan bina `duplicateFormAction(sourceFormId)` dengan pengesahan pemilikan, semakan had pelan (`canCreateForm`), penjanaan Google Sheet baharu (*fail-safe*), `saveForm`, `incrementFormCount`, `logAudit`, dan `revalidatePath('/forms')`.
+  4. `components/dashboard/form-card.tsx`: Tambah menu `Popover` (`MoreVertical`) di penjuru kanan atas `CardHeader` dengan tindakan **Edit Form**, **Duplicate Form**, **Copy Form Link**, dan **Open Preview**, berserta lapisan memuatkan *Duplicating Form...* dan toast berbutang **Open Builder**.
+  5. `app/builder/[id]/client.tsx`: Tambah butang **Duplicate** di bar pengepala Form Builder (menyimpan perubahan tertangguh terlebih dahulu jika perlu sebelum menduplikasi dan membuka Builder borang baharu).
+  6. `tests/duplicate-form.test.ts` & `tests/audit-format.test.ts`: Ujian unit lengkap untuk penamaan salinan, pemetaan semula ID silang, pengasingan helaian/rahsia, ketidakbolehubahan objek asal (*immutability*), dan pelabelan audit.
+- **Status Ujian & Pengesahan**:
+  - `npm test`: 509/509 lulus merentas 53 fail ujian.
+  - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat / 0 amaran (`eslint .`).
+  - `npm run build`: Binaan Next.js 16 Turbopack berjaya sepenuhnya (36 halaman statik + semua laluan dinamik).
+
+
 ## Perlindungan Anti-Bot Pendaftaran & Pembersihan Akaun Unverified Admin - 2026-11-17
 
 - **Punca Isu & Permintaan Pengguna**:

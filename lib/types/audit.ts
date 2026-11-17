@@ -5,6 +5,7 @@
 
 export type AuditAction =
   | 'form.create'
+  | 'form.duplicate'
   | 'form.delete'
   | 'form.update'
   | 'settings.update'

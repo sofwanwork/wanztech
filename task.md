@@ -1,3 +1,30 @@
+# Ciri Duplicate Borang (Duplicate Form Feature) ✅ SELESAI
+
+**Konteks & Permintaan Pengguna**:
+- Pengguna meminta berserta tangkapan skrin kad borang My Forms: *"boleh ke nak tambah feature utk copy paste atau dubplicate form"* dan mengesahkan *"okay proceed"*.
+
+### Pelan Tindakan Pelaksanaan
+- [x] 1. **Pembantu Klon Borang (`lib/forms/duplicate.ts`)**:
+  - Bina `buildDuplicatedTitle` (`genz` -> `genz (Copy)` -> `genz (Copy 2)`).
+  - Bina `cloneFormForDuplication` yang menyalin semua medan & tetapan secara mendalam (*deep clone*), menjana ID medan baharu berserta pemetaan semula semua rujukan silang (`conditional`, `attendanceSettings.checkInOut.identifierFieldId`, `editLinkSettings.emailFieldId`, `respondentNotification.emailFieldId`, `eCertificateCategory.fieldId`), mengosongkan `shortCode` dan `rotatingQr.secret`, serta menggantikan `googleSheetUrl` dengan helaian baharu yang berasingan.
+- [x] 2. **Sokongan Log Audit (`lib/types/audit.ts`, `lib/audit/format.ts`)**:
+  - Tambah jenis tindakan `'form.duplicate'` dan label `'Form duplicated'`.
+- [x] 3. **Server Action `duplicateFormAction` (`actions/forms.ts`)**:
+  - Sahkan pemilikan borang asal, semak had pelan (`canCreateForm`), jana Google Sheet baharu secara automatik (*fail-safe*), simpan borang salinan (`saveForm`), tambah kiraan penggunaan (`incrementFormCount`), rekod log audit, dan `revalidatePath('/forms')`.
+- [x] 4. **Antaramuka Pengguna (`components/dashboard/form-card.tsx`, `app/builder/[id]/client.tsx`)**:
+  - Tambah menu tindakan `...` pada penjuru atas-kanan `FormCard` dengan pilihan **Edit Form**, **Duplicate Form**, **Copy Form Link**, dan **Open Preview** berserta keadaan memuatkan dan toast **Open Builder**.
+  - Tambah butang **Duplicate** pada bar atas Form Builder (`app/builder/[id]/client.tsx`) yang menyimpan perubahan tertangguh terlebih dahulu sebelum menduplikasi dan membuka Builder borang baharu.
+- [x] 5. **Ujian Unit & Pengesahan Kualiti**:
+  - Tambah `tests/duplicate-form.test.ts` (3/3 lulus) dan kemas kini `tests/audit-format.test.ts` (7/7 lulus).
+  - Jalankan `npm test` (509/509 lulus merentas 53 fail), `npm run typecheck` (0 ralat), `npm run lint` (0 ralat), dan `npm run build` (berjaya).
+- [x] 6. **Dokumentasi**:
+  - Kemas kini `task.md`, `memory.md`, dan `lessons.md`.
+
+### Seksyen Reviu
+- **Pengasingan Data & Pemetaan Rujukan Silang**: Menjana `field.id` baharu dan memetakan semula kesemua rujukan ID (`conditional`, `checkInOut.identifierFieldId`, `editLinkSettings.emailFieldId`, `respondentNotification.emailFieldId`, `eCertificateCategory.fieldId`) mengelakkan sebarang pertembungan ID sambil memastikan logik borang salinan kekal berfungsi 100%, manakala Google Sheet baharu dan `shortCode` baharu memastikan data respons tidak pernah bercampur dengan borang asal.
+
+---
+
 # Perlindungan Anti-Bot Pendaftaran (Turnstile + Signup Guard + Admin Cleanup) ✅ SELESAI
 
 **Konteks & Punca Isu**:

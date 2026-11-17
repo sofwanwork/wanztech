@@ -6,7 +6,10 @@ import { Form, Settings } from '@/lib/types';
 import { appendToSheet, updateSheetRow } from '@/lib/api/google-sheets';
 import { uploadToDrive } from '@/lib/api/google-drive';
 import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
 import { after } from 'next/server';
+import { createClient } from '@/utils/supabase/server';
+import { buildDuplicatedTitle, cloneFormForDuplication } from '@/lib/forms/duplicate';
 import {
   canCreateForm,
   incrementFormCount,
@@ -59,6 +62,22 @@ export async function getSettingsAction() {
 
 // --- Form Actions ---
 
+async function autoCreateSheetUrl(title: string, settings: Settings | undefined): Promise<string> {
+  const hasOAuth = !!settings?.googleAccessToken;
+  const hasServiceAccount = !!(settings?.googleClientEmail && settings?.googlePrivateKey);
+  if (!settings || (!hasOAuth && !hasServiceAccount)) return '';
+
+  try {
+    const sheetResult = await createGoogleSpreadsheetHelper(title || 'Untitled Form', settings);
+    if (sheetResult.success && sheetResult.url) {
+      return sheetResult.url;
+    }
+  } catch (sheetErr) {
+    console.warn('[autoCreateSheetUrl] Auto-create Google Sheet error (fallback to blank):', sheetErr);
+  }
+  return '';
+}
+
 export async function createFormAction(formData: Partial<Form>) {
   // Check if settings exist before creating form (supports OAuth or Service Account)
   const settings = await getSettings();
@@ -79,22 +98,8 @@ export async function createFormAction(formData: Partial<Form>) {
   const description = formData.description ? sanitizeHtml(formData.description) : '';
   const thankYouMessage = formData.thankYouMessage ? sanitizeHtml(formData.thankYouMessage) : '';
 
-  let sheetUrl = formData.googleSheetUrl || '';
-
-  // Auto-generate Google Sheet if URL was not explicitly supplied
-  if (!sheetUrl && settings && (hasOAuth || hasServiceAccount)) {
-    try {
-      const sheetResult = await createGoogleSpreadsheetHelper(
-        formData.title || 'Untitled Form',
-        settings
-      );
-      if (sheetResult.success && sheetResult.url) {
-        sheetUrl = sheetResult.url;
-      }
-    } catch (sheetErr) {
-      console.warn('[createFormAction] Auto-create Google Sheet error (fallback to blank):', sheetErr);
-    }
-  }
+  const sheetUrl =
+    formData.googleSheetUrl || (await autoCreateSheetUrl(formData.title || 'Untitled Form', settings));
 
   const newForm: Form = {
     id,
@@ -120,6 +125,78 @@ export async function createFormAction(formData: Partial<Form>) {
   });
 
   redirect(`/builder/${id}`);
+}
+
+export async function duplicateFormAction(sourceFormId: string): Promise<{
+  success: boolean;
+  formId?: string;
+  title?: string;
+  reason?: string;
+  error?: string;
+}> {
+  try {
+    if (!sourceFormId) {
+      return { success: false, error: 'Source form ID is required.' };
+    }
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: 'Please sign in to duplicate this form.' };
+    }
+
+    const sourceForm = await getFormById(sourceFormId);
+    if (!sourceForm || sourceForm.userId !== user.id) {
+      return { success: false, error: 'Form not found or unauthorized.' };
+    }
+
+    const limitCheck = await canCreateForm();
+    if (!limitCheck.allowed) {
+      return {
+        success: false,
+        reason: limitCheck.reason,
+        error: limitCheck.message || 'Form limit reached',
+      };
+    }
+
+    const settings = await getSettings();
+    const newId = uuidv4();
+    const newTitle = buildDuplicatedTitle(sourceForm.title);
+    const newSheetUrl = await autoCreateSheetUrl(newTitle, settings ?? undefined);
+
+    const duplicatedForm = cloneFormForDuplication(sourceForm, {
+      newId,
+      newTitle,
+      newGoogleSheetUrl: newSheetUrl,
+    });
+
+    await saveForm(duplicatedForm);
+    await incrementFormCount();
+
+    await logAudit({
+      action: 'form.duplicate',
+      entityType: 'form',
+      entityId: newId,
+      metadata: { title: duplicatedForm.title, sourceFormId },
+    });
+
+    revalidatePath('/forms');
+
+    return {
+      success: true,
+      formId: newId,
+      title: duplicatedForm.title,
+    };
+  } catch (error) {
+    console.error('Duplicate Form Action Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to duplicate form',
+    };
+  }
 }
 
 export async function updateFormAction(form: Form) {

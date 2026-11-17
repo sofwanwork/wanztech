@@ -3,7 +3,7 @@
 import { useState, useEffect, useTransition, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Form, CertificateTemplate as CertificateTemplateType, AttendanceStats, MultiDayCertMode } from '@/lib/types';
-import { updateFormAction, deleteFormAction } from '@/actions/forms';
+import { updateFormAction, deleteFormAction, duplicateFormAction } from '@/actions/forms';
 import { createSheetForFormAction, syncSheetTitleAction } from '@/actions/sheets';
 import { getAttendanceStatsAction, clearAttendanceRecordsAction } from '@/actions/attendance';
 import { FORM_BACKGROUND_PATTERNS } from '@/lib/forms/patterns';
@@ -91,7 +91,7 @@ import { RespondentNotificationCard } from '@/components/forms/respondent-notifi
 import { PdpaCard } from '@/components/forms/pdpa-card';
 import { CertificateCategorySection } from '@/components/forms/certificate-category-card';
 import { BuilderTour } from '@/components/builder-tour';
-import { HelpCircle } from 'lucide-react';
+import { HelpCircle, CopyPlus } from 'lucide-react';
 
 interface BuilderClientProps {
   initialForm: Form;
@@ -103,6 +103,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
   const router = useRouter();
   const [form, setForm] = useState<Form>(initialForm);
   const [saving, setSaving] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [pendingTemplateId, setPendingTemplateId] = useState<string | null>(null);
@@ -277,6 +278,34 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
     }
   };
 
+  const handleDuplicate = async () => {
+    if (duplicating) return;
+    setDuplicating(true);
+    try {
+      if (saveStatus !== 'saved') {
+        const saveRes = await updateFormAction(form);
+        if (!saveRes?.success) {
+          toast.error(saveRes?.error || 'Failed to save changes before duplicating.');
+          return;
+        }
+        setSaveStatus('saved');
+      }
+
+      const res = await duplicateFormAction(form.id);
+      if (!res.success || !res.formId) {
+        toast.error(res.error || 'Failed to duplicate form.');
+        return;
+      }
+
+      toast.success(`Duplicated "${res.title}"`);
+      router.push(`/builder/${res.formId}`);
+    } catch {
+      toast.error('Failed to duplicate form.');
+    } finally {
+      setDuplicating(false);
+    }
+  };
+
   const handleDelete = async () => {
     setDeleting(true);
     try {
@@ -429,6 +458,21 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
             >
               <HelpCircle className="h-4 w-4 sm:mr-1" />
               <span className="hidden sm:inline">Help</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDuplicate}
+              disabled={duplicating || saving}
+              className="px-2 sm:px-3"
+              title="Duplicate this form"
+            >
+              {duplicating ? (
+                <Loader2 className="h-4 w-4 animate-spin sm:mr-2" />
+              ) : (
+                <CopyPlus className="h-4 w-4 sm:mr-2" />
+              )}
+              <span className="hidden md:inline">{duplicating ? 'Duplicating...' : 'Duplicate'}</span>
             </Button>
             <Link
               href={form.shortCode ? `/s/${form.shortCode}` : `/form/${form.id}`}

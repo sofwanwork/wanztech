@@ -8,6 +8,7 @@ import {
 describe('describeAuditAction', () => {
   it('maps known actions to English labels', () => {
     expect(describeAuditAction('form.create')).toBe('Form created');
+    expect(describeAuditAction('form.duplicate')).toBe('Form duplicated');
     expect(describeAuditAction('form.delete')).toBe('Form deleted');
     expect(describeAuditAction('settings.update')).toBe('Settings updated');
   });
@@ -46,6 +47,7 @@ describe('describeAuditLog', () => {
 describe('auditActionKind', () => {
   it('classifies by suffix', () => {
     expect(auditActionKind('form.create')).toBe('create');
+    expect(auditActionKind('form.duplicate')).toBe('create');
     expect(auditActionKind('form.delete')).toBe('delete');
     expect(auditActionKind('form.update')).toBe('update');
     expect(auditActionKind('mystery')).toBe('other');

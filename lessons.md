@@ -1,5 +1,9 @@
 # Development Lessons
 
+- **Form Duplication Cross-Reference Remapping & Resource Isolation**:
+  - When duplicating a `Form` (`lib/forms/duplicate.ts`), regenerating `field.id` values without building an `oldId -> newId` map silently breaks internal references across `conditional.fieldId`, `conditional.rules[].fieldId`, `attendanceSettings.checkInOut.identifierFieldId`, `editLinkSettings.emailFieldId`, `respondentNotification.emailFieldId`, and `eCertificateCategory.fieldId`. Always remap all cross-references through a shared ID map.
+  - Never copy `googleSheetUrl`, `shortCode`, or `attendanceSettings.rotatingQr.secret` from the source form: copying `googleSheetUrl` causes responses from the duplicated form to contaminate the original spreadsheet, and copying `shortCode` collides with the unique short-link index. Auto-create a fresh Google Sheet (fail-safe to `''`), omit `shortCode` so the `BEFORE INSERT` trigger assigns a new one, and clear `rotatingQr.secret`.
+
 - **Cloudflare Turnstile + Supabase Auth Single-Use Token & CSP Trap**:
   - *Single-Use Token Double-Redemption*: Cloudflare Turnstile tokens (`cf-turnstile-response`) can only be redeemed ONCE at `siteverify`. If Next.js calls `siteverify` in a Server Action AND forwards the same `captchaToken` to `supabase.auth.signUp({ options: { captchaToken } })` when Supabase Attack Protection is also enabled, Supabase's second `siteverify` fails with `timeout-or-duplicate`. Solution: Verify on Next.js server ONLY when `TURNSTILE_SECRET_KEY` is configured in Next.js (omitting `captchaToken` to Supabase); otherwise forward `captchaToken` directly to Supabase Auth.
   - *CSP Blocking Turnstile*: Adding Turnstile to a project with a strict `Content-Security-Policy` in `next.config.ts` silently blocks the widget unless `https://challenges.cloudflare.com` is permitted in `script-src`, `frame-src`, and `connect-src`.
