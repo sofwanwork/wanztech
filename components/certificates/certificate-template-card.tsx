@@ -34,7 +34,7 @@ export function CertificateTemplateCard({ template }: CertificateTemplateCardPro
   };
 
   return (
-    <Card className="group hover:shadow-xl transition-all duration-300 overflow-hidden rounded-2xl ring-1 ring-gray-100 hover:ring-primary/20 hover:-translate-y-1 p-0 gap-0 border-0">
+    <Card className="group hover:border-slate-300 hover:shadow-xs transition-colors overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xs p-0 gap-0">
       {/* Thumbnail */}
       <Link href={`/certificates/builder/${template.id}`} onClick={handleEditClick}>
         <div className="aspect-[297/210] relative overflow-hidden cursor-pointer template-card-bg">
@@ -77,7 +77,7 @@ export function CertificateTemplateCard({ template }: CertificateTemplateCardPro
             <div className="absolute top-2 right-2">
               <Badge
                 variant="secondary"
-                className="bg-white/90 text-xs font-semibold shadow-sm text-gray-800 backdrop-blur-sm"
+                className="bg-white/95 text-[10px] font-mono font-semibold shadow-2xs text-slate-800 rounded px-2 py-0.5 border border-slate-200/80"
               >
                 {template.category.charAt(0).toUpperCase() + template.category.slice(1)}
               </Badge>

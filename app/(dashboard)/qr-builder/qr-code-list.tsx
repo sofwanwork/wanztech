@@ -31,10 +31,10 @@ export function QrCodeList({ initialQrCodes, query }: QrCodeListProps) {
 
   if (initialQrCodes.length === 0) {
     return (
-      <div className="col-span-full flex flex-col items-center justify-center py-24 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
+      <div className="col-span-full flex flex-col items-center justify-center py-24 border border-dashed border-slate-200 rounded-lg bg-slate-50/50">
         {query ? (
           <>
-            <div className="h-20 w-20 bg-white rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-gray-100">
+            <div className="h-16 w-16 bg-white rounded-lg flex items-center justify-center mb-5 shadow-2xs border border-slate-200">
               <QrCode className="h-10 w-10 text-gray-400" />
             </div>
             <h3 className="text-xl font-semibold mb-2 text-gray-900">No matches found</h3>
@@ -47,7 +47,7 @@ export function QrCodeList({ initialQrCodes, query }: QrCodeListProps) {
           </>
         ) : (
           <>
-            <div className="h-20 w-20 bg-white rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="h-16 w-16 bg-white rounded-lg flex items-center justify-center mb-5 shadow-2xs border border-slate-200">
               <QrCode className="h-10 w-10 text-primary/60" />
             </div>
             <h3 className="text-xl font-semibold mb-2 text-gray-900">No QR Codes Yet</h3>
@@ -57,7 +57,7 @@ export function QrCodeList({ initialQrCodes, query }: QrCodeListProps) {
             <Link href="/qr-builder/new">
               <Button
                 size="lg"
-                className="bg-primary hover:bg-primary/90 text-white shadow-xl shadow-primary/30"
+                className="bg-violet-900 hover:bg-violet-950 text-white shadow-xs rounded-md"
               >
                 Create QR Code
               </Button>
@@ -71,7 +71,7 @@ export function QrCodeList({ initialQrCodes, query }: QrCodeListProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {initialQrCodes.map((qr) => (
-        <Card key={qr.id} className="group hover:border-primary/50 transition-all hover:shadow-md">
+        <Card key={qr.id} className="group rounded-lg border border-slate-200 bg-white shadow-2xs hover:border-slate-300 transition-colors">
           <CardHeader>
             <CardTitle className="truncate pb-1">{qr.title}</CardTitle>
           </CardHeader>
@@ -84,12 +84,12 @@ export function QrCodeList({ initialQrCodes, query }: QrCodeListProps) {
           </CardContent>
           <CardFooter className="flex justify-end gap-2">
             <Link href={`/qr-builder/${qr.id}`} className="w-full">
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full rounded-md text-xs">
                 <Edit className="mr-2 h-4 w-4" />
                 Edit
               </Button>
             </Link>
-            <Button variant="destructive" size="icon" onClick={() => handleDelete(qr.id)}>
+            <Button variant="destructive" size="icon" className="rounded-md" onClick={() => handleDelete(qr.id)}>
               <Trash2 className="h-4 w-4" />
             </Button>
           </CardFooter>

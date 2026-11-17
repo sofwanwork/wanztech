@@ -55,7 +55,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8">
       {/* Error Message */}
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-center gap-2">
+        <div className="p-4 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm flex items-center gap-2">
           <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
           <span>{decodeURIComponent(error)}</span>
         </div>
@@ -90,7 +90,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
 
           {/* Mobile Search Button toggle could go here, for now using sidebar create triggers */}
           <div className="md:hidden">
-            <Button variant="outline" size="icon">
+            <Button variant="outline" size="icon" className="rounded-md">
               <Search className="h-4 w-4" />
             </Button>
           </div>
@@ -105,10 +105,10 @@ export default async function DashboardPage(props: DashboardPageProps) {
       {/* Grid Content */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
         {forms.length === 0 && (
-          <div className="col-span-full flex flex-col items-center justify-center py-24 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
+          <div className="col-span-full flex flex-col items-center justify-center py-24 border border-dashed border-slate-200 rounded-lg bg-slate-50/50">
             {query ? (
               <>
-                <div className="h-20 w-20 bg-white rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-gray-100">
+                <div className="h-16 w-16 bg-white rounded-lg flex items-center justify-center mb-5 shadow-2xs border border-slate-200">
                   <Search className="h-10 w-10 text-gray-400" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2 text-gray-900">No matches found</h3>
@@ -116,13 +116,13 @@ export default async function DashboardPage(props: DashboardPageProps) {
                   No forms found matching &quot;{query}&quot;. Try a different keyword.
                 </p>
                 <Link href="/forms" prefetch={false}>
-                  <Button variant="outline">Clear Search</Button>
+                  <Button variant="outline" className="rounded-md">Clear Search</Button>
                 </Link>
               </>
             ) : (
               <>
-                <div className="h-20 w-20 bg-white rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-gray-100 transition-transform hover:scale-105">
-                  <FileText className="h-10 w-10 text-primary/60" />
+                <div className="h-16 w-16 bg-white rounded-lg flex items-center justify-center mb-5 shadow-2xs border border-slate-200">
+                  <FileText className="h-10 w-10 text-violet-900" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2 text-gray-900">No forms created yet</h3>
                 <p className="text-gray-500 mb-8 text-center text-sm max-w-sm">
@@ -137,7 +137,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
                 >
                   <Button
                     size="lg"
-                    className="bg-primary hover:bg-primary/90 text-white shadow-xl shadow-primary/30"
+                    className="bg-violet-900 hover:bg-violet-950 text-white shadow-xs rounded-md"
                   >
                     Create Form Now
                   </Button>

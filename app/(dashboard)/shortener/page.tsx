@@ -41,7 +41,7 @@ export default async function ShortenerPage() {
 
             {/* Stats Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <Card>
+                <Card className="rounded-lg border border-slate-200 bg-white shadow-2xs">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Total Links</CardTitle>
                         <LinkIcon className="h-4 w-4 text-muted-foreground" />
@@ -51,7 +51,7 @@ export default async function ShortenerPage() {
                         <p className="text-xs text-muted-foreground">Active short links</p>
                     </CardContent>
                 </Card>
-                <Card>
+                <Card className="rounded-lg border border-slate-200 bg-white shadow-2xs">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Total Clicks</CardTitle>
                         <MousePointerClick className="h-4 w-4 text-muted-foreground" />
@@ -63,7 +63,7 @@ export default async function ShortenerPage() {
                 </Card>
             </div>
 
-            <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
+            <div className="rounded-lg border border-slate-200 bg-white shadow-2xs overflow-hidden">
                 <div className="p-6 border-b bg-gray-50/50">
                     <h2 className="font-semibold text-lg">Your Links</h2>
                 </div>
@@ -106,11 +106,11 @@ function CreateLinkDialog() {
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button size="lg" className="shadow-sm">
+                <Button size="lg" className="bg-violet-900 hover:bg-violet-950 text-white rounded-md shadow-xs font-medium">
                     <Plus className="mr-2 h-4 w-4" /> Create New Link
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[500px] rounded-lg">
                 <DialogHeader>
                     <DialogTitle>Create Short Link</DialogTitle>
                     <DialogDescription>

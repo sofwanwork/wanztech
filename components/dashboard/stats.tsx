@@ -27,8 +27,8 @@ export function DashboardStats({ subscription, usage, totalForms, subscriptionSt
 
   const tierColors = {
     free: 'bg-slate-100 text-slate-700 border-slate-200',
-    pro: 'bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 border-amber-200',
-    enterprise: 'bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-800 border-purple-200',
+    pro: 'bg-violet-50 text-violet-900 border-violet-200/80',
+    enterprise: 'bg-indigo-50 text-indigo-700 border-indigo-200/80',
   };
 
   const tierIcons = {
@@ -42,7 +42,7 @@ export function DashboardStats({ subscription, usage, totalForms, subscriptionSt
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
       {/* Tier Badge Card */}
-      <Card className="border-0 shadow-sm bg-white overflow-hidden">
+      <Card className="rounded-lg border border-slate-200 shadow-2xs bg-white overflow-hidden">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-gray-500">Current Plan</CardTitle>
         </CardHeader>
@@ -50,7 +50,7 @@ export function DashboardStats({ subscription, usage, totalForms, subscriptionSt
           <div className="flex items-center gap-3">
             <div
               className={cn(
-                'flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold border',
+                'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border',
                 tierColors[subscription.tier]
               )}
             >
@@ -62,7 +62,7 @@ export function DashboardStats({ subscription, usage, totalForms, subscriptionSt
             <PricingModal>
               <Button
                 variant="link"
-                className="p-0 h-auto mt-2 text-primary text-xs font-medium"
+                className="p-0 h-auto mt-2 text-violet-900 hover:text-violet-950 text-xs font-medium"
                 suppressHydrationWarning
               >
                 Upgrade to Pro →
@@ -73,7 +73,7 @@ export function DashboardStats({ subscription, usage, totalForms, subscriptionSt
       </Card>
 
       {/* Forms Created Card */}
-      <Card className="border-0 shadow-sm bg-white overflow-hidden">
+      <Card className="rounded-lg border border-slate-200 shadow-2xs bg-white overflow-hidden">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-gray-500">
             New Forms (This Month)
@@ -88,7 +88,7 @@ export function DashboardStats({ subscription, usage, totalForms, subscriptionSt
       </Card>
 
       {/* Total Forms Card */}
-      <Card className="border-0 shadow-sm bg-white overflow-hidden">
+      <Card className="rounded-lg border border-slate-200 shadow-2xs bg-white overflow-hidden">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-gray-500">Total Forms</CardTitle>
         </CardHeader>
@@ -110,7 +110,7 @@ export function DashboardStats({ subscription, usage, totalForms, subscriptionSt
       </Card>
 
       {/* Submissions Card */}
-      <Card className="border-0 shadow-sm bg-white overflow-hidden">
+      <Card className="rounded-lg border border-slate-200 shadow-2xs bg-white overflow-hidden">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-gray-500">Responses This Month</CardTitle>
         </CardHeader>

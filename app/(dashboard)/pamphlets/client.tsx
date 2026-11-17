@@ -234,7 +234,7 @@ export function CreatePamphletDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending} className="font-semibold">
+            <Button type="submit" disabled={isPending} className="font-medium bg-violet-900 hover:bg-violet-950 text-white rounded-md shadow-xs">
               {isPending ? 'Creating...' : 'Next →'}
             </Button>
           </DialogFooter>
@@ -323,7 +323,7 @@ export function PamphletCard({
   };
 
   return (
-    <div className="group relative rounded-2xl border border-gray-200/80 bg-white overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+    <div className="group relative rounded-lg border border-slate-200 bg-white overflow-hidden shadow-2xs hover:border-slate-300 transition-colors flex flex-col justify-between">
       {/* Top Banner / Cover Preview */}
       <div className="relative h-44 w-full bg-slate-900 overflow-hidden flex items-center justify-center">
         {pamphlet.coverImage || (pamphlet.pages && pamphlet.pages[0]?.imageUrl) ? (
@@ -344,7 +344,7 @@ export function PamphletCard({
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none" />
 
         {/* Status Badge & Toggle */}
-        <div className="absolute top-3 right-3 flex items-center gap-2 bg-black/50 backdrop-blur-md rounded-full px-2.5 py-1 z-10 border border-white/10">
+        <div className="absolute top-3 right-3 flex items-center gap-2 bg-black/50 backdrop-blur-md rounded-md px-2.5 py-1 z-10 border border-white/10">
           <span className="text-[11px] font-medium text-white">
             {isActive ? 'Active' : 'Closed'}
           </span>
@@ -357,7 +357,7 @@ export function PamphletCard({
         </div>
 
         {/* Display Mode Pill */}
-        <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md rounded-lg px-2 py-0.5 z-10 text-[10px] font-semibold text-white/90 border border-white/15 capitalize flex items-center gap-1">
+        <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md rounded px-2 py-0.5 z-10 text-[10px] font-semibold text-white/90 border border-white/15 capitalize flex items-center gap-1">
           <BookOpen className="w-3 h-3 text-primary" />
           {pamphlet.displayMode === 'flipbook' ? '3D Flipbook' : pamphlet.displayMode}
         </div>
@@ -387,7 +387,7 @@ export function PamphletCard({
         </div>
 
         {/* Public Link Bar */}
-        <div className="flex items-center justify-between gap-2 bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-1.5">
+        <div className="flex items-center justify-between gap-2 bg-slate-50 border border-slate-200/80 rounded-md px-3 py-1.5">
           <span className="text-xs font-mono text-slate-600 truncate">
             /p/{pamphlet.slug}
           </span>
@@ -421,7 +421,7 @@ export function PamphletCard({
             asChild
             variant="default"
             size="sm"
-            className="w-full text-xs font-semibold gap-1 rounded-xl"
+            className="w-full text-xs font-medium gap-1 rounded-md bg-violet-900 hover:bg-violet-950 text-white shadow-xs"
           >
             <Link href={`/pamphlet-builder/${pamphlet.id}`}>
               <Edit className="w-3.5 h-3.5" />
@@ -433,7 +433,7 @@ export function PamphletCard({
             variant="outline"
             size="sm"
             onClick={() => setQrOpen(true)}
-            className="w-full text-xs font-medium gap-1 rounded-xl"
+            className="w-full text-xs font-medium gap-1 rounded-md"
           >
             <QrCode className="w-3.5 h-3.5" />
             <span>QR Code</span>
@@ -445,7 +445,7 @@ export function PamphletCard({
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full text-xs font-medium gap-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl"
+                className="w-full text-xs font-medium gap-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md"
                 disabled={isDeleting}
               >
                 <Trash2 className="w-3.5 h-3.5" />

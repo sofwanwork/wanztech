@@ -15,261 +15,270 @@ import {
 
 export function LandingFeaturesBento() {
   return (
-    <section id="features" className="py-20 md:py-28 bg-slate-50/60 border-y border-slate-200/60">
+    <section id="features" className="py-20 md:py-28 bg-slate-50/60 border-b border-slate-200/80">
       <div className="container mx-auto px-4 md:px-6">
         {/* Section Header */}
         <div className="max-w-3xl mx-auto text-center mb-16">
-          <motion.h2
-            initial={{ opacity: 0, y: 12 }}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.1 }}
+            transition={{ duration: 0.4 }}
+            className="inline-block text-[11px] font-mono font-semibold uppercase tracking-wider text-slate-500 mb-2"
+          >
+            Capabilities
+          </motion.div>
+          <motion.h2
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.45, delay: 0.05 }}
             className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-slate-900 mb-4 [text-wrap:balance]"
           >
-            One Complete Ecosystem. <br className="hidden sm:inline" />
-            Everything You Need to Manage Data &amp; Documents.
+            One Unified Architecture. <br className="hidden sm:inline" />
+            Zero Middleware Headaches.
           </motion.h2>
 
           <motion.p
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.15 }}
-            className="text-base sm:text-lg text-slate-600 font-normal leading-relaxed"
+            transition={{ duration: 0.45, delay: 0.1 }}
+            className="text-base sm:text-lg text-slate-600 font-normal leading-relaxed [text-wrap:balance]"
           >
-            KlikForm is more than a standard form builder. We seamlessly combine spreadsheet
-            automation, high-definition e-certificate design, and verification systems into a single unified platform.
+            KlikForm combines high-speed form intake, direct Google Sheets bi-directional synchronization,
+            and an in-browser digital certificate publishing engine into a single focused tool.
           </motion.p>
         </div>
 
         {/* Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
           {/* Bento Card 1: Google Sheets Sync (2 columns) */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="md:col-span-2 lg:col-span-2 bg-white rounded-2xl border border-slate-200/80 p-6 md:p-8 flex flex-col justify-between shadow-xs hover:border-slate-300 transition-colors group relative overflow-hidden"
+            transition={{ duration: 0.45 }}
+            className="md:col-span-2 lg:col-span-2 bg-white rounded-lg border border-slate-200 p-6 md:p-7 flex flex-col justify-between shadow-2xs hover:border-slate-300 transition-colors"
           >
-            <div className="relative z-10">
+            <div>
               <div className="flex items-center justify-between mb-4">
-                <div className="h-11 w-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+                <div className="h-10 w-10 rounded-md bg-slate-100 text-slate-800 border border-slate-200 flex items-center justify-center">
                   <FileSpreadsheet className="h-5 w-5" />
                 </div>
-                <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">
-                  Dual Methods: OAuth &amp; Service Account
+                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+                  Direct OAuth &amp; Service Account
                 </span>
               </div>
 
-              <h3 className="text-xl font-bold text-slate-900 mb-2">
+              <h3 className="text-lg font-bold text-slate-900 mb-1.5">
                 Real-Time Google Sheets Sync
               </h3>
-              <p className="text-sm text-slate-600 leading-relaxed mb-6">
-                Every response submitted by participants is instantly synced into your Google Sheet
-                in milliseconds. Equipped with a <strong className="text-slate-800 font-semibold">Formula Injection Shield</strong> and automatic header synchronization without requiring expensive third-party webhooks.
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-5">
+                Submissions stream into your connected Google Sheet in milliseconds. Protected by an
+                automated <strong className="text-slate-800 font-semibold">Formula Injection Shield</strong> that sanitizes dangerous spreadsheet formulas (`=`, `+`, `@`, `-`) automatically.
               </p>
             </div>
 
             {/* Micro visual: Mini table preview */}
-            <div className="mt-2 rounded-xl border border-slate-100 bg-slate-50/70 p-3 font-mono text-[11px] text-slate-600 space-y-1.5">
-              <div className="flex items-center justify-between text-[10px] text-slate-400 pb-1 border-b border-slate-200/60 font-sans font-medium">
-                <span>RECENT ROWS (AUTO-SYNCED)</span>
-                <span className="text-emerald-600 flex items-center gap-1 font-semibold">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="mt-2 rounded border border-slate-200 bg-slate-50/80 p-3 font-mono text-[11px] text-slate-600 space-y-1.5">
+              <div className="flex items-center justify-between text-[10px] text-slate-400 pb-1 border-b border-slate-200 font-sans font-medium">
+                <span>RECENT SUBMISSIONS</span>
+                <span className="text-emerald-700 flex items-center gap-1 font-mono font-semibold">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
                   Live Sync
                 </span>
               </div>
-              <div className="flex justify-between items-center py-1 px-2 rounded bg-white border border-slate-200/40">
-                <span className="font-semibold text-slate-800 truncate max-w-[140px]">Siti Sarah</span>
-                <span className="text-slate-500">950312-08-5120</span>
-                <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded text-[10px]">Saved</span>
+              <div className="flex justify-between items-center py-1 px-2 rounded bg-white border border-slate-200 text-xs">
+                <span className="font-semibold text-slate-800 truncate max-w-[140px]">Sarah Chen</span>
+                <span className="text-slate-500 font-mono">schen@design.org</span>
+                <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] font-mono">Synced</span>
               </div>
-              <div className="flex justify-between items-center py-1 px-2 rounded bg-white border border-slate-200/40">
-                <span className="font-semibold text-slate-800 truncate max-w-[140px]">Khairul Amri</span>
-                <span className="text-slate-500">910408-14-6179</span>
-                <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded text-[10px]">Saved</span>
+              <div className="flex justify-between items-center py-1 px-2 rounded bg-white border border-slate-200 text-xs">
+                <span className="font-semibold text-slate-800 truncate max-w-[140px]">Marcus Vance</span>
+                <span className="text-slate-500 font-mono">mvance@corp.com</span>
+                <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] font-mono">Synced</span>
               </div>
             </div>
           </motion.div>
 
           {/* Bento Card 2: Canva-Style E-Cert Studio (2 columns) */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.08 }}
-            className="md:col-span-1 lg:col-span-2 bg-white rounded-2xl border border-slate-200/80 p-6 md:p-8 flex flex-col justify-between shadow-xs hover:border-slate-300 transition-colors group relative overflow-hidden"
+            transition={{ duration: 0.45, delay: 0.05 }}
+            className="md:col-span-1 lg:col-span-2 bg-white rounded-lg border border-slate-200 p-6 md:p-7 flex flex-col justify-between shadow-2xs hover:border-slate-300 transition-colors"
           >
-            <div className="relative z-10">
+            <div>
               <div className="flex items-center justify-between mb-4">
-                <div className="h-11 w-11 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
+                <div className="h-10 w-10 rounded-md bg-slate-100 text-slate-800 border border-slate-200 flex items-center justify-center">
                   <Award className="h-5 w-5" />
                 </div>
-                <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-purple-50 text-purple-700">
-                  Canva-Style Drag-To-Scale
+                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+                  Canvas Studio Engine
                 </span>
               </div>
 
-              <h3 className="text-xl font-bold text-slate-900 mb-2">
-                Professional E-Certificate Studio
+              <h3 className="text-lg font-bold text-slate-900 mb-1.5">
+                Precision E-Certificate Studio
               </h3>
-              <p className="text-sm text-slate-600 leading-relaxed mb-6">
-                Design certificates freely using our intuitive canvas studio. Features 4-corner scale handles,
-                Google calligraphy fonts, diverse ready-to-use templates, and <strong className="text-slate-800 font-semibold">Auto-Scaling Typography</strong> that ensures lengthy event titles never get cut off.
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-5">
+                Direct in-browser visual canvas with interactive scaling handles, curated typography,
+                dual-signatory presets, and <strong className="text-slate-800 font-semibold">Auto-Scaling Font Math</strong> that ensures long attendee names never clip off borders.
               </p>
             </div>
 
             {/* Micro visual: Mini cert with badge */}
-            <div className="mt-2 p-3.5 rounded-xl border border-amber-200/70 bg-gradient-to-br from-amber-50/40 via-white to-amber-50/20 flex items-center justify-between">
+            <div className="mt-2 p-3 rounded border border-slate-200 bg-slate-50 flex items-center justify-between">
               <div>
-                <div className="text-[10px] uppercase font-mono tracking-wider text-amber-700 font-semibold">
-                  10+ Ready-To-Use Templates
+                <div className="text-[10px] uppercase font-mono tracking-wider text-slate-500 font-semibold">
+                  10+ Curated Layouts
                 </div>
                 <div className="text-xs font-serif font-bold text-slate-800 mt-0.5">
-                  Classic, Modern, Royal, Minimalist
+                  Classic, Modern, Academic, Minimalist
                 </div>
               </div>
-              <span className="text-[11px] font-medium text-slate-700 bg-white border border-slate-200 px-2.5 py-1 rounded-lg shadow-2xs">
+              <span className="text-[11px] font-mono text-slate-700 bg-white border border-slate-200 px-2 py-0.5 rounded">
                 A4 Landscape &amp; Portrait
               </span>
             </div>
           </motion.div>
 
-          {/* Bento Card 3: Penjanaan Pukal CSV ke ZIP */}
+          {/* Bento Card 3: Bulk CSV to ZIP */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.12 }}
-            className="bg-white rounded-2xl border border-slate-200/80 p-6 flex flex-col justify-between shadow-xs hover:border-slate-300 transition-colors"
+            transition={{ duration: 0.45, delay: 0.1 }}
+            className="bg-white rounded-lg border border-slate-200 p-6 flex flex-col justify-between shadow-2xs hover:border-slate-300 transition-colors"
           >
             <div>
-              <div className="h-10 w-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4 border border-indigo-100">
-                <Sparkles className="h-5 w-5" />
+              <div className="h-9 w-9 rounded-md bg-slate-100 text-slate-800 border border-slate-200 flex items-center justify-center mb-4">
+                <Sparkles className="h-4 w-4" />
               </div>
-              <h3 className="text-base font-bold text-slate-900 mb-1.5">
-                Bulk Certificates (CSV to ZIP)
+              <h3 className="text-sm font-bold text-slate-900 mb-1">
+                Bulk Generator (CSV → ZIP)
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Upload a participant CSV list. KlikForm generates hundreds of individual PDF/PNG certificates and packages them into a ZIP archive in seconds.
+                Upload a CSV roster. KlikForm renders hundreds of individual PDF/PNG certificates client-side and packages them into a clean ZIP archive.
               </p>
             </div>
-            <div className="mt-5 pt-3 border-t border-slate-100 flex items-center gap-1.5 text-[11px] text-indigo-600 font-medium">
-              <span>CSV → Hundreds of Certs → Instant ZIP</span>
+            <div className="mt-4 pt-3 border-t border-slate-100 text-[10px] font-mono text-slate-500">
+              Instant in-browser rendering
             </div>
           </motion.div>
 
           {/* Bento Card 4: KlikBio (Link-in-Bio) */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.16 }}
-            className="bg-white rounded-2xl border border-slate-200/80 p-6 flex flex-col justify-between shadow-xs hover:border-slate-300 transition-colors"
+            transition={{ duration: 0.45, delay: 0.15 }}
+            className="bg-white rounded-lg border border-slate-200 p-6 flex flex-col justify-between shadow-2xs hover:border-slate-300 transition-colors"
           >
             <div>
-              <div className="h-10 w-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center mb-4 border border-orange-100">
-                <LinkIcon className="h-5 w-5" />
+              <div className="h-9 w-9 rounded-md bg-slate-100 text-slate-800 border border-slate-200 flex items-center justify-center mb-4">
+                <LinkIcon className="h-4 w-4" />
               </div>
-              <h3 className="text-base font-bold text-slate-900 mb-1.5">
+              <h3 className="text-sm font-bold text-slate-900 mb-1">
                 KlikBio (Link-in-Bio)
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                A personal or business bio micro-page with social media links, direct WhatsApp chat buttons, KlikForm links, and 8 aesthetic background patterns.
+                A focused bio micro-page with WhatsApp routing buttons, form links, custom themes, and clean background patterns for social profiles.
               </p>
             </div>
-            <div className="mt-5 pt-3 border-t border-slate-100 flex items-center gap-1.5 text-[11px] text-orange-600 font-medium">
-              <span>8 Themes &amp; Smart Background Patterns</span>
+            <div className="mt-4 pt-3 border-t border-slate-100 text-[10px] font-mono text-slate-500">
+              8 Themes &amp; Patterns
             </div>
           </motion.div>
 
-          {/* Bento Card 5: Logik Bersyarat & Pelbagai Halaman */}
+          {/* Bento Card 5: Conditional Logic & Multi-Page */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="bg-white rounded-2xl border border-slate-200/80 p-6 flex flex-col justify-between shadow-xs hover:border-slate-300 transition-colors"
+            transition={{ duration: 0.45, delay: 0.2 }}
+            className="bg-white rounded-lg border border-slate-200 p-6 flex flex-col justify-between shadow-2xs hover:border-slate-300 transition-colors"
           >
             <div>
-              <div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4 border border-blue-100">
-                <GitBranch className="h-5 w-5" />
+              <div className="h-9 w-9 rounded-md bg-slate-100 text-slate-800 border border-slate-200 flex items-center justify-center mb-4">
+                <GitBranch className="h-4 w-4" />
               </div>
-              <h3 className="text-base font-bold text-slate-900 mb-1.5">
-                Multi-Page &amp; Conditional Logic
+              <h3 className="text-sm font-bold text-slate-900 mb-1">
+                Logic &amp; Multi-Step Pages
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Create dynamic forms with Page Breaks, Skip Logic, and robust AND/OR rule conditions for smooth user experiences.
+                Build progressive disclosure flows with Page Breaks, Skip Logic, and field-level AND/OR branching rules.
               </p>
             </div>
-            <div className="mt-5 pt-3 border-t border-slate-100 flex items-center gap-1.5 text-[11px] text-blue-600 font-medium">
-              <span>Cleaner, responsive multi-step forms</span>
+            <div className="mt-4 pt-3 border-t border-slate-100 text-[10px] font-mono text-slate-500">
+              Dynamic branch execution
             </div>
           </motion.div>
 
-          {/* Bento Card 6: Portal Semakan & Verifikasi QR */}
+          {/* Bento Card 6: IC & QR Lookup Portal */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.24 }}
-            className="bg-white rounded-2xl border border-slate-200/80 p-6 flex flex-col justify-between shadow-xs hover:border-slate-300 transition-colors"
+            transition={{ duration: 0.45, delay: 0.25 }}
+            className="bg-white rounded-lg border border-slate-200 p-6 flex flex-col justify-between shadow-2xs hover:border-slate-300 transition-colors"
           >
             <div>
-              <div className="h-10 w-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center mb-4 border border-rose-100">
-                <ShieldCheck className="h-5 w-5" />
+              <div className="h-9 w-9 rounded-md bg-slate-100 text-slate-800 border border-slate-200 flex items-center justify-center mb-4">
+                <ShieldCheck className="h-4 w-4" />
               </div>
-              <h3 className="text-base font-bold text-slate-900 mb-1.5">
-                Lookup Portal &amp; QR Verification
+              <h3 className="text-sm font-bold text-slate-900 mb-1">
+                Public Verification Portal
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Participants can easily search and re-download their certificates using IC or email. Tamper-evident QR codes verify authenticity instantly.
+                Attendees can retrieve lost certificates using their IC or email. Third parties scan the QR code to verify validity without creating an account.
               </p>
             </div>
-            <div className="mt-5 pt-3 border-t border-slate-100 flex items-center gap-1.5 text-[11px] text-rose-600 font-medium">
-              <span>IC / Email Lookup + Instant Verification</span>
+            <div className="mt-4 pt-3 border-t border-slate-100 text-[10px] font-mono text-slate-500">
+              Zero login required
             </div>
           </motion.div>
 
-          {/* Bento Card 7 (Wide - 2 cols on Desktop): Analitik Privasi, Magic Edit Link & Pematuhan PDPA */}
+          {/* Bento Card 7 (Wide - Full Width): Analytics & Privacy Protection */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.28 }}
-            className="md:col-span-3 lg:col-span-4 bg-white rounded-2xl border border-slate-200/80 p-6 md:p-8 shadow-xs hover:border-slate-300 transition-colors"
+            transition={{ duration: 0.45, delay: 0.3 }}
+            className="md:col-span-3 lg:col-span-4 bg-white rounded-lg border border-slate-200 p-6 md:p-7 shadow-2xs hover:border-slate-300 transition-colors"
           >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
               <div className="md:col-span-2">
-                <div className="inline-flex items-center gap-1.5 text-xs text-slate-500 font-semibold mb-2">
-                  <BarChart3 className="h-4 w-4 text-purple-600" />
-                  <span>ANALYTICS &amp; DATA PRIVACY</span>
+                <div className="inline-flex items-center gap-1.5 text-xs text-slate-500 font-mono mb-2">
+                  <BarChart3 className="h-3.5 w-3.5 text-slate-700" />
+                  <span>DATA PRIVACY &amp; RESPONDENT ANALYTICS</span>
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-2">
-                  Respondent Insights &amp; Complete Privacy Protection
+                <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-2">
+                  Privacy-First Funnels &amp; Magic Edit Links
                 </h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  Pinpoint where respondents abandon your forms (*drop-off fields*), track conversion rates, and measure completion time with privacy-first analytics (no raw IPs stored). Complete with Single-Use Response Edit Magic Links and automated Personal Data Protection Act (PDPA) consent.
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  Analyze drop-off fields and completion rates without tracking personal identifiable telemetry or raw IP addresses. Includes Single-Use Response Edit Magic Links and automated Personal Data Protection Act (PDPA) consent.
                 </p>
               </div>
 
-              <div className="flex flex-col gap-2.5 bg-slate-50 p-4 rounded-xl border border-slate-100 text-xs">
+              <div className="flex flex-col gap-2 bg-slate-50 p-3.5 rounded border border-slate-200 text-xs">
                 <div className="flex items-center gap-2 text-slate-700">
-                  <Check className="h-4 w-4 text-emerald-600 shrink-0" />
-                  <span>Field Drop-Off &amp; Funnel Tracking</span>
+                  <Check className="h-3.5 w-3.5 text-slate-900 shrink-0" />
+                  <span>Field drop-off &amp; completion duration</span>
                 </div>
                 <div className="flex items-center gap-2 text-slate-700">
-                  <Check className="h-4 w-4 text-emerald-600 shrink-0" />
-                  <span>Automated PDPA Consent Checkbox</span>
+                  <Check className="h-3.5 w-3.5 text-slate-900 shrink-0" />
+                  <span>Automated PDPA consent checkbox</span>
                 </div>
                 <div className="flex items-center gap-2 text-slate-700">
-                  <Check className="h-4 w-4 text-emerald-600 shrink-0" />
-                  <span>Single-Use Response Edit Magic Link</span>
+                  <Check className="h-3.5 w-3.5 text-slate-900 shrink-0" />
+                  <span>Single-use response edit magic links</span>
                 </div>
                 <div className="flex items-center gap-2 text-slate-700">
-                  <Check className="h-4 w-4 text-emerald-600 shrink-0" />
-                  <span>Countdown Timer &amp; GPS Location Gating</span>
+                  <Check className="h-3.5 w-3.5 text-slate-900 shrink-0" />
+                  <span>Submission countdowns &amp; quota limits</span>
                 </div>
               </div>
             </div>

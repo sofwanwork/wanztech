@@ -45,8 +45,8 @@ export default async function PamphletsDashboard() {
             <h1 className="text-3xl font-bold tracking-tight text-gray-900">
               E-Pamphlets & Program Books
             </h1>
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
-              <Sparkles className="w-3 h-3" /> New
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold bg-violet-50 text-violet-900 border border-violet-200/80">
+              <Sparkles className="w-3 h-3 text-violet-900" /> New
             </span>
           </div>
           <p className="text-muted-foreground mt-1 text-sm md:text-base">
@@ -72,7 +72,7 @@ export default async function PamphletsDashboard() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="rounded-2xl border-gray-200/80 shadow-xs">
+        <Card className="rounded-lg border border-slate-200 bg-white shadow-2xs">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-600">
               Total Program Books
@@ -85,7 +85,7 @@ export default async function PamphletsDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-gray-200/80 shadow-xs">
+        <Card className="rounded-lg border border-slate-200 bg-white shadow-2xs">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-600">
               Total Attendee Views
@@ -98,7 +98,7 @@ export default async function PamphletsDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-gray-200/80 shadow-xs">
+        <Card className="rounded-lg border border-slate-200 bg-white shadow-2xs">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-600">
               Total Pages

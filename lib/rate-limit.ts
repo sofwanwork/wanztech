@@ -158,6 +158,8 @@ export const RATE_LIMITS = {
   certificateCheck: { limit: 10, windowMs: 60_000 },
   /** Login attempts: 5 per minute per IP */
   loginAttempt: { limit: 5, windowMs: 60_000 },
+  /** Signup attempts: 5 per 10 minutes per IP */
+  signupAttempt: { limit: 5, windowMs: 600_000 },
   /** API calls: 100 per minute per IP */
   apiCall: { limit: 100, windowMs: 60_000 },
 } as const;

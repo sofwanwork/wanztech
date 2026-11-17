@@ -107,7 +107,7 @@ export function EditSubscriptionDialog({
     if (expiryDate.startsWith('2099')) {
       return {
         label: 'Seumur Hidup (Lifetime)',
-        className: 'bg-purple-100 text-purple-700 border-purple-200',
+        className: 'bg-violet-100 text-violet-900 border-violet-200',
       };
     }
     const exp = new Date(`${expiryDate}T23:59:59`);
@@ -146,7 +146,7 @@ export function EditSubscriptionDialog({
     if (tier === 'free' && expiryDate) {
       finalTier = 'pro';
       setTier('pro');
-      toast.info('Pelan dinaik taraf kepada PRO secara automatik kerana tarikh luput ditetapkan.');
+      toast.info('Plan automatically upgraded to PRO because an expiration date was set.');
     }
 
     setIsSubmitting(true);
@@ -161,11 +161,11 @@ export function EditSubscriptionDialog({
       });
 
       if (!res.success) {
-        toast.error(res.error || 'Gagal mengemas kini langganan');
+        toast.error(res.error || 'Failed to update subscription');
         return;
       }
 
-      toast.success(`Pelan ${client.fullName} berjaya dikemas kini kepada ${finalTier.toUpperCase()}`);
+      toast.success(`Plan for ${client.fullName} successfully updated to ${finalTier.toUpperCase()}`);
       onSuccess({
         userId: client.id,
         tier: finalTier,
@@ -174,7 +174,7 @@ export function EditSubscriptionDialog({
       });
       onOpenChange(false);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Ralat berlaku semasa kemas kini';
+      const msg = err instanceof Error ? err.message : 'An error occurred while updating';
       toast.error(msg);
     } finally {
       setIsSubmitting(false);
@@ -193,7 +193,7 @@ export function EditSubscriptionDialog({
           <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white p-5 sm:p-6 border-b border-slate-800/80 relative">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-400/25 text-indigo-300 text-[10px] font-bold uppercase tracking-wider mb-3">
               <ShieldCheck className="h-3.5 w-3.5 text-indigo-400" />
-              <span>Pengurusan Langganan Pentadbir</span>
+              <span>Admin Subscription Management</span>
             </div>
 
             <div className="flex items-center gap-3.5">
@@ -227,7 +227,7 @@ export function EditSubscriptionDialog({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
-                  Pilih Pelan / Tier
+                  Select Plan / Tier
                 </Label>
                 <span className="text-[11px] font-semibold text-slate-500 uppercase">
                   Semasa:{' '}
@@ -265,10 +265,10 @@ export function EditSubscriptionDialog({
                   </div>
                   <div>
                     <p className={cn('text-xs font-semibold', tier === 'free' ? 'text-slate-200' : 'text-slate-700')}>
-                      Percuma Asas
+                      Basic Free
                     </p>
                     <p className={cn('text-[11px] mt-0.5', tier === 'free' ? 'text-slate-400' : 'text-slate-500')}>
-                      Borang terhad • Tiada had masa
+                      Limited forms • No expiration
                     </p>
                   </div>
                 </button>
@@ -296,16 +296,16 @@ export function EditSubscriptionDialog({
                       <CheckCircle2 className="h-4 w-4 text-indigo-600 shrink-0" />
                     ) : (
                       <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-200/60">
-                        Akses Penuh
+                        Full Access
                       </span>
                     )}
                   </div>
                   <div>
                     <p className={cn('text-xs font-semibold', tier === 'pro' ? 'text-indigo-950 font-bold' : 'text-slate-700')}>
-                      Pelan Pro (Akses Penuh)
+                      Pro Plan (Full Access)
                     </p>
                     <p className={cn('text-[11px] mt-0.5', tier === 'pro' ? 'text-indigo-800/80 font-medium' : 'text-slate-500')}>
-                      Borang tanpa had • e-Sijil & Sheets
+                      Unlimited forms • e-Certificates & Sheets
                     </p>
                   </div>
                 </button>
@@ -315,11 +315,11 @@ export function EditSubscriptionDialog({
             {/* Status Langganan */}
             <div className="space-y-1.5 pt-1">
               <Label htmlFor="status-select" className="text-xs font-bold text-slate-700 uppercase tracking-wide">
-                Status Akaun & Akses
+                Account & Access Status
               </Label>
               <Select value={status} onValueChange={(val) => setStatus(val as SubscriptionStatus)}>
                 <SelectTrigger id="status-select" className="w-full h-10 border-slate-200/90 rounded-xl bg-slate-50/40 focus:ring-indigo-500">
-                  <SelectValue placeholder="Pilih Status" />
+                  <SelectValue placeholder="Select Status" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
                   <SelectItem value="active" className="text-emerald-700 font-medium">
@@ -331,13 +331,13 @@ export function EditSubscriptionDialog({
                   <SelectItem value="expired" className="text-rose-700 font-medium">
                     <div className="flex items-center gap-2">
                       <span className="h-2 w-2 rounded-full bg-rose-500 shrink-0" />
-                      <span>Tamat Tempoh (Akses Disekat)</span>
+                      <span>Expired (Access Blocked)</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="cancelled" className="text-amber-700 font-medium">
                     <div className="flex items-center gap-2">
                       <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
-                      <span>Dibatalkan</span>
+                      <span>Cancelled</span>
                     </div>
                   </SelectItem>
                 </SelectContent>
@@ -349,7 +349,7 @@ export function EditSubscriptionDialog({
               <div className="flex items-center justify-between pt-1">
                 <Label htmlFor="expiry-input" className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
                   <Calendar className="h-3.5 w-3.5 text-slate-500" />
-                  Tarikh Luput Langganan
+                  Subscription Expiration Date
                 </Label>
                 {expiryBadge && (
                   <span className={cn('text-[11px] px-2 py-0.5 rounded-full border font-medium', expiryBadge.className)}>
@@ -390,7 +390,7 @@ export function EditSubscriptionDialog({
               {tier === 'free' && !expiryDate && (
                 <div className="flex items-start gap-1.5 p-2 rounded-xl bg-slate-50 border border-slate-200/60 text-slate-600 text-[11px] leading-relaxed">
                   <Info className="h-3.5 w-3.5 text-slate-400 shrink-0 mt-0.5" />
-                  <span>Pelan Free tiada tarikh tamat. Pilih <strong>PRO</strong> atau klik mana-mana pintasan di bawah untuk menetapkan tempoh aktif.</span>
+                  <span>Free plan has no expiration. Select <strong>PRO</strong> or click any shortcut below to set an active duration.</span>
                 </div>
               )}
 
@@ -424,10 +424,10 @@ export function EditSubscriptionDialog({
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="text-xs h-8.5 rounded-xl font-bold text-purple-700 bg-purple-50/60 border-purple-200/90 hover:bg-purple-100 hover:border-purple-300 transition-colors cursor-pointer"
+                    className="text-xs h-8.5 rounded-xl font-bold text-violet-900 bg-violet-50/60 border-violet-200/90 hover:bg-violet-100 hover:border-violet-300 transition-colors cursor-pointer"
                     onClick={() => applyPreset('lifetime')}
                   >
-                    <Sparkles className="h-3 w-3 mr-1 text-purple-600 fill-purple-200" />
+                    <Sparkles className="h-3 w-3 mr-1 text-violet-900 fill-violet-200" />
                     Lifetime
                   </Button>
                 </div>
@@ -445,7 +445,7 @@ export function EditSubscriptionDialog({
               onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
             >
-              Batal
+              Cancel
             </Button>
             <Button
               type="submit"
@@ -461,7 +461,7 @@ export function EditSubscriptionDialog({
               ) : (
                 <>
                   <CheckCircle2 className="h-4 w-4 mr-1.5" />
-                  Simpan Perubahan
+                  Save Changes
                 </>
               )}
             </Button>

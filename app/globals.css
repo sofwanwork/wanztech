@@ -51,7 +51,7 @@
 */
 
 :root {
-  --radius: 0.5rem;
+  --radius: 0.375rem;
 
   /* Background & Foreground */
   --background: #ffffff;
@@ -65,8 +65,8 @@
   --popover: #ffffff;
   --popover-foreground: #1f2937;
 
-  /* Primary - Deep Purple */
-  --primary: #451263;
+  /* Primary - Deep Royal Violet (#4c1d95) */
+  --primary: #4c1d95;
   --primary-foreground: #ffffff;
 
   /* Secondary - Light Gray */
@@ -77,9 +77,9 @@
   --muted: #f9fafb;
   --muted-foreground: #6b7280;
 
-  /* Accent - Light Purple */
-  --accent: #f3e8ff;
-  --accent-foreground: #451263;
+  /* Accent - Light Violet */
+  --accent: #f5f3ff;
+  --accent-foreground: #4c1d95;
 
   /* Destructive */
   --destructive: #ef4444;
@@ -87,24 +87,24 @@
   /* Border & Input */
   --border: #e5e7eb;
   --input: #e5e7eb;
-  --ring: #451263;
+  --ring: #4c1d95;
 
-  /* Charts - Purple palette */
-  --chart-1: #451263;
-  --chart-2: #6b21a8;
-  --chart-3: #9333ea;
-  --chart-4: #c084fc;
-  --chart-5: #e9d5ff;
+  /* Charts - Royal Violet palette */
+  --chart-1: #4c1d95;
+  --chart-2: #6d28d9;
+  --chart-3: #7c3aed;
+  --chart-4: #a78bfa;
+  --chart-5: #c4b5fd;
 
   /* Sidebar */
   --sidebar: #fafafa;
   --sidebar-foreground: #1f2937;
-  --sidebar-primary: #451263;
+  --sidebar-primary: #4c1d95;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #f3f4f6;
   --sidebar-accent-foreground: #374151;
   --sidebar-border: #e5e7eb;
-  --sidebar-ring: #451263;
+  --sidebar-ring: #4c1d95;
 }
 
 .dark {
@@ -148,7 +148,7 @@
   --chart-1: #a78bfa;
   --chart-2: #7c3aed;
   --chart-3: #6d28d9;
-  --chart-4: #5b21b6;
+  --chart-4: #4c1d95;
   --chart-5: #4c1d95;
 
   /* Sidebar */
@@ -311,4 +311,29 @@
 .custom-scrollbar {
   -ms-overflow-style: none !important; /* IE and Edge */
   scrollbar-width: none !important; /* Firefox and modern Chromium */
+}
+
+/* StPageFlip 3D Realistic Inner Spine Crease & Shadow */
+.stf__item.--left .stf__spine-inner-shadow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: auto;
+  width: 32px;
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.10) 12px, rgba(0, 0, 0, 0.02) 24px, transparent 32px);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.stf__item.--right .stf__spine-inner-shadow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: auto;
+  width: 32px;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.10) 12px, rgba(0, 0, 0, 0.02) 24px, transparent 32px);
+  pointer-events: none;
+  z-index: 10;
 }

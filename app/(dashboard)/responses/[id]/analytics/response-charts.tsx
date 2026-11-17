@@ -41,13 +41,13 @@ export function ResponseChartsSection({ formId }: { formId: string }) {
   const summaries = data?.ok ? (data.summaries ?? []) : [];
 
   return (
-    <Card className="border border-gray-200 bg-white">
+    <Card className="rounded-lg border border-slate-200 bg-white shadow-2xs">
       <CardHeader className="pb-2 pt-4 px-5">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <CardTitle className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
-            <PieChart className="h-4 w-4 text-primary" /> Answer Summary (from Google Sheet)
+            <PieChart className="h-4 w-4 text-violet-900" /> Answer Summary (from Google Sheet)
           </CardTitle>
-          <Button size="sm" variant="outline" onClick={load} disabled={loading}>
+          <Button size="sm" variant="outline" className="rounded-md" onClick={load} disabled={loading}>
             {loading ? (
               <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
             ) : (
@@ -103,9 +103,9 @@ export function ResponseChartsSection({ formId }: { formId: string }) {
                               {o.count} ({o.pct}%)
                             </span>
                           </div>
-                          <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-2 w-full bg-slate-100 rounded-sm overflow-hidden">
                             <div
-                              className={`h-full rounded-full ${BAR_COLORS[i % BAR_COLORS.length]}`}
+                              className={`h-full rounded-sm ${BAR_COLORS[i % BAR_COLORS.length]}`}
                               style={{ width: `${Math.round((o.count / max) * 100)}%` }}
                             />
                           </div>

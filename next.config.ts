@@ -35,17 +35,19 @@ const nextConfig: NextConfig = {
     const cspDirectives = [
       `default-src 'self'`,
       // Next.js requires unsafe-inline for its runtime scripts & styles
-      `script-src 'self' 'unsafe-inline' 'unsafe-eval' *.vercel-scripts.com`,
+      `script-src 'self' 'unsafe-inline' 'unsafe-eval' *.vercel-scripts.com https://challenges.cloudflare.com`,
       `style-src 'self' 'unsafe-inline' fonts.googleapis.com`,
       `font-src 'self' fonts.gstatic.com`,
+      // Allow Cloudflare Turnstile widget iframe
+      `frame-src 'self' https://challenges.cloudflare.com`,
       // Sentry Session Replay spins up a Web Worker from a blob: URL for
       // compression. Without an explicit worker-src it falls back to
       // script-src (which lacks blob:) and gets blocked.
       `worker-src 'self' blob:`,
       // Allow images from any HTTPS source (cover images, avatars, etc.)
       `img-src 'self' data: blob: https:`,
-      // Allow connections to Supabase, Sentry tunnel, and BCL.my payment API
-      `connect-src 'self' *.supabase.co *.supabase.in *.sentry.io wss://*.supabase.co https://bcl.my`,
+      // Allow connections to Supabase, Sentry tunnel, BCL.my payment API, and Turnstile
+      `connect-src 'self' *.supabase.co *.supabase.in *.sentry.io wss://*.supabase.co https://bcl.my https://challenges.cloudflare.com`,
       `frame-ancestors 'none'`,
       `base-uri 'self'`,
       `form-action 'self'`,

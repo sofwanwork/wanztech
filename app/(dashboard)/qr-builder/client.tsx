@@ -66,7 +66,7 @@ export default function QrBuilderClient({ initialData }: QrBuilderClientProps) {
       <header className="border-b bg-white px-6 py-3 flex items-center justify-between gap-4">
         <div className="flex items-center gap-4 flex-1">
           <Link href="/qr-builder">
-            <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8">
+            <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8 rounded-md">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
@@ -84,7 +84,7 @@ export default function QrBuilderClient({ initialData }: QrBuilderClientProps) {
             </span>
           </div>
         </div>
-        <Button onClick={handleSave} disabled={isSaving} size="sm">
+        <Button onClick={handleSave} disabled={isSaving} size="sm" className="bg-violet-900 hover:bg-violet-950 text-white rounded-md shadow-xs">
           {isSaving ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

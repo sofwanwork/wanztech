@@ -58,7 +58,7 @@ export default async function CertificateBuilderPage({
 
         {allowed ? (
           <NewCertificateDialog>
-            <Button className="gap-2">
+            <Button className="gap-2 bg-violet-900 hover:bg-violet-950 text-white rounded-md shadow-xs">
               <Plus className="h-4 w-4" />
               New Certificate
             </Button>
@@ -87,10 +87,10 @@ export default async function CertificateBuilderPage({
             <Badge
               variant={selectedCategory === cat.id ? 'default' : 'outline'}
               className={cn(
-                'cursor-pointer px-4 py-2 text-sm font-medium transition-all',
+                'cursor-pointer px-3 py-1 text-xs font-medium rounded-md transition-colors',
                 selectedCategory === cat.id
-                  ? 'shadow-md'
-                  : 'hover:bg-gray-100 border-gray-300 text-gray-600'
+                  ? 'bg-violet-900 text-white hover:bg-violet-950 shadow-xs'
+                  : 'hover:bg-slate-100 border-slate-200 text-slate-600'
               )}
             >
               {cat.label}
@@ -102,8 +102,8 @@ export default async function CertificateBuilderPage({
       {/* Templates Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {templates.length === 0 ? (
-          <div className="col-span-full flex flex-col items-center justify-center py-24 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
-            <div className="h-20 w-20 bg-white rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-gray-100">
+          <div className="col-span-full flex flex-col items-center justify-center py-24 border border-dashed border-slate-200 rounded-lg bg-slate-50/50">
+            <div className="h-16 w-16 bg-white rounded-lg flex items-center justify-center mb-5 shadow-2xs border border-slate-200">
               <FileImage className="h-10 w-10 text-primary/60" />
             </div>
             <h3 className="text-xl font-semibold mb-2 text-gray-900">
@@ -114,7 +114,7 @@ export default async function CertificateBuilderPage({
             </p>
             {allowed ? (
               <NewCertificateDialog>
-                <Button size="lg" className="shadow-xl shadow-primary/30">
+                <Button size="lg" className="bg-violet-900 hover:bg-violet-950 text-white rounded-md shadow-xs">
                   Create Certificate Now
                 </Button>
               </NewCertificateDialog>

@@ -13,6 +13,8 @@ export interface AdminClientItem {
   avatarUrl?: string;
   createdAt: string;
   lastSignInAt?: string;
+  emailConfirmedAt?: string | null;
+  isVerified: boolean;
   tier: SubscriptionTier;
   status: SubscriptionStatus;
   currentPeriodStart?: string;
@@ -183,6 +185,8 @@ export async function getAdminClientsAction(): Promise<{
 
       const tier: SubscriptionTier = (sub?.tier as SubscriptionTier) || 'free';
       const status: SubscriptionStatus = (sub?.status as SubscriptionStatus) || 'active';
+      const emailConfirmedAt = u.email_confirmed_at || null;
+      const isVerified = Boolean(emailConfirmedAt || u.app_metadata?.provider === 'google');
 
       return {
         id: u.id,
@@ -192,6 +196,8 @@ export async function getAdminClientsAction(): Promise<{
         avatarUrl: profile?.avatar_url || (u.user_metadata?.avatar_url as string | undefined),
         createdAt: u.created_at,
         lastSignInAt: u.last_sign_in_at,
+        emailConfirmedAt,
+        isVerified,
         tier,
         status,
         currentPeriodStart: sub?.current_period_start,
@@ -263,6 +269,47 @@ export async function updateClientSubscriptionAction(params: {
   }
 }
 
+async function permanentlyDeleteUserById(
+  admin: ReturnType<typeof createAdminClient>,
+  userId: string,
+  adminUserId: string
+): Promise<{ success: boolean; error?: string }> {
+  if (userId === adminUserId) {
+    return { success: false, error: 'Anda tidak boleh memadam akaun Super Admin anda sendiri!' };
+  }
+
+  const { data: targetData, error: targetError } = await admin.auth.admin.getUserById(userId);
+  if (targetError || !targetData?.user) {
+    return { success: false, error: 'Pengguna tidak ditemui' };
+  }
+
+  const targetEmail = targetData.user.email?.toLowerCase().trim();
+  if (targetEmail === PRIMARY_ADMIN_EMAIL.toLowerCase().trim()) {
+    return { success: false, error: 'Tidak dibenarkan memadam akaun Super Admin!' };
+  }
+
+  // Delete related rows that might not have ON DELETE CASCADE
+  await Promise.allSettled([
+    admin.from('forms').delete().eq('user_id', userId),
+    admin.from('profiles').delete().eq('id', userId),
+    admin.from('subscriptions').delete().eq('user_id', userId),
+    admin.from('usage').delete().eq('user_id', userId),
+    admin.from('settings').delete().eq('user_id', userId),
+    admin.from('qr_codes').delete().eq('user_id', userId),
+    admin.from('short_links').delete().eq('user_id', userId),
+    admin.from('certificate_templates').delete().eq('user_id', userId),
+    admin.from('bio_links').delete().eq('user_id', userId),
+    admin.from('pamphlets').delete().eq('user_id', userId),
+  ]);
+
+  const { error: deleteError } = await admin.auth.admin.deleteUser(userId);
+  if (deleteError) {
+    return { success: false, error: deleteError.message };
+  }
+
+  return { success: true };
+}
+
 /**
  * Permanently delete a client from Supabase Auth and all associated records.
  * Protected by verifyAdminSession().
@@ -279,47 +326,113 @@ export async function deleteClientAction(userId: string): Promise<{
       return { success: false, error: 'ID Pengguna diperlukan' };
     }
 
-    // Super Admin self-deletion prevention
-    if (userId === adminUser.id) {
-      return { success: false, error: 'Anda tidak boleh memadam akaun Super Admin anda sendiri!' };
-    }
-
     const admin = createAdminClient();
-
-    // Check target user to guarantee we never delete PRIMARY_ADMIN_EMAIL
-    const { data: targetData, error: targetError } = await admin.auth.admin.getUserById(userId);
-    if (targetError || !targetData?.user) {
-      return { success: false, error: 'Pengguna tidak ditemui' };
+    const res = await permanentlyDeleteUserById(admin, userId, adminUser.id);
+    if (!res.success) {
+      return res;
     }
-
-    const targetEmail = targetData.user.email?.toLowerCase().trim();
-    if (targetEmail === PRIMARY_ADMIN_EMAIL.toLowerCase().trim()) {
-      return { success: false, error: 'Tidak dibenarkan memadam akaun Super Admin!' };
-    }
-
-    // Delete related rows that might not have ON DELETE CASCADE
-    await Promise.allSettled([
-      admin.from('forms').delete().eq('user_id', userId),
-      admin.from('profiles').delete().eq('id', userId),
-      admin.from('subscriptions').delete().eq('user_id', userId),
-      admin.from('usage').delete().eq('user_id', userId),
-      admin.from('settings').delete().eq('user_id', userId),
-      admin.from('qr_codes').delete().eq('user_id', userId),
-      admin.from('short_links').delete().eq('user_id', userId),
-      admin.from('certificate_templates').delete().eq('user_id', userId),
-      admin.from('bio_links').delete().eq('user_id', userId),
-      admin.from('pamphlets').delete().eq('user_id', userId),
-    ]);
-
-    // Finally delete from Auth users
-    const { error: deleteError } = await admin.auth.admin.deleteUser(userId);
-    if (deleteError) throw deleteError;
 
     revalidatePath('/admin');
-
     return { success: true };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Gagal memadam klien';
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Permanently delete multiple selected client accounts in bulk.
+ * Protected by verifyAdminSession() and guards against Super Admin deletion.
+ */
+export async function deleteClientsBulkAction(userIds: string[]): Promise<{
+  success: boolean;
+  deletedIds?: string[];
+  failedCount?: number;
+  error?: string;
+}> {
+  try {
+    const adminUser = await verifyAdminSession();
+    const uniqueIds = Array.from(new Set(userIds.filter(Boolean)));
+    if (uniqueIds.length === 0) {
+      return { success: false, error: 'No clients selected' };
+    }
+
+    const admin = createAdminClient();
+    const deletedIds: string[] = [];
+    let failedCount = 0;
+
+    for (const userId of uniqueIds) {
+      const res = await permanentlyDeleteUserById(admin, userId, adminUser.id);
+      if (res.success) {
+        deletedIds.push(userId);
+      } else {
+        failedCount++;
+      }
+    }
+
+    revalidatePath('/admin');
+    return { success: true, deletedIds, failedCount };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to delete selected clients';
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Clean up all unverified Free-tier accounts with 0 forms, 0 submissions, and no sign-ins.
+ * Protected by verifyAdminSession().
+ */
+export async function deleteUnverifiedZeroUsageClientsAction(): Promise<{
+  success: boolean;
+  deletedIds?: string[];
+  error?: string;
+}> {
+  try {
+    const adminUser = await verifyAdminSession();
+    const admin = createAdminClient();
+
+    const { data: usersData, error: usersError } = await admin.auth.admin.listUsers({
+      page: 1,
+      perPage: 1000,
+    });
+    if (usersError) throw usersError;
+
+    const [{ data: subscriptions }, { data: forms }, { data: usage }] = await Promise.all([
+      admin.from('subscriptions').select('user_id, tier'),
+      admin.from('forms').select('user_id'),
+      admin.from('usage').select('user_id, total_submissions'),
+    ]);
+
+    const subTierMap = new Map((subscriptions || []).map((s) => [s.user_id, s.tier]));
+    const usersWithForms = new Set((forms || []).map((f) => f.user_id).filter(Boolean));
+    const usersWithSubmissions = new Set(
+      (usage || []).filter((u) => Number(u.total_submissions) > 0).map((u) => u.user_id)
+    );
+
+    const candidates = (usersData?.users || []).filter((u) => {
+      const email = u.email?.toLowerCase().trim();
+      if (!email || email === PRIMARY_ADMIN_EMAIL.toLowerCase().trim()) return false;
+      if (u.id === adminUser.id) return false;
+      if (u.email_confirmed_at || u.app_metadata?.provider === 'google') return false;
+      if (u.last_sign_in_at) return false;
+      const tier = subTierMap.get(u.id) || 'free';
+      if (tier !== 'free') return false;
+      if (usersWithForms.has(u.id) || usersWithSubmissions.has(u.id)) return false;
+      return true;
+    });
+
+    const deletedIds: string[] = [];
+    for (const candidate of candidates) {
+      const res = await permanentlyDeleteUserById(admin, candidate.id, adminUser.id);
+      if (res.success) {
+        deletedIds.push(candidate.id);
+      }
+    }
+
+    revalidatePath('/admin');
+    return { success: true, deletedIds };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to clean up unverified accounts';
     return { success: false, error: message };
   }
 }

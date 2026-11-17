@@ -13,7 +13,7 @@ import {
     QrCode,
     BarChart2,
     MessageCircle,
-    CheckCircle2,
+    Check,
     Layers,
 } from 'lucide-react';
 import { Metadata } from 'next';
@@ -28,20 +28,20 @@ export const metadata: Metadata = {
 
 export default function BioProductPage() {
     return (
-        <div className="flex flex-col min-h-screen bg-white">
+        <div className="flex flex-col min-h-screen bg-white text-slate-900 font-sans">
             {/* Header */}
-            <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+            <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md supports-[backdrop-filter]:bg-white/75">
                 <div className="container mx-auto px-4 md:px-6 flex h-16 items-center justify-between">
                     <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-                        <div className="relative h-8 w-8 rounded-lg overflow-hidden">
-                            <Image src="/logo.png" alt="KlikForm Logo" fill className="object-contain" sizes="32px" />
+                        <div className="relative h-8 w-8 rounded-md overflow-hidden">
+                            <Image src="/logo.png" alt="KlikForm Logo" fill className="object-contain" sizes="32px" priority />
                         </div>
-                        <span><span className="text-primary">Klik</span>Form</span>
+                        <span className="tracking-tight text-slate-900"><span className="text-violet-900">Klik</span>Form</span>
                     </Link>
                     <div className="hidden md:flex flex-1 justify-center ml-8">
                         <LandingNavbar />
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
                         <LandingHeaderAuth />
                         <LandingMobileMenu />
                     </div>
@@ -50,26 +50,27 @@ export default function BioProductPage() {
 
             <main className="flex-1">
                 {/* Hero */}
-                <section className="relative overflow-hidden py-20 lg:py-32 bg-emerald-50/40">
-                    <div className="absolute top-0 right-0 w-full h-full overflow-hidden z-0 opacity-25">
-                        <div className="absolute right-[-10%] top-[-10%] w-[500px] h-[500px] rounded-full bg-emerald-500/20 blur-3xl" />
-                        <div className="absolute left-[-10%] bottom-[-10%] w-[400px] h-[400px] rounded-full bg-teal-400/20 blur-3xl" />
-                    </div>
+                <section className="relative py-20 lg:py-28 bg-white border-b border-slate-200/80">
+                    <div className="absolute inset-0 -z-10 bg-[radial-gradient(#e4e4e7_1px,transparent_1px)] [background-size:20px_20px] opacity-60" />
                     <div className="container mx-auto px-4 md:px-6 relative z-10 text-center max-w-4xl">
-                        <div className="inline-flex items-center gap-2 bg-emerald-100/80 text-emerald-800 px-4 py-1.5 rounded-full text-sm font-semibold mb-8 border border-emerald-200/60 shadow-xs">
-                            <Sparkles className="h-4 w-4 text-emerald-600" /> KlikBio — Next-Generation Link-in-Bio
+                        <div className="inline-flex items-center gap-2 bg-slate-100 text-slate-800 border border-slate-200 px-3 py-1 rounded text-xs font-mono font-medium mb-6">
+                            <Sparkles className="h-3.5 w-3.5" />
+                            <span>Link-in-Bio Architecture</span>
                         </div>
-                        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl text-transparent bg-clip-text bg-gradient-to-r from-emerald-700 via-teal-600 to-emerald-800 animate-gradient-xy mb-6 pb-4 [text-wrap:balance]">
-                            One Smart Link For All Your Profiles, Social Media &amp; Forms
+                        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl text-slate-950 mb-6 [text-wrap:balance]">
+                            One Unified Profile Link for Your Audience
                         </h1>
-                        <p className="text-lg md:text-xl text-slate-600 leading-relaxed mb-10 max-w-2xl mx-auto [text-wrap:balance]">
-                            Turn your social media bio into a professional micro-landing page. Features 8 elegant themes, aesthetic background patterns, direct WhatsApp links, and instant real-time live preview.
+                        <p className="text-base sm:text-lg md:text-xl text-slate-600 leading-relaxed mb-9 max-w-2xl mx-auto [text-wrap:balance]">
+                            Turn your social bio into a professional micro-page. Includes 8 curated themes, background patterns, direct WhatsApp routing, and real-time live preview.
                         </p>
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <Button size="lg" className="h-12 px-8 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20" asChild>
-                                <Link href="/login?tab=signup">Build Your KlikBio Free <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                            <Button size="lg" className="h-11 px-6 rounded-md bg-violet-900 hover:bg-violet-950 text-white text-xs font-medium shadow-xs" asChild>
+                                <Link href="/login?tab=signup">
+                                    Build Your KlikBio Free
+                                    <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                                </Link>
                             </Button>
-                            <Button size="lg" variant="outline" className="h-12 px-8 border-slate-200 hover:bg-slate-50" asChild>
+                            <Button size="lg" variant="outline" className="h-11 px-6 rounded-md border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-xs font-medium" asChild>
                                 <Link href="/pricing">View Plans &amp; Pricing</Link>
                             </Button>
                         </div>
@@ -77,104 +78,102 @@ export default function BioProductPage() {
                 </section>
 
                 {/* Key Features Bento */}
-                <section className="py-16 md:py-24">
+                <section className="py-16 md:py-24 border-b border-slate-200/80">
                     <div className="container mx-auto px-4 md:px-6">
-                        <div className="text-center mb-16">
-                            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 mb-4">
-                                Everything You Need in a Single Bio Page
+                        <div className="text-center mb-14">
+                            <div className="inline-block text-[11px] font-mono font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                                Features
+                            </div>
+                            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-slate-900 mb-3">
+                                Modern Bio Profile Capabilities
                             </h2>
-                            <p className="text-lg text-slate-500 max-w-2xl mx-auto">
-                                Purpose-built for online merchants, event organizers, educators, and content creators.
+                            <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto font-normal">
+                                Purpose-built for merchants, event managers, educators, and creators.
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                            <div className="bg-white p-8 rounded-3xl shadow-xs border border-slate-200/80 hover:shadow-md hover:border-emerald-200 transition-all">
-                                <div className="h-12 w-12 bg-emerald-50 rounded-2xl flex items-center justify-center mb-6 text-emerald-600 border border-emerald-100">
-                                    <Palette className="h-6 w-6" />
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 max-w-6xl mx-auto">
+                            <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-2xs hover:border-slate-300 transition-colors">
+                                <div className="h-9 w-9 bg-slate-100 rounded-md border border-slate-200 flex items-center justify-center mb-4 text-slate-800">
+                                    <Palette className="h-4 w-4" />
                                 </div>
-                                <h3 className="text-xl font-bold text-slate-900 mb-3">8 Premium Color Themes</h3>
-                                <p className="text-slate-500 leading-relaxed text-sm">
-                                    Choose from 8 curated themes: Emerald Luxe, Onyx Dark, Sunset Glow, Deep Ocean, Minimal Light, Cyber Neon, and more.
+                                <h3 className="text-base font-bold text-slate-900 mb-2">8 Curated Color Palettes</h3>
+                                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                                    Switch effortlessly between Minimal Light, Onyx Dark, Emerald Slate, Deep Ocean, and Warm Paper styles.
                                 </p>
                             </div>
 
-                            <div className="bg-white p-8 rounded-3xl shadow-xs border border-slate-200/80 hover:shadow-md hover:border-emerald-200 transition-all">
-                                <div className="h-12 w-12 bg-teal-50 rounded-2xl flex items-center justify-center mb-6 text-teal-600 border border-teal-100">
-                                    <Layers className="h-6 w-6" />
+                            <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-2xs hover:border-slate-300 transition-colors">
+                                <div className="h-9 w-9 bg-slate-100 rounded-md border border-slate-200 flex items-center justify-center mb-4 text-slate-800">
+                                    <Layers className="h-4 w-4" />
                                 </div>
-                                <h3 className="text-xl font-bold text-slate-900 mb-3">8 Aesthetic Background Patterns</h3>
-                                <p className="text-slate-500 leading-relaxed text-sm">
-                                    Add a unique visual touch with Polka Dots, Topography Waves, Grid, Modern Stripes, and Digital Circuit patterns.
+                                <h3 className="text-base font-bold text-slate-900 mb-2">Geometric Background Patterns</h3>
+                                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                                    Enhance visual texture with subtle Dot Matrix, Clean Grids, Topography Waves, and Minimal Stripes.
                                 </p>
                             </div>
 
-                            <div className="bg-white p-8 rounded-3xl shadow-xs border border-slate-200/80 hover:shadow-md hover:border-emerald-200 transition-all">
-                                <div className="h-12 w-12 bg-green-50 rounded-2xl flex items-center justify-center mb-6 text-green-600 border border-green-100">
-                                    <MessageCircle className="h-6 w-6" />
+                            <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-2xs hover:border-slate-300 transition-colors">
+                                <div className="h-9 w-9 bg-slate-100 rounded-md border border-slate-200 flex items-center justify-center mb-4 text-slate-800">
+                                    <MessageCircle className="h-4 w-4" />
                                 </div>
-                                <h3 className="text-xl font-bold text-slate-900 mb-3">Smart WhatsApp Links</h3>
-                                <p className="text-slate-500 leading-relaxed text-sm">
-                                    Make it effortless for customers to chat with one click, complete with pre-filled greeting text.
+                                <h3 className="text-base font-bold text-slate-900 mb-2">Direct WhatsApp Routing</h3>
+                                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                                    Allow prospects and customers to initiate chats with one click, pre-populated with customized inquiry messages.
                                 </p>
                             </div>
 
-                            <div className="bg-white p-8 rounded-3xl shadow-xs border border-slate-200/80 hover:shadow-md hover:border-emerald-200 transition-all">
-                                <div className="h-12 w-12 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 text-blue-600 border border-blue-100">
-                                    <Smartphone className="h-6 w-6" />
+                            <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-2xs hover:border-slate-300 transition-colors">
+                                <div className="h-9 w-9 bg-slate-100 rounded-md border border-slate-200 flex items-center justify-center mb-4 text-slate-800">
+                                    <Smartphone className="h-4 w-4" />
                                 </div>
-                                <h3 className="text-xl font-bold text-slate-900 mb-3">Live Mobile Mockup Preview</h3>
-                                <p className="text-slate-500 leading-relaxed text-sm">
-                                    See exactly how your bio page looks on mobile in real time as you edit profiles and arrange links.
+                                <h3 className="text-base font-bold text-slate-900 mb-2">Real-Time Mobile Sandbox</h3>
+                                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                                    Preview your mobile bio exactly as your followers will see it while rearranging links and editing bios.
                                 </p>
                             </div>
 
-                            <div className="bg-white p-8 rounded-3xl shadow-xs border border-slate-200/80 hover:shadow-md hover:border-emerald-200 transition-all">
-                                <div className="h-12 w-12 bg-purple-50 rounded-2xl flex items-center justify-center mb-6 text-purple-600 border border-purple-100">
-                                    <QrCode className="h-6 w-6" />
+                            <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-2xs hover:border-slate-300 transition-colors">
+                                <div className="h-9 w-9 bg-slate-100 rounded-md border border-slate-200 flex items-center justify-center mb-4 text-slate-800">
+                                    <QrCode className="h-4 w-4" />
                                 </div>
-                                <h3 className="text-xl font-bold text-slate-900 mb-3">QR Code &amp; Share Dialog</h3>
-                                <p className="text-slate-500 leading-relaxed text-sm">
-                                    Every KlikBio page comes with a high-resolution printable QR code and a clean short link for easy sharing on social media.
+                                <h3 className="text-base font-bold text-slate-900 mb-2">QR Code &amp; Short URL</h3>
+                                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                                    Every bio page includes a crisp vector QR code ready for physical event posters, business cards, and banners.
                                 </p>
                             </div>
 
-                            <div className="bg-white p-8 rounded-3xl shadow-xs border border-slate-200/80 hover:shadow-md hover:border-emerald-200 transition-all">
-                                <div className="h-12 w-12 bg-amber-50 rounded-2xl flex items-center justify-center mb-6 text-amber-600 border border-amber-100">
-                                    <BarChart2 className="h-6 w-6" />
+                            <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-2xs hover:border-slate-300 transition-colors">
+                                <div className="h-9 w-9 bg-slate-100 rounded-md border border-slate-200 flex items-center justify-center mb-4 text-slate-800">
+                                    <BarChart2 className="h-4 w-4" />
                                 </div>
-                                <h3 className="text-xl font-bold text-slate-900 mb-3">Click &amp; Visitor Analytics</h3>
-                                <p className="text-slate-500 leading-relaxed text-sm">
-                                    Track clicks for every individual link to discover which products or offers resonate most with your audience.
+                                <h3 className="text-base font-bold text-slate-900 mb-2">Link Click Metrics</h3>
+                                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                                    Track clicks across every link to identify which products, event registrations, or resources drive engagement.
                                 </p>
                             </div>
                         </div>
                     </div>
                 </section>
 
-                {/* Sesuai Untuk Siapa */}
-                <section className="py-16 md:py-24 bg-slate-50/60 border-t border-slate-100">
+                {/* Target Workflows */}
+                <section className="py-16 md:py-20 bg-slate-50 border-b border-slate-200/80">
                     <div className="container mx-auto px-4 md:px-6">
-                        <div className="text-center mb-16">
-                            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 mb-4">
-                                Tailored For Every Use Case
-                            </h2>
-                            <p className="text-lg text-slate-500 max-w-2xl mx-auto">
-                                One link that unifies all your offerings across Instagram, TikTok, Facebook, and WhatsApp.
-                            </p>
+                        <div className="text-center mb-12">
+                            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 mb-2">Target Workflows</h2>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto font-sans">
                             {[
-                                { title: 'Online Merchants & Sellers', desc: 'Showcase product catalogs, order forms, and instant WhatsApp chat links in a single bio.' },
-                                { title: 'Teachers & Educators', desc: 'Organize teaching materials, class attendance forms, and student certificate lookup portals.' },
-                                { title: 'Event & Function Organizers', desc: 'Share Waze/Google Maps directions, RSVP forms, and event itineraries effortlessly.' },
-                                { title: 'Creators & Freelancers', desc: 'Showcase your latest portfolio, YouTube/TikTok channels, and consultation inquiry links.' },
+                                { title: 'Merchants & Brands', desc: 'Centralize product catalogs, intake forms, and direct WhatsApp ordering.' },
+                                { title: 'Teachers & Trainers', desc: 'Organize course handouts, attendance check-ins, and certificate portals.' },
+                                { title: 'Event Organizers', desc: 'Share venue directions, speaker lineups, and ticket registration forms.' },
+                                { title: 'Creators & Agencies', desc: 'Showcase portfolios, media kits, and direct client consultation links.' },
                             ].map((item, i) => (
-                                <div key={i} className="bg-white p-6 rounded-3xl border border-slate-200/80 text-center hover:shadow-md hover:-translate-y-1 transition-all">
-                                    <div className="h-10 w-10 bg-emerald-50 rounded-xl flex items-center justify-center mx-auto mb-4 text-emerald-600">
-                                        <CheckCircle2 className="h-5 w-5" />
+                                <div key={i} className="bg-white p-5 rounded-lg border border-slate-200 shadow-2xs text-left">
+                                    <div className="h-8 w-8 bg-slate-100 rounded-md border border-slate-200 flex items-center justify-center mb-3 text-slate-900">
+                                        <Check className="h-4 w-4" />
                                     </div>
-                                    <h3 className="font-bold text-slate-900 mb-2">{item.title}</h3>
+                                    <h3 className="font-bold text-slate-900 text-sm mb-1">{item.title}</h3>
                                     <p className="text-xs text-slate-500 leading-relaxed">{item.desc}</p>
                                 </div>
                             ))}
@@ -183,16 +182,19 @@ export default function BioProductPage() {
                 </section>
 
                 {/* CTA */}
-                <section className="py-20 bg-emerald-950 text-white relative overflow-hidden">
-                    <div className="container mx-auto px-4 md:px-6 text-center max-w-3xl relative z-10">
-                        <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-6">
-                            Create Your KlikBio Link Today
+                <section className="py-20 bg-slate-950 text-white">
+                    <div className="container mx-auto px-4 md:px-6 text-center max-w-2xl">
+                        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-4 [text-wrap:balance]">
+                            Build Your Free KlikBio Profile
                         </h2>
-                        <p className="text-lg text-emerald-100/90 mb-10 max-w-2xl mx-auto">
-                            Sign up free in seconds. No credit card required.
+                        <p className="text-sm sm:text-base text-slate-300 mb-8 font-normal leading-relaxed">
+                            Publish your personalized link in under sixty seconds.
                         </p>
-                        <Button size="lg" className="h-12 px-8 bg-white text-emerald-950 hover:bg-emerald-50 font-bold shadow-xl" asChild>
-                            <Link href="/login?tab=signup">Get Started Free Now <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                        <Button size="lg" className="h-10 px-6 rounded-md bg-violet-900 hover:bg-violet-950 text-white text-xs font-medium shadow-xs" asChild>
+                            <Link href="/login?tab=signup">
+                                Get Started Free
+                                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                            </Link>
                         </Button>
                     </div>
                 </section>

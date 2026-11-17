@@ -13,117 +13,116 @@ import {
 const USE_CASES = [
   {
     icon: GraduationCap,
-    category: "Education & Schools",
-    title: "Teachers, Lecturers & Academic Institutions",
-    desc: "Manage extracurricular sign-ups, sports events, attendance countdown timers, and automatically issue student participation e-certificates with ease.",
+    category: "EDUCATION & ACADEMIA",
+    title: "Schools, Universities & Educators",
+    desc: "Manage extracurricular enrollments, departmental symposiums, attendance gates, and automatically dispatch accredited student e-certificates upon completion.",
     points: [
-      "Bulk generate student certificates from CSV",
-      "Parent certificate lookup portal using student IC / Identity No.",
-      "Attendance tracking with automated countdown lock",
+      "Bulk generate student certificates directly from CSV rosters",
+      "Public student certificate self-lookup portal using Student ID or IC",
+      "Automated attendance cutoff timers and deadline gating",
     ],
-    color: "bg-blue-50 text-blue-600 border-blue-100",
   },
   {
     icon: CalendarDays,
-    category: "Events & Conferences",
-    title: "Event & Webinar Organizers",
-    desc: "Effortless attendee registration, dynamic ticketing QR codes, and automated delivery of digital certificates of appreciation directly via email.",
+    category: "EVENTS & CONFERENCES",
+    title: "Conferences & Summit Organizers",
+    desc: "Seamless registrant intake, dynamic check-in ticketing QR codes, and automated delivery of high-resolution digital certificates of appreciation.",
     points: [
-      "Registration data flows straight into Google Sheets",
-      "Tamper-evident QR code stamps on every certificate",
-      "Respondents can update entries using single-use Magic Links",
+      "Registration records stream live into Google Sheets",
+      "Tamper-evident verification stamp on every certificate",
+      "Attendees can amend submissions via single-use magic links",
     ],
-    color: "bg-purple-50 text-purple-600 border-purple-100",
   },
   {
     icon: ShoppingBag,
-    category: "Commerce & Creators",
-    title: "WhatsApp Merchants & E-Commerce",
-    desc: "Replace messy manual order forms with sleek, mobile-optimized checkout pages that send formatted order summaries directly to your WhatsApp.",
+    category: "COMMERCE & CREATORS",
+    title: "Direct Merchants & Digital Creators",
+    desc: "Upgrade manual social order forms into clean, fast mobile checkout experiences with immediate order routing directly to WhatsApp.",
     points: [
-      "Professional KlikBio link-in-bio page for social media",
-      "Instant 'Send to WhatsApp' chat button",
-      "Order forms with product image options and variants",
+      "Clean KlikBio link-in-bio hub for Instagram & TikTok profiles",
+      "Instant 'Chat on WhatsApp' pre-formatted order button",
+      "Product showcase forms with inventory and variant selections",
     ],
-    color: "bg-emerald-50 text-emerald-600 border-emerald-100",
   },
   {
     icon: Building2,
-    category: "Corporate & Operations",
-    title: "Companies & HR Teams",
-    desc: "Leave applications, expense claims, internal staff surveys, and compliance checks with full alignment to data protection regulations.",
+    category: "CORPORATE & OPERATIONS",
+    title: "Enterprises & Human Resources",
+    desc: "Internal staff surveys, expense reporting, vendor onboarding, and compliance acknowledgments with rigorous data protection standards.",
     points: [
-      "Automated Personal Data Protection Act (PDPA) consent",
-      "Immutable audit logs for administrative security",
-      "Outgoing Webhooks for seamless internal API integrations",
+      "Automated Personal Data Protection Act (PDPA) consent capture",
+      "Immutable administrative audit trails for compliance logs",
+      "Direct webhook dispatching for internal infrastructure",
     ],
-    color: "bg-amber-50 text-amber-600 border-amber-100",
   },
 ];
 
 export function LandingUseCases() {
   return (
-    <section className="py-20 md:py-28 bg-slate-50/70 border-t border-slate-200/60">
+    <section className="py-20 md:py-28 bg-slate-50/60 border-b border-slate-200/80">
       <div className="container mx-auto px-4 md:px-6">
         <div className="max-w-3xl mx-auto text-center mb-16">
+          <div className="inline-block text-[11px] font-mono font-semibold uppercase tracking-wider text-slate-500 mb-2">
+            Applications
+          </div>
           <motion.h2
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.1 }}
+            transition={{ duration: 0.45 }}
             className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-slate-900 mb-4 [text-wrap:balance]"
           >
-            Designed for Organizations &amp; Individuals Alike
+            Built for High-Stakes Operations
           </motion.h2>
 
           <motion.p
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.15 }}
-            className="text-base sm:text-lg text-slate-600 font-normal leading-relaxed"
+            transition={{ duration: 0.45, delay: 0.05 }}
+            className="text-base sm:text-lg text-slate-600 font-normal leading-relaxed [text-wrap:balance]"
           >
-            From schools and universities to corporate teams, KlikForm streamlines your daily data collection and certificate distribution.
+            From national academic competitions to corporate human resources, KlikForm replaces fragile spreadsheets and manual certificate production.
           </motion.p>
         </div>
 
         {/* Use Cases Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-5xl mx-auto">
           {USE_CASES.map((item, idx) => {
             const Icon = item.icon;
             return (
               <motion.div
                 key={idx}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.45, delay: idx * 0.08 }}
-                className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 flex flex-col justify-between shadow-xs hover:border-slate-300 transition-colors"
+                transition={{ duration: 0.4, delay: idx * 0.06 }}
+                className="bg-white rounded-lg border border-slate-200 p-6 sm:p-7 flex flex-col justify-between shadow-2xs hover:border-slate-300 transition-colors"
               >
                 <div>
                   <div className="flex items-center gap-3 mb-4">
-                    <div className={`h-11 w-11 rounded-xl flex items-center justify-center border ${item.color}`}>
-                      <Icon className="h-5 w-5" />
+                    <div className="h-9 w-9 rounded-md bg-slate-100 text-slate-800 border border-slate-200 flex items-center justify-center shrink-0">
+                      <Icon className="h-4 w-4" />
                     </div>
                     <div>
-                      <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-400">
+                      <span className="text-[10px] uppercase font-mono tracking-wider font-semibold text-slate-400 block">
                         {item.category}
                       </span>
-                      <h3 className="text-lg font-bold text-slate-900">
+                      <h3 className="text-base font-bold text-slate-900">
                         {item.title}
                       </h3>
                     </div>
                   </div>
 
-                  <p className="text-sm text-slate-600 leading-relaxed mb-6 font-normal">
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-5 font-normal">
                     {item.desc}
                   </p>
                 </div>
 
-                <div className="space-y-2 pt-4 border-t border-slate-100">
+                <div className="space-y-2 pt-3 border-t border-slate-100 font-mono text-xs">
                   {item.points.map((point, pIdx) => (
-                    <div key={pIdx} className="flex items-center gap-2.5 text-xs text-slate-700">
-                      <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                    <div key={pIdx} className="flex items-center gap-2 text-slate-700 font-sans">
+                      <Check className="h-3.5 w-3.5 text-slate-900 shrink-0" />
                       <span>{point}</span>
                     </div>
                   ))}

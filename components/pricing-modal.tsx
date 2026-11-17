@@ -26,7 +26,7 @@ const plans = [
     period: '/ forever',
     description: 'Perfect for getting started',
     icon: Users,
-    color: 'bg-slate-100 text-slate-700',
+    color: 'bg-slate-100 text-slate-700 border border-slate-200',
     features: [
       '5 forms limit',
       '3,000 responses / month',
@@ -55,7 +55,7 @@ const plans = [
     priceDetail: PRO_PRICE.priceDetail,
     description: 'For professionals and growing teams',
     icon: Crown,
-    color: 'bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800',
+    color: 'bg-violet-50 text-violet-900 border border-violet-200/80',
     features: [
       'Unlimited forms',
       'Unlimited responses',
@@ -77,7 +77,7 @@ const plans = [
     period: '',
     description: 'For large organizations',
     icon: Zap,
-    color: 'bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-800',
+    color: 'bg-slate-100 text-slate-700 border border-slate-200',
     features: [
       'Everything in Pro',
       'Team management',
@@ -141,7 +141,7 @@ export function PricingModal({ children }: PricingModalProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="w-[95vw] sm:max-w-6xl max-h-[90vh] overflow-y-auto p-8">
+      <DialogContent className="w-[95vw] sm:max-w-6xl max-h-[90vh] overflow-y-auto p-8 rounded-lg border border-slate-200">
         <DialogHeader className="pb-4">
           <DialogTitle className="text-2xl font-bold text-center">Upgrade Your Plan</DialogTitle>
           <DialogDescription className="text-center">
@@ -156,18 +156,18 @@ export function PricingModal({ children }: PricingModalProps) {
               <Card
                 key={plan.name}
                 className={cn(
-                  'relative border-2 transition-all hover:shadow-lg',
-                  plan.popular && 'border-primary shadow-lg scale-105',
+                  'relative border transition-all hover:shadow-xs rounded-lg bg-white',
+                  plan.popular && 'border-2 border-violet-900 shadow-xs',
                   plan.current && 'border-slate-300'
                 )}
               >
                 {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white text-xs font-semibold px-3 py-1 rounded-full">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-violet-900 text-white text-xs font-semibold px-2.5 py-0.5 rounded-md shadow-xs">
                     Most Popular
                   </div>
                 )}
                 {plan.comingSoon && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs font-semibold px-2.5 py-0.5 rounded-md shadow-xs">
                     Coming Soon
                   </div>
                 )}
@@ -175,7 +175,7 @@ export function PricingModal({ children }: PricingModalProps) {
                 <CardHeader className="text-center pb-2">
                   <div
                     className={cn(
-                      'mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-2',
+                      'mx-auto w-11 h-11 rounded-md flex items-center justify-center mb-2',
                       plan.color
                     )}
                   >
@@ -194,7 +194,7 @@ export function PricingModal({ children }: PricingModalProps) {
                     </span>
                   </div>
                   {plan.priceDetail && (
-                    <p className="text-xs text-muted-foreground mt-1 font-medium text-amber-900 bg-amber-50 inline-block px-2 py-0.5 rounded">
+                    <p className="text-xs mt-1 font-medium text-violet-900 bg-violet-50 border border-violet-200/80 inline-block px-2 py-0.5 rounded-md">
                       {plan.priceDetail}
                     </p>
                   )}
@@ -217,7 +217,7 @@ export function PricingModal({ children }: PricingModalProps) {
                   </ul>
 
                   <Button
-                    className="w-full"
+                    className={cn('w-full rounded-md font-medium shadow-xs', plan.popular && 'bg-violet-900 hover:bg-violet-950 text-white')}
                     variant={plan.popular ? 'default' : 'outline'}
                     disabled={plan.current || plan.comingSoon || (loading && plan.name === 'Pro')}
                     onClick={() => handleUpgrade(plan.name)}
@@ -245,7 +245,7 @@ export function PricingModal({ children }: PricingModalProps) {
           Need help choosing? Contact us at{' '}
           <a
             href="mailto:wanztechenterprise@gmail.com?subject=Pertanyaan%20tentang%20KlikForm&body=Salam%2C%0A%0ASaya%20ingin%20bertanya%20tentang%20pelan%20KlikForm.%0A%0ANama%3A%20%0ASyarikat%2FOrganisasi%3A%20%0ASoalan%3A%20%0A%0ATerima%20kasih."
-            className="text-primary hover:underline"
+            className="text-violet-900 hover:underline"
           >
             wanztechenterprise@gmail.com
           </a>

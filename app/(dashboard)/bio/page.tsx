@@ -32,8 +32,8 @@ export default async function BioPagesDashboard() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-3xl font-bold tracking-tight text-gray-900">Bio Links (KlikBio)</h1>
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-              <Sparkles className="w-3 h-3 text-emerald-600" /> New
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold bg-violet-50 text-violet-900 border border-violet-200/80">
+              <Sparkles className="w-3 h-3 text-violet-900" /> New
             </span>
           </div>
           <p className="text-muted-foreground mt-1 text-sm md:text-base">
@@ -45,7 +45,7 @@ export default async function BioPagesDashboard() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="rounded-2xl border-gray-200/80 shadow-sm">
+        <Card className="rounded-lg border border-slate-200 bg-white shadow-2xs">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-600">Total Bio Pages</CardTitle>
             <Layers className="h-4 w-4 text-emerald-600" />
@@ -56,7 +56,7 @@ export default async function BioPagesDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-gray-200/80 shadow-sm">
+        <Card className="rounded-lg border border-slate-200 bg-white shadow-2xs">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-600">Total Page Views</CardTitle>
             <Eye className="h-4 w-4 text-sky-600" />
@@ -67,10 +67,10 @@ export default async function BioPagesDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-gray-200/80 shadow-sm">
+        <Card className="rounded-lg border border-slate-200 bg-white shadow-2xs">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-600">Conversion Power</CardTitle>
-            <MousePointerClick className="h-4 w-4 text-purple-600" />
+            <MousePointerClick className="h-4 w-4 text-violet-900" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-900">100%</div>
@@ -81,8 +81,8 @@ export default async function BioPagesDashboard() {
 
       {/* Bio Pages Grid / Empty State */}
       {bioPages.length === 0 ? (
-        <div className="rounded-3xl border-2 border-dashed border-gray-200 p-12 text-center bg-white/50 backdrop-blur-sm space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto shadow-sm">
+        <div className="rounded-lg border border-dashed border-slate-200 p-12 text-center bg-slate-50/50 space-y-4">
+          <div className="w-14 h-14 rounded-lg bg-white border border-slate-200 text-violet-900 flex items-center justify-center mx-auto shadow-2xs">
             <Sparkles className="w-8 h-8" />
           </div>
           <div className="max-w-md mx-auto space-y-1">

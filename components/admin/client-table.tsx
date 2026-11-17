@@ -1,10 +1,16 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { AdminClientItem, deleteClientAction } from '@/actions/admin';
+import {
+  AdminClientItem,
+  deleteClientAction,
+  deleteClientsBulkAction,
+  deleteUnverifiedZeroUsageClientsAction,
+} from '@/actions/admin';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Table,
@@ -58,7 +64,9 @@ export function ClientTable({ initialClients }: ClientTableProps) {
   const [search, setSearch] = useState('');
   const [tierFilter, setTierFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [verificationFilter, setVerificationFilter] = useState<string>('all');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Dialog state
   const [selectedClient, setSelectedClient] = useState<AdminClientItem | null>(null);
@@ -67,7 +75,12 @@ export function ClientTable({ initialClients }: ClientTableProps) {
   // Delete Dialog state
   const [clientToDelete, setClientToDelete] = useState<AdminClientItem | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [cleanupDialogOpen, setCleanupDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const isPrimaryAdmin = (email: string) =>
+    email.toLowerCase().trim() === PRIMARY_ADMIN_EMAIL.toLowerCase().trim();
 
   const handleDeleteClient = async () => {
     if (!clientToDelete) return;
@@ -79,16 +92,82 @@ export function ClientTable({ initialClients }: ClientTableProps) {
         return;
       }
       setClients((prev) => prev.filter((c) => c.id !== clientToDelete.id));
-      toast.success(`Klien ${clientToDelete.fullName} berjaya dipadam secara kekal.`);
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(clientToDelete.id);
+        return next;
+      });
+      toast.success(`Client ${clientToDelete.fullName} permanently deleted.`);
       setDeleteDialogOpen(false);
       setClientToDelete(null);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Ralat semasa memadam klien';
+      const msg = err instanceof Error ? err.message : 'Error deleting client';
       toast.error(msg);
     } finally {
       setIsDeleting(false);
     }
   };
+
+  const handleBulkDelete = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    setIsDeleting(true);
+    try {
+      const res = await deleteClientsBulkAction(ids);
+      if (!res.success) {
+        toast.error(res.error || 'Failed to delete selected clients');
+        return;
+      }
+      const deletedSet = new Set(res.deletedIds || []);
+      setClients((prev) => prev.filter((c) => !deletedSet.has(c.id)));
+      setSelectedIds(new Set());
+      toast.success(`Deleted ${deletedSet.size} selected client(s).`);
+      setBulkDeleteDialogOpen(false);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error deleting selected clients';
+      toast.error(msg);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleCleanupUnverified = async () => {
+    setIsDeleting(true);
+    try {
+      const res = await deleteUnverifiedZeroUsageClientsAction();
+      if (!res.success) {
+        toast.error(res.error || 'Failed to clean up unverified accounts');
+        return;
+      }
+      const deletedSet = new Set(res.deletedIds || []);
+      setClients((prev) => prev.filter((c) => !deletedSet.has(c.id)));
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        deletedSet.forEach((id) => next.delete(id));
+        return next;
+      });
+      toast.success(`Cleaned up ${deletedSet.size} unverified idle account(s).`);
+      setCleanupDialogOpen(false);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error cleaning up unverified accounts';
+      toast.error(msg);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Count unverified idle accounts eligible for 1-click cleanup
+  const unverifiedIdleCount = useMemo(() => {
+    return clients.filter(
+      (c) =>
+        !isPrimaryAdmin(c.email) &&
+        !c.isVerified &&
+        !c.lastSignInAt &&
+        c.tier === 'free' &&
+        c.formsCount === 0 &&
+        c.totalSubmissions === 0
+    ).length;
+  }, [clients]);
 
   // Filter clients
   const filteredClients = useMemo(() => {
@@ -107,9 +186,45 @@ export function ClientTable({ initialClients }: ClientTableProps) {
       // Status filter
       const matchesStatus = statusFilter === 'all' || c.status === statusFilter;
 
-      return matchesSearch && matchesTier && matchesStatus;
+      // Verification filter
+      const matchesVerification =
+        verificationFilter === 'all' ||
+        (verificationFilter === 'verified' && c.isVerified) ||
+        (verificationFilter === 'unverified' && !c.isVerified);
+
+      return matchesSearch && matchesTier && matchesStatus && matchesVerification;
     });
-  }, [clients, search, tierFilter, statusFilter]);
+  }, [clients, search, tierFilter, statusFilter, verificationFilter]);
+
+  const selectableFilteredClients = useMemo(
+    () => filteredClients.filter((c) => !isPrimaryAdmin(c.email)),
+    [filteredClients]
+  );
+
+  const allVisibleSelected =
+    selectableFilteredClients.length > 0 &&
+    selectableFilteredClients.every((c) => selectedIds.has(c.id));
+
+  const toggleSelectAllVisible = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allVisibleSelected) {
+        selectableFilteredClients.forEach((c) => next.delete(c.id));
+      } else {
+        selectableFilteredClients.forEach((c) => next.add(c.id));
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectOne = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -155,8 +270,8 @@ export function ClientTable({ initialClients }: ClientTableProps) {
     }
     if (tier === 'enterprise') {
       return (
-        <Badge className="bg-purple-100 text-purple-800 border-purple-300 font-semibold hover:bg-purple-200">
-          <ShieldCheck className="h-3 w-3 mr-1 text-purple-600" />
+        <Badge className="bg-violet-100 text-violet-900 border-violet-200 font-semibold hover:bg-violet-200">
+          <ShieldCheck className="h-3 w-3 mr-1 text-violet-900" />
           ENTERPRISE
         </Badge>
       );
@@ -188,7 +303,7 @@ export function ClientTable({ initialClients }: ClientTableProps) {
     return (
       <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
         <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-        Batal
+        Cancelled
       </span>
     );
   };
@@ -225,10 +340,10 @@ export function ClientTable({ initialClients }: ClientTableProps) {
             <Filter className="h-4 w-4 text-slate-400 shrink-0" />
             <Select value={tierFilter} onValueChange={setTierFilter}>
               <SelectTrigger className="w-[130px] h-10 border-slate-200 text-xs font-medium">
-                <SelectValue placeholder="Pelan" />
+                <SelectValue placeholder="Plan" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Semua Pelan</SelectItem>
+                <SelectItem value="all">All Plans</SelectItem>
                 <SelectItem value="free">Free</SelectItem>
                 <SelectItem value="pro">Pro</SelectItem>
                 <SelectItem value="enterprise">Enterprise</SelectItem>
@@ -241,14 +356,25 @@ export function ClientTable({ initialClients }: ClientTableProps) {
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Semua Status</SelectItem>
+              <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="active">Aktif</SelectItem>
               <SelectItem value="expired">Tamat</SelectItem>
-              <SelectItem value="cancelled">Batal</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
             </SelectContent>
           </Select>
 
-          {(search || tierFilter !== 'all' || statusFilter !== 'all') && (
+          <Select value={verificationFilter} onValueChange={setVerificationFilter}>
+            <SelectTrigger className="w-[145px] h-10 border-slate-200 text-xs font-medium">
+              <SelectValue placeholder="Verification" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Emails</SelectItem>
+              <SelectItem value="verified">Verified</SelectItem>
+              <SelectItem value="unverified">Unverified</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {(search || tierFilter !== 'all' || statusFilter !== 'all' || verificationFilter !== 'all') && (
             <Button
               variant="ghost"
               size="sm"
@@ -256,6 +382,7 @@ export function ClientTable({ initialClients }: ClientTableProps) {
                 setSearch('');
                 setTierFilter('all');
                 setStatusFilter('all');
+                setVerificationFilter('all');
               }}
               className="text-xs text-slate-500 hover:text-slate-900 h-10"
             >
@@ -265,12 +392,36 @@ export function ClientTable({ initialClients }: ClientTableProps) {
         </div>
       </div>
 
-      {/* Summary count */}
-      <div className="flex items-center justify-between px-1 text-xs text-slate-500 font-medium">
+      {/* Summary count & Bulk Actions */}
+      <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-slate-500 font-medium">
         <span>
           Memaparkan <strong className="text-slate-800 font-semibold">{filteredClients.length}</strong> daripada{' '}
           <strong className="text-slate-800 font-semibold">{clients.length}</strong> klien
         </span>
+        <div className="flex items-center gap-2">
+          {selectedIds.size > 0 && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setBulkDeleteDialogOpen(true)}
+              className="h-8 text-xs font-medium bg-rose-600 hover:bg-rose-700 text-white"
+            >
+              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+              Delete Selected ({selectedIds.size})
+            </Button>
+          )}
+          {unverifiedIdleCount > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCleanupDialogOpen(true)}
+              className="h-8 text-xs font-medium border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100"
+            >
+              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+              Clean Up Unverified ({unverifiedIdleCount})
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Clients Table */}
@@ -279,38 +430,45 @@ export function ClientTable({ initialClients }: ClientTableProps) {
           <Table>
             <TableHeader className="bg-slate-50/80 border-b border-slate-200">
               <TableRow className="hover:bg-transparent">
+                <TableHead className="w-[40px] pl-4">
+                  <Checkbox
+                    checked={allVisibleSelected}
+                    onCheckedChange={toggleSelectAllVisible}
+                    aria-label="Select all visible clients"
+                  />
+                </TableHead>
                 <TableHead className="w-[300px] text-xs font-bold text-slate-600 uppercase tracking-wider">
-                  Klien
+                  Client
                 </TableHead>
                 <TableHead className="text-xs font-bold text-slate-600 uppercase tracking-wider">
-                  Pelan
+                  Plan
                 </TableHead>
                 <TableHead className="text-xs font-bold text-slate-600 uppercase tracking-wider">
                   Status
                 </TableHead>
                 <TableHead className="text-xs font-bold text-slate-600 uppercase tracking-wider">
-                  Tarikh Luput
+                  Expiration Date
                 </TableHead>
                 <TableHead className="text-xs font-bold text-slate-600 uppercase tracking-wider">
-                  Penggunaan
+                  Usage
                 </TableHead>
                 <TableHead className="text-xs font-bold text-slate-600 uppercase tracking-wider">
-                  Daftar
+                  Registered
                 </TableHead>
                 <TableHead className="text-right text-xs font-bold text-slate-600 uppercase tracking-wider">
-                  Tindakan
+                  Actions
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody className="divide-y divide-slate-100">
               {filteredClients.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-44 text-center">
+                  <TableCell colSpan={8} className="h-44 text-center">
                     <div className="flex flex-col items-center justify-center text-slate-400 space-y-2">
                       <Users className="h-8 w-8 text-slate-300" />
-                      <p className="text-sm font-medium text-slate-600">Tiada klien dijumpai</p>
+                      <p className="text-sm font-medium text-slate-600">No clients found</p>
                       <p className="text-xs text-slate-400">
-                        Cuba ubah kata kunci carian atau tetapan penapis anda.
+                        Try adjusting your search query or filter settings.
                       </p>
                     </div>
                   </TableCell>
@@ -320,9 +478,19 @@ export function ClientTable({ initialClients }: ClientTableProps) {
                   const initials = client.fullName
                     ? client.fullName.substring(0, 2).toUpperCase()
                     : 'KF';
+                  const adminAccount = isPrimaryAdmin(client.email);
 
                   return (
                     <TableRow key={client.id} className="hover:bg-slate-50/60 transition-colors">
+                      {/* Selection Checkbox */}
+                      <TableCell className="pl-4">
+                        <Checkbox
+                          checked={selectedIds.has(client.id)}
+                          disabled={adminAccount}
+                          onCheckedChange={() => toggleSelectOne(client.id)}
+                          aria-label={`Select ${client.fullName}`}
+                        />
+                      </TableCell>
                       {/* Klien details */}
                       <TableCell className="py-3.5">
                         <div className="flex items-center gap-3">
@@ -333,9 +501,19 @@ export function ClientTable({ initialClients }: ClientTableProps) {
                             </AvatarFallback>
                           </Avatar>
                           <div className="min-w-0">
-                            <p className="text-sm font-semibold text-slate-900 truncate">
-                              {client.fullName}
-                            </p>
+                            <div className="flex items-center gap-1.5">
+                              <p className="text-sm font-semibold text-slate-900 truncate">
+                                {client.fullName}
+                              </p>
+                              {!client.isVerified && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] px-1.5 py-0 h-4 bg-amber-50 text-amber-700 border-amber-200 shrink-0"
+                                >
+                                  Unverified
+                                </Badge>
+                              )}
+                            </div>
                             <div className="flex items-center gap-1.5 text-xs text-slate-500">
                               <span className="truncate max-w-[180px] sm:max-w-[220px]">
                                 {client.email}
@@ -343,7 +521,7 @@ export function ClientTable({ initialClients }: ClientTableProps) {
                               <button
                                 type="button"
                                 onClick={() => copyToClipboard(client.email, client.id)}
-                                title="Salin emel"
+                                title="Copy email"
                                 className="text-slate-400 hover:text-slate-700 transition-colors"
                               >
                                 {copiedId === client.id ? (
@@ -373,7 +551,7 @@ export function ClientTable({ initialClients }: ClientTableProps) {
                         <div className="flex flex-col text-xs space-y-0.5">
                           <span className="text-slate-700 font-medium flex items-center gap-1">
                             <FileText className="h-3 w-3 text-slate-400" />
-                            {client.formsCount} borang
+                            {client.formsCount} forms
                           </span>
                           <span className="text-slate-500 flex items-center gap-1">
                             <Send className="h-3 w-3 text-slate-400" />
@@ -397,7 +575,7 @@ export function ClientTable({ initialClients }: ClientTableProps) {
                             className="h-8 text-xs font-medium text-slate-700 border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors"
                           >
                             <Edit className="h-3 w-3 mr-1.5" />
-                            Urus Pelan
+                            Manage Plan
                           </Button>
 
                           {client.email.toLowerCase().trim() !== PRIMARY_ADMIN_EMAIL.toLowerCase().trim() && (
@@ -409,7 +587,7 @@ export function ClientTable({ initialClients }: ClientTableProps) {
                                 setDeleteDialogOpen(true);
                               }}
                               className="h-8 w-8 p-0 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                              title="Padam Klien"
+                              title="Delete Client"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
@@ -441,7 +619,7 @@ export function ClientTable({ initialClients }: ClientTableProps) {
               <span className="p-1.5 bg-rose-100 text-rose-600 rounded-lg">
                 <Trash2 className="h-4 w-4" />
               </span>
-              Padam Klien Secara Kekal?
+              Permanently Delete Client?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-sm text-slate-600 pt-2 leading-relaxed">
               Adakah anda pasti mahu memadam akaun{' '}
@@ -450,13 +628,13 @@ export function ClientTable({ initialClients }: ClientTableProps) {
               <br />
               <br />
               <span className="text-rose-600 font-medium block bg-rose-50 border border-rose-200 rounded-lg p-2.5 text-xs">
-                Amaran: Tindakan ini tidak boleh diundur. Semua borang ({clientToDelete?.formsCount || 0}),
-                respons ({clientToDelete?.totalSubmissions || 0}), dan langganan akan dipadam serta-merta.
+                Warning: This action cannot be undone. All forms ({clientToDelete?.formsCount || 0}),
+                responses ({clientToDelete?.totalSubmissions || 0}), and subscriptions will be deleted immediately.
               </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-4 gap-2">
-            <AlertDialogCancel disabled={isDeleting}>Batal</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <Button
               variant="destructive"
               onClick={handleDeleteClient}
@@ -469,7 +647,80 @@ export function ClientTable({ initialClients }: ClientTableProps) {
                   Memadam...
                 </>
               ) : (
-                'Ya, Padam Klien'
+                'Yes, Delete Client'
+              )}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Selected Confirmation Dialog */}
+      <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <AlertDialogContent className="sm:max-w-[450px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <span className="p-1.5 bg-rose-100 text-rose-600 rounded-lg">
+                <Trash2 className="h-4 w-4" />
+              </span>
+              Delete {selectedIds.size} Selected Client(s)?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-slate-600 pt-2 leading-relaxed">
+              This will permanently delete <strong>{selectedIds.size}</strong> selected account(s)
+              along with all of their forms, responses, and subscriptions. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 gap-2">
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              onClick={handleBulkDelete}
+              disabled={isDeleting}
+              className="bg-rose-600 hover:bg-rose-700 text-white font-medium"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                `Delete ${selectedIds.size} Account(s)`
+              )}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Clean Up Unverified Idle Accounts Dialog */}
+      <AlertDialog open={cleanupDialogOpen} onOpenChange={setCleanupDialogOpen}>
+        <AlertDialogContent className="sm:max-w-[450px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <span className="p-1.5 bg-amber-100 text-amber-700 rounded-lg">
+                <Trash2 className="h-4 w-4" />
+              </span>
+              Clean Up {unverifiedIdleCount} Unverified Account(s)?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-slate-600 pt-2 leading-relaxed">
+              This will delete only <strong>unverified Free-tier accounts</strong> that have{' '}
+              <strong>never signed in</strong>, have <strong>0 forms</strong>, and{' '}
+              <strong>0 submissions</strong>. Verified users and paid accounts will never be touched.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 gap-2">
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              onClick={handleCleanupUnverified}
+              disabled={isDeleting}
+              className="bg-rose-600 hover:bg-rose-700 text-white font-medium"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                  Cleaning Up...
+                </>
+              ) : (
+                `Clean Up ${unverifiedIdleCount} Account(s)`
               )}
             </Button>
           </AlertDialogFooter>

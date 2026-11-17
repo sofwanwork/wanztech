@@ -18,36 +18,39 @@ export function VerifyClient({ certificateId, formData }: VerifyClientProps) {
   // If form data found, redirect to IC check
   if (formData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-white to-primary/10 py-12 px-4">
-        <div className="max-w-lg mx-auto">
+      <div className="min-h-screen bg-white py-14 px-4 text-slate-900 font-sans relative">
+        <div className="absolute inset-0 bg-[radial-gradient(#e4e4e7_1px,transparent_1px)] [background-size:20px_20px] opacity-60 z-0 pointer-events-none" />
+        <div className="max-w-md mx-auto relative z-10">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4 shadow-2xs border border-primary/20">
-              <Award className="h-8 w-8 text-primary" />
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-md bg-slate-100 border border-slate-200 text-slate-800 mb-3 shadow-2xs">
+              <Award className="h-6 w-6" />
             </div>
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight leading-snug max-w-md mx-auto whitespace-pre-line break-words [text-wrap:balance]">
               {formData.title}
             </h1>
-            <p className="text-slate-600 mt-2 text-sm [text-wrap:balance]">Certificate Verification</p>
+            <p className="text-slate-500 mt-1 text-xs font-mono uppercase tracking-wider">Official Certificate Registry</p>
           </div>
 
-          <Card className="border-0 shadow-lg bg-blue-50">
-            <CardContent className="pt-6 text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 mb-4">
-                <CheckCircle2 className="h-6 w-6 text-blue-600" />
+          <Card className="border border-slate-200 shadow-2xs bg-white rounded-lg">
+            <CardContent className="pt-6 pb-6 text-center space-y-3">
+              <div className="inline-flex items-center justify-center w-10 h-10 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 mb-1">
+                <CheckCircle2 className="h-5 w-5" />
               </div>
-              <h3 className="text-lg font-semibold text-blue-800 mb-2">
-                Program Certificate Found
+              <h3 className="text-base font-bold text-slate-900">
+                Program Certificate Registered
               </h3>
-              <p className="text-blue-600 mb-4">
-                Please verify your certificate by entering your IC number
+              <p className="text-xs text-slate-600 leading-relaxed max-w-xs mx-auto">
+                Please verify your certificate by entering your identification number on the verification portal.
               </p>
-              <Link href={`/check/${formData.id}`}>
-                <Button className="w-full bg-blue-600 hover:bg-blue-700">
-                  <Award className="mr-2 h-4 w-4" />
-                  Verify My Certificate
-                </Button>
-              </Link>
+              <div className="pt-2">
+                <Link href={`/check/${formData.id}`}>
+                  <Button className="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-md h-10 text-xs font-medium">
+                    <Award className="mr-2 h-3.5 w-3.5" />
+                    Verify My Certificate
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -57,37 +60,39 @@ export function VerifyClient({ certificateId, formData }: VerifyClientProps) {
 
   // Certificate not found
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-white to-primary/10 py-12 px-4">
-      <div className="max-w-lg mx-auto">
+    <div className="min-h-screen bg-white py-14 px-4 text-slate-900 font-sans relative">
+      <div className="absolute inset-0 bg-[radial-gradient(#e4e4e7_1px,transparent_1px)] [background-size:20px_20px] opacity-60 z-0 pointer-events-none" />
+      <div className="max-w-md mx-auto relative z-10">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
-            <Award className="h-8 w-8 text-gray-400" />
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-md bg-slate-100 border border-slate-200 text-slate-400 mb-3 shadow-2xs">
+            <Award className="h-6 w-6" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Certificate Verification</h1>
-          <p className="text-gray-600 mt-2">Verify your e-certificate authenticity</p>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Certificate Verification</h1>
+          <p className="text-slate-500 mt-1 text-xs font-mono">Verify e-certificate authenticity</p>
         </div>
 
-        <Card className="border-0 shadow-lg bg-red-50">
-          <CardContent className="pt-6 text-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mb-4">
-              <XCircle className="h-6 w-6 text-red-600" />
+        <Card className="border border-slate-200 shadow-2xs bg-white rounded-lg">
+          <CardContent className="pt-6 pb-6 text-center space-y-3">
+            <div className="inline-flex items-center justify-center w-10 h-10 rounded-md bg-rose-50 text-rose-600 border border-rose-200 mb-1">
+              <XCircle className="h-5 w-5" />
             </div>
-            <h3 className="text-lg font-semibold text-red-800 mb-2">Certificate Not Found</h3>
-            <p className="text-red-600 mb-4">
-              No certificate found with ID:{' '}
-              <code className="bg-red-100 px-2 py-1 rounded text-sm">{certificateId}</code>
+            <h3 className="text-base font-bold text-slate-900">Certificate Not Found</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              No active certificate record was found matching ID:{' '}
+              <code className="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded text-xs font-mono text-slate-800">{certificateId}</code>
             </p>
-            <p className="text-sm text-gray-600 mb-4">
-              Please make sure you&apos;re using the correct verification link or contact the
-              certificate issuer.
+            <p className="text-xs text-slate-500 leading-relaxed max-w-xs mx-auto">
+              Please verify that you are using the exact verification link or contact the issuing organizer.
             </p>
-            <Link href="/">
-              <Button variant="outline" className="border-red-300 text-red-600 hover:bg-red-50">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Home
-              </Button>
-            </Link>
+            <div className="pt-2">
+              <Link href="/">
+                <Button variant="outline" className="w-full border-slate-200 text-slate-700 hover:bg-slate-50 rounded-md h-10 text-xs font-medium">
+                  <ArrowLeft className="mr-2 h-3.5 w-3.5" />
+                  Back to Homepage
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>

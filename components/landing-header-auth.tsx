@@ -33,22 +33,22 @@ export function LandingHeaderAuth() {
   if (!mounted) {
     // Return a matching layout space placeholder to avoid Cumulative Layout Shift (CLS)
     return (
-      <div className="hidden md:flex items-center gap-4 w-[160px] h-9" />
+      <div className="hidden md:flex items-center gap-2.5 w-[160px] h-9" />
     );
   }
 
   return (
-    <div className="hidden md:flex items-center gap-4">
+    <div className="hidden md:flex items-center gap-2.5">
       {user ? (
-        <Button variant="ghost" size="sm" asChild>
+        <Button variant="outline" size="sm" className="rounded-md h-9 px-3.5 border-slate-200 text-slate-800 hover:bg-violet-50 hover:text-violet-900 hover:border-violet-200" asChild>
           <Link href="/forms">Dashboard</Link>
         </Button>
       ) : (
         <>
-          <Button variant="ghost" size="sm" asChild>
+          <Button variant="ghost" size="sm" className="rounded-md h-9 px-3 text-slate-700 hover:text-violet-900 hover:bg-violet-50/60" asChild>
             <Link href="/login">Login</Link>
           </Button>
-          <Button size="sm" asChild>
+          <Button size="sm" className="rounded-md h-9 px-3.5 bg-violet-900 hover:bg-violet-950 text-white shadow-xs" asChild>
             <Link href="/login?tab=signup">Sign Up Free</Link>
           </Button>
         </>

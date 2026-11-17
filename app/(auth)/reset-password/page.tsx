@@ -56,7 +56,7 @@ export default function ResetPasswordPage() {
     <div className="flex h-screen w-full items-center justify-center bg-[#fafafa] relative overflow-hidden pb-24">
       {/* Background Decor */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-        <div className="absolute -top-[20%] -right-[10%] w-[70vw] h-[70vw] bg-purple-200/30 rounded-full blur-3xl" />
+        <div className="absolute -top-[20%] -right-[10%] w-[70vw] h-[70vw] bg-violet-200/30 rounded-full blur-3xl" />
         <div className="absolute top-[40%] -left-[10%] w-[50vw] h-[50vw] bg-indigo-200/30 rounded-full blur-3xl" />
       </div>
 

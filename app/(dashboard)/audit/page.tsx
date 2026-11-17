@@ -35,7 +35,7 @@ export default async function AuditPage() {
         </div>
       </div>
 
-      <Card>
+      <Card className="rounded-lg border border-slate-200 bg-white shadow-2xs">
         <CardHeader>
           <CardTitle className="text-base">Recent Activity</CardTitle>
         </CardHeader>

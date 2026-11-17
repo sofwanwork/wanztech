@@ -51,7 +51,7 @@ export function DashboardSearch() {
         id="dashboard-search"
         name="dashboard-search"
         placeholder="Search forms..."
-        className="pl-9 h-10 bg-white"
+        className="pl-9 h-10 bg-white rounded-md border-slate-200"
         onChange={(e) => setTerm(e.target.value)}
         onBlur={() => {
           if (isSubmitting) return;

@@ -24,11 +24,11 @@ export async function CrossFormAnalytics() {
   const max = Math.max(1, ...summary.daily.map((d) => d.views));
 
   return (
-    <Card className="border-0 shadow-sm bg-white">
+    <Card className="rounded-lg border border-slate-200 bg-white shadow-2xs">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-primary" />
+            <TrendingUp className="h-5 w-5 text-violet-900" />
             30-Day Analytics
           </CardTitle>
           <span className="text-xs text-muted-foreground">All forms</span>
@@ -64,7 +64,7 @@ export async function CrossFormAnalytics() {
               return (
                 <div
                   key={d.date}
-                  className="flex-1 bg-primary/15 hover:bg-primary/40 transition-colors rounded-sm"
+                  className="flex-1 bg-violet-200 hover:bg-violet-400 transition-colors rounded-sm"
                   style={{ height: `${Math.max(2, h)}%` }}
                   title={`${d.date}: ${d.views} views, ${d.submits} submits`}
                 />
@@ -84,7 +84,7 @@ export async function CrossFormAnalytics() {
                   <Link
                     key={f.formId}
                     href={`/responses/${f.formId}/analytics`}
-                    className="flex items-center justify-between gap-3 p-2 rounded-md border hover:bg-gray-50 transition-colors"
+                    className="flex items-center justify-between gap-3 p-2 rounded-md border border-slate-200 hover:bg-slate-50 transition-colors"
                   >
                     <span className="text-sm font-medium text-gray-900 truncate flex-1">
                       {title}
@@ -116,7 +116,7 @@ function Stat({
   value: number | string;
 }) {
   return (
-    <div className="p-3 rounded-lg border bg-gray-50/40">
+    <div className="p-3 rounded-md border border-slate-200 bg-slate-50/50">
       <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-1">
         {icon}
         <span>{label}</span>

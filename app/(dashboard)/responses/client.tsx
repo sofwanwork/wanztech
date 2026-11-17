@@ -92,16 +92,16 @@ export function ResponsesClient({ forms, hasGoogleOAuth }: ResponsesClientProps)
             const res = await syncPendingResponsesForFormAction(formId);
             if (res.success) {
                 if (res.syncedCount && res.syncedCount > 0) {
-                    toast.success(`Berjaya menyegerakkan ${res.syncedCount} rekod ke Google Sheet!`);
+                    toast.success(`Successfully synced ${res.syncedCount} records to Google Sheet!`);
                 } else {
-                    toast.info('Semua data respons sudah selaras dengan Google Sheet.');
+                    toast.info('All response records are already up to date with Google Sheet.');
                 }
                 router.refresh();
             } else {
-                toast.error(res.error || 'Gagal menyegerakkan data ke Google Sheet.');
+                toast.error(res.error || 'Failed to sync data to Google Sheet.');
             }
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : 'Ralat semasa menyegerakkan data.');
+            toast.error(err instanceof Error ? err.message : 'An error occurred while syncing data.');
         } finally {
             setSyncingFormId(null);
         }
@@ -131,8 +131,8 @@ export function ResponsesClient({ forms, hasGoogleOAuth }: ResponsesClientProps)
             )}
 
             {filtered.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-24 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
-                    <div className="h-20 w-20 bg-white rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-gray-100">
+                <div className="flex flex-col items-center justify-center py-24 border border-dashed border-slate-200 rounded-lg bg-slate-50/50">
+                    <div className="h-16 w-16 bg-white rounded-lg flex items-center justify-center mb-5 shadow-2xs border border-slate-200">
                         <FileSpreadsheet className="h-10 w-10 text-gray-400" />
                     </div>
                     <h3 className="text-xl font-semibold mb-2 text-gray-900">
@@ -149,7 +149,7 @@ export function ResponsesClient({ forms, hasGoogleOAuth }: ResponsesClientProps)
                     {filtered.map((form) => (
                         <Card
                             key={form.id}
-                            className="border border-gray-200 bg-white hover:shadow-md transition-shadow"
+                            className="border border-slate-200 bg-white hover:border-slate-300 shadow-2xs transition-colors rounded-lg"
                         >
                             <CardHeader className="pb-2 pt-4 px-5">
                                 <div className="flex items-start justify-between gap-3">
@@ -202,7 +202,7 @@ export function ResponsesClient({ forms, hasGoogleOAuth }: ResponsesClientProps)
                                                 onClick={() => handleSyncSheet(form.id)}
                                                 disabled={syncingFormId === form.id}
                                                 className="gap-1.5 text-gray-700 hover:text-gray-900 border-gray-200 hover:bg-gray-50 shrink-0 flex-1 sm:flex-initial"
-                                                title="Segerak rekod tertunggak ke Google Sheet"
+                                                title="Sync pending records to Google Sheet"
                                             >
                                                 {syncingFormId === form.id ? (
                                                     <Loader2 className="h-4 w-4 animate-spin text-primary" />
@@ -259,9 +259,9 @@ export function ResponsesClient({ forms, hasGoogleOAuth }: ResponsesClientProps)
 
             {/* Reset Attendance Confirmation Dialog */}
             <AlertDialog open={!!confirmResetForm} onOpenChange={(open) => !open && setConfirmResetForm(null)}>
-                <AlertDialogContent className="sm:max-w-md bg-white rounded-2xl p-5 sm:p-6 border shadow-xl">
+                <AlertDialogContent className="sm:max-w-md bg-white rounded-lg p-5 sm:p-6 border border-slate-200 shadow-lg">
                     <AlertDialogHeader className="text-left space-y-2">
-                        <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 mb-1">
+                        <div className="w-10 h-10 rounded-md bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 mb-1">
                             <AlertTriangle className="w-6 h-6" />
                         </div>
                         <AlertDialogTitle className="text-base sm:text-lg font-bold text-slate-900">
@@ -273,20 +273,20 @@ export function ResponsesClient({ forms, hasGoogleOAuth }: ResponsesClientProps)
                                     This will permanently delete all check-in and check-out attendance records for{' '}
                                     <strong className="text-slate-900">{confirmResetForm?.title}</strong> from the database.
                                 </p>
-                                <p className="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium">
+                                <p className="p-2.5 rounded-md bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium">
                                     Your Google Sheet rows will NOT be modified. This enables participants (including previous testers) to register and check in freshly.
                                 </p>
                             </div>
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="mt-4 flex flex-col-reverse sm:flex-row gap-2">
-                        <AlertDialogCancel className="w-full sm:w-auto rounded-xl">
+                        <AlertDialogCancel className="w-full sm:w-auto rounded-md">
                             Cancel
                         </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleConfirmResetAttendance}
                             disabled={!!resettingFormId}
-                            className="w-full sm:w-auto bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-semibold shadow-xs"
+                            className="w-full sm:w-auto bg-rose-600 hover:bg-rose-700 text-white rounded-md font-medium shadow-xs"
                         >
                             {resettingFormId ? 'Resetting...' : 'Yes, Reset Records'}
                         </AlertDialogAction>

@@ -135,8 +135,11 @@ export type BackgroundPattern =
   | 'dots'
   | 'grid'
   | 'diagonal'
-  | 'waves'
+  | 'crosses'
   | 'circles'
+  | 'topography'
+  | 'stars'
+  | 'waves'
   | 'triangles';
 
 /**

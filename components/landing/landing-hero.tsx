@@ -5,15 +5,17 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
-  CheckCircle2,
+  Check,
   FileSpreadsheet,
   Award,
-  Sparkles,
   Link as LinkIcon,
   QrCode,
   Layers,
   ChevronRight,
   MessageCircle,
+  Plus,
+  RefreshCw,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -21,25 +23,21 @@ const PREVIEW_TABS = [
   {
     id: "forms",
     label: "Smart Forms",
-    badge: "Auto-Sync Sheets",
     icon: FileSpreadsheet,
   },
   {
     id: "certificates",
     label: "E-Cert Studio",
-    badge: "Canva-Style",
     icon: Award,
   },
   {
     id: "sheets",
     label: "Google Sheets",
-    badge: "Real-Time",
     icon: Layers,
   },
   {
     id: "bio",
     label: "KlikBio",
-    badge: "Link-in-Bio",
     icon: LinkIcon,
   },
 ];
@@ -47,76 +45,110 @@ const PREVIEW_TABS = [
 export function LandingHero() {
   const [activeTab, setActiveTab] = React.useState("forms");
 
+  // Interactive Form Tab States
+  const [formName, setFormName] = React.useState("Alex Morgan");
+  const [formEmail, setFormEmail] = React.useState("alex.morgan@company.com");
+  const [formSubmitted, setFormSubmitted] = React.useState(false);
+
+  // Interactive Certificate Tab States
+  const [certOrientation, setCertOrientation] = React.useState<"landscape" | "portrait">("landscape");
+  const [certStyle, setCertStyle] = React.useState<"editorial" | "classic">("editorial");
+  const [showQrVerification, setShowQrVerification] = React.useState(true);
+
+  // Interactive Sheets Tab States
+  const [sheetRows, setSheetRows] = React.useState([
+    { id: 1, time: "10:14 AM", name: "Alex Morgan", email: "alex.m@company.com", status: "Synced" },
+    { id: 2, time: "10:22 AM", name: "Sarah Chen", email: "schen@design.org", status: "Synced" },
+    { id: 3, time: "10:35 AM", name: "David Kim", email: "dkim@tech.co", status: "Synced" },
+  ]);
+
+  const addSheetRow = () => {
+    const names = ["Elena Rostova", "Marcus Vance", "Priya Patel", "Jordan Lee"];
+    const randomName = names[Math.floor(Math.random() * names.length)];
+    const emailSlug = randomName.toLowerCase().replace(" ", ".");
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    setSheetRows((prev) => [
+      ...prev,
+      {
+        id: prev.length + 1,
+        time: timeStr,
+        name: randomName,
+        email: `${emailSlug}@example.com`,
+        status: "Synced",
+      },
+    ]);
+  };
+
+  // Interactive Bio Tab Theme
+  const [bioTheme, setBioTheme] = React.useState<"light" | "dark">("light");
+
   return (
-    <section className="relative pt-10 pb-20 md:pt-16 md:pb-28 overflow-hidden bg-white">
-      {/* Background Subtle Grid Accent */}
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:24px_24px] opacity-60" />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[450px] -z-10 bg-gradient-to-b from-purple-50/50 via-slate-50/30 to-transparent blur-3xl pointer-events-none" />
+    <section className="relative pt-12 pb-20 md:pt-20 md:pb-32 bg-white text-slate-900 border-b border-slate-200/80">
+      {/* Subtle fine grid background (no glowing radial blur) */}
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(#e4e4e7_1px,transparent_1px)] [background-size:20px_20px] opacity-70" />
 
       <div className="container mx-auto px-4 md:px-6">
         <div className="mx-auto max-w-4xl text-center">
-          {/* Announcement Pill */}
+          {/* Announcement Badge - Crisp geometric */}
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-slate-200/80 bg-slate-50/90 text-xs font-medium text-slate-700 shadow-xs mb-6 hover:bg-slate-100/80 transition-colors"
+            transition={{ duration: 0.4 }}
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-md border border-violet-200/80 bg-violet-50/70 text-xs font-mono text-violet-900 mb-6 hover:border-violet-300 transition-colors"
           >
-            <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Next-Gen Online Form &amp; E-Certificate Platform</span>
-            <ChevronRight className="h-3 w-3 text-slate-400" />
+            <span className="flex h-1.5 w-1.5 rounded-full bg-violet-900" />
+            <span>Next-Gen Form &amp; Digital Certificate Platform</span>
+            <ChevronRight className="h-3 w-3 text-violet-400" />
           </motion.div>
 
-          {/* Main Headline */}
+          {/* Main Headline - High contrast, Anti-AI slop */}
           <motion.h1
-            initial={{ opacity: 0, y: 15 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.1, ease: "easeOut" }}
-            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-slate-900 leading-[1.08] mb-6 [text-wrap:balance]"
+            transition={{ duration: 0.5, delay: 0.08 }}
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-slate-950 leading-[1.08] mb-6 [text-wrap:balance]"
           >
             Build Smart Forms. <br className="hidden sm:inline" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-700 via-indigo-600 to-purple-800">
-              Automate E-Certificates.
-            </span>
+            Automate E-Certificates.
           </motion.h1>
 
           {/* Subtitle */}
           <motion.p
-            initial={{ opacity: 0, y: 15 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.2, ease: "easeOut" }}
-            className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto mb-8 font-normal leading-relaxed [text-wrap:balance]"
+            transition={{ duration: 0.5, delay: 0.16 }}
+            className="text-base sm:text-lg md:text-xl text-slate-600 max-w-2xl mx-auto mb-9 font-normal leading-relaxed [text-wrap:balance]"
           >
-            Collect registrations directly into Google Sheets in real time and automatically issue
-            high-resolution e-certificates to attendees in seconds. Powered by KlikBio and secure QR verification.
+            Direct Google Sheets synchronization with zero middleware. Automatically generate
+            print-ready e-certificates, complete with tamper-evident QR verification and attendee self-lookup.
           </motion.p>
 
-          {/* Action CTAs */}
+          {/* Action CTAs - Sharp minimal buttons */}
           <motion.div
-            initial={{ opacity: 0, y: 15 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.3, ease: "easeOut" }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-3.5 mb-10"
+            transition={{ duration: 0.5, delay: 0.24 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-10"
           >
             <Button
               size="lg"
-              className="h-12 px-8 rounded-xl text-base font-semibold bg-slate-900 text-white hover:bg-slate-800 shadow-md shadow-slate-900/10 transition-all w-full sm:w-auto group"
+              className="h-11 px-7 rounded-md text-sm font-medium bg-violet-900 text-white hover:bg-violet-950 transition-colors w-full sm:w-auto group shadow-xs"
               asChild
             >
               <Link href="/login?tab=signup">
                 Get Started Free
-                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
             </Button>
             <Button
               size="lg"
               variant="outline"
-              className="h-12 px-7 rounded-xl text-base font-medium border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 w-full sm:w-auto"
+              className="h-11 px-6 rounded-md text-sm font-medium border-slate-200 bg-white text-slate-800 hover:bg-slate-50 transition-colors w-full sm:w-auto"
               asChild
             >
               <Link href="#features">
-                <Sparkles className="mr-2 h-4 w-4 text-purple-600" />
-                Explore Features
+                Explore Documentation
               </Link>
             </Button>
           </motion.div>
@@ -125,50 +157,50 @@ export function LandingHero() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="flex flex-wrap items-center justify-center gap-y-2 gap-x-6 text-xs sm:text-sm text-slate-500 font-medium"
+            transition={{ duration: 0.5, delay: 0.32 }}
+            className="flex flex-wrap items-center justify-center gap-y-2 gap-x-6 text-xs text-slate-500 font-mono"
           >
             <div className="flex items-center gap-1.5">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              <span>No Credit Card Required</span>
+              <Check className="h-3.5 w-3.5 text-slate-900" />
+              <span>No credit card required</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              <span>Google Sheets Auto-Sync</span>
+              <Check className="h-3.5 w-3.5 text-slate-900" />
+              <span>Real-time Google Sheets sync</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              <span>Instant QR-Verified E-Certs</span>
+              <Check className="h-3.5 w-3.5 text-slate-900" />
+              <span>Instant QR certificate verification</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              <span>PDPA &amp; Privacy Compliant</span>
+              <Check className="h-3.5 w-3.5 text-slate-900" />
+              <span>PDPA &amp; GDPR compliant</span>
             </div>
           </motion.div>
         </div>
 
         {/* Interactive App Window Mockup */}
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.6, delay: 0.38, ease: "easeOut" }}
           className="mt-14 max-w-5xl mx-auto"
         >
-          <div className="rounded-2xl border border-slate-200/90 bg-white shadow-[0_20px_50px_rgba(0,0,0,0.06)] overflow-hidden">
+          <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
             {/* Window Chrome Header */}
-            <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/80 flex flex-wrap items-center justify-between gap-3">
+            <div className="px-4 py-3 border-b border-slate-200 bg-slate-50/90 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <span className="h-3 w-3 rounded-full bg-rose-400/80 inline-block" />
-                <span className="h-3 w-3 rounded-full bg-amber-400/80 inline-block" />
-                <span className="h-3 w-3 rounded-full bg-emerald-400/80 inline-block" />
-                <div className="ml-3 hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-md bg-white border border-slate-200/70 text-xs text-slate-500 font-mono">
+                <span className="h-2.5 w-2.5 rounded-full bg-slate-300 inline-block" />
+                <span className="h-2.5 w-2.5 rounded-full bg-slate-300 inline-block" />
+                <span className="h-2.5 w-2.5 rounded-full bg-slate-300 inline-block" />
+                <div className="ml-3 hidden sm:flex items-center gap-1.5 px-2.5 py-0.5 rounded border border-slate-200 bg-white text-[11px] text-slate-600 font-mono">
                   <span className="text-slate-400">https://</span>
-                  <span>klikform.com/app/demo</span>
+                  <span>klikform.com/app/preview</span>
                 </div>
               </div>
 
-              {/* Interactive Tabs inside Mockup */}
-              <div className="flex items-center gap-1 bg-slate-200/50 p-1 rounded-lg">
+              {/* Interactive Segmented Tabs */}
+              <div className="flex items-center gap-1 bg-slate-200/60 p-1 rounded-md">
                 {PREVIEW_TABS.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
@@ -176,23 +208,14 @@ export function LandingHero() {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`relative px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer ${
+                      className={`relative px-3 py-1 text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer rounded ${
                         isActive
-                          ? "text-slate-900 font-semibold"
+                          ? "text-violet-900 font-semibold bg-white shadow-2xs"
                           : "text-slate-600 hover:text-slate-900"
                       }`}
                     >
-                      {isActive && (
-                        <motion.span
-                          layoutId="heroTabBubble"
-                          className="absolute inset-0 rounded-md bg-white shadow-xs"
-                          transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
-                        />
-                      )}
-                      <span className="relative z-10 flex items-center gap-1.5">
-                        <Icon className="h-3.5 w-3.5" />
-                        <span>{tab.label}</span>
-                      </span>
+                      <Icon className="h-3.5 w-3.5" />
+                      <span>{tab.label}</span>
                     </button>
                   );
                 })}
@@ -200,224 +223,344 @@ export function LandingHero() {
             </div>
 
             {/* Mockup Dynamic Content Area */}
-            <div className="p-6 md:p-8 bg-slate-50/40 min-h-[360px] flex items-center justify-center">
+            <div className="p-6 md:p-8 bg-slate-50/50 min-h-[380px] flex items-center justify-center">
               <AnimatePresence mode="wait">
+                {/* 1. Smart Forms Interactive Demo */}
                 {activeTab === "forms" && (
                   <motion.div
                     key="tab-forms"
-                    initial={{ opacity: 0, scale: 0.98 }}
+                    initial={{ opacity: 0, scale: 0.99 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.98 }}
-                    transition={{ duration: 0.25 }}
-                    className="w-full max-w-2xl bg-white rounded-xl border border-slate-200 p-6 shadow-xs"
+                    exit={{ opacity: 0, scale: 0.99 }}
+                    transition={{ duration: 0.2 }}
+                    className="w-full max-w-2xl bg-white rounded-md border border-slate-200 p-6 shadow-xs"
                   >
-                    <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+                    <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 mb-5">
                       <div>
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded bg-purple-50 text-purple-700">
-                          Course Registration Form 2026
+                        <span className="inline-block text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                          Live Interactive Preview
                         </span>
                         <h3 className="text-base font-semibold text-slate-900 mt-1">
-                          Digital Leadership &amp; Management Seminar
+                          Executive Masterclass Registration 2026
                         </h3>
                       </div>
-                      <span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full font-medium flex items-center gap-1">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        Active
+                      <span className="text-xs text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded font-mono flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                        Live Form
                       </span>
                     </div>
 
-                    <div className="space-y-3.5">
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        setFormSubmitted(true);
+                      }}
+                      className="space-y-3.5"
+                    >
                       <div>
                         <label className="text-xs font-medium text-slate-700 block mb-1">
-                          Full Name (As in Identity Card / Passport) *
+                          Full Name (for Digital Certificate) *
                         </label>
-                        <div className="h-9 px-3 rounded-lg border border-slate-200 bg-slate-50/60 text-xs text-slate-800 flex items-center">
-                          Ahmad Farhan bin Mohd Salleh
-                        </div>
+                        <input
+                          type="text"
+                          value={formName}
+                          onChange={(e) => {
+                            setFormName(e.target.value);
+                            setFormSubmitted(false);
+                          }}
+                          className="h-9 w-full px-3 rounded border border-slate-200 bg-white text-xs text-slate-900 focus:outline-none focus:border-slate-400 font-sans"
+                        />
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <label className="text-xs font-medium text-slate-700 block mb-1">
-                            Identity Card / Passport No. *
+                            Identification / Passport Number *
                           </label>
-                          <div className="h-9 px-3 rounded-lg border border-slate-200 bg-slate-50/60 text-xs text-slate-800 flex items-center">
-                            940812-10-5421
-                          </div>
+                          <input
+                            type="text"
+                            defaultValue="A9842104"
+                            className="h-9 w-full px-3 rounded border border-slate-200 bg-white text-xs text-slate-900 focus:outline-none focus:border-slate-400 font-mono"
+                          />
                         </div>
                         <div>
                           <label className="text-xs font-medium text-slate-700 block mb-1">
                             Official Email Address *
                           </label>
-                          <div className="h-9 px-3 rounded-lg border border-slate-200 bg-slate-50/60 text-xs text-slate-800 flex items-center">
-                            farhan@school.edu.my
-                          </div>
+                          <input
+                            type="email"
+                            value={formEmail}
+                            onChange={(e) => {
+                              setFormEmail(e.target.value);
+                              setFormSubmitted(false);
+                            }}
+                            className="h-9 w-full px-3 rounded border border-slate-200 bg-white text-xs text-slate-900 focus:outline-none focus:border-slate-400 font-sans"
+                          />
                         </div>
                       </div>
 
+                      {formSubmitted && (
+                        <div className="p-2.5 rounded border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs flex items-center gap-2">
+                          <Check className="h-4 w-4 text-emerald-600 shrink-0" />
+                          <span>Response recorded! Google Sheet updated in 140ms and verification QR issued.</span>
+                        </div>
+                      )}
+
                       <div className="pt-2 flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-xs text-slate-500">
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                          <span>PDPA Consent enabled</span>
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                          <ShieldCheck className="h-3.5 w-3.5 text-slate-700" />
+                          <span>PDPA consent enforced</span>
                         </div>
-                        <div className="h-8 px-4 rounded-lg bg-purple-600 text-white text-xs font-medium flex items-center gap-1.5 shadow-xs">
-                          <span>Submit &amp; Generate E-Cert</span>
+                        <button
+                          type="submit"
+                          className="h-8 px-4 rounded bg-violet-900 hover:bg-violet-950 text-white text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                        >
+                          <span>{formSubmitted ? "Submit Another" : "Simulate Submission"}</span>
                           <ArrowRight className="h-3 w-3" />
-                        </div>
+                        </button>
                       </div>
-                    </div>
+                    </form>
                   </motion.div>
                 )}
 
+                {/* 2. E-Certificate Studio Interactive Demo */}
                 {activeTab === "certificates" && (
                   <motion.div
                     key="tab-certificates"
-                    initial={{ opacity: 0, scale: 0.98 }}
+                    initial={{ opacity: 0, scale: 0.99 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.98 }}
-                    transition={{ duration: 0.25 }}
-                    className="w-full max-w-2xl bg-white rounded-xl border border-slate-200 p-6 shadow-xs relative"
+                    exit={{ opacity: 0, scale: 0.99 }}
+                    transition={{ duration: 0.2 }}
+                    className="w-full max-w-2xl bg-white rounded-md border border-slate-200 p-6 shadow-xs relative"
                   >
-                    <div className="absolute top-4 right-4 flex items-center gap-1.5 text-xs text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full font-medium">
-                      <Sparkles className="h-3.5 w-3.5" />
-                      <span>Canva-Style Studio</span>
+                    {/* Controls Bar */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-slate-100 mb-4 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-slate-700">Format:</span>
+                        <div className="flex rounded border border-slate-200 p-0.5 bg-slate-50">
+                          <button
+                            onClick={() => setCertOrientation("landscape")}
+                            className={`px-2 py-0.5 rounded text-[11px] cursor-pointer ${
+                              certOrientation === "landscape" ? "bg-white text-slate-900 font-semibold shadow-2xs" : "text-slate-500"
+                            }`}
+                          >
+                            Landscape (A4)
+                          </button>
+                          <button
+                            onClick={() => setCertOrientation("portrait")}
+                            className={`px-2 py-0.5 rounded text-[11px] cursor-pointer ${
+                              certOrientation === "portrait" ? "bg-white text-slate-900 font-semibold shadow-2xs" : "text-slate-500"
+                            }`}
+                          >
+                            Portrait (A4)
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setCertStyle(certStyle === "editorial" ? "classic" : "editorial")}
+                          className="px-2.5 py-1 rounded border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs flex items-center gap-1 cursor-pointer"
+                        >
+                          <RefreshCw className="h-3 w-3" />
+                          <span>Style: {certStyle === "editorial" ? "Editorial Serif" : "Modern Bold"}</span>
+                        </button>
+                        <button
+                          onClick={() => setShowQrVerification(!showQrVerification)}
+                          className={`px-2.5 py-1 rounded border text-xs cursor-pointer transition-colors ${
+                            showQrVerification ? "border-violet-900 bg-violet-900 text-white" : "border-slate-200 text-slate-600"
+                          }`}
+                        >
+                          QR Stamp: {showQrVerification ? "On" : "Off"}
+                        </button>
+                      </div>
                     </div>
 
-                    {/* Certificate Preview Card */}
-                    <div className="border-4 border-double border-amber-600/30 p-6 rounded-lg bg-amber-50/20 text-center relative">
-                      <div className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-1">
-                        Certificate of Appreciation &amp; Participation
+                    {/* Certificate Canvas Mockup */}
+                    <div
+                      className={`border border-slate-300 p-6 rounded bg-slate-50 text-center relative transition-all duration-300 ${
+                        certOrientation === "landscape" ? "py-8" : "py-12"
+                      }`}
+                    >
+                      <div className="text-[10px] uppercase tracking-widest text-slate-500 font-mono font-semibold mb-1">
+                        Certificate of Excellence &amp; Participation
                       </div>
-                      <h4 className="text-xl md:text-2xl font-serif text-slate-900 font-bold mb-2">
-                        AHMAD FARHAN BIN MOHD SALLEH
+                      <h4
+                        className={`text-xl md:text-2xl font-bold text-slate-900 mb-2 ${
+                          certStyle === "editorial" ? "font-serif tracking-normal" : "font-sans tracking-tight"
+                        }`}
+                      >
+                        {formName.toUpperCase()}
                       </h4>
-                      <p className="text-xs text-slate-600 max-w-md mx-auto mb-4 italic">
-                        For successfully completing the National Digital Leadership &amp;
-                        Teacher Professionalism Workshop 2026.
+                      <p className="text-xs text-slate-600 max-w-md mx-auto mb-5">
+                        For successfully completing the Advanced Systems &amp; Organizational Architecture Workshop 2026.
                       </p>
 
-                      <div className="flex items-end justify-between pt-3 border-t border-slate-200/70 text-left">
+                      <div className="flex items-end justify-between pt-3 border-t border-slate-200 text-left">
                         <div>
-                          <div className="text-[10px] text-slate-400">Date Issued</div>
-                          <div className="text-xs font-semibold text-slate-700">14 September 2026</div>
+                          <div className="text-[10px] text-slate-400 font-mono">ISSUED ON</div>
+                          <div className="text-xs font-semibold text-slate-800">October 30, 2026</div>
                         </div>
-                        <div className="flex items-center gap-2 bg-white px-2.5 py-1.5 rounded border border-slate-200 shadow-xs">
-                          <QrCode className="h-7 w-7 text-slate-800" />
-                          <div className="text-[10px] leading-tight text-slate-500">
-                            <span className="font-mono text-slate-700 font-bold">KF-CERT-9821</span>
-                            <br />
-                            Scan to Verify
+
+                        {showQrVerification && (
+                          <div className="flex items-center gap-2 bg-white px-2 py-1 rounded border border-slate-200">
+                            <QrCode className="h-6 w-6 text-slate-800" />
+                            <div className="text-[10px] leading-tight text-slate-500 font-mono">
+                              <span className="font-bold text-slate-800">KF-9821-VERIFIED</span>
+                              <br />
+                              Scan to Verify
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
                     </div>
 
-                    <div className="mt-4 flex items-center justify-between text-xs text-slate-500">
-                      <span>✓ Auto-scale long titles</span>
-                      <span>✓ Export 300 DPI PDF &amp; PNG</span>
-                      <span>✓ Bulk CSV to ZIP Generator</span>
+                    <div className="mt-3.5 flex items-center justify-between text-xs text-slate-500 font-mono">
+                      <span>• Auto-scales long participant names</span>
+                      <span>• 300 DPI vector PDF &amp; PNG export</span>
                     </div>
                   </motion.div>
                 )}
 
+                {/* 3. Google Sheets Interactive Demo */}
                 {activeTab === "sheets" && (
                   <motion.div
                     key="tab-sheets"
-                    initial={{ opacity: 0, scale: 0.98 }}
+                    initial={{ opacity: 0, scale: 0.99 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.98 }}
-                    transition={{ duration: 0.25 }}
-                    className="w-full max-w-2xl bg-white rounded-xl border border-slate-200 p-5 shadow-xs"
+                    exit={{ opacity: 0, scale: 0.99 }}
+                    transition={{ duration: 0.2 }}
+                    className="w-full max-w-2xl bg-white rounded-md border border-slate-200 p-5 shadow-xs"
                   >
                     <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
                       <div className="flex items-center gap-2">
-                        <FileSpreadsheet className="h-5 w-5 text-emerald-600" />
+                        <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
                         <span className="text-xs font-semibold text-slate-800 font-mono">
-                          Course Registration 2026 (Responses)
+                          Live Registrations (Direct Sync)
                         </span>
                       </div>
-                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                        Google Sheets Auto-Sync
-                      </span>
+                      <button
+                        onClick={addSheetRow}
+                        className="px-2.5 py-1 rounded border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-xs font-medium flex items-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <Plus className="h-3 w-3" />
+                        <span>Simulate New Row</span>
+                      </button>
                     </div>
 
                     {/* SpreadSheet Mock Table */}
                     <div className="overflow-x-auto rounded border border-slate-200 text-xs">
                       <table className="w-full text-left font-mono">
-                        <thead className="bg-slate-100/90 text-slate-600">
+                        <thead className="bg-slate-50 text-slate-600 border-b border-slate-200 text-[11px]">
                           <tr>
                             <th className="p-2 border-r border-slate-200">#</th>
                             <th className="p-2 border-r border-slate-200">Timestamp</th>
-                            <th className="p-2 border-r border-slate-200">Participant Name</th>
-                            <th className="p-2 border-r border-slate-200">Identity No.</th>
-                            <th className="p-2">E-Cert Status</th>
+                            <th className="p-2 border-r border-slate-200">Full Name</th>
+                            <th className="p-2 border-r border-slate-200">Email</th>
+                            <th className="p-2">Sync Status</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-slate-700">
-                          <tr className="bg-emerald-50/40">
-                            <td className="p-2 border-r border-slate-200 text-slate-400">1</td>
-                            <td className="p-2 border-r border-slate-200">14/09/2026 15:20</td>
-                            <td className="p-2 border-r border-slate-200 font-semibold">Ahmad Farhan</td>
-                            <td className="p-2 border-r border-slate-200">940812105421</td>
-                            <td className="p-2 text-emerald-600 font-medium">Sent (Email)</td>
-                          </tr>
-                          <tr>
-                            <td className="p-2 border-r border-slate-200 text-slate-400">2</td>
-                            <td className="p-2 border-r border-slate-200">14/09/2026 15:22</td>
-                            <td className="p-2 border-r border-slate-200 font-semibold">Nurul Izzati</td>
-                            <td className="p-2 border-r border-slate-200">960405036122</td>
-                            <td className="p-2 text-emerald-600 font-medium">Sent (Email)</td>
-                          </tr>
-                          <tr>
-                            <td className="p-2 border-r border-slate-200 text-slate-400">3</td>
-                            <td className="p-2 border-r border-slate-200">14/09/2026 15:24</td>
-                            <td className="p-2 border-r border-slate-200 font-semibold">Muhammad Danish</td>
-                            <td className="p-2 border-r border-slate-200">921104145981</td>
-                            <td className="p-2 text-emerald-600 font-medium">Sent (Email)</td>
-                          </tr>
+                          {sheetRows.slice(-4).map((row, idx) => (
+                            <tr key={row.id} className={idx === sheetRows.length - 1 && sheetRows.length > 3 ? "bg-emerald-50/50" : ""}>
+                              <td className="p-2 border-r border-slate-200 text-slate-400">{row.id}</td>
+                              <td className="p-2 border-r border-slate-200">{row.time}</td>
+                              <td className="p-2 border-r border-slate-200 font-semibold text-slate-900">{row.name}</td>
+                              <td className="p-2 border-r border-slate-200 text-slate-500">{row.email}</td>
+                              <td className="p-2 text-emerald-700 font-medium">✓ {row.status}</td>
+                            </tr>
+                          ))}
                         </tbody>
                       </table>
                     </div>
-                    <div className="mt-3 text-[11px] text-slate-500 flex items-center justify-between">
-                      <span>• Formula injection shield active</span>
-                      <span>• Dual Google OAuth &amp; Service Account support</span>
+                    <div className="mt-3 text-[11px] text-slate-500 flex items-center justify-between font-mono">
+                      <span>Formula Injection Shield: ACTIVE</span>
+                      <span>Zero Webhooks Needed</span>
                     </div>
                   </motion.div>
                 )}
 
+                {/* 4. KlikBio Interactive Demo */}
                 {activeTab === "bio" && (
                   <motion.div
                     key="tab-bio"
-                    initial={{ opacity: 0, scale: 0.98 }}
+                    initial={{ opacity: 0, scale: 0.99 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.98 }}
-                    transition={{ duration: 0.25 }}
-                    className="w-full max-w-sm bg-white rounded-2xl border border-slate-200 p-5 shadow-sm text-center"
+                    exit={{ opacity: 0, scale: 0.99 }}
+                    transition={{ duration: 0.2 }}
+                    className="w-full max-w-sm bg-white rounded-md border border-slate-200 p-5 shadow-xs text-center"
                   >
-                    <div className="h-14 w-14 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 mx-auto mb-2.5 flex items-center justify-center text-white font-bold text-lg shadow-sm">
-                      KF
+                    <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 text-xs">
+                      <span className="font-mono text-slate-500">Theme:</span>
+                      <div className="flex rounded border border-slate-200 p-0.5 bg-slate-50">
+                        <button
+                          onClick={() => setBioTheme("light")}
+                          className={`px-2 py-0.5 rounded text-[11px] cursor-pointer ${
+                            bioTheme === "light" ? "bg-white text-slate-900 font-semibold shadow-2xs" : "text-slate-500"
+                          }`}
+                        >
+                          Light
+                        </button>
+                        <button
+                          onClick={() => setBioTheme("dark")}
+                          className={`px-2 py-0.5 rounded text-[11px] cursor-pointer ${
+                            bioTheme === "dark" ? "bg-slate-900 text-white font-semibold" : "text-slate-500"
+                          }`}
+                        >
+                          Dark
+                        </button>
+                      </div>
                     </div>
-                    <h4 className="text-sm font-bold text-slate-900">Digital Training Academy</h4>
-                    <p className="text-[11px] text-slate-500 mb-4">klikform.com/bio/digitalacademy</p>
 
-                    <div className="space-y-2 text-xs">
-                      <div className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors font-medium text-slate-800 flex items-center justify-center gap-1.5 shadow-2xs">
-                        <FileSpreadsheet className="h-3.5 w-3.5 text-purple-600" />
-                        <span>Course Registration Form 2026</span>
+                    <div
+                      className={`p-4 rounded border transition-colors ${
+                        bioTheme === "dark" ? "bg-slate-950 text-white border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"
+                      }`}
+                    >
+                      <div className="h-12 w-12 rounded-md bg-slate-900 text-white mx-auto mb-2.5 flex items-center justify-center font-bold font-mono text-base border border-slate-700">
+                        KF
                       </div>
-                      <div className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors font-medium text-slate-800 flex items-center justify-center gap-1.5 shadow-2xs">
-                        <Award className="h-3.5 w-3.5 text-amber-600" />
-                        <span>Attendee E-Certificate Lookup (Official Portal)</span>
-                      </div>
-                      <div className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors font-medium text-slate-800 flex items-center justify-center gap-1.5 shadow-2xs">
-                        <MessageCircle className="h-3.5 w-3.5 text-emerald-600" />
-                        <span>Contact Secretariat (WhatsApp)</span>
+                      <h4 className="text-sm font-semibold tracking-tight">Executive Tech Academy</h4>
+                      <p className={`text-[11px] mb-3.5 font-mono ${bioTheme === "dark" ? "text-slate-400" : "text-slate-500"}`}>
+                        klikform.com/bio/academy
+                      </p>
+
+                      <div className="space-y-2 text-xs">
+                        <div
+                          className={`p-2.5 rounded border font-medium flex items-center justify-center gap-1.5 transition-colors ${
+                            bioTheme === "dark"
+                              ? "bg-slate-900 border-slate-800 text-slate-200 hover:border-slate-700"
+                              : "bg-white border-slate-200 text-slate-800 hover:bg-slate-100"
+                          }`}
+                        >
+                          <FileSpreadsheet className="h-3.5 w-3.5" />
+                          <span>Course Registration Form</span>
+                        </div>
+                        <div
+                          className={`p-2.5 rounded border font-medium flex items-center justify-center gap-1.5 transition-colors ${
+                            bioTheme === "dark"
+                              ? "bg-slate-900 border-slate-800 text-slate-200 hover:border-slate-700"
+                              : "bg-white border-slate-200 text-slate-800 hover:bg-slate-100"
+                          }`}
+                        >
+                          <Award className="h-3.5 w-3.5" />
+                          <span>Digital Certificate Lookup</span>
+                        </div>
+                        <div
+                          className={`p-2.5 rounded border font-medium flex items-center justify-center gap-1.5 transition-colors ${
+                            bioTheme === "dark"
+                              ? "bg-slate-900 border-slate-800 text-slate-200 hover:border-slate-700"
+                              : "bg-white border-slate-200 text-slate-800 hover:bg-slate-100"
+                          }`}
+                        >
+                          <MessageCircle className="h-3.5 w-3.5" />
+                          <span>Contact Support via WhatsApp</span>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="mt-4 pt-3 border-t border-slate-100 text-[10px] text-slate-400">
-                      8 Beautiful Themes &amp; Background Patterns (Link-in-Bio)
+                    <div className="mt-3 text-[10px] text-slate-400 font-mono">
+                      8 Curated Themes &amp; Patterns (Link-in-Bio)
                     </div>
                   </motion.div>
                 )}

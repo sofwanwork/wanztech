@@ -79,7 +79,7 @@ export function CreateLinkForm() {
 function SubmitButton() {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" disabled={pending} className="w-full sm:w-auto">
+        <Button type="submit" disabled={pending} className="w-full sm:w-auto bg-violet-900 hover:bg-violet-950 text-white rounded-md shadow-xs font-medium">
             {pending ? 'Creating...' : 'Create Short Link'}
         </Button>
     );

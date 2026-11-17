@@ -1,5 +1,290 @@
 # Project Memory
 
+## Perlindungan Anti-Bot Pendaftaran & Pembersihan Akaun Unverified Admin - 2026-11-17
+
+- **Punca Isu & Permintaan Pengguna**:
+  - Pengguna bertanya berserta tangkapan skrin `/admin`: *"kenapa akaun yg pelik2 ni boleh daftar ya?"* dan mengesahkan *"okay proceed"*.
+  - Akaun spam automatik (cth. `ycOzLIsSbljRGtmsuabUn`, `n.o.ro.l.u.t.i.s.u.852@gmail.com`) boleh mendaftar kerana `app/(auth)/login/page.tsx` memanggil `supabase.auth.signUp()` terus dari klien tanpa CAPTCHA, tanpa *honeypot*, tanpa *rate limiting*, dan tanpa validasi username/emel. Tambahan pula `actions/admin.ts` tidak mendedahkan status `email_confirmed_at`, menjadikan akaun belum disahkan tetap nampak sebagai `Aktif`.
+- **Tindakan Pembaikan**:
+  1. `lib/auth/signup-guard.ts`: Tambah `validateSignupInput`, `isSuspiciousBotUsername` (menyekat token rawak bercampur huruf besar/kecil berentropi tinggi sambil membenarkan nama organisasi/manusia sah), `isSuspiciousGmailDotTrick` (menyekat `>= 4` titik atau segmen 1-huruf bertitik di Gmail), senarai domain pakai-buang (*disposable*), dan semakan *honeypot*.
+  2. `lib/auth/turnstile.ts` & `lib/rate-limit.ts`: Tambah `verifyTurnstileToken` (fail-closed, sahkan `success`, `action === 'signup'`, dan `hostname`) serta had kadar `RATE_LIMITS.signupAttempt` (5 permintaan / 10 minit per IP).
+  3. `actions/auth.ts`: Tambah Server Action `signUpAction` dengan pengawalan *single-use token* Turnstile (jika `TURNSTILE_SECRET_KEY` diset di Next.js, ia mengesahkan di pelayan tanpa hantar semula `captchaToken` ke Supabase; jika tidak, ia menyalurkan `captchaToken` ke Supabase Auth Attack Protection).
+  4. `components/auth/turnstile-widget.tsx`, `app/(auth)/login/page.tsx`, `app/(dashboard)/settings/page.tsx`: Bina widget Cloudflare Turnstile eksplisit (`resetKey` pada setiap cubaan), tambah medan *honeypot* `company_url`, alihkan pendaftaran ke `signUpAction`, serta pasangkan `TurnstileWidget` + `captchaToken` pada borang **Sign In**, **Forgot Password**, dan **Reset Password** di `/settings` supaya serasi sepenuhnya apabila Supabase Auth Captcha Protection diaktifkan.
+  5. `next.config.ts` & `.env.local.example`: Benarkan `https://challenges.cloudflare.com` dalam CSP (`script-src`, `frame-src`, `connect-src`) dan dokumentasikan `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `TURNSTILE_HOSTNAMES`.
+  6. `actions/admin.ts` & `components/admin/client-table.tsx`: Dedahkan `isVerified` / `emailConfirmedAt`, tambah lencana `Unverified`, penapis `Verified`/`Unverified`, kotak semak berbilang baris dengan `deleteClientsBulkAction`, dan pembersihan pantas akaun belum disahkan tanpa aktiviti (`deleteUnverifiedZeroUsageClientsAction`) melalui pembantu kongsi `permanentlyDeleteUserById`.
+  7. `tests/signup-guard.test.ts` & `tests/admin-actions.test.ts`: Tambah ujian unit perlindungan pendaftaran (5/5 lulus) dan kemas kini ujian pentadbir (4/4 lulus).
+- **Status Ujian & Pengesahan**:
+  - `npm test`: 506/506 lulus merentas 52 fail suite.
+  - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat / 0 amaran (`eslint .`).
+  - `npm run build`: Binaan Next.js 16 Turbopack berjaya sepenuhnya (36 halaman statik + semua laluan dinamik).
+
+
+## Penyelarasan Bahasa Inggeris Sejagat (System-wide English Language Standardization) - 2026-11-02
+
+- **Punca Isu & Permintaan Pengguna**:
+  - Pengguna meminta berserta tangkapan skrin Form Fields: *"ada yg bahasa melayu, sy nak awak selaraskan semua dlm sistem ni bahasa inggeris"*.
+  - Bahagian Form Fields Editor, Form Builder, Portal Semakan E-Sijil Awam, dan Panel Pentadbir masih mempunyai pelbagai teks antaramuka dalam Bahasa Melayu.
+- **Tindakan Pembaikan**:
+  1. `components/forms/fields-editor/index.tsx`:
+     - Menukar `Pemisah Halaman (Page Break)` kepada `Page Break`.
+     - `Soalan di bawah garisan ini akan bermula pada halaman baharu` -> `Questions below this line will start on a new page`.
+     - `Mahu jadikan soalan seterusnya pada halaman baharu?` -> `Want the next question on a new page?`.
+     - `+ Tambah Pemisah di sini` -> `+ Add Page Break here`.
+     - `Susunan Pilihan (Layout)` -> `Options Layout`, `Menegak` / `Mendatar` -> `Vertical` / `Horizontal`.
+     - `Baris Pernyataan` / `Lajur Skala` -> `Statement Rows` / `Scale Columns`, `Tambah Baris` / `Tambah Lajur` -> `Add Row` / `Add Column`.
+     - Logik bersyarat: `Sentiasa tunjuk soalan ini.` -> `Always show this question.`, `Tambah peraturan` -> `Add rule`, `Tunjuk jika SEMUA/MANA-MANA peraturan ini benar:` -> `Show if ALL/ANY of these rules match:`.
+     - `Wajib` -> `Required`, `(Tanpa Tajuk)` -> `(Untitled)`.
+  2. `app/builder/[id]/client.tsx`:
+     - Mesej toast sinkronisasi tajuk Google Sheet diselaraskan ke Bahasa Inggeris.
+     - Pilihan mod pengeluaran e-sijil acara berbilang hari diselaraskan ke Bahasa Inggeris.
+  3. `app/(public)/check/[formId]/client.tsx`:
+     - Seluruh portal semakan sijil dan pengesahan kehadiran diselaraskan ke Bahasa Inggeris.
+  4. `app/(admin)/admin/page.tsx`, `components/admin/client-table.tsx`, `components/admin/edit-subscription-dialog.tsx`:
+     - Seluruh panel pentadbir, kad metrik, tindakan, status, dan dialog langganan diselaraskan ke Bahasa Inggeris.
+  5. `components/pamphlet/viewer/flipbook-view.tsx` & `actions/sheets.ts`:
+     - Teks nombor halaman risalah (`Page ${n}`) dan mesej ralat tindakan lembaran diselaraskan ke Bahasa Inggeris.
+- **Status Ujian & Pengesahan**:
+  - `npm test`: 501/501 lulus.
+  - TypeScript: 0 ralat (`tsc --noEmit`).
+  - ESLint: 0 ralat (`eslint .`).
+
+
+## Penambahan Garisan Luar (Stroke) Pemilih Warna Tema Borang - 2026-11-02
+
+- **Punca Isu & Permintaan Pengguna**:
+  - Pengguna bertanya berserta gambar pemilih warna: *"kenapa bulat putih ni tak nampak ya? boleh ke strokekan"*.
+  - Bulatan `Background Color` yang bernilai `#FFFFFF` (putih) tidak kelihatan kerana kad latarnya juga putih bersih, dan piksel elemen `<input type="color">` yang bersaiz melimpah menutup border luaran kontena.
+- **Tindakan Pembaikan**:
+  - Menyusun semula kontena pemilih warna bulat di `app/builder/[id]/client.tsx`:
+    - Mengasingkan bekas bulat dengan `<div className="w-full h-full rounded-full overflow-hidden relative [clip-path:circle(50%)]">` untuk input warna.
+    - Menambah lapisan garisan sempadan (stroke) di atas input: `<div className="absolute inset-0 rounded-full border-2 border-slate-300/90 dark:border-slate-600 pointer-events-none" />`.
+    - Menetapkan `pointer-events-none` supaya interaksi klik tidak terhalang.
+  - Berfungsi dengan jelas pada warna putih bersih mahupun warna gelap, serta menyokong tema gelap (`dark:border-slate-600`).
+- **Status Ujian & Pengesahan**:
+  - `npm test`: 501/501 lulus.
+  - TypeScript: 0 ralat (`tsc --noEmit`).
+  - ESLint: 0 ralat (`eslint .`).
+
+
+## Penggantian Corak Latar Belakang Borang (Form Background Pattern Upgrade) - 2026-11-02
+
+- **Punca Isu & Permintaan Pengguna**:
+  - Pengguna meminta: *"background pattern tu, buang waves dan triangles, gantikan dengan yg cantik sikit"* berserta gambar selector tema di Form Builder.
+  - Corak lama `waves` (separuh bulatan berlapis / sisik ikan kasar) dan `triangles` (jalur bergerigi / hazard chevrons tajam) kelihatan tidak estetik dan ketinggalan zaman.
+- **Tindakan Pembaikan**:
+  1. `lib/types/forms.ts`: Tambah `'crosses' | 'topography' | 'stars'` pada `BackgroundPattern`, kekalkan `'waves' | 'triangles'` untuk keserasian legasi.
+  2. `lib/forms/patterns.ts`: Modul berpusat (*single source of truth*) yang mengandungi `FORM_BACKGROUND_PATTERNS` (None, Dots, Grid, Diagonal, Crosses, Circles, Topography, Stars) dan fungsi `getFormPatternStyle(pattern)` dengan *fallback* pintar untuk legasi `waves` (ke `topography`) dan `triangles` (ke `crosses`).
+  3. `app/builder/[id]/client.tsx`: Paparan grid 8 pilihan (4 kolum x 2 baris pada mudah alih, 8 kolum sebaris pada desktop) dengan thumbnail pratonton `rounded-md border border-slate-200/90 shadow-2xs` dan sorotan tema Midnight Violet (`border-violet-900 bg-violet-50/70`).
+  4. `app/(public)/form/[id]/client.tsx`: Menggunakan `getFormPatternStyle` untuk render corak latar belakang borang awam secara konsisten.
+  5. `tests/form-patterns.test.ts`: Ujian unit lengkap (5/5 lulus) mengesahkan 8 corak moden, ketiadaan `waves`/`triangles` pada pemilih, dan *fallback* legasi.
+- **Status Ujian & Pengesahan**:
+  - `npm test`: 501/501 lulus merentas 51 suite fail.
+  - TypeScript: 0 ralat (`tsc --noEmit`).
+  - ESLint: 0 ralat / 0 amaran (`eslint .`).
+
+
+## Penyelarasan Lengkungan Bersih Form Builder (Form Builder Low-Radius Geometry) - 2026-11-02
+
+- **Punca Isu & Permintaan Pengguna**:
+  - Pengguna meminta: *"yg dalam ni pun selaraskan jgk less curve tu"* dengan tangkapan skrin halaman Form Builder (`/builder/[id]`).
+  - Halaman Form Builder sebelum ini masih menggunakan radius berlebihan / AI-slop (`rounded-xl` dan `rounded-2xl`) pada kad tetapan borang, bekas paparan kod QR, dialog pengesahan, dan sasaran seret-dan-lepas (*drag-and-drop*) penyunting medan borang.
+- **Tindakan Pembaikan**:
+  1. `components/ui/card.tsx`: Komponen asas `<Card>` dikemas kini dari `rounded-xl py-6 shadow-sm` kepada `rounded-lg border border-slate-200 py-6 shadow-2xs`.
+  2. `app/builder/[id]/client.tsx`:
+     - Bekas QR code diselaraskan ke `rounded-md shadow-2xs border border-slate-200`.
+     - Kad tetapan utama borang (General Info, Theme, E-Cert, Attendance, Share) diselaraskan ke `rounded-lg shadow-2xs border-slate-200`.
+     - Kotak pemberitahuan, lencana, butang, dan dialog tindakan diselaraskan ke `rounded-md` / `rounded-lg`.
+  3. `components/forms/fields-editor/index.tsx`:
+     - Kad medan soalan seret (`SortableField`), kotak skala grid, dan drag overlay diselaraskan dari `rounded-2xl`/`rounded-xl` ke `rounded-md`.
+- **Status Ujian & Pengesahan**:
+  - `npm test`: 496/496 lulus merentas 50 fail suite.
+  - TypeScript: 0 ralat (`tsc --noEmit`).
+  - ESLint: 0 ralat / 0 amaran (`eslint .`).
+
+
+## Penyelarasan Rona Ungu Midnight Violet (Theme Darkening to Violet-900 #4C1D95) - 2026-11-02
+
+- **Punca Isu & Permintaan Pengguna**:
+  - Pengguna meminta: *"gelapkan sikit lagi color ungu tu"* dengan tangkapan skrin halaman Settings (`/settings`).
+  - Warna ungu sebelumnya (`violet-800` / `#5b21b6`) telah digelapkan dari neon purple (`#7c3aed`), tetapi pengguna mahukan warna ungu yang lebih gelap dan matang.
+- **Tindakan Pembaikan**:
+  - Menetapkan warna tema utama kepada **Midnight Violet** (`violet-900` / `#4c1d95`) dengan hover `violet-950` (`#2e1065`).
+  - Mengemas kini `app/globals.css` (`--primary: #4c1d95;`, dsb.), `sidebar.tsx` (`bg-violet-900 hover:bg-violet-950`), kad integrasi Google, lencana, teks penjenamaan, dan 48 fail komponen UI.
+- **Status Ujian & Pengesahan**:
+  - `npm test`: 496/496 lulus.
+  - TypeScript: 0 ralat.
+  - ESLint: 0 ralat.
+
+
+## Penghapusan Tompok Gelap di Bawah Tulang Buku (Clean Minimalist Spine & Notch Removal) - 2026-10-30
+
+- **Punca Isu ("kenapa ada tu dekat bawah")**:
+  - Di bahagian bawah tulang buku, terdapat elemen takuk tiruan (*binding notch*) yang menggunakan `radial-gradient`.
+  - Disebabkan pembahagi flex mengandungi garisan lurah tengah `h-full`, elemen takuk bawah tertolak melepasi sempadan bawah halaman buku, menghasilkan tompok petak gelap yang kelihatan cacat (*skeuomorphic artifact* / comot) di bahagian bawah buku.
+- **Tindakan Pembaikan**:
+  - Membuang kedua-dua elemen takuk (*top & bottom binding notches*) sepenuhnya.
+  - Memasang `overflow-hidden` pada kontena tulang tengah `w-4` berpusat di `left-1/2 -translate-x-1/2`.
+  - Tulang belakang kini menampilkan alur cekung 3D (*concave gutter shadow*) yang bersih serta garisan lurah halus 1.5px tanpa sebarang tompok atau artifak terkeluar.
+- **Status Ujian & Pengesahan**:
+  - `tests/pamphlet.test.ts`: 18/18 lulus.
+  - TypeScript: 0 ralat (`tsc --noEmit`).
+  - ESLint: 0 ralat / 0 amaran (`eslint .`).
+
+
+## Pemulihan & Penyelarasan Tulang Belakang Buku 3D di Bahagian Tengah (3D Center Spine Restoration & Dynamic Orientation Shading) - 2026-10-30
+
+- **Punca Isu ("kenapa tulang belakang buku takde dekat tengah2")**:
+  1. **Komponen Spine Tengah Tertinggal**: Semasa migrasi ke enjin StPageFlip (`page-flip`), tindanan komponen *3D Center Spine Crease System* (longkang cekung 16px, lurah garis rambut, rabung spekular, dan takuk jahitan) yang dibina sebelumnya tidak disertakan di atas kontena hos `hostRef`.
+  2. **Bayang Helaian Terbalik ke Luar**: Bayang lengkungan dalaman helaian sebelumnya menggunakan formula indeks statik `idx % 2 === 0`. Dalam mod dwi-halaman dengan muka depan (*showCover*), susunan helaian menyebabkan bayang jatuh pada bucu luar tepi buku (kiri dan kanan luar), bukannya menghala ke tulang tengah buku.
+- **Tindakan Pembaikan yang Dilaksanakan**:
+  1. **Lapisan 3D Center Spine System di Tengah (`left: 50%`)**:
+     - Ditambah sebagai elemen saudara (*sibling*) kepada `hostRef` dengan lebar 16px (`w-4`) dan berpusat di tengah `left-1/2 -translate-x-1/2`.
+     - Mengandungi kecerunan longkang cekung 3D (*concave spine gutter gradient*), lurah tengah 2px berserta sorotan rabung spekular (*specular ridge*), dan takuk jahitan ikatan atas/bawah (*top & bottom binding notches*).
+     - Menetapkan `startZIndex: 10` pada StPageFlip dan meletakkan lapisan tulang pada `z-[12]`. Dengan ini, tulang berada di atas helaian statik (`z: 10`), manakala helaian yang sedang diselak (`z: 15`) melintasi di atas tulang buku secara realistik.
+  2. **Bayang Lengkungan Helaian Berasaskan Kelas Dinamik (`app/globals.css`)**:
+     - Menggunakan peraturan CSS `.stf__item.--left .stf__spine-inner-shadow` (`right: 0`) dan `.stf__item.--right .stf__spine-inner-shadow` (`left: 0`).
+     - Memastikan bahawa mana-mana helaian di sebelah kiri akan memancarkan bayang ke arah kanan (ke tengah), dan mana-mana helaian di sebelah kanan akan memancarkan bayang ke arah kiri (ke tengah).
+- **Status Ujian & Pengesahan**:
+  - `tests/pamphlet.test.ts`: 18/18 lulus.
+  - TypeScript: 0 ralat (`tsc --noEmit`).
+  - ESLint: 0 ralat / 0 amaran (`eslint .`).
+
+
+## Penjelasan & Pengoptimuman Mekanik Tarikan Halaman 3D (3D Page Pull Mechanics & Soft Paper Density) - 2026-10-30
+
+- **Punca Isu ("kenapa tak semua page boleh tarik ya")**:
+  1. **Fizik Arah Selakan (Left vs Right Direction)**:
+     - Dalam fizik buku sebenar dan enjin StPageFlip, muka surat di sebelah kanan tulang buku hanya boleh ditarik dari **bucu kanan ke kiri** (mara ke hadapan).
+     - Muka surat di sebelah kiri tulang buku hanya boleh ditarik dari **bucu kiri ke kanan** (undur ke belakang).
+     - Bahagian tengah (tulang buku / *spine crease*) adalah titik cantuman helaian yang terikat, jadi seretan tidak boleh dimulakan dari tengah.
+  2. **Batasan Muka Surat Pertama & Terakhir**:
+     - Pada Muka Surat 1 (Muka Hadapan): Tiada helaian sebelumnya, jadi ia hanya boleh ditarik ke hadapan (bucu kanan). Tiada halaman di sebelah kiri untuk ditarik.
+     - Pada Halaman Terakhir: Tiada helaian seterusnya, jadi ia hanya boleh ditarik ke belakang (bucu kiri). Tiada halaman di sebelah kanan untuk ditarik.
+  3. **Kesan Kulit Tebal (*Hardcover Density*)**:
+     - Sebelum ini, muka depan dan belakang diset sebagai `density: 'hard'`.
+     - Dalam enjin `page-flip`, helaian `hard` tidak melipat bucu (*no corner curling*) apabila di-hover/ditarik sedikit, sebaliknya berpusing seperti papan pintu tegar. Ini memberi persepsi seolah-olah bucunya tidak boleh ditarik melentur berbanding muka surat dalaman.
+  4. **Risalah 2 Halaman (Contoh: "Garis Badai")**:
+     - Dokumen hanya mengandungi 2 halaman (Muka 1: Muka Depan, Muka 2: Maklumat).
+     - Pada Muka 1, hanya boleh diselak ke Muka 2. Setelah berada di Muka 2, hanya boleh diselak kembali ke Muka 1.
+- **Tindakan & Pengoptimuman Kod**:
+  - Mengubah konfigurasi `components/pamphlet/viewer/flipbook-view.tsx`:
+    1. Menetapkan `pageEl.dataset.density = 'soft'` untuk semua helaian.
+    2. Menambah penulisan semula ketumpatan selepas `loadFromHTML` melalui `pageCollection.getPages().forEach(p => p.setDensity('soft'))` bagi membatalkan paksaan automatik *hardcover* oleh enjin StPageFlip.
+    3. Kini setiap halaman (termasuk muka depan & belakang) mempunyai kesan lipatan bucu (*corner curl on hover/drag*) dan kelenturan kertas lembut sebenar.
+- **Status Ujian & Pengesahan**:
+  - `tests/pamphlet.test.ts`: 18/18 lulus.
+  - Keseluruhan suite: 492/492 lulus.
+  - TypeScript: 0 ralat (`tsc --noEmit`).
+  - ESLint: 0 ralat / 0 amaran (`eslint .`).
+
+
+## Integrasi Enjin 3D StPageFlip (Fizik Kertas Melentur & Lesen MIT Bebas Komersial) - 2026-10-30
+
+- **Objektif & Keputusan Perlesenan**:
+  - Mengintegrasikan pustaka `page-flip` (StPageFlip) berlesen **MIT** yang membenarkan KlikForm kekal sebagai perisian tertutup/komersial (sifar keperluan berkongsi atau membuka kod di GitHub, berbanding plugin jQuery GPL-2.0).
+  - Menyediakan fizik kertas melentur sebenar (*flexible paper bending physics*), tarikan bucu interaktif (*corner fold on hover/drag*), dan kulit tebal (*hardcover & soft pages*).
+- **Seni Bina & Pelaksanaan**:
+  1. **Pemuatan Dinamik Sisi Klien (*Client-Side Dynamic Import*)**: Mengimport `page-flip` secara dinamik di dalam `useEffect` bagi menjamin sifar ralat SSR dan sifar *hydration mismatch* pada Next.js 16 Turbopack.
+  2. **Pengasingan Sempadan Rekonsiliasi React DOM**: Menggunakan kontena hos terpencil (`hostEl.appendChild(bookRoot)`) supaya DOM yang diubah suai oleh `page-flip` tidak bertembung dengan reconciler React, mengelakkan ralat `Failed to execute removeChild on Node`.
+  3. **Penyesuaian Responsif & Kulit Keras**:
+     - Halaman muka depan dan belakang ditanda dengan `data-density="hard"` (apabila melebihi 2 halaman dalam mod dwi-halaman) untuk rasa kulit buku yang mantap.
+     - Halaman dalaman ditanda dengan `data-density="soft"` untuk fizik lenturan helaian kertas yang fleksibel.
+     - Bayang lurah tulang buku (*concave spine gradient*) dan sempadan kertas halus diterapkan secara automatik.
+  4. **Penyegerakan Dua Hala**:
+     - Perubahan halaman melalui seretan jari/tetikus menyegerakkan `onPageChange(pageNumber)` ke komponen induk.
+     - Navigasi luaran (butang terapung, papan kekunci, drawer thumbnail) menyegerakkan terus ke `turnToPage()`.
+     - Bunyi selakan kertas dimainkan secara automatik semasa status `flipping`.
+- **Status Ujian & Pengesahan**:
+  - `tests/pamphlet.test.ts`: 18/18 ujian lulus.
+  - Keseluruhan suite: 492/492 ujian lulus.
+  - TypeScript: 0 ralat (`tsc --noEmit`).
+  - ESLint: 0 ralat / 0 amaran (`eslint .`).
+
+
+## Penambahbaikan Reka Bentuk Tulang Buku 3D (3D Spine Beautification & Crease Depth) - 2026-10-30
+
+- **Punca Isu ("cantikkan sikit tgh tulang buku (spine)")**:
+  1. **Artifak Jalur Kelabu di Tulang Luar Kiri**: Sebelum ini, `shadow-[...]` diletakkan serentak pada kedua-dua satah `.face.front` dan `.face.back` di dalam helaian. Kerana satah belakang berputar `rotateY(180deg)`, unjuran perspektif 3D (`rotateX(7deg)`) menyebabkan bayang muka belakang terkeluar ke arah bertentangan (kiri). Tambahan pula, satah depan dan belakang berada pada kedudukan $Z = 0$ yang sama, mencetuskan *Z-fighting* dan pembundaran subpiksel GPU di mana sempadan kelabu muka belakang meleleh ke sisi kiri buku.
+  2. **Tengah Tulang Buku (Center Crease)**: Garisan tengah sebelumnya hanyalah garisan hitam rata 2px (`linear-gradient(rgba(0,0,0,0.3), ...)`), kelihatan kaku dan kurang kedalaman fizikal 3D.
+- **Tindakan Penambahbaikan Dilaksanakan**:
+  1. **Longkang Cekung 3D Tengah Tulang Buku (*Concave Spine Gutter*)**:
+     - Membina longkang 16px di tengah buku (`isTwoPageSpread`) dengan kecerunan cekung berlapis (`rgba(0,0,0,0.06)` hingga `rgba(0,0,0,0.36)` di teras).
+     - Menambah rabung pantulan mikro-spekular (*specular ridge*) berserta lurah garis rambut (*hairline valley groove*) 2px di bahagian tengah.
+     - Menambah aksen takuk jahitan ikatan buku (*binding notch accents*) di bahagian atas dan bawah spine.
+     - Meluaskan bayang lurah dalaman (*inner gutter shadow*) pada setiap muka halaman kepada 32px (`w-8`) dengan lengkungan optik yang realistik.
+  2. **Kemasan Tulang Luar Buku Fizikal (*Tactile Spine Fold & Hinge Accent*)**:
+     - Menambah aksen lipatan tulang buku fizikal di sisi luar halaman: sorotan lembut (*soft specular highlight*), lorekan silinder, dan garis alur lipatan 1px halus.
+     - Memindahkan bayang jatuhan (*drop shadow*) dari muka depan/belakang ke kontena helaian induk (*sheet container*).
+     - Mengasingkan satah 3D muka hadapan (`translateZ(0.5px)`) dan satah belakang (`rotateY(180deg) translateZ(0.5px)`), menghasilkan jarak fizikal 1.0px yang menghapuskan *Z-fighting* dan artifak lelehan bayang terbalik sepenuhnya.
+- **Status Ujian & Pengesahan**:
+  - `tests/pamphlet.test.ts`: 18/18 ujian lulus.
+  - Keseluruhan suite: 492/492 ujian lulus.
+  - TypeScript: 0 ralat (`tsc --noEmit`).
+  - ESLint: 0 ralat / 0 amaran (`eslint .`).
+
+
+## Pembaikan 3D Flipbook — Penghapusan Jalur Tulang Terapung & Selakan Masa Nyata (Real-Time Flip) - 2026-10-30
+
+- **Punca Isu ("tak nak ada tu dulu baru flip / real time bila flip")**:
+  1. **Jalur Kertas Terapung ("ada tu dulu")**: Komponen `FlipbookView` sebelum ini mengandungi elemen skeuomorphic bertindih (*stacked paper edges*) dengan kecerunan berulang `#c8beab, #f4efe4` yang diikat secara statik pada sempadan luar kontena dwi-halaman (`right: -9px`). Bagi risalah 2-halaman (seperti infografik "GARIS BADAI"), ia memaksa mod *two-page spread* lalu meninggalkan separuh kawasan kanan kosong dan menampakkan jalur menegak terapung di ruang putih.
+  2. **Kelengahan Animasi (*Sluggish Ease-In Lag*)**: Tempoh animasi selakan 720ms dengan fungsi kubik berat ($4t^3$) menghasilkan kelewatan ~180ms sebelum helaian mula berpusing ketara, menyebabkan pengguna berasa risalah "tersangkut/ada ruang tu dulu" baru mula menyelak.
+- **Tindakan Dilaksanakan**:
+  1. **Hapuskan Jalur Kertas Terapung Sepenuhnya**: Menyingkirkan elemen `Stacked Paper Edges` kiri & kanan. Halaman kini bersih, minimalis, dan moden dengan bayang persekitaran semula jadi.
+  2. **Kunci Mod Halaman Tunggal untuk Dokumen $\le 2$ Halaman**: Menyelaraskan formula `isTwoPageSpread` supaya mod dwi-halaman automatik hanya aktif untuk dokumen melebihi 2 halaman (`totalPages > 2`). Dokumen 1 atau 2 muka surat kini dipaparkan di tengah skrin (*centered*) tanpa ruang kosong sebelah kanan.
+  3. **Selakan Responsif Masa Nyata (*Real-Time Direct Flip*)**:
+     - Tempoh animasi dikurangkan kepada 400ms dengan *snappy quadratic start* (tiada lagi kelewatan pada saat awal klik).
+     - Ambang sentuhan seretan (*drag threshold*) dikurangkan daripada 6px kepada 3px untuk tindak balas serta-merta.
+     - Ambang penyiapan selakan dikurangkan daripada 32% kepada 22%.
+     - Butang navigasi terapung dikemas kini kepada geometri moden `rounded-md`.
+- **Status Ujian**:
+  - `tests/pamphlet.test.ts`: 18/18 ujian lulus.
+  - Keseluruhan suite: 492/492 ujian lulus.
+  - TypeScript & ESLint: 0 ralat.
+
+
+## Keputusan & Penyelarasan UI Terkini (Dashboard & Semua Tab Dalaman - #7C3AED / Minimalist / Anti-AI Slop / Less Curve / 100% English) - 2026-10-30
+
+- **Penyelarasan Penuh Papan Pemuka Pengguna (`app/(dashboard)`)**:
+  - Berdasarkan maklum balas pengguna dan tangkapan skrin papan pemuka:
+    1. **Sidebar Navigasi (`components/dashboard/sidebar.tsx`, `components/mobile-menu.tsx`)**:
+       - Bekas logo diubah daripada `rounded-xl` kepada geometri padat `rounded-md overflow-hidden border border-purple-200/80`.
+       - Butang utama `+ New Form`: lengkungan rendah `rounded-md`, ungu logo KlikForm `bg-purple-600 hover:bg-purple-700 text-white shadow-xs font-medium`.
+       - Item navigasi aktif: `rounded-md`, latar lembut `bg-purple-50 text-purple-700 font-semibold`, ikon `text-purple-600`.
+       - Item tidak aktif: `rounded-md`, `text-slate-600 hover:text-slate-900 hover:bg-slate-100/80`.
+       - Profil pengguna dan avatar: `rounded-md`.
+    2. **Tab 1: Dashboard / Forms (`app/(dashboard)/forms/page.tsx`, `form-card.tsx`, `stats.tsx`, `cross-form-analytics.tsx`, `search.tsx`, `filter.tsx`)**:
+       - `FormCard`: Kurangkan daripada `rounded-2xl` & animasi melantun `-translate-y-1` / `shadow-xl` kepada geometri kemas `rounded-lg border border-slate-200 bg-white shadow-2xs hover:border-slate-300 hover:shadow-xs`. Butang `Copy Link` & `Preview` ditukar daripada pil `rounded-full` kepada `rounded-md`. Lencana tarikh format mono `text-[11px] text-slate-500 font-mono bg-slate-100 px-2 py-0.5 rounded`.
+       - `DashboardStats`: Kad statistik `rounded-lg border border-slate-200 bg-white shadow-2xs`. Lencana status pelan `rounded-md`, pautan naik taraf `text-purple-600`.
+       - `CrossFormAnalytics`: Kad `rounded-lg border border-slate-200 bg-white shadow-2xs`, ikon `text-purple-600`, carta garis percambahan warna ungu logo.
+       - Keadaan kosong: `rounded-lg border border-dashed border-slate-200 bg-slate-50/50`, butang `bg-purple-600 hover:bg-purple-700 text-white rounded-md shadow-xs`.
+    3. **Tab 2: Responses (`app/(dashboard)/responses/client.tsx`, `[id]/analytics/client.tsx`, `response-charts.tsx`)**:
+       - Kad senarai respons: `rounded-lg border border-slate-200 bg-white shadow-2xs`.
+       - AlertDialog set semula kehadiran: `rounded-lg border border-slate-200` dengan butang `rounded-md`.
+       - Semua notifikasi toast diterjemahkan ke 100% Bahasa Inggeris (*"Successfully synced X records to Google Sheet!"*, *"All response records are already up to date with Google Sheet."*).
+       - Carta analisis jawapan: kad `rounded-lg border border-slate-200 bg-white shadow-2xs`, bar kemajuan `rounded-sm`.
+    4. **Tab 3: E-Cert (`app/(dashboard)/certificates/page.tsx`, `components/certificate-qr-card.tsx`)**:
+       - Kad e-sijil: `rounded-lg border border-slate-200 bg-white shadow-2xs`. Kotak QR `rounded-md`, butang muat turun `bg-purple-600 hover:bg-purple-700 text-white rounded-md shadow-xs`.
+    5. **Tab 4: E-Cert Builder (`app/(dashboard)/certificates/builder/page.tsx`, `components/certificates/certificate-template-card.tsx`)**:
+       - Butang "New Certificate": `bg-purple-600 hover:bg-purple-700 text-white rounded-md shadow-xs`. Lencana kategori `rounded-md`. Kad templat sijil `rounded-lg border border-slate-200 bg-white shadow-2xs`.
+    6. **Tab 5: QR Builder (`app/(dashboard)/qr-builder/page.tsx`, `qr-code-list.tsx`, `client.tsx`)**:
+       - Kad senarai QR: `rounded-lg border border-slate-200 bg-white shadow-2xs`. Butang "Create New" dan simpan: `bg-purple-600 hover:bg-purple-700 text-white rounded-md shadow-xs`.
+    7. **Tab 6: URL Shortener (`app/(dashboard)/shortener/page.tsx`, `client.tsx`)**:
+       - Kad statistik dan jadual pautan pendek: `rounded-lg border border-slate-200 bg-white shadow-2xs`. Butang "Create New Link": `bg-purple-600 hover:bg-purple-700 text-white rounded-md shadow-xs`.
+    8. **Tab 7: Bio Links / KlikBio (`app/(dashboard)/bio/page.tsx`, `client.tsx`)**:
+       - Kad statistik dan `BioPageCard`: `rounded-lg border border-slate-200 bg-white shadow-2xs`. Kotak URL awam dan lencana tema `rounded-md`.
+    9. **Tab 8: E-Pamphlet (`app/(dashboard)/pamphlets/page.tsx`, `client.tsx`)**:
+       - Kad brosur digital: `rounded-lg border border-slate-200 bg-white shadow-2xs`. Butang tindakan dan "Edit Pamphlet": `bg-purple-600 hover:bg-purple-700 text-white rounded-md shadow-xs`.
+    10. **Tab 9 & 10: Audit Log & Settings & Pricing Modal (`app/(dashboard)/audit/page.tsx`, `app/(dashboard)/settings/page.tsx`, `components/pricing-modal.tsx`, `components/dashboard/subscription-banner.tsx`)**:
+        - Kad tetapan: `rounded-lg border border-slate-200 bg-white shadow-2xs`. Tab: `rounded-md`. Butang simpan tetapan: `bg-purple-600 hover:bg-purple-700 text-white rounded-md shadow-xs`.
+        - `PricingModal`: Dialog dan kad pelan `rounded-lg border border-slate-200`, kad Pro `border-2 border-purple-600`, lencana "Most Popular" `bg-purple-600 text-white rounded-md shadow-xs`, butang naik taraf `bg-purple-600 hover:bg-purple-700 text-white rounded-md shadow-xs`.
+        - `SubscriptionBanner`: Ikon `rounded-md`, butang pembaharuan `rounded-md shadow-xs font-medium`.
+  - **Status Pengesahan**:
+    - TypeScript typecheck (`tsc --noEmit`): 0 ralat.
+    - ESLint (`eslint .`): 0 ralat / 0 amaran.
+    - Vitest: 492/492 ujian lulus (49 test files).
+    - Next.js Turbopack build (`next build`): 36 laluan berjaya dikompilasi sepenuhnya.
+
 ## System Overview
 
 **KlikForm** — SaaS form builder platform (Malaysian market). Users create forms, collect responses, generate e-certificates, build QR codes, and shorten URLs.
@@ -3583,3 +3868,251 @@ Membina ciri mikro-landing page lengkap (*Link-in-bio*) yang membolehkan penggun
 
 
 
+
+
+## Reka Bentuk Semula UI Laman Web: Minimalist, Anti-AI Slop, Less Radiant, Less Curve & 100% English (2026-10-30)
+- **Konteks & Keperluan Pengguna**:
+  - Pengguna meminta: *"boleh tak ubah UI website klikform ni kepada yg lebih interactive, minimalist, clean, anti ai slop, less radiant, pastikan semuanya dalam bahasa inggeris, lepas tu nak less curve"*.
+- **Penyelesaian Seni Bina & Reka Bentuk Dilaksanakan**:
+  1. **Asas Reka Bentuk Global & Radius (`app/globals.css`, `app/page.tsx`)**:
+     - Mengubah `--radius` kepada `0.375rem` (6px) untuk menghasilkan sudut geometri kemas dan bersahaja ala Linear/Supabase/Vercel.
+     - Menghapuskan gaya teks gradien pelangi beranimasi (`animate-gradient-xy`) dan bebola cahaya kabur beradiasi (`blur-3xl`, radial neon flares).
+     - Menetapkan warna pemilihan teks berkontras tinggi (`selection:bg-slate-900 selection:text-white`).
+  2. **Navigasi & Pengepala Awam (`components/landing-navbar.tsx`, `landing-header-auth.tsx`, `landing-mobile-menu.tsx`)**:
+     - Mengubah bingkai lungsur produk daripada `rounded-3xl` kepada `rounded-lg` dengan sempadan 1px halus dan bayang lembut.
+     - Membuang latar belakang pastel ikon berwarna-warni; menggantikannya dengan kotak ikon kelabu/slate neutral yang anggun dan berkontras tinggi.
+     - Lencana status (NEW, FAST) kini menggunakan bucu geometri (`rounded` atau `rounded-sm`), bukan bentuk pil bujur `rounded-full`.
+  3. **Hero Section Interaktif Langsung (`components/landing/landing-hero.tsx`)**:
+     - Menghapuskan teks klip gradien ungu/indigo melampau dan bebola cahaya `blur-3xl`; menggunakan tipografi hitam pekat `text-slate-950` berkontras tinggi.
+     - Mockup aplikasi dilengkapi 4 tab interaktif sebenar:
+       - **Smart Forms**: Borang interaktif langsung dengan validasi dan simulasi penghantaran respon ("Response recorded in 140ms").
+       - **E-Cert Studio**: Studio e-sijil dengan suis pemilih format Landscape (A4) / Portrait (A4), penukar gaya fon Editorial/Modern, dan suis pengesahan cap QR.
+       - **Google Sheets**: Jadual simulasi penstriman Google Sheets dengan butang "Simulate New Row" yang menambah baris masa-nyata.
+       - **KlikBio**: Mockup telefon pintar dengan penukar tema Light / Dark dan pautan profil yang boleh diklik.
+  4. **Bento Grid Fitur & Showcase (`components/landing/landing-features-bento.tsx`, `landing-showcase.tsx`)**:
+     - Mengubah semua kad bento daripada `rounded-2xl` kepada `rounded-lg` dengan sempadan 1px halus `border-slate-200`.
+     - Showcase dilengkapi simulator render arkib ZIP pukal dan medan carian carian pengesahan sijil segera.
+  5. **Use Cases, Perbandingan, Call-to-Action & Footer (`components/landing/landing-use-cases.tsx`, `landing-comparison.tsx`, `landing-cta.tsx`, `landing-footer.tsx`)**:
+     - Menukar kad senario penggunaan kepada `rounded-lg` dengan ikon neutral.
+     - Jadual perbandingan diperkemas dengan lajur KlikForm berasaskan slate neutral dan tanda semak geometri.
+     - Bahagian CTA menggunakan latar belakang obsidian pekat (`bg-slate-950`) tanpa flare radial neon kabur, lengkap dengan butang berpenjuru kemas (`rounded-md`).
+     - Footer diperkemas dengan logo `rounded-md` dan tipografi mono minimalis.
+  6. **Penyelarasan Halaman Produk, Pricing, About & Auth (`app/pricing/page.tsx`, `app/about/page.tsx`, `app/products/*`, `app/(auth)/login/page.tsx`, `components/pricing/plan-card.tsx`)**:
+     - Mengemas kini `PlanCard` daripada `rounded-3xl` kepada `rounded-lg` dengan lencana cadangan geometri (`Recommended`).
+     - Menghapuskan bebola cahaya neon dan teks animasi pada semua 5 halaman produk (`forms`, `certificates`, `bulk-certificates`, `bio`, `qr-codes`, `shortener`) dan halaman `about`.
+     - Halaman `login` kini menggunakan tab segmen bersudut kemas, kad `rounded-lg`, dan semua mesej notifikasi / panduan e-mel spam diselaraskan sepenuhnya dalam Bahasa Inggeris antarabangsa.
+- **Pengesahan & Kualiti**:
+  - `npm test`: 492 / 492 ujian unit lulus merentas 49 fail suite.
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+
+
+## Autogenerasi & Pautan Automatik Google Sheet Semasa Cipta Borang Baharu (2026-11-01)
+- **Konteks & Keperluan Pengguna**:
+  - Pengguna bertanya dan mengarahkan: *"bila create new form kan, boleh ke nak auto ada google sheet share url" -> "proceed"*.
+- **Punca & Aliran Kerja Terdahulu**:
+  - Terdahulu, `createFormAction` menetapkan `googleSheetUrl: ''`, menyebabkan pengguna terpaksa membuka Google Drive di tab berasingan, mencipta helaian secara manual, memberikan hak milik akses editor, dan menyalin-tampal pautan semula ke dalam aplikasi.
+- **Penyelarasan Seni Bina Dilaksanakan**:
+  1. **Modul Pengautomasian Google Sheet (`actions/sheets.ts`)**:
+     - Membina `createGoogleSpreadsheetHelper(title, settings, userEmail)` yang menyokong kedua-dua:
+       - **Google OAuth (Access & Refresh Token)**: Menjana helaian secara langsung pada Google Drive akaun peribadi pengguna.
+       - **Google Service Account (JWT)**: Menjana helaian via JWT, berkongsi izin editor automatik (`role: 'writer'`) kepada emel pengguna, dan memindahkan ke `googleDriveFolderId` jika disediakan.
+     - Memperluas `createSheetForFormAction` supaya berfungsi lancar untuk kedua-dua OAuth dan Service Account.
+  2. **Integrasi Automatik dalam `createFormAction` (`actions/forms.ts`)**:
+     - Setiap kali pengguna klik `+ New Form`, `createGoogleSpreadsheetHelper` dipanggil secara latar belakang.
+     - Pautan URL spreadsheet yang berjaya dijana dimasukkan terus ke medan `googleSheetUrl` borang sebelum disimpan ke pangkalan data.
+     - Dilindungi blok *fail-safe* (try-catch) supaya jika berlaku gangguan talian rangkaian luar, borang tetap dicipta tanpa menyekat pengguna.
+  3. **Antaramuka Form Builder (`app/builder/[id]/client.tsx`)**:
+     - Ruangan *Google Sheet Share URL* kini memaparkan pautan terus **"Open Google Sheet"** (buka di tab baharu) apabila helaian telah sedia dipautkan.
+     - Menambah butang tindakan 1-klik **"⚡ Auto-Generate Google Sheet"** sekiranya borang belum mempunyai pautan helaian, membolehkan pengguna menjana helaian baharu bila-bila masa tanpa meninggalkan aplikasi.
+  4. **Ujian Unit Baharu (`tests/auto-sheet-creation.test.ts`)**:
+     - 3 ujian unit lulus merangkumi: kegagalan teratur tanpa kelayakan, penjanaan helaian berasaskan OAuth, dan penjanaan berasaskan Service Account berserta izin `writer`.
+- **Pengesahan & Kualiti**:
+  - `npm test`: 495 / 495 ujian unit lulus (100% lulus merentas 50 fail suite).
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm run build`: Kompilasi Turbopack Next.js 16 berjaya sepenuhnya menjana 36 halaman statik dan 23 halaman dinamik tanpa sebarang ralat.
+
+
+## Penyelarasan Tema Logo Rasmi KlikForm (#7C3AED / Violet-600) (2026-10-30)
+- **Konteks & Maklum Balas Pengguna**:
+  - Pengguna meminta: *"ikut tema logo"*.
+- **Pemeriksaan Warna Logo**:
+  - Pemeriksaan imej `public/logo.png` mendapati rona primer teras logo rasmi KlikForm ialah `#7f3ceb` / `#7030e0` / `#7c3aed` (signature vibrant violet / purple).
+- **Penyelarasan Seni Bina Visual Dilaksanakan**:
+  1. **Pemboleh Ubah CSS Global (`app/globals.css`, `app/page.tsx`)**:
+     - Menyelaraskan `--primary: #7c3aed;`, `--ring: #7c3aed;`, `--accent: #f5f3ff;`, `--accent-foreground: #7c3aed;`.
+     - Menetapkan warna pemilihan teks berjenama: `selection:bg-purple-100 selection:text-purple-900`.
+  2. **Navigasi & Pengepala (`components/landing-header-auth.tsx`, `landing-navbar.tsx`, `landing-mobile-menu.tsx`)**:
+     - Butang utama "Sign Up" kini menggunakan warna tema logo `bg-purple-600 hover:bg-purple-700 text-white shadow-xs`.
+     - Menu lungsur navigasi menggunakan aksen hover ungu logo `hover:bg-purple-50/40 text-purple-700` dan penunjuk aktif ungu logo.
+  3. **Hero Section & Mockup Interaktif (`components/landing/landing-hero.tsx`)**:
+     - Butang CTA utama "Get Started Free" diselaraskan kepada `bg-purple-600 hover:bg-purple-700 text-white shadow-xs`.
+     - Lencana pengumuman atas menggunakan border lembut beraksen ungu logo (`border-purple-200/80 bg-purple-50/70 text-purple-900`) dengan titik status ungu logo (`bg-purple-600`).
+     - Butang hantar borang olok-olok ("Simulate Submission") dan suis cap pengesahan QR ("QR Stamp: On") kini berpadanan dengan warna tema logo.
+  4. **Bento Grid, Showcase & Perbandingan (`components/landing/landing-features-bento.tsx`, `landing-showcase.tsx`, `landing-comparison.tsx`)**:
+     - Lencana kategori showcase kini beraksen ungu logo (`bg-purple-50 text-purple-700 border-purple-200/80`).
+     - Bar kemajuan simulator bulk generator bertukar kepada ungu logo `bg-purple-600`.
+     - Lajur perbandingan KlikForm diserlahkan dengan pengepala ungu logo (`bg-purple-50/70 text-purple-950`), sempadan halus, dan tanda semak `bg-purple-600 text-white`.
+  5. **Halaman Awam, Pricing, Footer & Auth (`app/pricing/page.tsx`, `components/pricing/plan-card.tsx`, `components/landing/landing-cta.tsx`, `landing-footer.tsx`, `app/(auth)/login/page.tsx`, `app/products/*`)**:
+     - Kad pelan "Pro" diserlahkan dengan sempadan `border-2 border-purple-600`, lencana `Recommended` berlatar ungu logo, dan butang tindakan `bg-purple-600 hover:bg-purple-700`.
+     - Bahagian CTA penutup menggunakan butang tindakan ungu logo `bg-purple-600 hover:bg-purple-700 text-white shadow-sm`.
+     - Pautan footer menggunakan `hover:text-purple-600`.
+     - Halaman login menggunakan butang serah "Sign In", "Create Account", "Send Reset Link", dan "Back to Login" berwarna ungu logo `bg-purple-600 hover:bg-purple-700`.
+     - Semua 6 halaman produk (`forms`, `certificates`, `bulk-certificates`, `bio`, `qr-codes`, `shortener`) menggunakan butang CTA ungu logo `bg-purple-600 hover:bg-purple-700 text-white shadow-xs`.
+- **Pengesahan & Kualiti**:
+  - `npm test`: 492 / 492 ujian unit lulus (100% lulus merentas 49 suite).
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+
+
+## Penyelarasan Saiz & Geometri Kotak Tarikh Kad Borang (2026-11-01)
+- **Konteks & Maklum Balas Pengguna**:
+  - Pengguna meminta: *"kotak tarikh tu bagi sama saiz dengan sebelah, nampak konsisten"* merujuk kepada kotak tarikh pada bahagian footer kad borang (`CardFooter` dalam `components/dashboard/form-card.tsx`).
+- **Punca**:
+  - Kotak tarikh ciptaan borang (`Oct 2, 2026`) terdahulu menggunakan tag `span` ringkas dengan `py-0.5 rounded` (~20px tinggi) tanpa sempadan terstruktur, manakala butang salin pautan dan butang pratonton di sebelahnya mempunyai ketinggian tetap `h-8` (32px), sempadan `border-slate-200`, dan `rounded-md`. Ini menghasilkan ketidakseimbangan ketinggian (*height mismatch*).
+- **Penyelarasan Seni Bina Dilaksanakan**:
+  - Mengemas kini kotak tarikh dalam `components/dashboard/form-card.tsx` kepada:
+    `inline-flex items-center h-8 px-2.5 rounded-md border border-slate-200 bg-slate-50 text-xs font-mono text-slate-600 whitespace-nowrap shrink-0 shadow-2xs`.
+  - Semua elemen di bahagian baris bawah kini berkongsi ketinggian tepat 32px (`h-8`), radius sudut `rounded-md`, sempadan 1px neutral, dan bayang halus `shadow-2xs` yang simetri dan konsisten sepenuhnya.
+- **Pengesahan & Kualiti**:
+  - `npm test`: 492 / 492 ujian unit lulus merentas 49 fail suite.
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+
+
+## Autogenerasi & Pautan Automatik Google Sheet Semasa Cipta Borang Baharu (2026-11-01)
+- **Konteks & Keperluan Pengguna**:
+  - Pengguna bertanya dan mengarahkan: *"bila create new form kan, boleh ke nak auto ada google sheet share url" -> "proceed"*.
+- **Punca & Aliran Kerja Terdahulu**:
+  - Terdahulu, `createFormAction` menetapkan `googleSheetUrl: ''`, menyebabkan pengguna terpaksa membuka Google Drive di tab berasingan, mencipta helaian secara manual, memberikan hak milik akses editor, dan menyalin-tampal pautan semula ke dalam aplikasi.
+- **Penyelarasan Seni Bina Dilaksanakan**:
+  1. **Modul Pengautomasian Google Sheet (`actions/sheets.ts`)**:
+     - Membina `createGoogleSpreadsheetHelper(title, settings, userEmail)` yang menyokong kedua-dua:
+       - **Google OAuth (Access & Refresh Token)**: Menjana helaian secara langsung pada Google Drive akaun peribadi pengguna.
+       - **Google Service Account (JWT)**: Menjana helaian via JWT, berkongsi izin editor automatik (`role: 'writer'`) kepada emel pengguna, dan memindahkan ke `googleDriveFolderId` jika disediakan.
+     - Memperluas `createSheetForFormAction` supaya berfungsi lancar untuk kedua-dua OAuth dan Service Account.
+  2. **Integrasi Automatik dalam `createFormAction` (`actions/forms.ts`)**:
+     - Setiap kali pengguna klik `+ New Form`, `createGoogleSpreadsheetHelper` dipanggil secara latar belakang.
+     - Pautan URL spreadsheet yang berjaya dijana dimasukkan terus ke medan `googleSheetUrl` borang sebelum disimpan ke pangkalan data.
+     - Dilindungi blok *fail-safe* (try-catch) supaya jika berlaku gangguan talian rangkaian luar, borang tetap dicipta tanpa menyekat pengguna.
+  3. **Antaramuka Form Builder (`app/builder/[id]/client.tsx`)**:
+     - Ruangan *Google Sheet Share URL* kini memaparkan pautan terus **"Open Google Sheet"** (buka di tab baharu) apabila helaian telah sedia dipautkan.
+     - Menambah butang tindakan 1-klik **"⚡ Auto-Generate Google Sheet"** sekiranya borang belum mempunyai pautan helaian, membolehkan pengguna menjana helaian baharu bila-bila masa tanpa meninggalkan aplikasi.
+  4. **Ujian Unit Baharu (`tests/auto-sheet-creation.test.ts`)**:
+     - 3 ujian unit lulus merangkumi: kegagalan teratur tanpa kelayakan, penjanaan helaian berasaskan OAuth, dan penjanaan berasaskan Service Account berserta izin `writer`.
+- **Pengesahan & Kualiti**:
+  - `npm test`: 495 / 495 ujian unit lulus (100% lulus merentas 50 fail suite).
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+  - `npm run build`: Kompilasi Turbopack Next.js 16 berjaya sepenuhnya menjana semua laluan statik dan dinamik.
+
+
+## Penyelarasan Tema Warna Ungu Gelap: Deep Royal Violet (#5B21B6) (2026-11-01)
+- **Konteks & Maklum Balas Pengguna**:
+  - Pengguna bertanya berserta tangkapan skrin papan pemuka: *"tema website ni color purple gelap sikit boleh ke"*.
+  - Rona ungu terdahulu (`#7c3aed` / `purple-600`) mempunyai tahap kecerahan tinggi (~58% lightness) yang kelihatan terlalu cerah dan neon pada kanvas putih papan pemuka.
+  - Pengguna mengesahkan pemilihan ton cadangan utama: **Deep Royal Violet (`#5b21b6` / `violet-800`)**.
+- **Penyelarasan Seni Bina Visual Dilaksanakan**:
+  1. **Pemboleh Ubah CSS Global (`app/globals.css`, `public/site.webmanifest`, `app/page.tsx`)**:
+     - Menyelaraskan `--primary: #5b21b6;`, `--ring: #5b21b6;`, `--accent: #f5f3ff;`, `--accent-foreground: #5b21b6;`.
+     - Palet carta analytics diselaraskan kepada spektrum Royal Violet: `--chart-1: #5b21b6;`, `--chart-2: #6d28d9;`, `--chart-3: #7c3aed;`, `--chart-4: #a78bfa;`, `--chart-5: #c4b5fd;`.
+     - Penyelarasan `site.webmanifest` dengan `theme_color: #5b21b6`.
+     - Pemilihan teks berjenama: `selection:bg-violet-100 selection:text-violet-900`.
+  2. **Papan Pemuka & Navigasi (`components/dashboard/*`)**:
+     - Butang utama `+ New Form` dalam `components/dashboard/sidebar.tsx` dikemas kini kepada `bg-violet-800 hover:bg-violet-900 text-white shadow-xs`.
+     - Teks logo sidebar menggunakan `text-violet-800` dan bingkai avatar/logo menggunakan `border-violet-200/80`.
+     - Item menu navigasi aktif (`Dashboard`, `Responses`, `E-Cert`, dsb.) menggunakan `bg-violet-50 text-violet-900 font-semibold` dengan ikon `text-violet-800`.
+     - Lencana pelan Pro dalam `components/dashboard/stats.tsx` bertukar ke `bg-violet-50 text-violet-800 border-violet-200/80` dan pautan `text-violet-800 hover:text-violet-900`.
+     - Ikon 30-Day Analytics `text-violet-800` dan bar visual carta harian diselaraskan kepada `bg-violet-200 hover:bg-violet-400`.
+     - Butang pratonton kad borang `components/dashboard/form-card.tsx` dan butang cipta borang `app/(dashboard)/forms/page.tsx` bertukar ke `bg-violet-800 hover:bg-violet-900`.
+  3. **Halaman Awam, Produk, Pricing & Auth**:
+     - Butang Sign In / Sign Up, Reset Password dalam `app/(auth)/login/page.tsx`, `reset-password/page.tsx` dan `components/landing-header-auth.tsx` menggunakan `bg-violet-800 hover:bg-violet-900 text-white shadow-xs`.
+     - Kad pelan "Pro" dalam `components/pricing/plan-card.tsx` & `components/pricing-modal.tsx` menggunakan `border-2 border-violet-800` dan `bg-violet-800 hover:bg-violet-900`.
+     - Hero section (`components/landing/landing-hero.tsx`): butang "Get Started Free" diselaraskan ke `bg-violet-800 hover:bg-violet-900 text-white shadow-xs`, titik status pengumuman `bg-violet-800`, lencana pengumuman `border-violet-200/80 bg-violet-50/70 text-violet-900`.
+     - Showcase, Bento, Comparison & CTA (`landing-showcase.tsx`, `landing-features-bento.tsx`, `landing-comparison.tsx`, `landing-cta.tsx`, `landing-footer.tsx`) diselaraskan ke aksen dan butang Deep Royal Violet.
+     - Semua modul dashboard (`bio`, `certificates`, `pamphlets`, `qr-builder`, `shortener`, `settings`, `audit`) menggunakan aksen Deep Royal Violet yang seragam.
+- **Pengesahan & Kualiti**:
+  - `npm test`: 492 / 492 ujian unit lulus (100% lulus merentas 49 suite).
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+
+
+## Penyelarasan Saiz & Geometri Kotak Tarikh Kad Borang (2026-11-01)
+- **Konteks & Maklum Balas Pengguna**:
+  - Pengguna meminta: *"kotak tarikh tu bagi sama saiz dengan sebelah, nampak konsisten"* merujuk kepada kotak tarikh pada bahagian footer kad borang (`CardFooter` dalam `components/dashboard/form-card.tsx`).
+- **Punca**:
+  - Kotak tarikh ciptaan borang (`Oct 2, 2026`) terdahulu menggunakan tag `span` ringkas dengan `py-0.5 rounded` (~20px tinggi) tanpa sempadan terstruktur, manakala butang salin pautan dan butang pratonton di sebelahnya mempunyai ketinggian tetap `h-8` (32px), sempadan `border-slate-200`, dan `rounded-md`. Ini menghasilkan ketidakseimbangan ketinggian (*height mismatch*).
+- **Penyelarasan Seni Bina Dilaksanakan**:
+  - Mengemas kini kotak tarikh dalam `components/dashboard/form-card.tsx` kepada:
+    `inline-flex items-center h-8 px-2.5 rounded-md border border-slate-200 bg-slate-50 text-xs font-mono text-slate-600 whitespace-nowrap shrink-0 shadow-2xs`.
+  - Semua elemen di bahagian baris bawah kini berkongsi ketinggian tepat 32px (`h-8`), radius sudut `rounded-md`, sempadan 1px neutral, dan bayang halus `shadow-2xs` yang simetri dan konsisten sepenuhnya.
+- **Pengesahan & Kualiti**:
+  - `npm test`: 492 / 492 ujian unit lulus merentas 49 fail suite.
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+
+
+## Autogenerasi & Pautan Automatik Google Sheet Semasa Cipta Borang Baharu (2026-11-01)
+- **Konteks & Keperluan Pengguna**:
+  - Pengguna bertanya dan mengarahkan: *"bila create new form kan, boleh ke nak auto ada google sheet share url" -> "proceed"*.
+- **Punca & Aliran Kerja Terdahulu**:
+  - Terdahulu, `createFormAction` menetapkan `googleSheetUrl: ''`, menyebabkan pengguna terpaksa membuka Google Drive di tab berasingan, mencipta helaian secara manual, memberikan hak milik akses editor, dan menyalin-tampal pautan semula ke dalam aplikasi.
+- **Penyelarasan Seni Bina Dilaksanakan**:
+  1. **Modul Pengautomasian Google Sheet (`actions/sheets.ts`)**:
+     - Membina `createGoogleSpreadsheetHelper(title, settings, userEmail)` yang menyokong kedua-dua:
+       - **Google OAuth (Access & Refresh Token)**: Menjana helaian secara langsung pada Google Drive akaun peribadi pengguna.
+       - **Google Service Account (JWT)**: Menjana helaian via JWT, berkongsi izin editor automatik (`role: 'writer'`) kepada emel pengguna, dan memindahkan ke `googleDriveFolderId` jika disediakan.
+     - Memperluas `createSheetForFormAction` supaya berfungsi lancar untuk kedua-dua OAuth dan Service Account.
+  2. **Integrasi Automatik dalam `createFormAction` (`actions/forms.ts`)**:
+     - Setiap kali pengguna klik `+ New Form`, `createGoogleSpreadsheetHelper` dipanggil secara latar belakang.
+     - Pautan URL spreadsheet yang berjaya dijana dimasukkan terus ke medan `googleSheetUrl` borang sebelum disimpan ke pangkalan data.
+     - Dilindungi blok *fail-safe* (try-catch) supaya jika berlaku gangguan talian rangkaian luar, borang tetap dicipta tanpa menyekat pengguna.
+  3. **Antaramuka Form Builder (`app/builder/[id]/client.tsx`)**:
+     - Ruangan *Google Sheet Share URL* kini memaparkan pautan terus **"Open Google Sheet"** (buka di tab baharu) apabila helaian telah sedia dipautkan.
+     - Menambah butang tindakan 1-klik **"⚡ Auto-Generate Google Sheet"** sekiranya borang belum mempunyai pautan helaian, membolehkan pengguna menjana helaian baharu bila-bila masa tanpa meninggalkan aplikasi.
+  4. **Ujian Unit Baharu (`tests/auto-sheet-creation.test.ts`)**:
+     - 3 ujian unit lulus merangkumi: kegagalan teratur tanpa kelayakan, penjanaan helaian berasaskan OAuth, dan penjanaan berasaskan Service Account berserta izin `writer`.
+- **Pengesahan & Kualiti**:
+  - `npm test`: 495 / 495 ujian unit lulus (100% lulus merentas 50 fail suite).
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+
+
+## Sinkronisasi Automatik Tajuk Google Sheet Apabila Tajuk Borang Dikemas Kini (2026-11-01)
+- **Konteks & Maklum Balas Pengguna**:
+  - Pengguna bertanya berserta tangkapan skrin Google Sheet: *"tajuk tu tak auto update ke? kalau ubah di form title"*.
+- **Punca Isu & Tindakan Pembaikan**:
+  - Apabila borang dicipta permulaan dengan tajuk `Untitled Form`, Google Sheet dinamakan `Untitled Form - Responses`.
+  - Apabila pengguna mengubah tajuk borang di Form Builder (contoh: "Mesyuarat Pasukan Kandungan Laman Web 2026") dan menyimpannya (atau auto-save berjalan), tajuk Google Sheet di Google Drive sebelum ini tidak disinkronkan.
+  - Membina `updateGoogleSpreadsheetTitle(sheetUrl, newTitle, settings)` dan `syncSheetTitleAction(formId, newTitle)` dalam `actions/sheets.ts` menggunakan API Google Sheets `spreadsheets.batchUpdate` (`updateSpreadsheetProperties: { properties: { title }, fields: 'title' }`).
+  - Mengintegrasikan pengemaskinian tajuk automatik dalam `updateFormAction` (`actions/forms.ts`) menggunakan `after()` supaya pengemaskinian tajuk di Google Drive berlaku secara asinkron di latar belakang tanpa menambah sebarang latensi kepada simpanan pangkalan data.
+- **Pengesahan & Kualiti**:
+  - `tests/auto-sheet-creation.test.ts`: Ujian unit `updateGoogleSpreadsheetTitle` lulus (4/4 lulus).
+  - `npm test`: 496 / 496 ujian lulus merentas 50 fail suite.
+  - `npm run typecheck`: 0 ralat TypeScript.
+  - `npm run lint`: 0 ralat / 0 amaran ESLint.
+
+- **Penambahbaikan Keteguhan Penyelarasan Tajuk Google Sheet (Multi-Point Sync & Direct Await)** (2026-11-01):
+  - Pengguna melaporkan *"tak jadi pun"* selepas cubaan menyelaraskan tajuk borang sedia ada dengan Google Sheet.
+  - Punca dikesan: Borang sedia ada (`sejarah IT`) telah pun menyimpan tajuk baharu ke dalam pangkalan data sebelum ciri auto-sync dimuatkan. Apabila borang dibuka semula dan disimpan, `existing.title !== form.title` dinilai sebagai `false` lalu melangkau penyegerakan Google Sheets. Selain itu, penggunaan `after()` dalam persekitaran pembangunan tempatan berisiko digugurkan setelah sambungan selesai.
+  - Tindakan pembaikan:
+    1. Menggantikan `after()` dalam `updateFormAction` (`actions/forms.ts`) dengan pelaksanaan terus (`await`) yang dilindungi `try-catch`.
+    2. Menambah pencetus `onBlur` pada textarea `form-title` di `app/builder/[id]/client.tsx` supaya penyegerakan berjalan serta-merta apabila pengguna selesai menaip tajuk.
+    3. Mengintegrasikan `syncSheetTitleAction` secara langsung dalam tindakan `handleSave` (butang Save).
+    4. Menambah pautan automatik semasa klik `Open Google Sheet` dan menyediakan butang **"↻ Sync Title"** bersebelahan pautan Google Sheet di Form Builder dengan maklum balas toast.
+    5. Semua ujian lulus (496/496), 0 ralat TypeScript, 0 ralat ESLint.
+
+- **Pembaikan Padding & Susun Atur Tab Settings (`app/(dashboard)/settings/page.tsx`)** (2026-11-01):
+  - Pengguna melaporkan *"padding tak sekata"* berserta tangkapan skrin tab Settings (Profile, Subscription, Integrations).
+  - Punca: Bekas `TabsList` sebelum ini dikonfigurasikan dengan `grid w-full grid-cols-3 max-w-[400px]` tanpa `gap`, menyebabkan tab pendek (Profile) mempunyai ruang kosong yang terlalu luas, manakala tab panjang (Integrations) melimpah keluar dari sempadan bekas. Ketinggiannya juga terhad kepada `h-9` (36px).
+  - Tindakan pembaikan:
+    1. Mengubah `TabsList` kepada `inline-flex h-10 w-fit items-center gap-1 rounded-md border border-slate-200 bg-slate-100/80 p-1 text-slate-600`.
+    2. Menetapkan padding dan ketinggian seragam untuk setiap `TabsTrigger`: `h-8 px-4 py-1.5 rounded-md text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs`.
+    3. Semua ujian lulus (496/496), 0 ralat TypeScript, 0 ralat ESLint.
+
+- **Penggelapan Tema Warna Ungu (Midnight Violet `#4c1d95` / `violet-900`)** (2026-11-01):
+  - Pengguna meminta: *"gelapkan sikit lagi color ungu tu"*.
+  - Menyelaraskan seluruh palet primer daripada `violet-800` (`#5b21b6`) ke **`violet-900` (`#4c1d95`)** dengan kesan hover **`violet-950` (`#2e1065`)**.
+  - Mengemas kini `app/globals.css` (`--primary`, `--ring`, `--sidebar-primary`, `--accent-foreground`, dan carta) serta semua komponen UI (sidebar "+ New Form", navigation links, badges, buttons, cards) merentas 48 fail.
+  - Semua ujian unit lulus (496/496), 0 ralat TypeScript, 0 ralat ESLint.

@@ -36,11 +36,11 @@ export function DashboardFilter() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="icon" className="h-10 w-10 shrink-0">
+        <Button variant="outline" size="icon" className="h-10 w-10 shrink-0 rounded-md border-slate-200">
           <SlidersHorizontal className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-48 p-1" align="end">
+      <PopoverContent className="w-48 p-1 rounded-md border border-slate-200" align="end">
         <div className="space-y-1">
           <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Sort By</div>
           {sortOptions.map((option) => (

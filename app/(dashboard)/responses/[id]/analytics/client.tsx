@@ -14,7 +14,7 @@ interface AnalyticsClientProps {
 export function AnalyticsClient({ summary, fields }: AnalyticsClientProps) {
   if (!summary) {
     return (
-      <Card className="border border-gray-200">
+      <Card className="rounded-lg border border-slate-200 bg-white shadow-2xs">
         <CardContent className="p-12 text-center text-gray-500">
           Failed to load analytics. Try refreshing the page.
         </CardContent>
@@ -67,7 +67,7 @@ export function AnalyticsClient({ summary, fields }: AnalyticsClientProps) {
           rate={summary.completionRate}
           subtitle="Completion rate (of those who started)"
         />
-        <Card className="border border-gray-200 bg-white">
+        <Card className="rounded-lg border border-slate-200 bg-white shadow-2xs">
           <CardHeader className="pb-2 pt-4 px-5">
             <CardTitle className="text-xs font-medium text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
               <Clock className="h-3.5 w-3.5" /> Avg time to submit
@@ -85,7 +85,7 @@ export function AnalyticsClient({ summary, fields }: AnalyticsClientProps) {
       </div>
 
       {noData && (
-        <Card className="border border-dashed border-gray-300 bg-gray-50/50">
+        <Card className="rounded-lg border border-dashed border-slate-200 bg-slate-50/50">
           <CardContent className="p-12 text-center">
             <BarChart3 className="h-10 w-10 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-600 font-medium">No analytics data yet</p>
@@ -99,7 +99,7 @@ export function AnalyticsClient({ summary, fields }: AnalyticsClientProps) {
       {!noData && (
         <>
           {/* Daily trend */}
-          <Card className="border border-gray-200 bg-white">
+          <Card className="rounded-lg border border-slate-200 bg-white shadow-2xs">
             <CardHeader className="pb-2 pt-4 px-5">
               <CardTitle className="text-sm font-semibold text-gray-900">
                 Last 30 days
@@ -112,7 +112,7 @@ export function AnalyticsClient({ summary, fields }: AnalyticsClientProps) {
 
           {/* Two-column: devices + field engagement */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Card className="border border-gray-200 bg-white">
+            <Card className="rounded-lg border border-slate-200 bg-white shadow-2xs">
               <CardHeader className="pb-2 pt-4 px-5">
                 <CardTitle className="text-sm font-semibold text-gray-900">Devices</CardTitle>
               </CardHeader>
@@ -134,9 +134,9 @@ export function AnalyticsClient({ summary, fields }: AnalyticsClientProps) {
                           {count} ({pct}%)
                         </span>
                       </div>
-                      <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-1.5 w-full bg-slate-100 rounded-sm overflow-hidden">
                         <div
-                          className="h-full bg-gray-700 rounded-full"
+                          className="h-full bg-violet-900 rounded-sm"
                           style={{ width: `${pct}%` }}
                         />
                       </div>
@@ -146,7 +146,7 @@ export function AnalyticsClient({ summary, fields }: AnalyticsClientProps) {
               </CardContent>
             </Card>
 
-            <Card className="border border-gray-200 bg-white">
+            <Card className="rounded-lg border border-slate-200 bg-white shadow-2xs">
               <CardHeader className="pb-2 pt-4 px-5">
                 <CardTitle className="text-sm font-semibold text-gray-900">
                   Field engagement
@@ -208,7 +208,7 @@ function StatCard({
   color: keyof typeof COLOR_MAP;
 }) {
   return (
-    <Card className="border border-gray-200 bg-white">
+    <Card className="rounded-lg border border-slate-200 bg-white shadow-2xs">
       <CardContent className="p-4">
         <div
           className={`inline-flex h-7 w-7 items-center justify-center rounded-md mb-2 ${COLOR_MAP[color]}`}
@@ -232,7 +232,7 @@ function RateCard({
   subtitle: string;
 }) {
   return (
-    <Card className="border border-gray-200 bg-white">
+    <Card className="rounded-lg border border-slate-200 bg-white shadow-2xs">
       <CardHeader className="pb-2 pt-4 px-5">
         <CardTitle className="text-xs font-medium text-gray-500 uppercase tracking-wide">
           {label}
@@ -260,11 +260,11 @@ function DailyChart({ daily }: { daily: Array<{ date: string; views: number; sub
             title={`${d.date} • ${d.views} views • ${d.submits} submits`}
           >
             <div
-              className="w-full bg-blue-200 rounded-sm transition-all"
+              className="w-full bg-violet-200 rounded-sm transition-all"
               style={{ height: `${viewH}%`, minHeight: d.views > 0 ? '2px' : '0' }}
             />
             <div
-              className="w-full bg-green-500 rounded-sm absolute bottom-0 transition-all"
+              className="w-full bg-violet-900 rounded-sm absolute bottom-0 transition-all"
               style={{ height: `${subH}%`, minHeight: d.submits > 0 ? '2px' : '0' }}
             />
           </div>

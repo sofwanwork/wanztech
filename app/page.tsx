@@ -24,12 +24,12 @@ export const metadata: Metadata = {
 
 export default function LandingPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-white text-slate-900 font-sans selection:bg-purple-100 selection:text-purple-900">
+    <div className="flex min-h-screen flex-col bg-white text-slate-900 font-sans selection:bg-violet-100 selection:text-violet-900">
       {/* Sleek Minimalist Sticky Navbar */}
       <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md supports-[backdrop-filter]:bg-white/75">
         <div className="container mx-auto px-4 md:px-6 flex h-16 items-center justify-between">
           <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-            <div className="relative h-8 w-8 rounded-lg overflow-hidden">
+            <div className="relative h-8 w-8 rounded-md overflow-hidden">
               <Image
                 src="/logo.png"
                 alt="KlikForm Logo"
@@ -40,7 +40,7 @@ export default function LandingPage() {
               />
             </div>
             <span className="tracking-tight text-slate-900">
-              <span className="text-purple-600">Klik</span>Form
+              <span className="text-violet-900">Klik</span>Form
             </span>
           </Link>
 

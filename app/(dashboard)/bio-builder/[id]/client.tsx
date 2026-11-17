@@ -1922,7 +1922,7 @@ function SortableBioLinkItem({
       case 'whatsapp':
         return <MessageCircle className="h-4 w-4 text-emerald-600" />;
       case 'form':
-        return <FileText className="h-4 w-4 text-purple-600" />;
+        return <FileText className="h-4 w-4 text-violet-900" />;
       case 'header':
         return <Heading className="h-4 w-4 text-gray-600" />;
       default:

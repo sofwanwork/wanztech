@@ -119,23 +119,23 @@ function SortableField({
           isDragging && 'opacity-25 scale-[0.98]'
         )}
       >
-        <div className="bg-white border-2 border-dashed border-primary/35 hover:border-primary/70 rounded-2xl p-3 sm:p-3.5 shadow-xs transition-all flex items-center justify-between gap-3">
+        <div className="bg-white border-2 border-dashed border-primary/35 hover:border-primary/70 rounded-md p-3 sm:p-3.5 shadow-xs transition-all flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
             <div
               {...attributes}
               {...listeners}
               suppressHydrationWarning
               className="cursor-grab active:cursor-grabbing touch-none hover:bg-slate-100 p-1.5 rounded-lg transition-colors text-slate-400 hover:text-slate-700"
-              title="Tarik untuk susun semula pemisah halaman"
+              title="Drag to reorder page break"
             >
               <GripVertical className="h-4 w-4" />
             </div>
             <div className="flex items-center gap-2 min-w-0">
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20 shrink-0">
-                Pemisah Halaman (Page Break)
+                Page Break
               </span>
               <span className="text-xs text-slate-500 truncate hidden sm:inline">
-                Soalan di bawah garisan ini akan bermula pada halaman baharu
+                Questions below this line will start on a new page
               </span>
             </div>
           </div>
@@ -144,8 +144,8 @@ function SortableField({
             size="icon"
             className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg shrink-0 cursor-pointer"
             onClick={() => removeField(index)}
-            title="Padam pemisah halaman"
-            aria-label="Padam pemisah halaman"
+            title="Delete page break"
+            aria-label="Delete page break"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -173,11 +173,11 @@ function SortableField({
             {hasNextPageBreak ? (
               <span
                 className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg text-xs font-semibold bg-primary/10 text-primary border border-primary/20 shrink-0"
-                title="Pemisah halaman aktif terus di bawah soalan ini"
+                title="Active page break directly below this question"
               >
                 <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                <span className="hidden sm:inline">Pemisah Aktif</span>
-                <span className="sm:hidden text-[10px]">Pemisah</span>
+                <span className="hidden sm:inline">Active Break</span>
+                <span className="sm:hidden text-[10px]">Break</span>
               </span>
             ) : (
               <Button
@@ -186,11 +186,11 @@ function SortableField({
                 size="sm"
                 className="h-8 px-2 sm:px-2.5 text-xs font-semibold text-slate-700 hover:text-primary hover:border-primary/40 hover:bg-primary/5 bg-white shadow-2xs rounded-lg flex items-center gap-1.5 cursor-pointer transition-all border-slate-200 shrink-0"
                 onClick={() => insertPageBreak?.(index)}
-                title="Tambah Pemisah Halaman (Page Break) terus di bawah soalan ini"
-                aria-label="Tambah pemisah halaman selepas soalan ini"
+                title="Add Page Break directly below this question"
+                aria-label="Add page break after this question"
               >
                 <Plus className="h-3.5 w-3.5 text-primary" />
-                <span className="hidden sm:inline">Pemisah Halaman</span>
+                <span className="hidden sm:inline">Page Break</span>
                 <span className="sm:hidden text-[11px]">Break</span>
               </Button>
             )}
@@ -347,11 +347,11 @@ function SortableField({
                   <div className="space-y-1.5 pt-0.5">
                     <div className="flex items-center justify-between">
                       <Label className="text-xs font-semibold text-slate-700">
-                        Susunan Pilihan (Layout)
+                        Options Layout
                       </Label>
                       {autoDetected && !field.optionsLayout && (
                         <span className="text-[11px] text-emerald-700 font-medium bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full">
-                          Skala dikesan automatik (Mendatar)
+                          Auto-detected scale (Horizontal)
                         </span>
                       )}
                     </div>
@@ -367,7 +367,7 @@ function SortableField({
                         )}
                       >
                         <List className="w-3.5 h-3.5" />
-                        <span>Menegak (Vertical)</span>
+                        <span>Vertical</span>
                       </button>
                       <button
                         type="button"
@@ -380,7 +380,7 @@ function SortableField({
                         )}
                       >
                         <Columns3 className="w-3.5 h-3.5" />
-                        <span>Mendatar (Horizontal)</span>
+                        <span>Horizontal</span>
                       </button>
                     </div>
                   </div>
@@ -488,7 +488,7 @@ function SortableField({
           )}
 
           {field.type === 'grid' && (
-            <div className="space-y-5 p-4 sm:p-5 bg-slate-50/80 rounded-xl border border-slate-200">
+            <div className="space-y-5 p-4 sm:p-5 bg-slate-50/80 rounded-md border border-slate-200">
               {/* Quick Scale Presets */}
               <div>
                 <Label className="text-xs font-semibold text-slate-700 uppercase tracking-wider block mb-2">
@@ -525,10 +525,10 @@ function SortableField({
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                    Baris Pernyataan (Statements / Rows)
+                    Statement Rows
                   </Label>
                   <span className="text-[11px] text-slate-500 font-medium">
-                    {field.gridConfig?.rows?.length || 0} Baris
+                    {field.gridConfig?.rows?.length || 0} Rows
                   </span>
                 </div>
                 <div className="space-y-2">
@@ -569,7 +569,7 @@ function SortableField({
                         }}
                         disabled={(field.gridConfig?.rows || []).length <= 1}
                         className="h-9 w-9 text-slate-400 hover:text-red-500 hover:bg-red-50 shrink-0"
-                        title="Padam baris"
+                        title="Delete row"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -593,7 +593,7 @@ function SortableField({
                   className="w-full mt-1.5 h-8 text-xs border-dashed border-slate-300 text-slate-600 hover:text-primary hover:border-primary/50"
                 >
                   <Plus className="w-3.5 h-3.5 mr-1" />
-                  Tambah Baris (Add Row)
+                  Add Row
                 </Button>
               </div>
 
@@ -601,10 +601,10 @@ function SortableField({
               <div className="space-y-2.5 pt-1 border-t border-slate-200/80">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                    Lajur Skala (Scale Columns)
+                    Scale Columns
                   </Label>
                   <span className="text-[11px] text-slate-500 font-medium">
-                    {field.gridConfig?.columns?.length || 0} Lajur
+                    {field.gridConfig?.columns?.length || 0} Columns
                   </span>
                 </div>
                 <div className="space-y-2">
@@ -645,7 +645,7 @@ function SortableField({
                         }}
                         disabled={(field.gridConfig?.columns || []).length <= 2}
                         className="h-9 w-9 text-slate-400 hover:text-red-500 hover:bg-red-50 shrink-0"
-                        title="Padam lajur"
+                        title="Delete column"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -670,7 +670,7 @@ function SortableField({
                   className="w-full mt-1.5 h-8 text-xs border-dashed border-slate-300 text-slate-600 hover:text-primary hover:border-primary/50"
                 >
                   <Plus className="w-3.5 h-3.5 mr-1" />
-                  Tambah Lajur (Add Column)
+                  Add Column
                 </Button>
               </div>
 
@@ -994,7 +994,7 @@ function SortableField({
           {!hasNextPageBreak && (
             <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
               <span className="text-[11px] text-slate-400 truncate">
-                Mahu jadikan soalan seterusnya pada halaman baharu?
+                Want the next question on a new page?
               </span>
               <Button
                 type="button"
@@ -1002,10 +1002,10 @@ function SortableField({
                 size="sm"
                 onClick={() => insertPageBreak?.(index)}
                 className="h-7 px-2.5 text-xs font-medium text-slate-600 hover:text-primary hover:bg-primary/5 rounded-md flex items-center gap-1 cursor-pointer shrink-0"
-                title="Tambah pemisah halaman di bawah soalan ini"
+                title="Add page break below this question"
               >
                 <Plus className="h-3.5 w-3.5 text-primary" />
-                <span>+ Tambah Pemisah di sini</span>
+                <span>+ Add Page Break here</span>
               </Button>
             </div>
           )}
@@ -1070,7 +1070,7 @@ function ConditionalLogicEditor({
 
       {rules.length === 0 ? (
         <div className="p-3 bg-slate-50 rounded-md border border-slate-100 text-sm text-slate-600 flex items-center justify-between">
-          <span>Sentiasa tunjuk soalan ini.</span>
+          <span>Always show this question.</span>
           <Button
             variant="outline"
             size="sm"
@@ -1078,24 +1078,24 @@ function ConditionalLogicEditor({
             disabled={availableFields.length === 0}
           >
             <Plus className="h-3.5 w-3.5 mr-1" />
-            Tambah peraturan
+            Add rule
           </Button>
         </div>
       ) : (
         <div className="p-3 bg-slate-50 rounded-md border border-slate-100 space-y-3">
           {rules.length > 1 && (
             <div className="flex items-center gap-2 text-sm text-slate-600">
-              <span>Tunjuk jika</span>
+              <span>Show if</span>
               <Select value={logic} onValueChange={(v) => writeRules(rules, v as 'all' | 'any')}>
                 <SelectTrigger className="w-[110px] h-8 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">SEMUA</SelectItem>
-                  <SelectItem value="any">MANA-MANA</SelectItem>
+                  <SelectItem value="all">ALL</SelectItem>
+                  <SelectItem value="any">ANY</SelectItem>
                 </SelectContent>
               </Select>
-              <span>peraturan ini benar:</span>
+              <span>of these rules match:</span>
             </div>
           )}
 
@@ -1105,19 +1105,19 @@ function ConditionalLogicEditor({
               className="flex flex-col sm:flex-row gap-2 items-start sm:items-center"
             >
               {rules.length === 1 && (
-                <span className="text-sm text-slate-600 whitespace-nowrap">Tunjuk jika</span>
+                <span className="text-sm text-slate-600 whitespace-nowrap">Show if</span>
               )}
               <Select
                 value={rule.fieldId}
                 onValueChange={(val) => updateRule(idx, { fieldId: val })}
               >
                 <SelectTrigger className="w-full sm:w-[180px] h-9 text-sm">
-                  <SelectValue placeholder="Pilih soalan..." />
+                  <SelectValue placeholder="Select question..." />
                 </SelectTrigger>
                 <SelectContent>
                   {availableFields.map((f) => (
                     <SelectItem key={f.id} value={f.id}>
-                      {f.label || '(Tanpa Tajuk)'}
+                      {f.label || '(Untitled)'}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -1144,7 +1144,7 @@ function ConditionalLogicEditor({
               {operatorNeedsValue(rule.operator) && (
                 <Input
                   className="h-9 text-sm"
-                  placeholder="Nilai..."
+                  placeholder="Value..."
                   value={rule.value ?? ''}
                   onChange={(e) => updateRule(idx, { value: e.target.value })}
                   aria-label="Condition value"
@@ -1156,7 +1156,7 @@ function ConditionalLogicEditor({
                 size="icon"
                 className="h-8 w-8 text-destructive hover:bg-destructive/10"
                 onClick={() => removeRule(idx)}
-                aria-label="Buang peraturan"
+                aria-label="Remove rule"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -1171,7 +1171,7 @@ function ConditionalLogicEditor({
             className="h-8 text-xs"
           >
             <Plus className="h-3.5 w-3.5 mr-1" />
-            Tambah peraturan
+            Add rule
           </Button>
         </div>
       )}
@@ -1322,36 +1322,36 @@ export function FieldsEditor({ fields, onChange }: FieldsEditorProps) {
         <DragOverlay dropAnimation={null}>
           {activeField ? (
             activeField.type === 'pagebreak' ? (
-              <div className="bg-white border-2 border-primary rounded-2xl p-3 sm:p-3.5 shadow-2xl ring-4 ring-primary/15 flex items-center justify-between gap-3 cursor-grabbing opacity-95">
+              <div className="bg-white border-2 border-primary rounded-md p-3 sm:p-3.5 shadow-2xl ring-4 ring-primary/15 flex items-center justify-between gap-3 cursor-grabbing opacity-95">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="p-1.5 rounded-lg text-primary">
                     <GripVertical className="h-4 w-4" />
                   </div>
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-primary text-white shadow-xs shrink-0">
-                      Pemisah Halaman (Page Break)
+                      Page Break
                     </span>
                     <span className="text-xs text-slate-500 truncate hidden sm:inline">
-                      Soalan di bawah garisan ini akan bermula pada halaman baharu
+                      Questions below this line will start on a new page
                     </span>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="bg-white border-2 border-primary/50 rounded-xl shadow-2xl ring-4 ring-primary/10 cursor-grabbing opacity-95 overflow-hidden">
+              <div className="bg-white border-2 border-primary/50 rounded-md shadow-2xl ring-4 ring-primary/10 cursor-grabbing opacity-95 overflow-hidden">
                 <div className="py-3 px-4 bg-slate-50 flex items-center justify-between gap-2 border-b border-slate-100">
                   <div className="flex items-center gap-2 min-w-0">
                     <GripVertical className="h-4 w-4 text-primary shrink-0" />
                     <span className="text-xs font-bold px-2 py-0.5 rounded bg-primary/10 text-primary uppercase shrink-0">
-                      Soalan {activeIndex + 1} • {activeField.type}
+                      Question {activeIndex + 1} • {activeField.type}
                     </span>
                     <span className="text-sm font-semibold text-slate-800 truncate">
-                      {activeField.label || '(Tanpa Tajuk)'}
+                      {activeField.label || '(Untitled)'}
                     </span>
                   </div>
                   {activeField.required && (
                     <span className="text-[11px] text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-full border border-red-100 shrink-0">
-                      Wajib
+                      Required
                     </span>
                   )}
                 </div>

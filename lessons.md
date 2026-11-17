@@ -1,5 +1,63 @@
 # Development Lessons
 
+- **Cloudflare Turnstile + Supabase Auth Single-Use Token & CSP Trap**:
+  - *Single-Use Token Double-Redemption*: Cloudflare Turnstile tokens (`cf-turnstile-response`) can only be redeemed ONCE at `siteverify`. If Next.js calls `siteverify` in a Server Action AND forwards the same `captchaToken` to `supabase.auth.signUp({ options: { captchaToken } })` when Supabase Attack Protection is also enabled, Supabase's second `siteverify` fails with `timeout-or-duplicate`. Solution: Verify on Next.js server ONLY when `TURNSTILE_SECRET_KEY` is configured in Next.js (omitting `captchaToken` to Supabase); otherwise forward `captchaToken` directly to Supabase Auth.
+  - *CSP Blocking Turnstile*: Adding Turnstile to a project with a strict `Content-Security-Policy` in `next.config.ts` silently blocks the widget unless `https://challenges.cloudflare.com` is permitted in `script-src`, `frame-src`, and `connect-src`.
+  - *Direct Supabase Endpoint Bypass & Global Captcha Requirement*: Client-side validation and Server Actions protect the web UI, but Supabase's `/auth/v1/signup` endpoint remains reachable directly with `NEXT_PUBLIC_SUPABASE_ANON_KEY` unless Turnstile Attack Protection is also enabled in Supabase Dashboard (`Authentication → Attack Protection`). Crucially, once Supabase Captcha Protection is enabled, Supabase requires `captchaToken` on **all** public auth flows (`signUp`, `signInWithPassword`, AND `resetPasswordForEmail` including the Reset Password button in `/settings`), not just signup.
+
+- **Skeuomorphic Binding Notch Overflow & Clean Spine Aesthetics ("Tompok Bawah Tulang Buku")**:
+  - *Pitfall*: Attempting skeuomorphic book details like top/bottom binding notch accents (`radial-gradient` curved notches) inside a vertical flex column alongside an `h-full` spine line forces the bottom notch to overflow outside the bounding box of the book. It renders as an unsightly dark smudge/box hanging at the bottom edge.
+  - *Fix*: Omit artificial notch blobs completely to uphold a clean, anti-AI-slop minimalist aesthetic. Equip the spine overlay with `overflow-hidden` so all gradients (concave gutter and hairline crease) stay strictly confined within the page boundaries.
+
+
+- **StPageFlip / `page-flip` Center Spine Overlay Architecture & Dynamic Page Shading**:
+  1. *Center Spine Sibling Placement*: In imperative flipbook renderers like `page-flip`, the root mount (`hostRef`) is cleared and mutated directly by the engine. To overlay a persistent center spine crease (gutter, hairline valley, notches) across the open book fold, never inject the spine inside `hostRef`. Wrap `hostRef` with a parent `relative` container and position the spine as an absolute sibling at `left: 50% -translate-x-1/2` with `pointer-events: none`.
+  2. *Z-Index Stacking with Turning Pages*: Configure `startZIndex: 10` in `PageFlip` options. Set the center spine to `z-[12]`. Static left and right pages render at `z: 10` (beneath the spine crease), while the actively flipping page renders at `z: 15` (passing seamlessly above the center spine during turns).
+  3. *Dynamic Orientation Shading vs Static Page Indices*: Never compute left/right spine shadows using static indices (`idx % 2 === 0`) because `showCover: true` offsets page sides, and users can flip pages back and forth. Instead, rely on `page-flip`'s internal classes (`.--left` and `.--right`) via CSS:
+     - `.stf__item.--left .stf__spine-inner-shadow { right: 0; }`
+     - `.stf__item.--right .stf__spine-inner-shadow { left: 0; }`
+     This guarantees inner shadows always fall towards the center spine seam, completely eliminating misplaced edge shadows.
+
+
+- **StPageFlip / `page-flip` Physical Drag Mechanics & Page Density (`soft` vs `hard`)**:
+  1. *Book Spine Physics & Drag Direction*:
+     - In real-world book physics and realistic flipbook engines, pages cannot be dragged in an arbitrary direction.
+     - The **Right Page** (facing right) can ONLY be dragged from its outer corners (top-right or bottom-right) towards the left (to flip forward / next). It cannot be dragged to the right because its spine is on the left.
+     - The **Left Page** (facing left) can ONLY be dragged from its outer corners (top-left or bottom-left) towards the right (to flip backward / prev).
+     - The **Center Spine Crease** is bound; clicks and drags initiated near the center axis are ignored by design.
+     - The **Front Cover** (Page 1) has no preceding pages; it can only flip forward. The **Back Cover** (final page) has no subsequent pages; it can only flip backward.
+  2. *Hardcover Density Trap (`data-density="hard"`)*:
+     - Pages configured with `density: 'hard'` behave as rigid boards (simulating a thick hardback cover). In `page-flip`, hard pages disable interactive corner bending (`showCorner`) and dynamic paper curling on hover and drag, creating the user perception that the cover "cannot be pulled" or is stuck compared to inside pages.
+     - *Solution*: Set all pages to `data-density="soft"` and explicitly override `pageFlip.getPageCollection().getPages().forEach(p => p.setDensity('soft'))` immediately after `loadFromHTML()` (which otherwise forces the cover and backcover to `"hard"` when `showCover: true`). Every page now enjoys authentic soft paper mesh curvature and corner folding.
+
+
+- **`page-flip` (StPageFlip) Integration in React 19 / Next.js App Router (DOM Mutation & Lifecycle Boundaries)**:
+  1. *React DOM Child Adoption Pitfall*: When integrating imperative page-turning libraries (`page-flip` / StPageFlip) that reorganize DOM elements inside their own viewport wrapper (`.stf__wrapper > .stf__block`), rendering page items via React JSX (`{pages.map(...)}`) causes React to lose track of child nodes. On unmount or state update, React throws `NotFoundError: Failed to execute 'removeChild' on 'Node'`.
+     - *Solution*: Manage page items strictly through an unmanaged imperative DOM boundary. React renders only the outer container `<div ref={hostRef} />`. Inside `useEffect`, create a child mount node (`const bookRoot = document.createElement('div')`), append page elements to `bookRoot`, and pass `bookRoot` to `PageFlip`. On cleanup, invoke `pageFlip.destroy()` and clear `hostEl.innerHTML = ''`. React's reconciler remains completely insulated.
+  2. *Cross-Bundler Constructor Resolution*: In hybrid ESM/CJS packaging, bundlers like Turbopack wrap the module differently. Always resolve the constructor via:
+     `const PageFlip = pageFlipModule.PageFlip || pageFlipModule.default?.PageFlip || pageFlipModule.default;`
+  3. *Zero-Reinstantiation Page Synchronization*: Re-creating the `PageFlip` instance on every `currentPage` state change causes visual flicker and resets flipping physics. Use a ref (`currentPageRef = useRef(currentPage)`) for initial mount, and synchronize subsequent external jumps strictly via `pageFlip.turnToPage(targetIdx)` in a dedicated effect.
+
+
+- **3D Flipbook Spine Realism & Backface Inverted Shadow Z-Fighting ("Cantikkan Tulang Buku (Spine)")**:
+  1. *Root Cause of Spine Artifact on Left Edge*: When placing `box-shadow` on both `.face.front` and `.face.back` inside a sheet with `transformStyle: 'preserve-3d'`, the back face is rotated `rotateY(180deg)`. Under perspective projection (`rotateX(7deg)` and `perspective: 2600px`), the back face's shadow is cast in the inverted direction (protruding outward to the left). Furthermore, because both faces share the identical Z coordinate ($Z = 0$), GPU rasterizers suffer from Z-fighting and subpixel rounding along the edges, causing the back face's border and inverted shadow to bleed through as an unsightly jagged grey strip along the left spine edge.
+  2. *Eliminating Z-Fighting via Micro Spatial Separation & Parent Shadow*:
+     - Move the page drop shadow to the parent sheet container (`sheet-${sheetIdx}`), ensuring the shadow is calculated along the natural page boundary.
+     - Separate the two page faces in 3D space: apply `transform: 'translateZ(0.5px)'` to Front Face and `transform: 'rotateY(180deg) translateZ(0.5px)'` to Back Face. This establishes a clean 1.0px physical separation between the opposite faces, permanently banishing edge bleed and Z-fighting.
+  3. *Crafting an Authentic 3D Book Spine ("Tengah & Luar Tulang Buku")*:
+     - *Center Spine Gutter (Tengah)*: Replace flat 2px dark lines with a 16px concave shadow gutter (`linear-gradient(to right, transparent, rgba(0,0,0,0.06) 20%, rgba(0,0,0,0.22) 46%, rgba(0,0,0,0.36) 50%, rgba(0,0,0,0.22) 54%, rgba(0,0,0,0.06) 80%, transparent)`), paired with a 2px micro-specular ridge (`boxShadow: '1px 0 0 rgba(255,255,255,0.22)'`) and top/bottom binding notch accents.
+     - *Outer Spine Fold & Hinge (Luar)*: Add tactile spine binding accents along the outer fold edges (soft specular highlight, subtle cylindrical gradient, and a 1px delicate score line), giving documents an authentic, premium bookbindery feel without relying on cluttered skeuomorphic bars.
+
+
+- **3D Flipbook 2-Page Document Spread vs Single-Sheet Orientation & Skeuomorphic Paper Bars Trap ("Ada tu dulu baru flip")**:
+  1. *Root Cause of Floating Bar & Empty Half-Book*: Forcing `isTwoPageSpread = true` on 2-page documents (`totalPages === 2`, such as single-leaf brochures/pamphlets with front and back) creates an artificial two-page book spread. Page 1 sits on one half while the opposite half is completely empty, and fixed skeuomorphic paper stack edges (`repeating-linear-gradient #c8beab, #f4efe4`) float in empty space.
+  2. *Sluggish Ease-In Lag*: A long 720ms duration combined with heavy cubic ease-in ($4t^3$) causes a ~180ms perceptual lag on frame 1, making users feel that the book lingers/pauses ("ada tu dulu") before flipping.
+  3. *Solution*:
+     - Require `totalPages > 2` for automatic two-page spread, ensuring 1-page and 2-page pamphlets default to clean, centered single-page flip mode.
+     - Eliminate floating skeuomorphic paper bars completely for a clean, minimalist, modern aesthetic.
+     - Upgrade to real-time responsive flipping: 400ms duration, snappy quadratic start, 3px drag sensitivity threshold, and 22% completion threshold for instant direct manipulation.
+
+
 - **Full-Bleed Children in Shadcn `Card` & Ghost Margins (`py-6 gap-6`)**: In shadcn/ui components (`components/ui/card.tsx`), `Card` defaults to `flex flex-col gap-6 py-6`. When nesting subcomponents with full-bleed backgrounds (such as a header toolbar `<CardHeader className="bg-white border-b">`, an interactive workbench canvas `<CardContent className="p-0 bg-slate-100">`, or a footer strip `<CardFooter className="bg-slate-50 border-t">`), omitting an explicit padding/gap reset on the parent `<Card>` leaves the 24px vertical padding (`py-6`) and 24px children gap (`gap-6`) active. This creates glaring white bands / gaps ("lopong putih") above, below, and between adjacent colored sections.
   1. *Complete Elimination*: Always override the card wrapper with `<Card className="p-0 gap-0 overflow-hidden ...">`. `p-0` removes top and bottom padding, `gap-0` eliminates inter-child spacing, and `overflow-hidden` clips children seamlessly to the card's `rounded-xl` or `rounded-2xl` corners without border leakage.
   2. *Studio Workbench Realism*: Rather than using flat gray backdrops (`bg-gray-200`) which look like unstyled wireframes, use a subtle studio workbench matrix (`radial-gradient(rgba(148, 163, 184, 0.4) 1px, transparent 1px) [background-size:20px_20px]`) paired with realistic ambient paper drop shadows (`shadow-[0_20px_50px_rgba(0,0,0,0.16),0_4px_16px_rgba(0,0,0,0.08)]`) and a micro border ring (`ring-1 ring-black/10`).
@@ -656,3 +714,71 @@
   - *Symptom*: User sees an awkward, glowing, high-contrast white border ("bold putih") around the perimeter of the modal dialog, especially tracing around dark headers.
   - *Root Cause*: Shadcn `DialogContent` injects the class `border` by default (`border: 1px solid var(--border)` where `--border` is light grey `#e5e7eb`). Against the dark backdrop overlay (`bg-black/50`) and dark header backgrounds (`bg-slate-950`), `#e5e7eb` stands out sharply as a white line. Furthermore, `bg-background` (`#ffffff`) on `DialogContent` causes subpixel curvature anti-aliasing to bleed a 1px white fringe around the dark header's top corners.
   - *Solution*: Explicitly override `DialogContent` with `border-0 bg-slate-950 shadow-2xl shadow-black/50`. This removes the outer light border entirely and matches the dialog container's base color to the dark header, letting the natural elevation shadow float the dialog seamlessly against the dimmed overlay.
+
+
+- **Anti-AI Slop & Estetika Geometri Ketepatan (Low-Radius Precision System)**:
+  - *Corak Masalah (Symptom of AI Slop)*: Penggunaan berlebihan bebola cahaya neon ungu/biru kabur (`blur-3xl`), animasi teks gradien pelangi tebal (`animate-gradient-xy`, `bg-clip-text`), radius bujur bulat melampau (`rounded-3xl`, `rounded-2xl`, bentuk pil `rounded-full`), dan kotak ikon warna-warni pastel tepu. Ini menghasilkan visual laman web yang kelihatan seperti "AI wrapper / slop" murahan dan tidak meyakinkan pengguna profesional.
+  - *Penyelesaian Reka Bentuk Moden*:
+    1. **Low-Radius Precision**: Gunakan `--radius: 0.375rem` (6px) untuk komponen asas (`rounded-md` untuk butang/input, `rounded-lg` untuk kad/kontena, `rounded-sm` / `rounded` untuk lencana).
+    2. **High-Contrast Monochrome & Matte Surfaces**: Gunakan tipografi hitam pekat berani (`text-slate-950` di atas `bg-white`) dengan garis grid halus neutral 1px (`border-slate-200`) dan permukaan matte, tanpa sebarang radial glow atau flare kabur.
+    3. **Tactile Interactive Sandboxes**: Gantikan mockup statik atau animasi melampau dengan elemen interaktif sebenar yang boleh diklik dan disentuh pengguna (contoh: borang simulasi, penstriman helaian masa-nyata, suis orientasi e-sijil langsung, simulator render ZIP, dan suis tema).
+    4. **Konsistensi Bahasa Penuh (100% English)**: Apabila menyelaraskan laman web ke bahasa Inggeris, semak bukan sekadar teks tajuk tetapi juga mesej ralat toast, teks amaran folder spam/junk, dan label input login/auth agar sifar percampuran bahasa berlaku.
+
+- **Penyelarasan Warna Logo & Jenama Tanpa Terjebak ke AI Slop**:
+  - *Corak Masalah*: Apabila pengguna meminta menyelaraskan warna web dengan logo jenama ("ikut tema logo"), terdapat godaan untuk menyuntik semula latar belakang gradien ungu berlebihan atau glowing radial glow mesh di seluruh halaman. Ini merosakkan semula prinsip minimalis dan anti-slop yang telah dibina.
+  - *Penyelesaian Elegan*:
+    1. **Hadkan Warna Jenama untuk Tindakan & Fokus Utama**: Gunakan warna primer logo rasmi (`#7c3aed` / `bg-purple-600 hover:bg-purple-700 text-white shadow-xs`) secara tegas pada butang CTA utama ("Get Started Free", "Create Account", "Upgrade to Pro", "Sign Up"), butang serah mockup interaktif, dan bar penunjuk kemajuan.
+    2. **Aksen Halus (Subtle Accents)**: Gunakan lencana status berlatar lembut (`bg-purple-50 text-purple-700 border-purple-200/80`), penunjuk tab aktif, pilihan teks berjenama (`selection:bg-purple-100 selection:text-purple-900`), dan sempadan kad Pro (`border-2 border-purple-600`).
+    3. **Kekalkan Latar Belakang Bersih & Neutral**: Latar belakang utama kekal putih bersih (`bg-white`) atau kelabu matte halus (`bg-slate-50/60`), memastikan hierarki maklumat kekal jelas, profesional, dan berwibawa.
+
+- **Ketepatan Skala Kecerahan Warna Jenama (Brand Color Lightness vs Dark UI / Light Canvas Ergonomics)**:
+  - *Corak Masalah*: Apabila menyelaraskan warna primer jenama berasaskan warna logo langsung (seperti `#7c3aed`), menggunakan nilai heksadesimal tersebut secara terus untuk butang primer bersaiz besar (`bg-purple-600`) boleh kelihatan terlalu terang (~58% lightness), menghasilkan kesan "neon / candy button" yang menyilaukan pandangan pengguna pada latar belakang putih.
+  - *Penyelesaian Elegan*:
+    1. **Skala Kecerahan Seimbang (38% - 44% Lightness)**: Gunakan ton Deep Royal Violet (`#5b21b6` / `violet-800` dengan hover `#4c1d95` / `violet-900`) untuk tindakan primer. Ini mengekalkan identiti warna ungu yang pekat dan jelas tanpa sebarang silau neon, serta memberikan kontras teks putih melebihi 7.5:1 (melepasi standard ketat WCAG AAA).
+    2. **Harmoni Aksen Lembut & Tipografi**: Padankan dengan latar belakang penunjuk aktif yang tenang (`bg-violet-50` / `bg-violet-100/70`) dan tipografi gelap beraksen pekat (`text-violet-900` / `text-violet-800`) bagi menghasilkan papan pemuka yang matang dan selesa digunakan sepanjang hari.
+
+- **Ketekalan Ketinggian & Geometri Elemen Sebaris dalam Kad Footer (`h-8` Alignment)**:
+  - *Corak Masalah*: Meletakkan lencana teks atau metadata (seperti tarikh) dengan hanya padding menegak rawak (`py-0.5` / ~20px) bersebelahan dengan butang tindakan yang mempunyai ketinggian tetap (`h-8` / 32px) mewujudkan ketidakseimbangan visual (asymmetric baseline imbalance). Ini kelihatan seperti ralat susun atur yang tidak disengajakan.
+  - *Penyelesaian Elegan*:
+    - Sentiasa gunakan ketinggian tetap yang sama (`h-8` / 32px) dengan `inline-flex items-center`, sempadan 1px neutral (`border-slate-200`), dan jejari sudut seragam (`rounded-md`).
+    - Ini memastikan semua elemen di baris bawah kad (lencana tarikh, butang salin, butang pratonton) tersusun kemas dan simetri pada paksi menegak yang sama.
+
+- **Pengautomasian Provisyen Sumber Luaran Tanpa Geseran (Zero-Click Third-Party Resource Provisioning & Fail-Safe Architecture)**:
+  - *Corak Masalah*: Meminta pengguna mencipta sumber luaran secara manual di tab berasingan (seperti Google Spreadsheet di Google Drive, berkongsi hak milik emel perkhidmatan, dan menyalin-tampal pautan kembali ke aplikasi) menambahkan beban kognitif tinggi pada setiap kali mencipta borang.
+  - *Penyelesaian Elegan*:
+    1. **Autoprovisyen Berpusat di Server Actions**: Apabila borang dicipta (`createFormAction`), hubungi terus Google Sheets API via `createGoogleSpreadsheetHelper` untuk menjana spreadsheet dan memautkannya secara automatik tanpa memerlukan sebarang interaksi manual pengguna.
+    2. **Sokongan Dwi-Kredensial (OAuth & Service Account)**: Menyokong kedua-dua akaun Google peribadi (OAuth) dan Service Account (JWT) dengan pemberian keizinan automatik (`role: 'writer'`) dan pengurusan folder Drive (`googleDriveFolderId`).
+    3. **Fail-Safe & Butang Sandaran 1-Klik**: Jangan biarkan kelewatan atau gangguan talian luaran menyekat penciptaan borang. Balut panggilan luaran dengan *try-catch* dan sediakan butang sandaran 1-klik di skrin Form Builder bagi membolehkan penjanaan bila-bila masa.
+
+- **Sinkronisasi Tajuk Sumber Luaran Tidak Segerak (`after()` Background Title Synchronization)**:
+  - *Corak Masalah*: Apabila pengguna menukar tajuk sesuatu entiti (seperti borang), sumber luaran pihak ketiga yang terikat dengannya (seperti fail Google Spreadsheet di Google Drive) kekal dengan nama lama yang dicipta pada awalnya (`Untitled Form - Responses`). Ini mengelirukan pengguna apabila melihat senarai fail di Google Drive.
+  - *Penyelesaian Elegan*:
+    - Di dalam mutasi `updateFormAction`, kesan perubahan tajuk (`existing.title !== form.title` atau `existing.title === 'Untitled Form'`).
+    - Gunakan fungsi `after()` daripada `next/server` untuk memindahkan panggilan rangkaian pihak ketiga (`updateGoogleSpreadsheetTitle` via `spreadsheets.batchUpdate`) ke latar belakang.
+    - Ini memastikan pengguna menikmati simpanan pangkalan data yang serta-merta tanpa kelewatan rangkaian Google, sambil menjamin fail Google Sheet di Google Drive sentiasa selari dengan tajuk borang terkini.
+
+- **Had `after()` & Keperluan Pengesahan Tajuk Multi-Titik (Multi-Point Title Synchronization)**:
+  - *Corak Masalah*:
+    1. Menggunakan `after()` untuk operasi penyegerakan sumber luaran boleh digugurkan atau tertangguh dalam mod pembangunan tempatan sebaik sahaja permintaan HTTP selesai, menyebabkan fail Google Drive tidak dikemas kini.
+    2. Bergantung semata-mata pada perbandingan `existing.title !== form.title` di pelayan boleh terlepas sekiranya tajuk telah disimpan dalam DB sebelumnya (atau semasa auto-save separa), menyebabkan simpanan berikutnya melangkau panggilan API.
+    3. Ketiadaan butang penyelarasan manual menyebabkan pengguna tiada jalan penyelesaian sekiranya helaian luaran masih memaparkan nama lama.
+  - *Peraturan & Penyelesaian Elegan*:
+    1. **Panggilan Terus (`await`)**: Laksanakan `updateGoogleSpreadsheetTitle` secara terus dalam `updateFormAction` supaya pengemaskinian selesai sebelum tindakan melengkapkan kitaran.
+    2. **Pencetus Multi-Titik (Multi-Point Triggers)**:
+       - `onBlur` pada medan tajuk: Menyelaras tajuk secara automatik sebaik sahaja pengguna selesai menaip dan beralih fokus.
+       - Tindakan simpanan manual `handleSave`: Memastikan tajuk Google Sheet disahkan selari.
+       - Klik pada `Open Google Sheet`: Menjalankan penyegerakan tajuk secara automatik sebelum tab dibuka.
+    3. **Butang 1-Klik "↻ Sync Title"**: Sediakan butang penyegerakan manual bersebelahan pautan helaian dengan petunjuk animasi `isSyncingSheetTitle` dan maklum balas toast yang jelas.
+
+- **Penyelarasan Padding & Dimensi Tabs Pill (`inline-flex` vs `grid-cols-N fixed max-w`)**:
+  - *Corak Masalah*: Menggunakan `grid grid-cols-N max-w-[400px]` pada senarai tab dengan kepanjangan teks berbeza ("Profile" 7 aksara vs "Subscription" 12 aksara vs "Integrations" 12 aksara) mengakibatkan padding asimetri yang ketara: tab pendek mempunyai ruang kosong berlebihan manakala tab panjang terhimpit dan melimpah melepasi sempadan kanan bekas. Ketiadaan jurang pemisah (`gap`) turut menyebabkan tab aktif bercantum terus dengan tab bersebelahan.
+  - *Peraturan & Penyelesaian Elegan*:
+    - Gunakan susun atur `inline-flex h-10 w-fit items-center gap-1 rounded-md border border-slate-200 bg-slate-100/80 p-1` bagi bekas tab.
+    - Tetapkan padding seragam pada setiap `TabsTrigger`: `px-4 py-1.5 h-8 text-sm font-medium rounded-md`.
+    - Ini memastikan nisbah padding dalaman adalah sama rata untuk setiap tab, ruang pemisah (`gap-1`) yang konsisten, dan bekas tab menyesuaikan saiz secara dinamik tanpa sebarang masalah teks terpotong.
+
+- **Penyelarasan Tona Warna Tema (Theme Deepening to Midnight Violet `#4c1d95`)**:
+  - *Corak Masalah*: Warna primer `violet-800` (`#5b21b6`) masih kelihatan sedikit cerah dan kurang padat untuk estetika reka bentuk minimalis korporat.
+  - *Peraturan & Penyelesaian Elegan*:
+    - Dalami kepekatan warna ke tahap **`violet-900` (`#4c1d95`)** dengan kesan hover **`violet-950` (`#2e1065`)**.
+    - Kemas kini pemboleh ubah asas `--primary`, `--ring`, `--sidebar-primary`, dan carta dalam `globals.css` serta kelaskan semula butang dan lencana merentas semua komponen supaya konsisten 100%.

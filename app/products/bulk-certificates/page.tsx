@@ -11,8 +11,7 @@ import {
     FileSpreadsheet,
     Download,
     ShieldCheck,
-    CheckCircle2,
-    Sparkles,
+    Check,
     FileText,
     Zap,
 } from 'lucide-react';
@@ -28,20 +27,20 @@ export const metadata: Metadata = {
 
 export default function BulkCertificatesProductPage() {
     return (
-        <div className="flex flex-col min-h-screen bg-white">
+        <div className="flex flex-col min-h-screen bg-white text-slate-900 font-sans">
             {/* Header */}
-            <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+            <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md supports-[backdrop-filter]:bg-white/75">
                 <div className="container mx-auto px-4 md:px-6 flex h-16 items-center justify-between">
                     <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-                        <div className="relative h-8 w-8 rounded-lg overflow-hidden">
-                            <Image src="/logo.png" alt="KlikForm Logo" fill className="object-contain" sizes="32px" />
+                        <div className="relative h-8 w-8 rounded-md overflow-hidden">
+                            <Image src="/logo.png" alt="KlikForm Logo" fill className="object-contain" sizes="32px" priority />
                         </div>
-                        <span><span className="text-primary">Klik</span>Form</span>
+                        <span className="tracking-tight text-slate-900"><span className="text-violet-900">Klik</span>Form</span>
                     </Link>
                     <div className="hidden md:flex flex-1 justify-center ml-8">
                         <LandingNavbar />
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
                         <LandingHeaderAuth />
                         <LandingMobileMenu />
                     </div>
@@ -50,26 +49,27 @@ export default function BulkCertificatesProductPage() {
 
             <main className="flex-1">
                 {/* Hero */}
-                <section className="relative overflow-hidden py-20 lg:py-32 bg-amber-50/40">
-                    <div className="absolute top-0 right-0 w-full h-full overflow-hidden z-0 opacity-25">
-                        <div className="absolute right-[-10%] top-[-10%] w-[500px] h-[500px] rounded-full bg-amber-500/20 blur-3xl" />
-                        <div className="absolute left-[-10%] bottom-[-10%] w-[400px] h-[400px] rounded-full bg-orange-400/20 blur-3xl" />
-                    </div>
+                <section className="relative py-20 lg:py-28 bg-white border-b border-slate-200/80">
+                    <div className="absolute inset-0 -z-10 bg-[radial-gradient(#e4e4e7_1px,transparent_1px)] [background-size:20px_20px] opacity-60" />
                     <div className="container mx-auto px-4 md:px-6 relative z-10 text-center max-w-4xl">
-                        <div className="inline-flex items-center gap-2 bg-amber-100/80 text-amber-800 px-4 py-1.5 rounded-full text-sm font-semibold mb-8 border border-amber-200/60 shadow-xs">
-                            <Layers className="h-4 w-4 text-amber-600" /> Bulk Certificates — Fast &amp; Powerful
+                        <div className="inline-flex items-center gap-2 bg-slate-100 text-slate-800 border border-slate-200 px-3 py-1 rounded text-xs font-mono font-medium mb-6">
+                            <Layers className="h-3.5 w-3.5" />
+                            <span>Batch Processing Engine</span>
                         </div>
-                        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl text-transparent bg-clip-text bg-gradient-to-r from-amber-700 via-orange-600 to-amber-800 animate-gradient-xy mb-6 pb-4 [text-wrap:balance]">
-                            Generate Hundreds of Digital Certificates from CSV to ZIP in Seconds
+                        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl text-slate-950 mb-6 [text-wrap:balance]">
+                            Compile Hundreds of Certificates from CSV to ZIP
                         </h1>
-                        <p className="text-lg md:text-xl text-slate-600 leading-relaxed mb-10 max-w-2xl mx-auto [text-wrap:balance]">
-                            No more filling certificates one by one manually. Upload attendee rosters via CSV, map columns, and download hundreds of finished PDF or PNG certificates in a clean ZIP archive.
+                        <p className="text-base sm:text-lg md:text-xl text-slate-600 leading-relaxed mb-9 max-w-2xl mx-auto [text-wrap:balance]">
+                            Upload your participant roster via CSV. KlikForm maps fields, compiles individual PDF or PNG documents client-side, and packages them into a clean, structured ZIP archive.
                         </p>
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <Button size="lg" className="h-12 px-8 bg-amber-600 hover:bg-amber-700 text-white shadow-lg shadow-amber-600/20" asChild>
-                                <Link href="/login?tab=signup">Start Bulk Generation <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                            <Button size="lg" className="h-11 px-6 rounded-md bg-violet-900 hover:bg-violet-950 text-white text-xs font-medium shadow-xs" asChild>
+                                <Link href="/login?tab=signup">
+                                    Start Bulk Generation
+                                    <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                                </Link>
                             </Button>
-                            <Button size="lg" variant="outline" className="h-12 px-8 border-slate-200 hover:bg-slate-50" asChild>
+                            <Button size="lg" variant="outline" className="h-11 px-6 rounded-md border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-xs font-medium" asChild>
                                 <Link href="/pricing">View Plans &amp; Pricing</Link>
                             </Button>
                         </div>
@@ -77,104 +77,102 @@ export default function BulkCertificatesProductPage() {
                 </section>
 
                 {/* Key Features Bento */}
-                <section className="py-16 md:py-24">
+                <section className="py-16 md:py-24 border-b border-slate-200/80">
                     <div className="container mx-auto px-4 md:px-6">
-                        <div className="text-center mb-16">
-                            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 mb-4">
-                                Smart Capabilities for Large-Scale Certificate Issuance
+                        <div className="text-center mb-14">
+                            <div className="inline-block text-[11px] font-mono font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                                Architecture
+                            </div>
+                            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-slate-900 mb-3">
+                                Scalable Batch Infrastructure
                             </h2>
-                            <p className="text-lg text-slate-500 max-w-2xl mx-auto">
-                                Empowering schools, universities, training centers, and event organizers to save countless hours.
+                            <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto font-normal">
+                                Empowering administrators to process large rosters in seconds without server timeouts.
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                            <div className="bg-white p-8 rounded-3xl shadow-xs border border-slate-200/80 hover:shadow-md hover:border-amber-200 transition-all">
-                                <div className="h-12 w-12 bg-amber-50 rounded-2xl flex items-center justify-center mb-6 text-amber-600 border border-amber-100">
-                                    <FileSpreadsheet className="h-6 w-6" />
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 max-w-6xl mx-auto">
+                            <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-2xs hover:border-slate-300 transition-colors">
+                                <div className="h-9 w-9 bg-slate-100 rounded-md border border-slate-200 flex items-center justify-center mb-4 text-slate-800">
+                                    <FileSpreadsheet className="h-4 w-4" />
                                 </div>
-                                <h3 className="text-xl font-bold text-slate-900 mb-3">Effortless CSV File Import</h3>
-                                <p className="text-slate-500 leading-relaxed text-sm">
-                                    Upload CSV files directly from Excel or Google Sheets. Seamlessly processes hundreds to thousands of attendees without slowdowns.
+                                <h3 className="text-base font-bold text-slate-900 mb-2">Instant CSV Roster Ingestion</h3>
+                                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                                    Export directly from Excel, Google Sheets, or internal databases. Smoothly parses thousands of rows without crashing browser memory.
                                 </p>
                             </div>
 
-                            <div className="bg-white p-8 rounded-3xl shadow-xs border border-slate-200/80 hover:shadow-md hover:border-amber-200 transition-all">
-                                <div className="h-12 w-12 bg-orange-50 rounded-2xl flex items-center justify-center mb-6 text-orange-600 border border-orange-100">
-                                    <Zap className="h-6 w-6" />
+                            <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-2xs hover:border-slate-300 transition-colors">
+                                <div className="h-9 w-9 bg-slate-100 rounded-md border border-slate-200 flex items-center justify-center mb-4 text-slate-800">
+                                    <Zap className="h-4 w-4" />
                                 </div>
-                                <h3 className="text-xl font-bold text-slate-900 mb-3">Smart Column Auto-Detection</h3>
-                                <p className="text-slate-500 leading-relaxed text-sm">
-                                    The system automatically detects Participant Name, Identity / IC No., Date, and Program Title columns for instant mapping.
+                                <h3 className="text-base font-bold text-slate-900 mb-2">Automatic Header Detection</h3>
+                                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                                    Smart column mapping automatically detects Name, Email, ID number, and Date headers to minimize setup friction.
                                 </p>
                             </div>
 
-                            <div className="bg-white p-8 rounded-3xl shadow-xs border border-slate-200/80 hover:shadow-md hover:border-amber-200 transition-all">
-                                <div className="h-12 w-12 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 text-blue-600 border border-blue-100">
-                                    <Download className="h-6 w-6" />
+                            <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-2xs hover:border-slate-300 transition-colors">
+                                <div className="h-9 w-9 bg-slate-100 rounded-md border border-slate-200 flex items-center justify-center mb-4 text-slate-800">
+                                    <Download className="h-4 w-4" />
                                 </div>
-                                <h3 className="text-xl font-bold text-slate-900 mb-3">Ready-to-Download ZIP Archive</h3>
-                                <p className="text-slate-500 leading-relaxed text-sm">
-                                    All participant certificates are generated and neatly packaged into a single ZIP file, systematically named by attendee.
+                                <h3 className="text-base font-bold text-slate-900 mb-2">Structured ZIP Compilation</h3>
+                                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                                    All generated files are cleanly compressed into a single ZIP archive, systematically indexed by participant name or identity code.
                                 </p>
                             </div>
 
-                            <div className="bg-white p-8 rounded-3xl shadow-xs border border-slate-200/80 hover:shadow-md hover:border-amber-200 transition-all">
-                                <div className="h-12 w-12 bg-purple-50 rounded-2xl flex items-center justify-center mb-6 text-purple-600 border border-purple-100">
-                                    <FileText className="h-6 w-6" />
+                            <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-2xs hover:border-slate-300 transition-colors">
+                                <div className="h-9 w-9 bg-slate-100 rounded-md border border-slate-200 flex items-center justify-center mb-4 text-slate-800">
+                                    <FileText className="h-4 w-4" />
                                 </div>
-                                <h3 className="text-xl font-bold text-slate-900 mb-3">Printable PDF &amp; HD PNG Formats</h3>
-                                <p className="text-slate-500 leading-relaxed text-sm">
-                                    Choose the right export format — high-resolution print-ready PDFs or crisp PNG images perfect for social media sharing.
+                                <h3 className="text-base font-bold text-slate-900 mb-2">Vector PDF &amp; Raster PNG</h3>
+                                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                                    Choose the right export format: crisp 300 DPI vector PDFs for high-grade printing or clean PNG images for instant social sharing.
                                 </p>
                             </div>
 
-                            <div className="bg-white p-8 rounded-3xl shadow-xs border border-slate-200/80 hover:shadow-md hover:border-amber-200 transition-all">
-                                <div className="h-12 w-12 bg-emerald-50 rounded-2xl flex items-center justify-center mb-6 text-emerald-600 border border-emerald-100">
-                                    <ShieldCheck className="h-6 w-6" />
+                            <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-2xs hover:border-slate-300 transition-colors">
+                                <div className="h-9 w-9 bg-slate-100 rounded-md border border-slate-200 flex items-center justify-center mb-4 text-slate-800">
+                                    <ShieldCheck className="h-4 w-4" />
                                 </div>
-                                <h3 className="text-xl font-bold text-slate-900 mb-3">Security QR Codes &amp; Serial Numbers</h3>
-                                <p className="text-slate-500 leading-relaxed text-sm">
-                                    Every certificate generated can include a unique serial number and QR code for instant authentication on the public lookup portal.
+                                <h3 className="text-base font-bold text-slate-900 mb-2">Batch Serial Stamps &amp; QR Codes</h3>
+                                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                                    Each compiled certificate receives an individual serial number and QR code verifiable on our public verification portal.
                                 </p>
                             </div>
 
-                            <div className="bg-white p-8 rounded-3xl shadow-xs border border-slate-200/80 hover:shadow-md hover:border-amber-200 transition-all">
-                                <div className="h-12 w-12 bg-rose-50 rounded-2xl flex items-center justify-center mb-6 text-rose-600 border border-rose-100">
-                                    <Sparkles className="h-6 w-6" />
+                            <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-2xs hover:border-slate-300 transition-colors">
+                                <div className="h-9 w-9 bg-slate-100 rounded-md border border-slate-200 flex items-center justify-center mb-4 text-slate-800">
+                                    <Layers className="h-4 w-4" />
                                 </div>
-                                <h3 className="text-xl font-bold text-slate-900 mb-3">Smart Typography Auto-Scaling</h3>
-                                <p className="text-slate-500 leading-relaxed text-sm">
-                                    Lengthy participant names or event titles automatically scale down in font size so certificate layouts remain balanced and elegant.
+                                <h3 className="text-base font-bold text-slate-900 mb-2">Intelligent Font Scaling</h3>
+                                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                                    Long names or hyphenated honorifics automatically scale down in real-time, preventing awkward line overflows and clipping.
                                 </p>
                             </div>
                         </div>
                     </div>
                 </section>
 
-                {/* Sesuai Untuk Siapa */}
-                <section className="py-16 md:py-24 bg-slate-50/60 border-t border-slate-100">
+                {/* Target Workflows */}
+                <section className="py-16 md:py-20 bg-slate-50 border-b border-slate-200/80">
                     <div className="container mx-auto px-4 md:px-6">
-                        <div className="text-center mb-16">
-                            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 mb-4">
-                                Built For Large-Scale Events &amp; Institutions
-                            </h2>
-                            <p className="text-lg text-slate-500 max-w-2xl mx-auto">
-                                The ultimate solution for managing thousands of attendee e-certificates without manual overhead.
-                            </p>
+                        <div className="text-center mb-12">
+                            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 mb-2">Target Workflows</h2>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto font-sans">
                             {[
-                                { title: 'Schools & Academic Institutions', desc: 'Generate achievement, extracurricular, and annual sports day certificates for all students in a flash.' },
-                                { title: 'Webinar & Seminar Organizers', desc: 'Distribute hundreds of attendee participation certificates immediately after your program concludes.' },
-                                { title: 'Corporate Training & HR', desc: 'Issue staff skill certification, safety compliance accreditations, and professional training completion certs.' },
-                                { title: 'Sports & Community Events', desc: 'Finisher certificates for marathons, athletic tournaments, community activities, and NGOs.' },
+                                { title: 'Schools & Universities', desc: 'Graduation, annual sports day, and co-curricular awards for thousands of students.' },
+                                { title: 'Webinars & Seminars', desc: 'Compile hundreds of attendee participation certs directly from post-event check-in sheets.' },
+                                { title: 'Corporate Training', desc: 'Certifications of completion for regulatory, safety, and operational workshops.' },
+                                { title: 'Sports & Community Runs', desc: 'Finisher accreditations for marathons, tournaments, and civic initiatives.' },
                             ].map((item, i) => (
-                                <div key={i} className="bg-white p-6 rounded-3xl border border-slate-200/80 text-center hover:shadow-md hover:-translate-y-1 transition-all">
-                                    <div className="h-10 w-10 bg-amber-50 rounded-xl flex items-center justify-center mx-auto mb-4 text-amber-600">
-                                        <CheckCircle2 className="h-5 w-5" />
+                                <div key={i} className="bg-white p-5 rounded-lg border border-slate-200 shadow-2xs text-left">
+                                    <div className="h-8 w-8 bg-slate-100 rounded-md border border-slate-200 flex items-center justify-center mb-3 text-slate-900">
+                                        <Check className="h-4 w-4" />
                                     </div>
-                                    <h3 className="font-bold text-slate-900 mb-2">{item.title}</h3>
+                                    <h3 className="font-bold text-slate-900 text-sm mb-1">{item.title}</h3>
                                     <p className="text-xs text-slate-500 leading-relaxed">{item.desc}</p>
                                 </div>
                             ))}
@@ -183,16 +181,19 @@ export default function BulkCertificatesProductPage() {
                 </section>
 
                 {/* CTA */}
-                <section className="py-20 bg-amber-950 text-white relative overflow-hidden">
-                    <div className="container mx-auto px-4 md:px-6 text-center max-w-3xl relative z-10">
-                        <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-6">
+                <section className="py-20 bg-slate-950 text-white">
+                    <div className="container mx-auto px-4 md:px-6 text-center max-w-2xl">
+                        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-4 [text-wrap:balance]">
                             Ready to Automate Your Bulk Certificates?
                         </h2>
-                        <p className="text-lg text-amber-100/90 mb-10 max-w-2xl mx-auto">
-                            Save valuable hours for your team. Generate hundreds of professional e-certificates in just a few clicks.
+                        <p className="text-sm sm:text-base text-slate-300 mb-8 font-normal leading-relaxed">
+                            Save valuable administrative hours. Generate hundreds of professional e-certificates in seconds.
                         </p>
-                        <Button size="lg" className="h-12 px-8 bg-white text-amber-950 hover:bg-amber-50 font-bold shadow-xl" asChild>
-                            <Link href="/login?tab=signup">Start Generating Bulk Certificates Free <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                        <Button size="lg" className="h-10 px-6 rounded-md bg-violet-900 hover:bg-violet-950 text-white text-xs font-medium shadow-xs" asChild>
+                            <Link href="/login?tab=signup">
+                                Start Generating Bulk Certificates
+                                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                            </Link>
                         </Button>
                     </div>
                 </section>

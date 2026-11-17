@@ -162,12 +162,12 @@ export function DashboardSidebar({ profile, onNavigate, isMobile = false }: Side
       <div className="p-4 border-b border-gray-100 flex items-center justify-between h-[89px]">
         {!isCollapsed && (
           <div className="flex items-center gap-3 overflow-hidden transition-all duration-300">
-            <div className="relative h-10 w-10 shrink-0 rounded-xl overflow-hidden border border-primary/20">
+            <div className="relative h-10 w-10 shrink-0 rounded-md overflow-hidden border border-violet-200/80">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/logo.png?v=3" alt="KlikForm Logo" className="w-full h-full object-cover" />
             </div>
             <h1 className="text-xl font-bold text-gray-900 tracking-tight whitespace-nowrap">
-              <span className="text-primary">Klik</span>Form
+              <span className="text-violet-900">Klik</span>Form
             </h1>
           </div>
         )}
@@ -178,7 +178,7 @@ export function DashboardSidebar({ profile, onNavigate, isMobile = false }: Side
             onClick={() => setIsCollapsed(!isCollapsed)}
             title="Expand Sidebar"
           >
-            <div className="relative h-10 w-10 rounded-xl overflow-hidden border border-primary/20 flex items-center justify-center bg-white">
+            <div className="relative h-10 w-10 rounded-md overflow-hidden border border-violet-200/80 flex items-center justify-center bg-white">
               {/* Show Arrow or Logo based on state */}
               <div
                 className={cn(
@@ -186,7 +186,7 @@ export function DashboardSidebar({ profile, onNavigate, isMobile = false }: Side
                   showArrow ? 'opacity-100' : 'opacity-0'
                 )}
               >
-                <ChevronRight className="h-6 w-6 text-primary" />
+                <ChevronRight className="h-6 w-6 text-violet-900" />
               </div>
               <div
                 className={cn(
@@ -209,7 +209,7 @@ export function DashboardSidebar({ profile, onNavigate, isMobile = false }: Side
           <Button
             variant="ghost"
             size="icon"
-            className="hidden md:flex h-6 w-6 text-gray-400 hover:text-gray-600"
+            className="hidden md:flex h-6 w-6 text-gray-400 hover:text-gray-600 rounded-md"
             onClick={() => setIsCollapsed(true)}
           >
             <ChevronLeft className="h-4 w-4" />
@@ -229,7 +229,7 @@ export function DashboardSidebar({ profile, onNavigate, isMobile = false }: Side
           >
             <Button
               className={cn(
-                'w-full bg-primary hover:bg-primary/90 shadow-md shadow-primary/20 transition-all',
+                'w-full bg-violet-900 hover:bg-violet-950 text-white rounded-md shadow-xs transition-colors font-medium',
                 isCollapsed ? 'justify-center px-0' : 'justify-start'
               )}
               size={isCollapsed ? 'icon' : 'lg'}
@@ -258,11 +258,11 @@ export function DashboardSidebar({ profile, onNavigate, isMobile = false }: Side
               asChild
               variant="ghost"
               className={cn(
-                'w-full h-10 mb-1 transition-all duration-200',
+                'w-full h-10 mb-1 transition-colors rounded-md text-sm',
                 isCollapsed ? 'justify-center px-0' : 'justify-start px-3',
                 item.active
-                  ? 'bg-primary/10 text-primary font-semibold hover:bg-primary/15 hover:text-primary'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/80'
+                  ? 'bg-violet-50 text-violet-900 font-semibold hover:bg-violet-100/70 hover:text-violet-950'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               )}
               title={isCollapsed ? item.title : undefined}
             >
@@ -284,8 +284,8 @@ export function DashboardSidebar({ profile, onNavigate, isMobile = false }: Side
               >
                 <item.icon
                   className={cn(
-                    'h-5 w-5 flex-shrink-0',
-                    item.active ? 'text-primary' : 'text-gray-500'
+                    'h-4 w-4 flex-shrink-0',
+                    item.active ? 'text-violet-900' : 'text-slate-400'
                   )}
                 />
                 {!isCollapsed && <span className="truncate">{item.title}</span>}
@@ -300,24 +300,24 @@ export function DashboardSidebar({ profile, onNavigate, isMobile = false }: Side
         <Link
           href="/settings"
           className={cn(
-            'flex items-center gap-3 mb-2 px-1 py-1 rounded-md transition-all hover:bg-gray-100 cursor-pointer',
+            'flex items-center gap-3 mb-2 px-2 py-1.5 rounded-md transition-colors hover:bg-slate-100 cursor-pointer',
             isCollapsed ? 'justify-center flex-col' : 'justify-start'
           )}
           title="View Profile"
         >
-          <Avatar className="h-9 w-9 border border-gray-200 shrink-0">
-            <AvatarImage src={profile?.avatar_url || ''} />
-            <AvatarFallback className="bg-primary/10 text-primary text-xs">
+          <Avatar className="h-9 w-9 rounded-md border border-slate-200 shrink-0">
+            <AvatarImage src={profile?.avatar_url || ''} className="rounded-md" />
+            <AvatarFallback className="rounded-md bg-violet-50 text-violet-900 text-xs font-semibold">
               {profile?.username ? profile.username.substring(0, 2).toUpperCase() : 'KF'}
             </AvatarFallback>
           </Avatar>
 
           {!isCollapsed && (
             <div className="flex-1 min-w-0 overflow-hidden">
-              <p className="text-sm font-medium text-gray-900 truncate">
+              <p className="text-xs font-semibold text-slate-900 truncate">
                 {profile?.full_name || profile?.username || 'User'}
               </p>
-              <p className="text-xs text-gray-500 truncate">View Profile & Settings</p>
+              <p className="text-[11px] text-slate-500 truncate">View Profile &amp; Settings</p>
             </div>
           )}
         </Link>
@@ -332,7 +332,7 @@ export function DashboardSidebar({ profile, onNavigate, isMobile = false }: Side
             variant="ghost"
             size="sm"
             className={cn(
-              'w-full text-gray-500 hover:text-gray-900 hover:bg-gray-200/50 h-9 transition-all',
+              'w-full text-slate-500 hover:text-slate-900 hover:bg-slate-100 h-9 transition-colors rounded-md text-xs',
               isCollapsed ? 'justify-center px-0' : 'justify-start'
             )}
             title="Log Out"

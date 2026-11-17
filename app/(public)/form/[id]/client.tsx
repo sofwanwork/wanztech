@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/select';
 import { cn, getProxiedImageUrl, sanitizeHtml } from '@/lib/utils';
 import { format } from 'date-fns';
+import { getFormPatternStyle } from '@/lib/forms/patterns';
 import { useState, useEffect } from 'react';
 import { Loader2, CheckCircle2, List, Clock, ExternalLink, LogOut, Award, KeyRound, AlertTriangle, ShieldAlert, Lock, Info, UserCheck, UserPlus, Hourglass, QrCode, RefreshCw, CalendarCheck, ArrowRight } from 'lucide-react';
 import { submitFormAction } from '@/actions/forms';
@@ -1219,30 +1220,7 @@ export function PublicFormClient({
 
   // Generate background pattern CSS
   const getPatternCSS = (): React.CSSProperties => {
-    const pattern = form.theme?.backgroundPattern;
-    if (!pattern || pattern === 'none') return {};
-    const patternMap: Record<string, string> = {
-      dots: 'radial-gradient(circle, #00000040 1px, transparent 1px)',
-      grid: 'linear-gradient(#00000020 1px, transparent 1px), linear-gradient(90deg, #00000020 1px, transparent 1px)',
-      diagonal:
-        'repeating-linear-gradient(45deg, transparent, transparent 10px, #00000015 10px, #00000015 11px)',
-      waves: 'radial-gradient(circle at 50% 0, #00000040 10px, transparent 10.5px)',
-      circles: 'radial-gradient(circle at center, #00000040 2px, transparent 2px)',
-      triangles:
-        'linear-gradient(135deg, #00000020 25%, transparent 25%), linear-gradient(225deg, #00000020 25%, transparent 25%)',
-    };
-    const sizeMap: Record<string, string> = {
-      dots: '12px 12px',
-      grid: '20px 20px',
-      diagonal: 'auto',
-      waves: '20px 20px',
-      circles: '24px 24px',
-      triangles: '20px 20px',
-    };
-    return {
-      backgroundImage: patternMap[pattern] || undefined,
-      backgroundSize: sizeMap[pattern] || undefined,
-    };
+    return getFormPatternStyle(form.theme?.backgroundPattern);
   };
 
   // Combine background color, optional pattern, and optional photo into one

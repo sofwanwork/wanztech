@@ -31,7 +31,7 @@ export default async function QrBuilderPage({ searchParams }: QrBuilderPageProps
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8">
       {/* Simple Stats Placeholder - specific to QR Codes */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="rounded-lg border border-slate-200 bg-white shadow-2xs">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total QR Codes</CardTitle>
             <QrCode className="h-4 w-4 text-muted-foreground" />
@@ -61,7 +61,7 @@ export default async function QrBuilderPage({ searchParams }: QrBuilderPageProps
             </Button>
           </div>
           <Link href="/qr-builder/new">
-            <Button className="ml-2">
+            <Button className="ml-2 bg-violet-900 hover:bg-violet-950 text-white rounded-md shadow-xs">
               <Plus className="mr-2 h-4 w-4" />
               Create New
             </Button>

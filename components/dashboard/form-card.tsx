@@ -53,7 +53,7 @@ export function FormCard({ form }: FormCardProps) {
   };
 
   return (
-    <Card className="group hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 border-gray-100 bg-white overflow-hidden flex flex-col h-full rounded-2xl ring-1 ring-gray-100 hover:ring-primary/20 hover:-translate-y-1 p-0 gap-0">
+    <Card className="group hover:border-slate-300 hover:shadow-sm transition-all duration-200 border-slate-200 bg-white overflow-hidden flex flex-col h-full rounded-lg shadow-2xs p-0 gap-0">
       {/* Card Image Area */}
       <Link
         href={builderHref}
@@ -125,7 +125,7 @@ export function FormCard({ form }: FormCardProps) {
 
       <CardFooter className="px-5 py-3 border-t border-gray-50 flex items-center justify-between gap-2">
         <span
-          className="text-xs text-gray-400 font-medium bg-gray-50 px-2.5 py-1 rounded-md whitespace-nowrap shrink-0"
+          className="inline-flex items-center h-8 px-2.5 rounded-md border border-slate-200 bg-slate-50 text-xs font-mono text-slate-600 whitespace-nowrap shrink-0 shadow-2xs"
           suppressHydrationWarning
         >
           {new Date(form.createdAt).toLocaleDateString('en-US', {
@@ -138,7 +138,7 @@ export function FormCard({ form }: FormCardProps) {
           <Button
             size="sm"
             variant="outline"
-            className="h-8 w-8 p-0 text-gray-400 border-gray-200 hover:bg-gray-100 hover:text-gray-900 rounded-full transition-all shrink-0"
+            className="h-8 w-8 p-0 text-slate-500 border-slate-200 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors shrink-0 cursor-pointer"
             onClick={handleCopyLink}
             title="Copy Form Link"
           >
@@ -157,7 +157,7 @@ export function FormCard({ form }: FormCardProps) {
             <Button
               size="sm"
               variant="outline"
-              className="h-8 text-primary border-primary/20 hover:bg-primary/5 hover:text-primary gap-1.5 rounded-full px-3 transition-all"
+              className="h-8 text-violet-900 border-violet-200/80 hover:bg-violet-50 hover:text-violet-900 gap-1.5 rounded-md px-3 text-xs font-medium transition-colors cursor-pointer"
             >
               Preview <ExternalLink className="h-3.5 w-3.5" />
             </Button>

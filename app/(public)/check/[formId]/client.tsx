@@ -162,49 +162,49 @@ export function CertificateCheckClient({
   const modeContent = {
     email_only: {
       subtitle:
-        'Sahkan kehadiran dan muat turun e-sijil rasmi anda dengan memasukkan alamat E-mel pendaftaran.',
-      cardDesc: 'Masukkan alamat E-mel yang digunakan semasa pendaftaran program.',
-      label: 'Alamat E-mel',
-      example: 'cth: nama@email.com',
-      placeholder: 'Contoh: nama@email.com',
+        'Verify attendance and download your official e-certificate by entering your registered email address.',
+      cardDesc: 'Enter the email address used during program registration.',
+      label: 'Email Address',
+      example: 'e.g. name@email.com',
+      placeholder: 'e.g. name@email.com',
       hint: (
         <span>
-          Masukkan alamat e-mel yang digunakan semasa mengisi borang pendaftaran rasmi.
+          Enter the email address used when submitting the official registration form.
         </span>
       ),
-      emptyToast: 'Sila masukkan alamat e-mel anda',
+      emptyToast: 'Please enter your email address',
       inputMode: 'email' as const,
       type: 'email' as const,
     },
     ic_only: {
       subtitle:
-        'Sahkan kehadiran dan muat turun e-sijil rasmi anda dengan memasukkan No. Kad Pengenalan pendaftaran.',
-      cardDesc: 'Masukkan No. Kad Pengenalan yang digunakan semasa pendaftaran program.',
-      label: 'No. Kad Pengenalan (IC)',
-      example: 'cth: 901234567890',
-      placeholder: 'Contoh: 901020015566',
+        'Verify attendance and download your official e-certificate by entering your registered IC Number.',
+      cardDesc: 'Enter the Identification Card (IC) Number used during program registration.',
+      label: 'IC / ID Number',
+      example: 'e.g. 901234567890',
+      placeholder: 'e.g. 901020015566',
       hint: (
         <span>
-          Masukkan No. IC tanpa sempang (<code>-</code>) seperti 901020015566.
+          Enter IC number without dashes (<code>-</code>) e.g. 901020015566.
         </span>
       ),
-      emptyToast: 'Sila masukkan nombor kad pengenalan anda',
+      emptyToast: 'Please enter your IC / ID number',
       inputMode: 'numeric' as const,
       type: 'text' as const,
     },
     both: {
       subtitle:
-        'Sahkan kehadiran dan muat turun e-sijil rasmi anda dengan memasukkan No. Kad Pengenalan atau E-mel pendaftaran.',
-      cardDesc: 'Masukkan No. Kad Pengenalan atau E-mel yang digunakan semasa pendaftaran program.',
-      label: 'No. Kad Pengenalan / E-mel',
-      example: 'cth: 901234567890',
-      placeholder: 'Contoh: 901020015566 atau nama@email.com',
+        'Verify attendance and download your official e-certificate by entering your registered IC Number or Email.',
+      cardDesc: 'Enter the IC Number or Email used during program registration.',
+      label: 'IC / ID Number or Email',
+      example: 'e.g. 901234567890',
+      placeholder: 'e.g. 901020015566 atau nama@email.com',
       hint: (
         <span>
-          Masukkan No. IC tanpa sempang (<code>-</code>) atau alamat e-mel pendaftaran rasmi.
+          Enter IC number without dashes (<code>-</code>) or official registration email.
         </span>
       ),
-      emptyToast: 'Sila masukkan No. Kad Pengenalan atau E-mel anda',
+      emptyToast: 'Please enter your IC Number or Email',
       inputMode: 'text' as const,
       type: 'text' as const,
     },
@@ -214,10 +214,10 @@ export function CertificateCheckClient({
     if (!identifier.trim()) return null;
     const cleanDigits = identifier.replace(/[-\s]/g, '');
     if (mode === 'ic_only' && identifier.includes('@')) {
-      return 'Borang ini menggunakan pengesahan No. Kad Pengenalan (IC). Sila masukkan No. IC tanpa tanda sempang.';
+      return 'This form uses IC / ID Number verification. Please enter your IC without dashes.';
     }
     if (mode === 'email_only' && /^\d{6,}$/.test(cleanDigits) && !identifier.includes('@')) {
-      return 'Borang ini menggunakan pengesahan Alamat E-mel. Sila masukkan e-mel pendaftaran anda.';
+      return 'This form uses Email verification. Please enter your registered email address.';
     }
     return null;
   })();
@@ -418,7 +418,7 @@ export function CertificateCheckClient({
         >
           {/* Floating dual-ring badge */}
           <div className="relative inline-flex mb-4 group">
-            <div className="absolute -inset-1.5 bg-gradient-to-r from-primary/30 to-purple-600/30 rounded-3xl blur-md opacity-75 group-hover:opacity-100 transition duration-500" />
+            <div className="absolute -inset-1.5 bg-gradient-to-r from-primary/30 to-violet-800/30 rounded-3xl blur-md opacity-75 group-hover:opacity-100 transition duration-500" />
             <div className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-white shadow-xl shadow-primary/10 ring-1 ring-slate-900/5 flex items-center justify-center text-primary">
               <Award className="h-8 w-8 sm:h-9 sm:w-9 text-primary transition-transform duration-300 group-hover:scale-105" />
               <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-md ring-2 ring-white">
@@ -431,7 +431,7 @@ export function CertificateCheckClient({
           <div className="flex items-center justify-center mb-3">
             <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20 shadow-2xs">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Portal Semakan E-Sijil Rasmi</span>
+              <span>Official E-Certificate Verification Portal</span>
             </span>
           </div>
 
@@ -441,7 +441,7 @@ export function CertificateCheckClient({
           </h1>
           <p className="text-slate-600 mt-2.5 text-sm sm:text-base [text-wrap:balance] max-w-xl mx-auto leading-relaxed">
             {result?.found
-              ? 'Sijil rasmi anda telah berjaya disahkan dan sedia untuk dimuat turun.'
+              ? 'Your official certificate has been verified and is ready for download.'
               : modeContent.subtitle}
           </p>
 
@@ -449,7 +449,7 @@ export function CertificateCheckClient({
             <div className="mt-3.5">
               <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-800 text-xs font-semibold border border-emerald-200/80 shadow-2xs">
                 <Clock className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Syarat Kehadiran: Minimum {minHoursRequired} Jam</span>
+                <span>Attendance Requirement: Minimum {minHoursRequired} Hours</span>
               </span>
             </div>
           ) : null}
@@ -462,10 +462,10 @@ export function CertificateCheckClient({
             <CardHeader className="p-0 gap-1.5">
               <div className="flex items-center gap-2 text-primary font-semibold text-xs tracking-wider uppercase">
                 <FileText className="w-4 h-4" />
-                <span>Pengesahan Sijil • Verification</span>
+                <span>Certificate Verification</span>
               </div>
               <CardTitle className="text-xl sm:text-2xl font-bold text-slate-900">
-                Semakan Rekod Peserta
+                Participant Record Verification
               </CardTitle>
               <CardDescription className="text-xs sm:text-sm text-slate-500">
                 {modeContent.cardDesc}
@@ -500,7 +500,7 @@ export function CertificateCheckClient({
                         inputRef.current?.focus();
                       }}
                       className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
-                      title="Padam"
+                      title="Clear"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -528,12 +528,12 @@ export function CertificateCheckClient({
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Mengesahkan Rekod...
+                    Verifying Record...
                   </>
                 ) : (
                   <>
                     <Search className="mr-2 h-5 w-5" />
-                    Sahkan E-Sijil Sekarang
+                    Verify E-Certificate Now
                   </>
                 )}
               </Button>
@@ -559,12 +559,12 @@ export function CertificateCheckClient({
               className="rounded-xl h-9 px-3.5 text-xs font-semibold text-slate-700 hover:text-slate-900 border-slate-200 bg-white shadow-2xs hover:bg-slate-50 transition-all cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5 mr-1.5 text-slate-500" />
-              <span>Semak Peserta Lain</span>
+              <span>Check Another Participant</span>
             </Button>
 
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 px-3.5 py-1 rounded-full border border-emerald-200/80 shadow-2xs">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Rekod Peserta Disahkan</span>
+              <span>Participant Record Verified</span>
             </span>
           </div>
 
@@ -612,10 +612,10 @@ export function CertificateCheckClient({
                         <div className="flex items-center justify-between">
                           <span className="text-[11px] font-semibold text-emerald-800 uppercase tracking-wider flex items-center gap-1">
                             <Calendar className="w-3.5 h-3.5 text-emerald-600" />
-                            <span>Pilihan Sijil Kehadiran</span>
+                            <span>Attendance Certificate Options</span>
                           </span>
                           <span className="text-[10px] text-emerald-700 bg-emerald-100 font-medium px-2 py-0.5 rounded-full">
-                            {dailyOptions.length} Sijil
+                            {dailyOptions.length} Certificates
                           </span>
                         </div>
                         <div className="space-y-1.5">
@@ -642,9 +642,7 @@ export function CertificateCheckClient({
                                     <span>{opt.label}</span>
                                   </span>
                                   {isSelected && (
-                                    <span className="text-[10px] bg-emerald-700/80 text-white px-1.5 py-0.2 rounded font-normal shrink-0">
-                                      Aktif
-                                    </span>
+                                    <span className="text-[10px] bg-emerald-700/80 text-white px-1.5 py-0.2 rounded font-normal shrink-0">Active</span>
                                   )}
                                 </div>
                                 <span
@@ -709,7 +707,7 @@ export function CertificateCheckClient({
                       className="w-full h-10 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-emerald-50/70 rounded-xl transition-all cursor-pointer mt-1"
                     >
                       <RefreshCw className="mr-2 h-3.5 w-3.5 text-emerald-700" />
-                      Semak Sijil Peserta Lain
+                      Check Another Participant's Certificate
                     </Button>
                   </div>
                 </CardContent>
@@ -798,7 +796,7 @@ export function CertificateCheckClient({
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
                         <Calendar className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Pilih Sijil:</span>
+                        <span>Select Certificate:</span>
                       </span>
                     </div>
                     <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 max-w-full">
@@ -934,10 +932,10 @@ export function CertificateCheckClient({
                   <div>
                     <h3 className="text-lg font-bold text-amber-950 mb-1.5">
                       {result.attendanceDetails.status === 'not_checked_out'
-                        ? 'Daftar Keluar (Check-Out) Belum Lengkap'
+                        ? 'Check-Out Incomplete'
                         : result.attendanceDetails.status === 'no_record'
-                        ? 'Tiada Rekod Kehadiran Ditemui'
-                        : 'Syarat Jam Kehadiran Tidak Mencukupi'}
+                        ? 'No Attendance Record Found'
+                        : 'Attendance Hour Requirement Not Met'}
                     </h3>
                     <p className="text-xs text-amber-900/90 max-w-md mx-auto leading-relaxed">
                       {result.error}
@@ -946,25 +944,25 @@ export function CertificateCheckClient({
 
                   <div className="bg-white/95 p-4 rounded-2xl border border-amber-200/80 text-left text-xs space-y-2 max-w-sm mx-auto shadow-2xs">
                     <div className="flex justify-between items-center py-1 border-b border-amber-100">
-                      <span className="text-muted-foreground">Syarat Jam Minimum:</span>
-                      <span className="font-bold text-slate-900">{result.attendanceDetails.requiredHours} Jam</span>
+                      <span className="text-muted-foreground">Minimum Required Hours:</span>
+                      <span className="font-bold text-slate-900">{result.attendanceDetails.requiredHours} Hours</span>
                     </div>
                     {result.attendanceDetails.status === 'insufficient_hours' && (
                       <>
                         <div className="flex justify-between items-center py-1 border-b border-amber-100">
-                          <span className="text-muted-foreground">Jumlah Kehadiran Anda:</span>
+                          <span className="text-muted-foreground">Your Total Attendance:</span>
                           <span className="font-bold text-amber-800">{result.attendanceDetails.attendedFormatted}</span>
                         </div>
                         <div className="flex justify-between items-center py-1">
-                          <span className="text-muted-foreground">Kekurangan:</span>
-                          <span className="font-bold text-rose-600">Kurang {result.attendanceDetails.shortfallText}</span>
+                          <span className="text-muted-foreground">Shortfall:</span>
+                          <span className="font-bold text-rose-600">Short by {result.attendanceDetails.shortfallText}</span>
                         </div>
                       </>
                     )}
                   </div>
 
                   <p className="text-[11px] text-amber-800/80 italic">
-                    Sila hubungi pihak urusetia / penganjur program sekiranya anda mempunyai kebenaran khas atau pengecualian.
+                    Please contact the event organizer if you have special permission or an exemption.
                   </p>
                 </CardContent>
               </Card>
@@ -977,10 +975,10 @@ export function CertificateCheckClient({
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-slate-900 mb-1">
-                      Carian E-mel Tidak Tersedia
+                      Email Search Unavailable
                     </h3>
                     <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
-                      Rekod kehadiran bagi borang ini menggunakan <strong>Nombor Kad Pengenalan (No. IC)</strong> sebagai pengenalan utama. Sila gunakan No. IC anda untuk menyemak sijil.
+                      Attendance records for this form use <strong>IC Number</strong> as the primary identifier. Please use your IC to check certificates.
                     </p>
                   </div>
 
@@ -995,7 +993,7 @@ export function CertificateCheckClient({
                       className="h-11 px-5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-medium shadow-md shadow-amber-600/20 text-xs sm:text-sm transition-all cursor-pointer"
                     >
                       <CreditCard className="w-4 h-4 mr-2" />
-                      Gunakan Nombor Kad Pengenalan (No. IC)
+                      Use IC / ID Number
                     </Button>
                   </div>
                 </CardContent>
@@ -1009,10 +1007,10 @@ export function CertificateCheckClient({
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-slate-900 mb-1">
-                      Carian No. IC Tidak Tersedia
+                      IC Search Unavailable
                     </h3>
                     <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
-                      Rekod kehadiran bagi borang ini menggunakan <strong>Alamat E-mel</strong> sebagai pengenalan utama. Sila gunakan alamat e-mel anda untuk menyemak sijil.
+                      Attendance records for this form use <strong>Email Address</strong> as the primary identifier. Please use your email address to check certificates.
                     </p>
                   </div>
 
@@ -1027,7 +1025,7 @@ export function CertificateCheckClient({
                       className="h-11 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-md shadow-blue-600/20 text-xs sm:text-sm transition-all cursor-pointer"
                     >
                       <Mail className="w-4 h-4 mr-2" />
-                      Gunakan Alamat E-mel
+                      Gunakan Email Address
                     </Button>
                   </div>
                 </CardContent>
@@ -1041,10 +1039,10 @@ export function CertificateCheckClient({
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-slate-900 mb-1">
-                      Rekod Sijil Tidak Ditemui
+                      Certificate Record Not Found
                     </h3>
                     <p className="text-xs sm:text-sm text-rose-800/90 max-w-md mx-auto leading-relaxed">
-                      Tiada rekod kehadiran dijumpai untuk carian{' '}
+                      No attendance record found for{' '}
                       <span className="font-semibold text-rose-950 font-mono bg-rose-100/80 px-2 py-0.5 rounded-md">
                         {identifier}
                       </span>.
@@ -1054,26 +1052,26 @@ export function CertificateCheckClient({
                   <div className="bg-white/95 p-4 rounded-2xl border border-rose-100/90 text-left text-xs space-y-2 max-w-md mx-auto shadow-2xs text-slate-600">
                     <div className="font-semibold text-slate-800 text-[11px] uppercase tracking-wider flex items-center gap-1.5">
                       <HelpCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                      <span>Panduan & Tindakan:</span>
+                      <span>Troubleshooting Tips:</span>
                     </div>
                     <ul className="space-y-1.5 pl-4 list-disc text-slate-600 leading-relaxed text-xs">
                       {mode === 'email_only' ? (
                         <>
-                          <li>Pastikan alamat e-mel dieja dengan tepat seperti semasa mengisi borang program.</li>
-                          <li>Periksa ejaan domain e-mel anda (contoh: <code>@gmail.com</code>, <code>@yahoo.com</code>).</li>
-                          <li>Sila hubungi pihak urusetia / penganjur jika kehadiran anda belum dimuat naik ke dalam sistem.</li>
+                          <li>Make sure the email address is spelled exactly as submitted during registration.</li>
+                          <li>Check your email domain spelling (e.g. <code>@gmail.com</code>, <code>@yahoo.com</code>).</li>
+                          <li>Please contact the organizers if your attendance has not yet been recorded in the system.</li>
                         </>
                       ) : mode === 'ic_only' ? (
                         <>
-                          <li>Pastikan No. Kad Pengenalan dimasukkan tanpa tanda sempang (contoh: <code>901020015566</code>).</li>
-                          <li>Semak semula 12 digit nombor kad pengenalan anda.</li>
-                          <li>Sila hubungi pihak urusetia / penganjur jika kehadiran anda belum dimuat naik ke dalam sistem.</li>
+                          <li>Ensure your IC number is entered without dashes (e.g. <code>901020015566</code>).</li>
+                          <li>Double-check your 12-digit identification number.</li>
+                          <li>Please contact the organizers if your attendance has not yet been recorded in the system.</li>
                         </>
                       ) : (
                         <>
-                          <li>Pastikan No. Kad Pengenalan dimasukkan tanpa tanda sempang (contoh: <code>901020015566</code>).</li>
-                          <li>Pastikan alamat e-mel dieja dengan tepat seperti semasa mengisi borang program.</li>
-                          <li>Sila hubungi pihak urusetia / penganjur jika kehadiran anda belum dimuat naik ke dalam sistem.</li>
+                          <li>Ensure your IC number is entered without dashes (e.g. <code>901020015566</code>).</li>
+                          <li>Make sure the email address is spelled exactly as submitted during registration.</li>
+                          <li>Please contact the organizers if your attendance has not yet been recorded in the system.</li>
                         </>
                       )}
                     </ul>
@@ -1252,7 +1250,7 @@ export function CertificateCheckClient({
       {/* Official Verification Footer */}
       <footer className="mt-12 sm:mt-16 text-center text-xs text-slate-500 flex flex-wrap items-center justify-center gap-2 pt-6 border-t border-slate-200/70 max-w-6xl mx-auto w-full">
         <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-        <span>Sistem Pengesahan E-Sijil Digital Selamat • Dikuasakan oleh <strong className="text-slate-700 font-semibold">KlikForm</strong></span>
+        <span>Secure Digital E-Certificate Verification System • Powered by <strong className="text-slate-700 font-semibold">KlikForm</strong></span>
       </footer>
     </div>
   );

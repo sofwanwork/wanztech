@@ -194,7 +194,7 @@ export function CreateBioDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending} className="gap-2 bg-emerald-600 hover:bg-emerald-700">
+            <Button type="submit" disabled={isPending} className="gap-2 bg-violet-900 hover:bg-violet-950 text-white rounded-md shadow-xs font-medium">
               {isPending ? 'Creating...' : 'Create & Open Builder'}
             </Button>
           </DialogFooter>
@@ -275,13 +275,13 @@ export function BioPageCard({ page, appUrl }: BioPageCardProps) {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden group">
+    <div className="bg-white rounded-lg border border-slate-200 shadow-2xs hover:border-slate-300 transition-colors flex flex-col justify-between overflow-hidden group">
       {/* Top Banner with Theme Preview */}
       <div className={`h-22 ${theme.bg} relative p-4 flex items-start justify-between`}>
-        <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-black/40 text-white/95 backdrop-blur-md border border-white/20 shadow-xs">
+        <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-black/40 text-white/95 backdrop-blur-md border border-white/20 shadow-xs">
           {theme.name}
         </span>
-        <label className="text-[11px] font-medium text-white/90 cursor-pointer flex items-center gap-1.5 bg-black/30 hover:bg-black/40 px-2.5 py-1 rounded-full backdrop-blur-sm border border-white/10 transition-colors shadow-xs">
+        <label className="text-[11px] font-medium text-white/90 cursor-pointer flex items-center gap-1.5 bg-black/30 hover:bg-black/40 px-2 py-0.5 rounded-md backdrop-blur-sm border border-white/10 transition-colors shadow-xs">
           <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-400' : 'bg-slate-400'}`} />
           <span>{isActive ? 'Active' : 'Draft'}</span>
           <Switch
@@ -336,7 +336,7 @@ export function BioPageCard({ page, appUrl }: BioPageCardProps) {
         </div>
 
         {/* Public URL Box */}
-        <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-xl border border-gray-200/80 text-xs">
+        <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-md border border-slate-200 text-xs font-mono">
           <span className="truncate flex-1 font-mono text-gray-700 select-all pl-1">
             {publicUrl}
           </span>

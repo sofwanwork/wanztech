@@ -55,14 +55,14 @@ export function CertificateQrCard({ formId, formTitle, templateName }: Certifica
   }, [formTitle]);
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="rounded-lg border border-slate-200 bg-white shadow-2xs hover:border-slate-300 transition-colors">
       <CardHeader>
         <CardTitle className="text-lg line-clamp-2 break-words whitespace-pre-line">{formTitle}</CardTitle>
         <CardDescription>Template: {templateName}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* QR Code Preview (client-side generated) */}
-        <div className="flex justify-center p-4 bg-white rounded-lg border">
+        <div className="flex justify-center p-4 bg-white rounded-md border border-slate-200">
           {origin ? (
             <QRCodeCanvas
               value={checkUrl}
@@ -89,9 +89,9 @@ export function CertificateQrCard({ formId, formTitle, templateName }: Certifica
 
         {/* Download Button */}
         <Button
-          variant="secondary"
+
           size="sm"
-          className="w-full"
+          className="w-full rounded-md bg-violet-900 hover:bg-violet-950 text-white shadow-xs font-medium"
           onClick={handleDownload}
           disabled={downloading}
         >

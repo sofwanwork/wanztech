@@ -4,7 +4,9 @@ import { useState, useEffect, useTransition, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Form, CertificateTemplate as CertificateTemplateType, AttendanceStats, MultiDayCertMode } from '@/lib/types';
 import { updateFormAction, deleteFormAction } from '@/actions/forms';
+import { createSheetForFormAction, syncSheetTitleAction } from '@/actions/sheets';
 import { getAttendanceStatsAction, clearAttendanceRecordsAction } from '@/actions/attendance';
+import { FORM_BACKGROUND_PATTERNS } from '@/lib/forms/patterns';
 import { FieldsEditor } from '@/components/forms/fields-editor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,6 +56,7 @@ import {
   RotateCcw,
   Calendar,
   Layers,
+  RefreshCw,
 } from 'lucide-react';
 
 import Link from 'next/link';
@@ -105,6 +108,42 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
   const [pendingTemplateId, setPendingTemplateId] = useState<string | null>(null);
   const [sheetUrlEditable, setSheetUrlEditable] = useState(false);
   const [isNavigating, startTransition] = useTransition();
+  const [isGeneratingSheet, startGenerateSheet] = useTransition();
+
+  const handleAutoGenerateSheet = () => {
+    startGenerateSheet(async () => {
+      try {
+        const res = await createSheetForFormAction(form.id);
+        if (res.success && res.url) {
+          setForm((f) => ({ ...f, googleSheetUrl: res.url }));
+          toast.success('Google Sheet created and linked automatically!');
+        } else {
+          toast.error(res.error || 'Failed to auto-generate Google Sheet');
+        }
+      } catch {
+        toast.error('An error occurred while generating Google Sheet');
+      }
+    });
+  };
+
+  const [isSyncingSheetTitle, setIsSyncingSheetTitle] = useState(false);
+
+  const handleManualSyncTitle = async () => {
+    if (!form.googleSheetUrl) return;
+    setIsSyncingSheetTitle(true);
+    try {
+      const res = await syncSheetTitleAction(form.id, form.title);
+      if (res.success) {
+        toast.success(`Google Sheet title synced: ${form.title}`);
+      } else {
+        toast.error(res.error || 'Failed to sync Google Sheet title');
+      }
+    } catch {
+      toast.error('Error syncing Google Sheet title');
+    } finally {
+      setIsSyncingSheetTitle(false);
+    }
+  };
 
   const [mounted, setMounted] = useState(false);
   const [publicUrl, setPublicUrl] = useState(`/form/${initialForm.id}`);
@@ -221,6 +260,9 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
     try {
       const result = await updateFormAction(form);
       if (result.success) {
+        if (form.googleSheetUrl && form.title && form.title.trim()) {
+          syncSheetTitleAction(form.id, form.title).catch(console.warn);
+        }
         toast.success('Form saved successfully');
         setSaveStatus('saved');
       } else {
@@ -456,7 +498,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left: Form Settings & Fields */}
           <div className="lg:col-span-2 space-y-6">
-            <Card className="border border-gray-200 bg-white">
+            <Card className="border border-slate-200 bg-white shadow-2xs rounded-lg">
               <CardHeader>
                 <CardTitle>General Info</CardTitle>
               </CardHeader>
@@ -471,6 +513,18 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                     className="resize-y min-h-[60px]"
                     value={form.title}
                     onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                    onBlur={async () => {
+                      if (form.googleSheetUrl && form.title && form.title.trim()) {
+                        try {
+                          const res = await syncSheetTitleAction(form.id, form.title);
+                          if (res.success) {
+                            toast.success(`Google Sheet title synced: ${form.title}`);
+                          }
+                        } catch (err) {
+                          console.warn('Sync sheet title on blur error:', err);
+                        }
+                      }
+                    }}
                   />
                 </div>
                 <div className="space-y-2">
@@ -661,12 +715,65 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                       )}
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Field is locked to prevent accidental edits. Click{' '}
-                    <Pencil className="inline h-3 w-3" /> to edit.
-                  </p>
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                    <p className="text-xs text-muted-foreground">
+                      Field is locked to prevent accidental edits. Click{' '}
+                      <Pencil className="inline h-3 w-3" /> to edit.
+                    </p>
+                    {form.googleSheetUrl ? (
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={form.googleSheetUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => {
+                            if (form.title && form.title.trim()) {
+                              syncSheetTitleAction(form.id, form.title).catch(console.warn);
+                            }
+                          }}
+                          className="inline-flex items-center gap-1.5 text-xs font-medium text-violet-900 hover:text-violet-950 hover:underline"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                          Open Google Sheet
+                        </a>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          disabled={isSyncingSheetTitle}
+                          onClick={handleManualSyncTitle}
+                          className="h-6 px-2 text-xs text-muted-foreground hover:text-violet-900 hover:bg-violet-50 cursor-pointer"
+                          title="Sync form title to Google Sheet"
+                        >
+                          <RefreshCw className={cn("h-3 w-3 mr-1", isSyncingSheetTitle && "animate-spin")} />
+                          Sync Title
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={isGeneratingSheet}
+                        onClick={handleAutoGenerateSheet}
+                        className="h-7 px-2.5 text-xs text-violet-900 border-violet-200/80 bg-violet-50/70 hover:bg-violet-100 hover:text-violet-900 rounded-md font-medium cursor-pointer"
+                      >
+                        {isGeneratingSheet ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                            Creating Sheet...
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="h-3.5 w-3.5 mr-1 text-violet-900" />
+                            Auto-Generate Google Sheet
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
                   {!useManualKeys && (
-                    <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-sm">
+                    <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md text-sm">
                       <p className="font-medium text-blue-800 dark:text-blue-200 mb-2">
                         How to link your Google Sheet:
                       </p>
@@ -727,7 +834,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                   </p>
                 </div>
 
-                <div className="space-y-4 border p-4 rounded-lg bg-slate-50/50 dark:bg-slate-900/50">
+                <div className="space-y-4 border p-4 rounded-md bg-slate-50/50 dark:bg-slate-900/50">
                   <div className="space-y-1">
                     <Label className="text-sm font-semibold">Custom Thank You Buttons</Label>
                     <p className="text-xs text-muted-foreground">
@@ -808,7 +915,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2 border p-3 rounded-lg bg-slate-50">
+                <div className="flex items-center space-x-2 border p-3 rounded-md bg-slate-50">
                   <Switch
                     id="allow-multiple"
                     checked={form.allowMultipleSubmissions ?? true} // Default to true if undefined
@@ -826,7 +933,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2 border p-3 rounded-lg bg-slate-50">
+                <div className="flex items-center space-x-2 border p-3 rounded-md bg-slate-50">
                   <Switch
                     id="receive-emails"
                     checked={form.receiveEmailNotifications ?? true} // Default to true
@@ -844,7 +951,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2 border p-3 rounded-lg bg-slate-50">
+                <div className="flex items-center space-x-2 border p-3 rounded-md bg-slate-50">
                   <Switch
                     id="form-status"
                     checked={form.isActive ?? true}
@@ -862,7 +969,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                   </div>
                 </div>
 
-                <div className="flex flex-col space-y-4 border p-4 rounded-lg bg-emerald-50/50 border-emerald-100">
+                <div className="flex flex-col space-y-4 border p-4 rounded-md bg-emerald-50/50 border-emerald-100">
                   <div className="flex items-center space-x-2">
                     <Switch
                       id="whatsapp-share"
@@ -910,7 +1017,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
             </Card>
 
             {/* Theme Settings Card */}
-            <Card className="border border-gray-200 bg-white">
+            <Card className="border border-slate-200 bg-white shadow-2xs rounded-lg">
               <CardHeader>
                 <CardTitle>Theme Settings</CardTitle>
                 <CardDescription>Customize the look and feel of your public form.</CardDescription>
@@ -919,20 +1026,23 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                 <div className="space-y-2">
                   <Label htmlFor="primary-color">Primary Color</Label>
                   <div className="flex items-center gap-3">
-                    <div className="relative w-10 h-10 rounded-full border shadow-sm ring-1 ring-black/5 [clip-path:circle(50%)]">
-                      <input
-                        id="primary-color-picker"
-                        type="color"
-                        value={toValidHexColor(form.theme?.primaryColor, '#000000')}
-                        onChange={(e) =>
-                          setForm((f) => ({
-                            ...f,
-                            theme: { ...f.theme, primaryColor: e.target.value },
-                          }))
-                        }
-                        className="absolute -inset-2 w-[calc(100%+16px)] h-[calc(100%+16px)] p-0 m-0 cursor-pointer border-0"
-                        title="Primary color picker"
-                      />
+                    <div className="relative w-10 h-10 rounded-full shadow-2xs shrink-0">
+                      <div className="w-full h-full rounded-full overflow-hidden relative [clip-path:circle(50%)]">
+                        <input
+                          id="primary-color-picker"
+                          type="color"
+                          value={toValidHexColor(form.theme?.primaryColor, '#000000')}
+                          onChange={(e) =>
+                            setForm((f) => ({
+                              ...f,
+                              theme: { ...f.theme, primaryColor: e.target.value },
+                            }))
+                          }
+                          className="absolute -inset-2 w-[calc(100%+16px)] h-[calc(100%+16px)] p-0 m-0 cursor-pointer border-0"
+                          title="Primary color picker"
+                        />
+                      </div>
+                      <div className="absolute inset-0 rounded-full border-2 border-slate-300/90 dark:border-slate-600 pointer-events-none" />
                     </div>
                     <Input
                       id="primary-color"
@@ -956,20 +1066,23 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                 <div className="space-y-2">
                   <Label htmlFor="background-color">Background Color</Label>
                   <div className="flex items-center gap-3">
-                    <div className="relative w-10 h-10 rounded-full border shadow-sm ring-1 ring-black/5 [clip-path:circle(50%)]">
-                      <input
-                        id="background-color-picker"
-                        type="color"
-                        value={toValidHexColor(form.theme?.backgroundColor, '#ffffff')}
-                        onChange={(e) =>
-                          setForm((f) => ({
-                            ...f,
-                            theme: { ...f.theme, backgroundColor: e.target.value },
-                          }))
-                        }
-                        className="absolute -inset-2 w-[calc(100%+16px)] h-[calc(100%+16px)] p-0 m-0 cursor-pointer border-0"
-                        title="Background color picker"
-                      />
+                    <div className="relative w-10 h-10 rounded-full shadow-2xs shrink-0">
+                      <div className="w-full h-full rounded-full overflow-hidden relative [clip-path:circle(50%)]">
+                        <input
+                          id="background-color-picker"
+                          type="color"
+                          value={toValidHexColor(form.theme?.backgroundColor, '#ffffff')}
+                          onChange={(e) =>
+                            setForm((f) => ({
+                              ...f,
+                              theme: { ...f.theme, backgroundColor: e.target.value },
+                            }))
+                          }
+                          className="absolute -inset-2 w-[calc(100%+16px)] h-[calc(100%+16px)] p-0 m-0 cursor-pointer border-0"
+                          title="Background color picker"
+                        />
+                      </div>
+                      <div className="absolute inset-0 rounded-full border-2 border-slate-300/90 dark:border-slate-600 pointer-events-none" />
                     </div>
                     <Input
                       id="background-color"
@@ -992,74 +1105,42 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                   <p className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                     Background Pattern
                   </p>
-                  <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
-                    {[
-                      { id: 'none', label: 'None', pattern: 'bg-gray-100' },
-                      {
-                        id: 'dots',
-                        label: 'Dots',
-                        pattern:
-                          'bg-[radial-gradient(circle,_#00000040_1px,_transparent_1px)] bg-[length:12px_12px]',
-                      },
-                      {
-                        id: 'grid',
-                        label: 'Grid',
-                        pattern:
-                          'bg-[linear-gradient(#00000020_1px,_transparent_1px),linear-gradient(90deg,_#00000020_1px,_transparent_1px)] bg-[length:20px_20px]',
-                      },
-                      {
-                        id: 'diagonal',
-                        label: 'Diagonal',
-                        pattern:
-                          'bg-[repeating-linear-gradient(45deg,_transparent,_transparent_10px,_#00000015_10px,_#00000015_11px)]',
-                      },
-                      {
-                        id: 'waves',
-                        label: 'Waves',
-                        pattern:
-                          'bg-[radial-gradient(circle_at_50%_0,_#00000040_10px,_transparent_10.5px)] bg-[length:20px_20px]',
-                      },
-                      {
-                        id: 'circles',
-                        label: 'Circles',
-                        pattern:
-                          'bg-[radial-gradient(circle_at_center,_#00000040_2px,_transparent_2px)] bg-[length:24px_24px]',
-                      },
-                      {
-                        id: 'triangles',
-                        label: 'Triangles',
-                        pattern:
-                          'bg-[linear-gradient(135deg,_#00000020_25%,_transparent_25%),linear-gradient(225deg,_#00000020_25%,_transparent_25%)] bg-[length:20px_20px]',
-                      },
-                    ].map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() =>
-                          setForm((f) => ({
-                            ...f,
-                            theme: {
-                              ...f.theme,
-                              backgroundPattern: p.id as
-                                | 'none'
-                                | 'dots'
-                                | 'grid'
-                                | 'diagonal'
-                                | 'waves'
-                                | 'circles'
-                                | 'triangles',
-                            },
-                          }))
-                        }
-                        className={`flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all ${(form.theme?.backgroundPattern || 'none') === p.id
-                          ? 'border-primary bg-primary/5'
-                          : 'border-gray-200 hover:border-gray-300'
+                  <div className="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+                    {FORM_BACKGROUND_PATTERNS.map((p) => {
+                      const isSelected = (form.theme?.backgroundPattern || 'none') === p.id;
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() =>
+                            setForm((f) => ({
+                              ...f,
+                              theme: {
+                                ...f.theme,
+                                backgroundPattern: p.id,
+                              },
+                            }))
+                          }
+                          className={`flex flex-col items-center gap-1.5 p-2 rounded-lg border-2 transition-all cursor-pointer ${
+                            isSelected
+                              ? 'border-violet-900 bg-violet-50/70 shadow-2xs dark:border-violet-400 dark:bg-violet-950/20'
+                              : 'border-slate-200 hover:border-slate-300 bg-white'
                           }`}
-                      >
-                        <div className={`w-10 h-10 rounded-md ${p.pattern} border`} />
-                        <span className="text-xs font-medium">{p.label}</span>
-                      </button>
-                    ))}
+                        >
+                          <div
+                            className="w-10 h-10 rounded-md border border-slate-200/90 shadow-2xs"
+                            style={p.previewStyle}
+                          />
+                          <span
+                            className={`text-xs ${
+                              isSelected ? 'font-semibold text-violet-900' : 'font-medium text-slate-700'
+                            }`}
+                          >
+                            {p.label}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Add a subtle pattern overlay to the background.
@@ -1113,7 +1194,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
             </Card>
 
             {/* E-Cert Settings Card */}
-            <Card className="border border-gray-200 bg-white">
+            <Card className="border border-slate-200 bg-white shadow-2xs rounded-lg">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -1136,7 +1217,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
               {form.eCertificateEnabled && (
                 <CardContent className="space-y-6">
                   {/* Info Box */}
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
                     <div className="flex items-start gap-3">
                       <Info className="h-5 w-5 text-blue-600 mt-0.5 shrink-0" />
                       <div className="text-sm text-blue-800">
@@ -1209,7 +1290,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                     </div>
 
                     {userCertificates.length === 0 ? (
-                      <div className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center">
+                      <div className="border-2 border-dashed border-slate-200 rounded-md p-8 text-center">
                         <FileImage className="h-12 w-12 text-gray-300 mx-auto mb-3" />
                         <p className="text-gray-500 mb-4">
                           No certificate templates. Create your certificate template first.
@@ -1227,7 +1308,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                           <div
                             key={cert.id}
                             onClick={() => handleSelectTemplate(cert.id)}
-                            className={`cursor-pointer rounded-lg border-2 overflow-hidden transition-all relative group ${form.eCertificateTemplate === cert.id
+                            className={`cursor-pointer rounded-md border-2 overflow-hidden transition-all relative group ${form.eCertificateTemplate === cert.id
                               ? 'border-primary ring-2 ring-primary/20'
                               : 'border-gray-200 hover:border-gray-300'
                               }`}
@@ -1285,7 +1366,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
 
                   {/* Check Certificate Link */}
                   {mounted && form.eCertificateEnabled && (
-                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="p-4 bg-green-50 border border-green-200 rounded-md">
                       <p className="text-sm font-medium text-green-800 mb-2">
                         Certificate Verification Link:
                       </p>
@@ -1313,7 +1394,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
             </Card>
 
             {/* Attendance Settings Card */}
-            <Card className="border border-gray-200 bg-white">
+            <Card className="border border-slate-200 bg-white shadow-2xs rounded-lg">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -1416,7 +1497,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                     </div>
 
                     {form.attendanceSettings?.geofence?.enabled && (
-                      <div className="p-4 bg-gray-50 rounded-lg space-y-4 border">
+                      <div className="p-4 bg-gray-50 rounded-md space-y-4 border">
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor="geofence-lat">Latitude</Label>
@@ -1574,7 +1655,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                     </div>
 
                     {form.attendanceSettings?.checkInOut?.enabled && (
-                      <div className="p-4 bg-emerald-50/50 rounded-xl space-y-4 border border-emerald-100">
+                      <div className="p-4 bg-emerald-50/50 rounded-md space-y-4 border border-emerald-100">
                         <div className="space-y-2">
                           <Label htmlFor="identifier-field" className="text-xs font-semibold text-emerald-950">
                             Participant Identifier Field (Unique Key)
@@ -1702,8 +1783,8 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
 
                           <p className="text-[11px] text-muted-foreground pt-1">
                             {(form.attendanceSettings?.checkInOut?.totalDays || 1) > 1
-                              ? `Multi-day mode enabled (${form.attendanceSettings?.checkInOut?.totalDays} Days). Peserta menggunakan 1 kod QR yang sama untuk setiap hari. Waktu masuk/keluar harian dan jumlah jam kumulatif dikira automatik.`
-                              : 'Standard 1-day event. Peserta check in waktu sampai dan check out waktu tamat.'}
+                              ? `Multi-day mode enabled (${form.attendanceSettings?.checkInOut?.totalDays} Days). Participants use the same single QR code each day. Daily check-in/out times and cumulative total hours are calculated automatically.`
+                              : 'Standard 1-day event. Participants check in on arrival and check out on departure.'}
                           </p>
 
                           {/* Multi-Day Certificate Mode Selector */}
@@ -1713,16 +1794,16 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                                 <div className="flex items-center gap-1.5">
                                   <Award className="h-3.5 w-3.5 text-emerald-700" />
                                   <Label className="text-xs font-semibold text-emerald-950">
-                                    Format Pengeluaran Sijil (Acara Berbilang Hari)
+                                    Certificate Issuance Format (Multi-Day Event)
                                   </Label>
                                 </div>
                                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200/70">
-                                  Pilihan Pengeluaran Sijil
+                                  Certificate Issuance Options
                                 </span>
                               </div>
 
                               <p className="text-[11px] text-slate-600 leading-snug">
-                                Pilih sama ada mahu mengeluarkan sijil berasingan bagi setiap hari atau satu sijil penuh merangkumi keseluruhan acara:
+                                Choose whether to issue separate certificates for each day or a single full certificate covering the entire event:
                               </p>
 
                               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -1738,23 +1819,23 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                                   }> = [
                                     {
                                       id: 'daily_only',
-                                      title: 'Sijil Harian Sahaja',
-                                      badge: 'Lalai',
-                                      desc: 'Sijil berasingan bagi setiap hari (Hari 1, Hari 2). Tiada sijil penuh.',
+                                      title: 'Daily Certificates Only',
+                                      badge: 'Default',
+                                      desc: 'Separate certificates for each day (Day 1, Day 2). No full certificate.',
                                       icon: Calendar,
                                     },
                                     {
                                       id: 'full_only',
-                                      title: 'Sijil Penuh Sahaja',
-                                      badge: '1 Sijil Penuh',
-                                      desc: 'Hanya 1 sijil penuh merangkumi semua hari acara. Tiada sijil harian.',
+                                      title: 'Full Certificate Only',
+                                      badge: '1 Full Certificate',
+                                      desc: 'Only 1 full certificate covering all event days. No daily certificates.',
                                       icon: Award,
                                     },
                                     {
                                       id: 'both',
-                                      title: 'Kedua-duanya',
-                                      badge: 'Pilihan Peserta',
-                                      desc: 'Sijil harian dan sijil penuh kedua-duanya disediakan untuk dipilih peserta.',
+                                      title: 'Both',
+                                      badge: 'Attendee Choice',
+                                      desc: 'Both daily certificates and full certificate are available for attendees to choose.',
                                       icon: Layers,
                                     },
                                   ];
@@ -1779,7 +1860,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                                           }))
                                         }
                                         className={cn(
-                                          'flex flex-col text-left p-2.5 rounded-xl border transition-all relative',
+                                          'flex flex-col text-left p-2.5 rounded-md border transition-all relative',
                                           isSelected
                                             ? 'bg-emerald-50/90 border-emerald-600 ring-2 ring-emerald-500/20 shadow-xs'
                                             : 'bg-white hover:bg-slate-50 border-slate-200/90 hover:border-emerald-300'
@@ -1924,7 +2005,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                           <div className="flex items-center gap-1.5">
                             <Award className="w-3.5 h-3.5 text-emerald-700" />
                             <Label htmlFor="min-hours-cert" className="text-xs font-semibold text-emerald-950">
-                              Minimum Hours for E-Certificate (Syarat Jam Minimum E-Sijil)
+                              Minimum Hours for E-Certificate
                             </Label>
                           </div>
                           <Input
@@ -1955,7 +2036,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                         </div>
 
                         {/* Attendance Records & Reset (Owner Controls) */}
-                        <div className="pt-3 border-t border-emerald-200/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-emerald-100">
+                        <div className="pt-3 border-t border-emerald-200/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-md border border-emerald-100">
                           <div className="space-y-0.5">
                             <div className="flex items-center gap-1.5 font-semibold text-xs text-slate-800">
                               <RotateCcw className="w-3.5 h-3.5 text-slate-600" />
@@ -1999,7 +2080,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                                 )}
                               </Button>
                             </AlertDialogTrigger>
-                            <AlertDialogContent className="sm:max-w-md bg-white rounded-2xl p-5 sm:p-6 border shadow-xl">
+                            <AlertDialogContent className="sm:max-w-md bg-white rounded-lg p-5 sm:p-6 border shadow-xl">
                               <AlertDialogHeader className="text-left space-y-2">
                                 <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 mb-1">
                                   <AlertTriangle className="w-6 h-6" />
@@ -2012,19 +2093,19 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                                     <p>
                                       This will permanently delete all check-in and check-out records for this form from the database ({attStats?.total ?? 0} total records).
                                     </p>
-                                    <p className="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium">
+                                    <p className="p-2.5 rounded-md bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium">
                                       Your Google Sheet rows will NOT be modified. Participants (including previous testers) will be able to scan and register freshly.
                                     </p>
                                   </div>
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter className="mt-4 flex flex-col-reverse sm:flex-row gap-2">
-                                <AlertDialogCancel className="w-full sm:w-auto rounded-xl">
+                                <AlertDialogCancel className="w-full sm:w-auto rounded-md">
                                   Cancel
                                 </AlertDialogCancel>
                                 <AlertDialogAction
                                   onClick={handleResetAttendance}
-                                  className="w-full sm:w-auto bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-semibold shadow-xs"
+                                  className="w-full sm:w-auto bg-rose-600 hover:bg-rose-700 text-white rounded-md font-semibold shadow-xs"
                                 >
                                   Yes, Reset Records
                                 </AlertDialogAction>
@@ -2069,7 +2150,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                       </div>
 
                       {form.attendanceSettings?.rotatingQr?.enabled && (
-                        <div className="p-4 bg-slate-900 text-white rounded-xl space-y-4">
+                        <div className="p-4 bg-slate-900 text-white rounded-md space-y-4">
                           <div className="flex items-start justify-between gap-3">
                             <div className="space-y-1">
                               <div className="flex items-center gap-2">
@@ -2218,13 +2299,13 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
 
           {/* Right: QR Code & Analysis (Placeholder) */}
           <div className="space-y-6">
-            <Card>
+            <Card className="border border-slate-200 bg-white shadow-2xs rounded-lg">
               <CardHeader>
                 <CardTitle>Share</CardTitle>
                 <CardDescription>Distribute your form</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col items-center gap-4">
-                <div className="p-4 bg-white rounded-lg shadow-sm border">
+                <div className="p-4 bg-white rounded-md shadow-2xs border border-slate-200">
                   {mounted && (
                     <QRCodeSVG
                       id="form-qr-code"

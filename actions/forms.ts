@@ -43,6 +43,7 @@ import {
   updateAttendanceCheckOut,
 } from '@/lib/storage/attendance';
 import { verifyRotatingQrToken } from '@/lib/forms/rotating-qr';
+import { createGoogleSpreadsheetHelper, updateGoogleSpreadsheetTitle } from '@/actions/sheets';
 
 // --- Settings Storage for Credentials ---
 // Replaced by lib/storage which uses Supabase
@@ -78,12 +79,29 @@ export async function createFormAction(formData: Partial<Form>) {
   const description = formData.description ? sanitizeHtml(formData.description) : '';
   const thankYouMessage = formData.thankYouMessage ? sanitizeHtml(formData.thankYouMessage) : '';
 
+  let sheetUrl = formData.googleSheetUrl || '';
+
+  // Auto-generate Google Sheet if URL was not explicitly supplied
+  if (!sheetUrl && settings && (hasOAuth || hasServiceAccount)) {
+    try {
+      const sheetResult = await createGoogleSpreadsheetHelper(
+        formData.title || 'Untitled Form',
+        settings
+      );
+      if (sheetResult.success && sheetResult.url) {
+        sheetUrl = sheetResult.url;
+      }
+    } catch (sheetErr) {
+      console.warn('[createFormAction] Auto-create Google Sheet error (fallback to blank):', sheetErr);
+    }
+  }
+
   const newForm: Form = {
     id,
     title: formData.title || 'Untitled Form',
     description,
     coverImage: formData.coverImage || '',
-    googleSheetUrl: formData.googleSheetUrl || '',
+    googleSheetUrl: sheetUrl,
     fields: formData.fields || [],
     createdAt: new Date().toISOString(),
     thankYouMessage,
@@ -128,7 +146,23 @@ export async function updateFormAction(form: Form) {
       }));
     }
 
+    const existing = await getFormById(form.id);
+    const titleChanged = !!(existing && existing.title !== form.title);
+
     await saveForm(form);
+
+    // Sync Google Sheet title if linked and title changed
+    if (form.googleSheetUrl && form.title && (titleChanged || existing?.title === 'Untitled Form')) {
+      const settings = await getSettings();
+      if (settings) {
+        try {
+          await updateGoogleSpreadsheetTitle(form.googleSheetUrl, form.title, settings);
+        } catch (sheetSyncErr) {
+          console.warn('[updateFormAction] Auto-sync Google Sheet title error:', sheetSyncErr);
+        }
+      }
+    }
+
     // No redirect, just save state
     return { success: true };
   } catch (error) {

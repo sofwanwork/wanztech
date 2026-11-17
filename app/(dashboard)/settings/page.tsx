@@ -25,8 +25,11 @@ import { ExternalLink, Eye, EyeOff, User, CreditCard, Mail, Shield } from 'lucid
 import { saveSettingsAction, getSettingsAction } from '@/actions/forms';
 import { getUserProfile, getUserSubscription, type UserProfile, type UserSubscription } from '@/actions/user';
 import { resetPasswordAction } from '@/actions/auth';
+import { TurnstileWidget } from '@/components/auth/turnstile-widget';
 import { useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
+const HAS_TURNSTILE = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim());
 
 function SettingsContent() {
   const searchParams = useSearchParams();
@@ -47,6 +50,8 @@ function SettingsContent() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [subscription, setSubscription] = useState<UserSubscription | null>(null);
   const [resetting, setResetting] = useState(false);
+  const [resetTurnstileToken, setResetTurnstileToken] = useState('');
+  const [resetTurnstileKey, setResetTurnstileKey] = useState(0);
 
   useEffect(() => {
     if (errorParam === 'missing_config' && !hasShownError.current) {
@@ -121,9 +126,13 @@ function SettingsContent() {
 
   const handleResetPassword = async () => {
     if (!profile?.email) return;
+    if (HAS_TURNSTILE && !resetTurnstileToken) {
+      toast.error('Please complete the human verification check.');
+      return;
+    }
     setResetting(true);
     try {
-      const res = await resetPasswordAction(profile.email);
+      const res = await resetPasswordAction(profile.email, resetTurnstileToken || undefined);
       if (res?.success) {
         toast.success('Password reset email sent! Check your inbox.');
       } else {
@@ -132,6 +141,8 @@ function SettingsContent() {
     } catch {
       toast.error('An error occurred');
     } finally {
+      setResetTurnstileKey((k) => k + 1);
+      setResetTurnstileToken('');
       setResetting(false);
     }
   };
@@ -153,15 +164,30 @@ function SettingsContent() {
       </div>
 
       <Tabs defaultValue="profile" className="w-full space-y-6">
-        <TabsList className="grid w-full grid-cols-3 max-w-[400px]">
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="subscription">Subscription</TabsTrigger>
-          <TabsTrigger value="integrations">Integrations</TabsTrigger>
+        <TabsList className="inline-flex h-10 w-fit items-center gap-1 rounded-md border border-slate-200 bg-slate-100/80 p-1 text-slate-600">
+          <TabsTrigger
+            value="profile"
+            className="h-8 rounded-md px-4 py-1.5 text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs"
+          >
+            Profile
+          </TabsTrigger>
+          <TabsTrigger
+            value="subscription"
+            className="h-8 rounded-md px-4 py-1.5 text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs"
+          >
+            Subscription
+          </TabsTrigger>
+          <TabsTrigger
+            value="integrations"
+            className="h-8 rounded-md px-4 py-1.5 text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs"
+          >
+            Integrations
+          </TabsTrigger>
         </TabsList>
 
         {/* PROFILE TAB */}
         <TabsContent value="profile" className="space-y-6">
-          <Card>
+          <Card className="rounded-lg border border-slate-200 bg-white shadow-2xs">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5 text-gray-500" />
@@ -171,9 +197,9 @@ function SettingsContent() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center gap-6">
-                <Avatar className="h-20 w-20 border">
+                <Avatar className="h-20 w-20 rounded-md border border-slate-200">
                   <AvatarImage src={profile?.avatarUrl} />
-                  <AvatarFallback className="text-xl">
+                  <AvatarFallback className="text-xl rounded-md bg-violet-50 text-violet-900 font-semibold">
                     {profile?.fullName?.substring(0, 2).toUpperCase() || 'KF'}
                   </AvatarFallback>
                 </Avatar>
@@ -192,6 +218,7 @@ function SettingsContent() {
                       <Button
                         variant="outline"
                         size="icon"
+                        className="rounded-md"
                         title="Send Email"
                         onClick={() => window.open(`mailto:${profile.email}`)}
                       >
@@ -204,7 +231,7 @@ function SettingsContent() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="rounded-lg border border-slate-200 bg-white shadow-2xs">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Shield className="h-5 w-5 text-gray-500" />
@@ -212,7 +239,7 @@ function SettingsContent() {
               </CardTitle>
               <CardDescription>Manage your password and security settings</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="font-medium">Password</h4>
@@ -220,17 +247,27 @@ function SettingsContent() {
                     Forgot your password? Send a reset link to your email.
                   </p>
                 </div>
-                <Button onClick={handleResetPassword} disabled={resetting} variant="outline">
+                <Button
+                  onClick={handleResetPassword}
+                  disabled={resetting || (HAS_TURNSTILE && !resetTurnstileToken)}
+                  variant="outline"
+                  className="rounded-md"
+                >
                   {resetting ? 'Sending...' : 'Reset Password'}
                 </Button>
               </div>
+              <TurnstileWidget
+                action="reset-password"
+                onTokenChange={setResetTurnstileToken}
+                resetKey={resetTurnstileKey}
+              />
             </CardContent>
           </Card>
         </TabsContent>
 
         {/* SUBSCRIPTION TAB */}
         <TabsContent value="subscription" className="space-y-6">
-          <Card>
+          <Card className="rounded-lg border border-slate-200 bg-white shadow-2xs">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5 text-gray-500" />
@@ -239,16 +276,16 @@ function SettingsContent() {
               <CardDescription>View your subscription status</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
+              <div className="flex items-center justify-between p-4 border border-slate-200 rounded-lg bg-slate-50/50">
                 <div>
                   <p className="text-sm font-medium text-gray-500">Plan</p>
-                  <p className="text-2xl font-bold text-primary capitalize">
+                  <p className="text-2xl font-bold text-violet-900 capitalize">
                     {subscription?.tier || 'Free'} Plan
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-medium text-gray-500">Status</p>
-                  <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
+                  <div className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium capitalize
                     ${subscription?.status === 'active' ? 'bg-green-100 text-green-800' :
                       subscription?.status === 'expired' ? 'bg-red-100 text-red-800' :
                         'bg-gray-100 text-gray-800'}`}>
@@ -268,7 +305,7 @@ function SettingsContent() {
             </CardContent>
             <CardFooter className="bg-gray-50/50 border-t items-center justify-between">
               <p className="text-xs text-gray-500">Need to upgrade or cancel?</p>
-              <Button variant="outline" onClick={() => window.open('mailto:support@klikform.com')}>
+              <Button variant="outline" className="rounded-md" onClick={() => window.open('mailto:support@klikform.com')}>
                 Contact Support
               </Button>
             </CardFooter>
@@ -283,7 +320,7 @@ function SettingsContent() {
           </div>
 
           <Tabs defaultValue="oauth" className="w-full">
-            <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 mb-6 p-1 bg-gray-100/80 rounded-lg h-auto sm:h-12 gap-1 sm:gap-0">
+            <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 mb-6 p-1 bg-slate-100/80 rounded-md border border-slate-200 h-auto sm:h-12 gap-1 sm:gap-0">
               <TabsTrigger value="oauth" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md py-2 h-auto whitespace-normal min-h-[40px]">
                 Connect with Google (Recommended)
               </TabsTrigger>
@@ -294,12 +331,12 @@ function SettingsContent() {
 
             {/* OAUTH METHOD */}
             <TabsContent value="oauth" className="space-y-4">
-              <Card className="border border-green-100/50 shadow-sm relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
+              <Card className="rounded-lg border border-slate-200 bg-white shadow-2xs relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-1 h-full bg-violet-900"></div>
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     Google Drive & Sheets
-                    <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-medium">Recommended</span>
+                    <span className="bg-violet-50 text-violet-900 border border-violet-200/80 text-xs px-2 py-0.5 rounded-md font-medium">Recommended</span>
                   </CardTitle>
                   <CardDescription>
                     The easiest way to connect. Just sign in with your Google account to allow KlikForm to generate certificates and export sheet data automatically.
@@ -307,9 +344,9 @@ function SettingsContent() {
                 </CardHeader>
                 <CardContent className="pt-2 pb-6">
                   {isConnected ? (
-                    <div className="flex flex-col sm:flex-row items-center justify-between p-4 bg-green-50 border border-green-100 rounded-lg">
+                    <div className="flex flex-col sm:flex-row items-center justify-between p-4 bg-violet-50/50 border border-violet-100 rounded-lg">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center shadow-sm">
+                        <div className="h-10 w-10 bg-white rounded-md flex items-center justify-center border border-slate-200 shadow-2xs">
                           <svg className="w-5 h-5" viewBox="0 0 24 24">
                             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -318,17 +355,17 @@ function SettingsContent() {
                           </svg>
                         </div>
                         <div>
-                          <p className="font-semibold text-green-900">Connected to Google</p>
-                          <p className="text-xs text-green-700">Ready to sync data and generate certificates.</p>
+                          <p className="font-semibold text-slate-900">Connected to Google</p>
+                          <p className="text-xs text-slate-600">Ready to sync data and generate certificates.</p>
                         </div>
                       </div>
-                      <Button variant="outline" className="mt-4 sm:mt-0 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700" onClick={() => window.location.href = '/api/auth/google/login?prompt=consent'}>
+                      <Button variant="outline" className="mt-4 sm:mt-0 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 rounded-md" onClick={() => window.location.href = '/api/auth/google/login?prompt=consent'}>
                         Reconnect
                       </Button>
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center p-8 bg-gray-50 border border-dashed border-gray-200 rounded-lg text-center">
-                      <div className="h-12 w-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
+                    <div className="flex flex-col items-center justify-center p-8 bg-slate-50/50 border border-dashed border-slate-200 rounded-lg text-center">
+                      <div className="h-12 w-12 bg-white rounded-md flex items-center justify-center border border-slate-200 shadow-2xs mb-4">
                         <svg className="w-6 h-6" viewBox="0 0 24 24">
                           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                           <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -340,7 +377,7 @@ function SettingsContent() {
                       <p className="text-sm text-gray-500 mb-6 max-w-sm">Connect your Google account to enable seamless integration with Sheets and Drive.</p>
                       <Button
                         onClick={() => window.location.href = '/api/auth/google/login'}
-                        className="bg-primary hover:bg-primary/90 text-white shadow-sm"
+                        className="bg-violet-900 hover:bg-violet-950 text-white shadow-xs rounded-md font-medium"
                       >
                         Connect with Google
                       </Button>
@@ -352,11 +389,11 @@ function SettingsContent() {
 
             {/* SERVICE ACCOUNT METHOD */}
             <TabsContent value="service-account" className="space-y-4">
-              <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-lg text-sm mb-4">
+              <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-md text-sm mb-4">
                 <strong>Advanced Users Only:</strong> This legacy method requires configuring a Google Cloud project manually. We strongly recommend using the "Connect with Google" method above instead.
               </div>
 
-              <Card className="border border-gray-200 bg-white">
+              <Card className="rounded-lg border border-slate-200 bg-white shadow-2xs">
                 <CardHeader className="border-b border-gray-100 pb-4">
                   <CardTitle className="text-base font-semibold">Service Account Credentials</CardTitle>
                   <CardDescription className="text-sm">
@@ -455,14 +492,14 @@ function SettingsContent() {
                   </div>
                 </CardContent>
                 <CardFooter className="bg-gray-50/50 border-t pt-4 border-gray-100">
-                  <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto">
+                  <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto bg-violet-900 hover:bg-violet-950 text-white shadow-xs rounded-md font-medium">
                     {saving ? 'Saving...' : 'Save Manual Settings'}
                   </Button>
                 </CardFooter>
               </Card>
 
               {/* SETUP GUIDE ACCORDION */}
-              <Card>
+              <Card className="rounded-lg border border-slate-200 bg-white shadow-2xs">
                 <CardHeader className="pb-3 border-b border-gray-100">
                   <CardTitle className="text-base text-gray-700">Service Account Setup Guide</CardTitle>
                 </CardHeader>
@@ -478,7 +515,7 @@ function SettingsContent() {
                               href="https://console.cloud.google.com/"
                               target="_blank"
                               rel="noreferrer"
-                              className="text-primary hover:underline inline-flex items-center font-medium"
+                              className="text-violet-900 hover:underline inline-flex items-center font-medium"
                             >
                               Google Cloud Console <ExternalLink className="h-3 w-3 ml-1" />
                             </a>

@@ -462,7 +462,7 @@ export function CertificateEditorSidebar({
               })
             }
           >
-            <Briefcase className="h-4 w-4 text-purple-600" />
+            <Briefcase className="h-4 w-4 text-violet-900" />
             Role / Position
           </Button>
           <Button

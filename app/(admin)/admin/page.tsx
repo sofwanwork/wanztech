@@ -94,14 +94,14 @@ export default async function AdminPage() {
         <Card className="p-0 gap-0 overflow-hidden border-slate-200 shadow-sm">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-[11px] font-bold text-purple-600 uppercase tracking-wider">
+              <p className="text-[11px] font-bold text-violet-900 uppercase tracking-wider">
                 Enterprise
               </p>
-              <p className="text-2xl font-extrabold text-purple-700 mt-1">
+              <p className="text-2xl font-extrabold text-violet-900 mt-1">
                 {stats.totalEnterprise}
               </p>
             </div>
-            <div className="h-10 w-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 border border-purple-100">
+            <div className="h-10 w-10 rounded-xl bg-violet-50 flex items-center justify-center text-violet-900 border border-violet-100">
               <ShieldCheck className="h-5 w-5" />
             </div>
           </CardContent>
@@ -112,7 +112,7 @@ export default async function AdminPage() {
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                Klien Percuma
+                Free Tier
               </p>
               <p className="text-2xl font-extrabold text-slate-700 mt-1">
                 {stats.totalFree}
@@ -129,7 +129,7 @@ export default async function AdminPage() {
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                Jumlah Borang
+                Total Forms
               </p>
               <p className="text-2xl font-extrabold text-slate-900 mt-1">
                 {stats.totalForms}
@@ -146,7 +146,7 @@ export default async function AdminPage() {
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">
-                Total Respons
+                Total Responses
               </p>
               <p className="text-2xl font-extrabold text-emerald-700 mt-1">
                 {stats.totalSubmissions}
@@ -162,9 +162,9 @@ export default async function AdminPage() {
       {/* Main Client Table */}
       <div className="space-y-4">
         <div>
-          <h2 className="text-lg font-bold text-slate-900">Senarai Klien Berdaftar</h2>
+          <h2 className="text-lg font-bold text-slate-900">Registered Client Directory</h2>
           <p className="text-xs text-slate-500">
-            Klik butang &quot;Urus Pelan&quot; pada mana-mana klien untuk menaik taraf atau mengubah tarikh langganan mereka.
+            Click &quot;Manage Plan&quot; on any client to upgrade tier or modify their subscription dates.
           </p>
         </div>
 

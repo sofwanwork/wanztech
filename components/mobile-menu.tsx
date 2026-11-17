@@ -31,8 +31,10 @@ export function MobileMenu({ profile }: MobileMenuProps) {
       {/* Logo on the left */}
       <div className="flex items-center gap-2">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo.png" alt="KlikForm" className="h-8 w-8 rounded-lg" />
-        <span className="font-bold text-lg text-gray-900">KlikForm</span>
+        <img src="/logo.png" alt="KlikForm" className="h-8 w-8 rounded-md" />
+        <span className="font-bold text-lg text-gray-900 tracking-tight">
+          <span className="text-violet-900">Klik</span>Form
+        </span>
       </div>
 
       {/* Hamburger menu on the right */}
