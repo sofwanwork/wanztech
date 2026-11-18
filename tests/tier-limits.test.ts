@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { TIER_LIMITS } from '@/lib/constants/subscription-tiers';
+import { TIER_LIMITS, resolveEffectiveTierFromRow } from '@/lib/constants/subscription-tiers';
 
 /**
  * Helper that mirrors the gating pattern used in
@@ -56,5 +56,48 @@ describe('Tier gating — canCreateMore()', () => {
   it('pro user is never blocked, even with extreme counts', () => {
     expect(canCreateMore(0, TIER_LIMITS.pro.maxForms)).toBe(true);
     expect(canCreateMore(1_000_000, TIER_LIMITS.pro.maxCertificates)).toBe(true);
+  });
+});
+
+describe('resolveEffectiveTierFromRow()', () => {
+  const fixedNow = Date.UTC(2026, 10, 18, 12, 0, 0);
+
+  it('defaults to free when subscription row is missing or tier is free', () => {
+    expect(resolveEffectiveTierFromRow(null, fixedNow)).toBe('free');
+    expect(resolveEffectiveTierFromRow(undefined, fixedNow)).toBe('free');
+    expect(resolveEffectiveTierFromRow({ tier: 'free', status: 'active' }, fixedNow)).toBe('free');
+  });
+
+  it('returns pro or enterprise when active and not expired', () => {
+    expect(
+      resolveEffectiveTierFromRow(
+        { tier: 'pro', status: 'active', current_period_end: '2026-12-18T00:00:00Z' },
+        fixedNow
+      )
+    ).toBe('pro');
+    expect(
+      resolveEffectiveTierFromRow({ tier: 'enterprise', status: 'active', current_period_end: null }, fixedNow)
+    ).toBe('enterprise');
+  });
+
+  it('downgrades to free when status is inactive or period has expired', () => {
+    expect(
+      resolveEffectiveTierFromRow(
+        { tier: 'pro', status: 'grace_period', current_period_end: '2026-12-18T00:00:00Z' },
+        fixedNow
+      )
+    ).toBe('free');
+    expect(
+      resolveEffectiveTierFromRow(
+        { tier: 'pro', status: 'expired', current_period_end: '2026-12-18T00:00:00Z' },
+        fixedNow
+      )
+    ).toBe('free');
+    expect(
+      resolveEffectiveTierFromRow(
+        { tier: 'pro', status: 'active', current_period_end: '2026-11-01T00:00:00Z' },
+        fixedNow
+      )
+    ).toBe('free');
   });
 });

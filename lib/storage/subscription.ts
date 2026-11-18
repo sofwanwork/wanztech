@@ -1,7 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { Subscription, Usage, SubscriptionTier } from '@/lib/types';
-import { TIER_LIMITS } from '@/lib/constants/subscription-tiers';
+import { TIER_LIMITS, resolveEffectiveTierFromRow } from '@/lib/constants/subscription-tiers';
 
 // Helper to get user
 async function getUser() {
@@ -153,6 +153,25 @@ export async function getEffectiveTier(): Promise<SubscriptionTier> {
   const { status, tier } = await getSubscriptionStatus();
   if (status === 'active') return tier;
   return 'free';
+}
+
+/**
+ * Resolve the active effective subscription tier for a specific userId (safe for public pages).
+ * Degrades gracefully to 'free' if admin client is unavailable or subscription is inactive/expired.
+ */
+export async function getEffectiveTierForUser(userId: string): Promise<SubscriptionTier> {
+  if (!userId) return 'free';
+  try {
+    const admin = createAdminClient();
+    const { data: sub } = await admin
+      .from('subscriptions')
+      .select('tier, status, current_period_end')
+      .eq('user_id', userId)
+      .single();
+    return resolveEffectiveTierFromRow(sub);
+  } catch {
+    return 'free';
+  }
 }
 
 // Get current month's usage (auto-create if not exists)

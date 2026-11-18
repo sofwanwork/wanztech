@@ -330,9 +330,9 @@ export function PamphletBuilderClient({
   return (
     <div className="flex flex-col h-[calc(100vh-65px)] overflow-hidden bg-slate-50">
       {/* Top Action Header */}
-      <header className="h-16 bg-white border-b border-gray-200 px-4 md:px-6 flex items-center justify-between gap-3 shrink-0 z-20">
+      <header className="h-16 bg-white border-b border-slate-200 px-4 md:px-6 flex items-center justify-between gap-3 shrink-0 z-20">
         <div className="flex items-center gap-3 min-w-0">
-          <Button asChild variant="ghost" size="icon" className="h-9 w-9 rounded-xl">
+          <Button asChild variant="ghost" size="icon" className="h-9 w-9 rounded-md text-slate-600 hover:text-slate-900">
             <Link href="/pamphlets">
               <ChevronLeft className="h-5 w-5" />
             </Link>
@@ -340,12 +340,12 @@ export function PamphletBuilderClient({
 
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <BookOpen className="h-4 w-4 text-primary shrink-0" />
-              <h1 className="text-base font-bold text-gray-900 truncate">
+              <BookOpen className="h-4 w-4 text-violet-900 shrink-0" />
+              <h1 className="text-base font-bold text-slate-900 truncate">
                 {pamphlet.title || 'Untitled Program Book'}
               </h1>
             </div>
-            <p className="text-xs text-muted-foreground truncate font-mono">
+            <p className="text-xs text-slate-500 truncate font-mono">
               /p/{pamphlet.slug}
             </p>
           </div>
@@ -354,13 +354,13 @@ export function PamphletBuilderClient({
         {/* Header Right Actions */}
         <div className="flex items-center gap-2 shrink-0">
           {/* Preview Device Toggle */}
-          <div className="hidden sm:flex items-center bg-gray-100 p-1 rounded-xl border border-gray-200/80 mr-1">
+          <div className="hidden sm:flex items-center bg-slate-100 p-1 rounded-md border border-slate-200 mr-1">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setPreviewDevice('desktop')}
-              className={`h-7 px-2.5 rounded-lg text-xs gap-1.5 ${
-                previewDevice === 'desktop' ? 'bg-white shadow-xs font-semibold text-primary' : 'text-muted-foreground'
+              className={`h-7 px-2.5 rounded text-xs gap-1.5 ${
+                previewDevice === 'desktop' ? 'bg-white shadow-2xs font-semibold text-violet-900' : 'text-slate-500'
               }`}
             >
               <Monitor className="h-3.5 w-3.5" />
@@ -370,8 +370,8 @@ export function PamphletBuilderClient({
               variant="ghost"
               size="sm"
               onClick={() => setPreviewDevice('mobile')}
-              className={`h-7 px-2.5 rounded-lg text-xs gap-1.5 ${
-                previewDevice === 'mobile' ? 'bg-white shadow-xs font-semibold text-primary' : 'text-muted-foreground'
+              className={`h-7 px-2.5 rounded text-xs gap-1.5 ${
+                previewDevice === 'mobile' ? 'bg-white shadow-2xs font-semibold text-violet-900' : 'text-slate-500'
               }`}
             >
               <Smartphone className="h-3.5 w-3.5" />
@@ -384,8 +384,8 @@ export function PamphletBuilderClient({
             variant="ghost"
             size="sm"
             onClick={() => setIsPreviewExpanded((prev) => !prev)}
-            className={`hidden md:flex h-7 px-2.5 rounded-lg text-xs gap-1.5 border border-gray-200 ${
-              isPreviewExpanded ? 'bg-primary/10 text-primary font-semibold border-primary/30' : 'text-gray-600 hover:text-gray-900'
+            className={`hidden md:flex h-7 px-2.5 rounded-md text-xs gap-1.5 border border-slate-200 ${
+              isPreviewExpanded ? 'bg-violet-50 text-violet-900 font-semibold border-violet-200' : 'text-slate-600 hover:text-slate-900'
             }`}
             title={isPreviewExpanded ? 'Return to split view' : 'Expand preview to fullscreen'}
           >
@@ -402,9 +402,9 @@ export function PamphletBuilderClient({
             )}
           </Button>
 
-          <Button asChild variant="outline" size="sm" className="gap-1.5 font-medium rounded-xl">
+          <Button asChild variant="outline" size="sm" className="gap-1.5 font-medium rounded-md border-slate-200">
             <Link href={`/p/${pamphlet.slug}`} target="_blank">
-              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+              <ExternalLink className="h-3.5 w-3.5 text-slate-500" />
               <span className="hidden sm:inline">Public View</span>
             </Link>
           </Button>
@@ -413,7 +413,7 @@ export function PamphletBuilderClient({
             onClick={handleSave}
             disabled={isSaving}
             size="sm"
-            className="gap-1.5 font-semibold bg-primary hover:bg-primary/90 text-white rounded-xl shadow-xs"
+            className="gap-1.5 font-semibold bg-violet-900 hover:bg-violet-950 text-white rounded-md shadow-xs"
           >
             {isSaving ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -430,7 +430,7 @@ export function PamphletBuilderClient({
         {/* Left Side: Configuration Panel */}
         <div
           className={cn(
-            'w-full lg:w-[480px] xl:w-[520px] bg-white border-r border-gray-200 flex flex-col shrink-0 overflow-y-auto transition-all duration-300',
+            'w-full lg:w-[480px] xl:w-[520px] bg-white border-r border-slate-200 flex flex-col shrink-0 overflow-y-auto transition-all duration-300',
             isPreviewExpanded && 'hidden'
           )}
         >
@@ -439,19 +439,19 @@ export function PamphletBuilderClient({
             onValueChange={(v) => setActiveTab(v as 'pages' | 'details' | 'appearance')}
             className="w-full flex-1 flex flex-col"
           >
-            <div className="px-4 pt-3 border-b border-gray-100 bg-gray-50/50 sticky top-0 z-10">
-              <TabsList className="grid grid-cols-3 w-full h-10 rounded-xl bg-gray-200/70 p-1">
-                <TabsTrigger value="pages" className="h-full text-xs font-semibold rounded-lg gap-1.5 py-0 flex items-center justify-center">
+            <div className="px-4 pt-3 pb-3 border-b border-slate-200 bg-slate-50/70 sticky top-0 z-10">
+              <TabsList className="grid grid-cols-3 w-full h-10 rounded-md bg-slate-200/70 p-1">
+                <TabsTrigger value="pages" className="h-full text-xs font-semibold rounded gap-1.5 py-0 flex items-center justify-center">
                   <Layers className="h-3.5 w-3.5" />
                   <span>Pages ({pamphlet.pages?.length || 0})</span>
                 </TabsTrigger>
-                <TabsTrigger value="details" className="h-full text-xs font-semibold rounded-lg gap-1.5 py-0 flex items-center justify-center">
+                <TabsTrigger value="details" className="h-full text-xs font-semibold rounded gap-1.5 py-0 flex items-center justify-center">
                   <FileText className="h-3.5 w-3.5" />
                   <span>Details</span>
                 </TabsTrigger>
-                <TabsTrigger value="appearance" className="h-full text-xs font-semibold rounded-lg gap-1.5 py-0 flex items-center justify-center">
+                <TabsTrigger value="appearance" className="h-full text-xs font-semibold rounded gap-1.5 py-0 flex items-center justify-center">
                   <Palette className="h-3.5 w-3.5" />
-                  <span>Style & Buttons</span>
+                  <span>Style &amp; Buttons</span>
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -459,13 +459,13 @@ export function PamphletBuilderClient({
             {/* TAB 1: PAGES MANAGER */}
             <TabsContent value="pages" className="p-4 space-y-4 flex-1 m-0">
               {/* Upload Actions Banner */}
-              <div className="p-4 rounded-2xl border-2 border-dashed border-primary/30 bg-primary/5 flex flex-col items-center justify-center text-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+              <div className="p-4 rounded-lg border border-dashed border-violet-300 bg-violet-50/50 flex flex-col items-center justify-center text-center gap-3">
+                <div className="h-10 w-10 rounded-md bg-white border border-slate-200 text-violet-900 flex items-center justify-center">
                   <Upload className="h-5 w-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-gray-900">Upload Pamphlet Pages</h4>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  <h4 className="text-sm font-bold text-slate-900">Upload Pamphlet Pages</h4>
+                  <p className="text-xs text-slate-600 mt-0.5">
                     Select images (PNG, JPG, WebP). You can upload multiple images at once.
                   </p>
                 </div>
@@ -485,7 +485,7 @@ export function PamphletBuilderClient({
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isUploading}
                     size="sm"
-                    className="gap-2 font-semibold"
+                    className="gap-2 font-semibold bg-violet-900 hover:bg-violet-950 text-white rounded-md shadow-xs"
                   >
                     {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                     <span>Choose Image Files</span>
@@ -498,7 +498,7 @@ export function PamphletBuilderClient({
                         variant="outline"
                         onClick={handleLoadDemoPages}
                         size="sm"
-                        className="gap-1.5 text-xs"
+                        className="gap-1.5 text-xs rounded-md border-slate-200"
                       >
                         <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                         <span>Sample Portrait</span>
@@ -508,7 +508,7 @@ export function PamphletBuilderClient({
                         variant="outline"
                         onClick={handleLoadLandscapeDemoPages}
                         size="sm"
-                        className="gap-1.5 text-xs"
+                        className="gap-1.5 text-xs rounded-md border-slate-200"
                       >
                         <Monitor className="w-3.5 h-3.5 text-blue-500" />
                         <span>Sample Landscape</span>
@@ -519,12 +519,12 @@ export function PamphletBuilderClient({
               </div>
 
               {/* Orientation Selector Card */}
-              <div className="p-3.5 rounded-2xl border border-gray-200 bg-gray-50/70 space-y-2">
+              <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/70 space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                     <span>Program Book Orientation</span>
                   </Label>
-                  <span className="text-[11px] font-semibold text-primary px-2 py-0.5 rounded-full bg-primary/10">
+                  <span className="text-[11px] font-semibold text-violet-900 px-2 py-0.5 rounded bg-violet-100/80 border border-violet-200">
                     {pamphlet.orientation === 'landscape' ? 'Landscape (Horizontal)' : 'Portrait (Vertical)'}
                   </span>
                 </div>
@@ -533,10 +533,10 @@ export function PamphletBuilderClient({
                     type="button"
                     onClick={() => handleOrientationChange('portrait')}
                     className={cn(
-                      'flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border text-xs font-semibold transition-all',
+                      'flex items-center justify-center gap-1.5 py-2 px-3 rounded-md border text-xs font-semibold transition-colors',
                       pamphlet.orientation !== 'landscape'
-                        ? 'border-primary bg-primary text-white shadow-xs font-bold'
-                        : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-100'
+                        ? 'border-violet-900 bg-violet-900 text-white shadow-xs font-semibold'
+                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                     )}
                   >
                     <Smartphone className="w-3.5 h-3.5" />
@@ -546,17 +546,17 @@ export function PamphletBuilderClient({
                     type="button"
                     onClick={() => handleOrientationChange('landscape')}
                     className={cn(
-                      'flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border text-xs font-semibold transition-all',
+                      'flex items-center justify-center gap-1.5 py-2 px-3 rounded-md border text-xs font-semibold transition-colors',
                       pamphlet.orientation === 'landscape'
-                        ? 'border-primary bg-primary text-white shadow-xs font-bold'
-                        : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-100'
+                        ? 'border-violet-900 bg-violet-900 text-white shadow-xs font-semibold'
+                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                     )}
                   >
                     <Monitor className="w-3.5 h-3.5" />
                     <span>Landscape (Horizontal)</span>
                   </button>
                 </div>
-                <p className="text-[11px] text-muted-foreground leading-normal">
+                <p className="text-[11px] text-slate-500 leading-normal">
                   The system smartly optimizes 3D Flipbook geometry and slide dimensions according to your book orientation.
                 </p>
               </div>
@@ -564,16 +564,16 @@ export function PamphletBuilderClient({
               {/* Pages List */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">
                     Page Order
                   </Label>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-slate-500">
                     {pamphlet.pages?.length || 0} pages
                   </span>
                 </div>
 
                 {(!pamphlet.pages || pamphlet.pages.length === 0) ? (
-                  <div className="p-8 text-center border rounded-2xl bg-gray-50/50 text-muted-foreground text-xs">
+                  <div className="p-8 text-center border border-slate-200 rounded-lg bg-slate-50/70 text-slate-500 text-xs">
                     No pages yet. Please upload images or click &ldquo;Load Sample&rdquo; above.
                   </div>
                 ) : (
@@ -581,7 +581,7 @@ export function PamphletBuilderClient({
                     {pamphlet.pages.map((page, idx) => (
                       <div
                         key={page.id}
-                        className="flex items-center gap-3 p-2.5 rounded-xl border border-gray-200 bg-white hover:border-primary/50 transition-all shadow-2xs group"
+                        className="flex items-center gap-3 p-2.5 rounded-md border border-slate-200 bg-white hover:border-violet-300 transition-colors shadow-2xs group"
                       >
                         {/* Page Number & Thumbnail */}
                         <div
@@ -752,17 +752,17 @@ export function PamphletBuilderClient({
             <TabsContent value="appearance" className="p-4 space-y-5 flex-1 m-0">
               {/* Display Mode Selection */}
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">
                   Default Display Mode (Viewer Mode)
                 </Label>
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setPamphlet({ ...pamphlet, displayMode: 'flipbook' })}
-                    className={`p-3 rounded-xl border text-xs font-medium flex flex-col items-center gap-1.5 transition-all ${
+                    className={`p-3 rounded-md border text-xs font-medium flex flex-col items-center gap-1.5 transition-colors ${
                       pamphlet.displayMode === 'flipbook'
-                        ? 'border-primary bg-primary/10 text-primary font-bold shadow-xs'
-                        : 'border-border hover:bg-accent'
+                        ? 'border-violet-900 bg-violet-50/70 text-violet-950 font-semibold shadow-2xs'
+                        : 'border-slate-200 hover:bg-slate-50 text-slate-700'
                     }`}
                   >
                     <BookOpen className="w-5 h-5" />
@@ -771,10 +771,10 @@ export function PamphletBuilderClient({
                   <button
                     type="button"
                     onClick={() => setPamphlet({ ...pamphlet, displayMode: 'slide' })}
-                    className={`p-3 rounded-xl border text-xs font-medium flex flex-col items-center gap-1.5 transition-all ${
+                    className={`p-3 rounded-md border text-xs font-medium flex flex-col items-center gap-1.5 transition-colors ${
                       pamphlet.displayMode === 'slide'
-                        ? 'border-primary bg-primary/10 text-primary font-bold shadow-xs'
-                        : 'border-border hover:bg-accent'
+                        ? 'border-violet-900 bg-violet-50/70 text-violet-950 font-semibold shadow-2xs'
+                        : 'border-slate-200 hover:bg-slate-50 text-slate-700'
                     }`}
                   >
                     <Layers className="w-5 h-5" />
@@ -783,10 +783,10 @@ export function PamphletBuilderClient({
                   <button
                     type="button"
                     onClick={() => setPamphlet({ ...pamphlet, displayMode: 'vertical' })}
-                    className={`p-3 rounded-xl border text-xs font-medium flex flex-col items-center gap-1.5 transition-all ${
+                    className={`p-3 rounded-md border text-xs font-medium flex flex-col items-center gap-1.5 transition-colors ${
                       pamphlet.displayMode === 'vertical'
-                        ? 'border-primary bg-primary/10 text-primary font-bold shadow-xs'
-                        : 'border-border hover:bg-accent'
+                        ? 'border-violet-900 bg-violet-50/70 text-violet-950 font-semibold shadow-2xs'
+                        : 'border-slate-200 hover:bg-slate-50 text-slate-700'
                     }`}
                   >
                     <Calendar className="w-5 h-5" />
@@ -797,7 +797,7 @@ export function PamphletBuilderClient({
 
               {/* Theme Selector */}
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">
                   Backdrop Theme
                 </Label>
                 <div className="grid grid-cols-2 gap-2">
@@ -809,19 +809,19 @@ export function PamphletBuilderClient({
                         key={themeKey}
                         type="button"
                         onClick={() => setPamphlet({ ...pamphlet, theme: themeKey })}
-                        className={`p-3 rounded-xl border text-left flex items-start gap-2.5 transition-all ${
+                        className={`p-3 rounded-md border text-left flex items-start gap-2.5 transition-colors ${
                           isSelected
-                            ? 'border-primary ring-2 ring-primary/30 shadow-xs'
-                            : 'border-border hover:bg-accent'
+                            ? 'border-violet-900 bg-violet-50/70 ring-1 ring-violet-900/20 shadow-2xs'
+                            : 'border-slate-200 hover:bg-slate-50'
                         }`}
                       >
                         <span
-                          className="h-5 w-5 rounded-full border border-gray-400 shrink-0 mt-0.5"
+                          className="h-5 w-5 rounded-full border border-slate-400 shrink-0 mt-0.5"
                           style={{ backgroundColor: t.accentColor }}
                         />
                         <div className="min-w-0">
-                          <p className="text-xs font-bold text-gray-900">{t.name}</p>
-                          <p className="text-[10px] text-muted-foreground line-clamp-1">
+                          <p className="text-xs font-bold text-slate-900">{t.name}</p>
+                          <p className="text-[10px] text-slate-500 line-clamp-1">
                             {t.description}
                           </p>
                         </div>
@@ -832,13 +832,13 @@ export function PamphletBuilderClient({
               </div>
 
               {/* Action Buttons in Viewer */}
-              <div className="space-y-3 pt-2 border-t">
+              <div className="space-y-3 pt-2 border-t border-slate-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">
                       Event Action Buttons
                     </Label>
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-[11px] text-slate-500">
                       Quick action links in the top viewer bar (e.g., Check-In, E-Cert, WhatsApp).
                     </p>
                   </div>
@@ -851,9 +851,9 @@ export function PamphletBuilderClient({
                     variant="outline"
                     size="sm"
                     onClick={() => handleAddActionButton('checkin')}
-                    className="text-xs gap-1.5 h-7 rounded-lg"
+                    className="text-xs gap-1.5 h-7 rounded-md border-slate-200"
                   >
-                    <QrCode className="w-3.5 h-3.5 text-primary" />
+                    <QrCode className="w-3.5 h-3.5 text-violet-900" />
                     <span>+ Form Check-In</span>
                   </Button>
                   <Button
@@ -861,7 +861,7 @@ export function PamphletBuilderClient({
                     variant="outline"
                     size="sm"
                     onClick={() => handleAddActionButton('cert')}
-                    className="text-xs gap-1.5 h-7 rounded-lg"
+                    className="text-xs gap-1.5 h-7 rounded-md border-slate-200"
                   >
                     <Award className="w-3.5 h-3.5 text-amber-500" />
                     <span>+ Redeem E-Cert</span>
@@ -871,7 +871,7 @@ export function PamphletBuilderClient({
                     variant="outline"
                     size="sm"
                     onClick={() => handleAddActionButton('whatsapp')}
-                    className="text-xs gap-1.5 h-7 rounded-lg"
+                    className="text-xs gap-1.5 h-7 rounded-md border-slate-200"
                   >
                     <MessageCircle className="w-3.5 h-3.5 text-emerald-500" />
                     <span>+ WhatsApp</span>
@@ -884,11 +884,11 @@ export function PamphletBuilderClient({
                     {pamphlet.actionButtons.map((btn) => (
                       <div
                         key={btn.id}
-                        className="p-3 rounded-xl border border-gray-200 bg-gray-50/50 space-y-2"
+                        className="p-3 rounded-md border border-slate-200 bg-slate-50/70 space-y-2"
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-[11px] font-bold text-gray-700 capitalize flex items-center gap-1">
-                            <LinkIcon className="w-3 h-3 text-primary" />
+                          <span className="text-[11px] font-bold text-slate-700 capitalize flex items-center gap-1">
+                            <LinkIcon className="w-3 h-3 text-violet-900" />
                             {btn.type || 'Link'}
                           </span>
                           <Button
@@ -908,7 +908,7 @@ export function PamphletBuilderClient({
                               handleUpdateActionButton(btn.id, { label: e.target.value })
                             }
                             placeholder="Button label"
-                            className="h-8 text-xs bg-white"
+                            className="h-8 text-xs bg-white rounded-md border-slate-200"
                           />
                           <Input
                             value={btn.url}
@@ -916,7 +916,7 @@ export function PamphletBuilderClient({
                               handleUpdateActionButton(btn.id, { url: e.target.value })
                             }
                             placeholder="https://..."
-                            className="h-8 text-xs font-mono bg-white"
+                            className="h-8 text-xs font-mono bg-white rounded-md border-slate-200"
                           />
                         </div>
                       </div>
@@ -936,7 +936,7 @@ export function PamphletBuilderClient({
           )}
         >
           <div
-            className={`transition-all duration-300 relative shadow-2xl overflow-hidden rounded-2xl border border-white/10 ${
+            className={`transition-all duration-300 relative shadow-sm overflow-hidden rounded-lg border border-white/10 ${
               previewDevice === 'mobile'
                 ? 'w-[400px] h-[780px] max-h-[92vh] rounded-[40px] border-8 border-slate-800 shadow-2xl ring-1 ring-white/20'
                 : 'w-full h-full'

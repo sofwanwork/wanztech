@@ -160,20 +160,20 @@ export function PresenterClient({
       >
         <div
           style={{ backgroundColor: '#0f172a', borderColor: '#1e293b' }}
-          className="max-w-md w-full p-8 rounded-2xl bg-[#0f172a] border border-slate-800 shadow-2xl"
+          className="max-w-md w-full p-8 rounded-lg bg-[#0f172a] border border-slate-800 shadow-sm"
         >
-          <div className="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 mx-auto flex items-center justify-center mb-5">
-            <AlertTriangle className="w-8 h-8" />
+          <div className="w-12 h-12 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-400 mx-auto flex items-center justify-center mb-5">
+            <AlertTriangle className="w-6 h-6" />
           </div>
           <h1 className="text-xl font-bold mb-2">Rotating QR Mode Not Enabled</h1>
           <p className="text-slate-400 text-sm mb-6 leading-relaxed">
             This form has not enabled the <strong>Live Rotating QR Code</strong> feature. Please open form settings in Form Builder and enable the anti-fraud projector toggle.
           </p>
           <div className="flex flex-col gap-3">
-            <Button asChild className="bg-emerald-600 hover:bg-emerald-500 text-white w-full">
+            <Button asChild className="bg-violet-900 hover:bg-violet-950 text-white rounded-md w-full shadow-xs">
               <Link href={`/builder/${formId}`}>Open Form Builder</Link>
             </Button>
-            <Button asChild variant="outline" className="border-slate-800 text-slate-300 hover:bg-slate-800">
+            <Button asChild variant="outline" className="border-slate-800 text-slate-300 hover:bg-slate-800 rounded-md">
               <Link href={`/form/${formId}`} target="_blank">View Standard Form</Link>
             </Button>
           </div>
@@ -188,11 +188,10 @@ export function PresenterClient({
   return (
     <main
       style={{ backgroundColor: '#020617', color: '#ffffff' }}
-      className="min-h-screen bg-[#020617] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white flex flex-col justify-between p-3 sm:p-6 md:p-8 select-none overflow-y-auto lg:overflow-hidden relative"
+      className="min-h-screen bg-[#020617] text-white flex flex-col justify-between p-3 sm:p-6 md:p-8 select-none overflow-y-auto lg:overflow-hidden relative"
     >
-      {/* Background Ambient Glows */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-emerald-500/5 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-10 right-10 w-[400px] h-[400px] bg-cyan-500/5 blur-[100px] rounded-full pointer-events-none" />
+      {/* Subtle Architectural Grid Overlay (Dark Projector Surface) */}
+      <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-50 pointer-events-none" />
 
       {/* TOP HEADER */}
       <header className="relative z-10 flex items-center justify-between gap-4 border-b border-slate-800/80 pb-3 sm:pb-4 max-w-7xl mx-auto w-full">
@@ -211,7 +210,7 @@ export function PresenterClient({
         <div className="flex items-center gap-2 sm:gap-4 text-right">
           <div
             style={{ backgroundColor: 'rgba(15, 23, 42, 0.85)', borderColor: '#1e293b' }}
-            className="flex items-center gap-2 text-slate-200 bg-[#0f172a]/90 border border-slate-800 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-lg font-mono text-xs sm:text-sm md:text-base font-semibold shadow-inner"
+            className="flex items-center gap-2 text-slate-200 bg-[#0f172a]/90 border border-slate-800 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-md font-mono text-xs sm:text-sm md:text-base font-semibold"
           >
             <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
             <span>{currentTimeStr || '00:00:00'}</span>
@@ -222,7 +221,7 @@ export function PresenterClient({
             size="sm"
             onClick={toggleFullscreen}
             title={isFullscreen ? 'Exit Fullscreen (F)' : 'Fullscreen (F)'}
-            className="text-slate-400 hover:text-white hover:bg-[#1e293b]"
+            className="text-slate-400 hover:text-white hover:bg-[#1e293b] rounded-md"
           >
             {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
           </Button>
@@ -234,7 +233,7 @@ export function PresenterClient({
         {/* Program Title */}
         <h1
           style={{ color: '#ffffff' }}
-          className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-2 whitespace-pre-line leading-tight drop-shadow-md"
+          className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-2 whitespace-pre-line leading-tight"
         >
           {formTitle}
         </h1>
@@ -246,21 +245,18 @@ export function PresenterClient({
         </p>
 
         {/* QR Code Container Card */}
-        <div className="relative group">
-          {/* Subtle Outer Animated Aura */}
-          <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 via-teal-500/30 to-cyan-500/20 rounded-3xl blur-xl opacity-75 transition duration-1000 group-hover:opacity-100 animate-pulse" />
-
+        <div className="relative">
           <div
-            style={{ backgroundColor: '#ffffff', borderColor: '#1e293b' }}
-            className="relative bg-white p-5 sm:p-7 md:p-8 rounded-3xl shadow-2xl border-4 border-[#1e293b] flex flex-col items-center justify-center"
+            style={{ backgroundColor: '#ffffff', borderColor: '#334155' }}
+            className="relative bg-white p-5 sm:p-7 md:p-8 rounded-lg shadow-sm border-2 border-slate-700 flex flex-col items-center justify-center"
           >
             {isLoading ? (
-              <div className="w-[240px] h-[240px] sm:w-[320px] sm:h-[320px] md:w-[360px] md:h-[360px] flex flex-col items-center justify-center bg-slate-100 rounded-2xl animate-pulse text-slate-400">
+              <div className="w-[240px] h-[240px] sm:w-[320px] sm:h-[320px] md:w-[360px] md:h-[360px] flex flex-col items-center justify-center bg-slate-100 rounded-md animate-pulse text-slate-400">
                 <RefreshCw className="w-10 h-10 animate-spin mb-3 text-slate-500" />
                 <span className="text-sm font-medium">Generating Live QR Code...</span>
               </div>
             ) : errorMsg ? (
-              <div className="w-[240px] h-[240px] sm:w-[320px] sm:h-[320px] md:w-[360px] md:h-[360px] flex flex-col items-center justify-center bg-red-50 text-red-600 p-4 rounded-2xl">
+              <div className="w-[240px] h-[240px] sm:w-[320px] sm:h-[320px] md:w-[360px] md:h-[360px] flex flex-col items-center justify-center bg-red-50 text-red-600 p-4 rounded-md">
                 <AlertTriangle className="w-10 h-10 mb-2" />
                 <p className="text-xs sm:text-sm font-semibold">{errorMsg}</p>
                 <Button
@@ -352,7 +348,7 @@ export function PresenterClient({
         {checkOutPasscode && (
           <div
             style={{ backgroundColor: '#0f172a', borderColor: '#1e293b' }}
-            className="flex items-center gap-2 bg-[#0f172a] border border-slate-800 p-2 sm:px-4 sm:py-2.5 rounded-xl shadow-lg"
+            className="flex items-center gap-2 bg-[#0f172a] border border-slate-800 p-2 sm:px-4 sm:py-2.5 rounded-lg shadow-sm"
           >
             <KeyRound className="w-4 h-4 text-amber-400" />
             <div className="text-left">

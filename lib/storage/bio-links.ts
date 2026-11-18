@@ -1,8 +1,13 @@
+import { cache } from 'react';
 import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { BioPage, BioLink, BioPageWithLinks, BioTheme, BioSocialLinks, BioThemeConfig, BioLinkType } from '@/lib/types/bio-links';
+import type { SubscriptionTier } from '@/lib/types/subscription';
 import { TIER_LIMITS } from '@/lib/constants/subscription-tiers';
 import { isValidBioUsername, cleanBioUsername } from '@/lib/bio-links/themes';
+
+const reactCache: typeof cache =
+  typeof cache === 'function' ? cache : ((fn) => fn);
 
 // Helper to authenticate user
 async function getUser() {
@@ -90,11 +95,16 @@ export async function getBioPageById(id: string): Promise<BioPageWithLinks | nul
     return null;
   }
 
-  const { data: linksRows, error: linksError } = await supabase
-    .from('bio_links')
-    .select('*')
-    .eq('bio_page_id', id)
-    .order('order_index', { ascending: true });
+  const [{ data: linksRows, error: linksError }, userTier] = await Promise.all([
+    supabase
+      .from('bio_links')
+      .select('*')
+      .eq('bio_page_id', id)
+      .order('order_index', { ascending: true }),
+    import('@/lib/storage/subscription')
+      .then((m) => (typeof m.getEffectiveTier === 'function' ? m.getEffectiveTier() : ('free' as SubscriptionTier)))
+      .catch(() => 'free' as SubscriptionTier),
+  ]);
 
   if (linksError) {
     console.error('Error fetching bio links:', linksError);
@@ -105,6 +115,7 @@ export async function getBioPageById(id: string): Promise<BioPageWithLinks | nul
 
   return {
     ...page,
+    userTier,
     links,
   };
 }
@@ -112,8 +123,9 @@ export async function getBioPageById(id: string): Promise<BioPageWithLinks | nul
 /**
  * Public query: Fetch active bio page and active links by username
  * Uses admin client to bypass RLS for unauthenticated visitors
+ * Wrapped in React.cache to share results between generateMetadata and page render.
  */
-export async function getBioPageByUsername(username: string): Promise<BioPageWithLinks | null> {
+export const getBioPageByUsername = reactCache(async (username: string): Promise<BioPageWithLinks | null> => {
   const admin = createAdminClient();
   const cleanUser = cleanBioUsername(username);
 
@@ -128,12 +140,21 @@ export async function getBioPageByUsername(username: string): Promise<BioPageWit
     return null;
   }
 
-  const { data: linksRows, error: linksError } = await admin
-    .from('bio_links')
-    .select('*')
-    .eq('bio_page_id', pageRow.id)
-    .eq('is_active', true)
-    .order('order_index', { ascending: true });
+  const [{ data: linksRows, error: linksError }, userTier] = await Promise.all([
+    admin
+      .from('bio_links')
+      .select('*')
+      .eq('bio_page_id', pageRow.id)
+      .eq('is_active', true)
+      .order('order_index', { ascending: true }),
+    import('@/lib/storage/subscription')
+      .then((m) =>
+        typeof m.getEffectiveTierForUser === 'function'
+          ? m.getEffectiveTierForUser(pageRow.user_id)
+          : ('free' as SubscriptionTier)
+      )
+      .catch(() => 'free' as SubscriptionTier),
+  ]);
 
   if (linksError) {
     console.error('Error fetching public bio links:', linksError);
@@ -144,9 +165,10 @@ export async function getBioPageByUsername(username: string): Promise<BioPageWit
 
   return {
     ...page,
+    userTier,
     links,
   };
-}
+});
 
 /**
  * Create a new bio page

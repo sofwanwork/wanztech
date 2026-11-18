@@ -27,7 +27,7 @@ import {
   Calendar,
   Mail,
   CreditCard,
-  Sparkles,
+  Info,
   X,
   AlertCircle,
   HelpCircle,
@@ -198,7 +198,7 @@ export function CertificateCheckClient({
       cardDesc: 'Enter the IC Number or Email used during program registration.',
       label: 'IC / ID Number or Email',
       example: 'e.g. 901234567890',
-      placeholder: 'e.g. 901020015566 atau nama@email.com',
+      placeholder: 'e.g. 901020015566 or name@email.com',
       hint: (
         <span>
           Enter IC number without dashes (<code>-</code>) or official registration email.
@@ -226,8 +226,8 @@ export function CertificateCheckClient({
     if (mode === 'email_only') {
       return (
         <Mail
-          className={`h-5 w-5 transition-colors ${
-            identifier.length > 0 ? 'text-primary' : 'text-slate-400'
+          className={`h-4 w-4 transition-colors ${
+            identifier.length > 0 ? 'text-violet-900' : 'text-slate-400'
           }`}
         />
       );
@@ -235,20 +235,20 @@ export function CertificateCheckClient({
     if (mode === 'ic_only') {
       return (
         <CreditCard
-          className={`h-5 w-5 transition-colors ${
-            identifier.length > 0 ? 'text-primary' : 'text-slate-400'
+          className={`h-4 w-4 transition-colors ${
+            identifier.length > 0 ? 'text-violet-900' : 'text-slate-400'
           }`}
         />
       );
     }
     // mode === 'both'
     if (identifier.includes('@')) {
-      return <Mail className="h-5 w-5 text-primary transition-colors" />;
+      return <Mail className="h-4 w-4 text-violet-900 transition-colors" />;
     }
     if (/^\d+$/.test(identifier.replace(/[-\s]/g, '')) && identifier.length > 0) {
-      return <CreditCard className="h-5 w-5 text-primary transition-colors" />;
+      return <CreditCard className="h-4 w-4 text-violet-900 transition-colors" />;
     }
-    return <Search className="h-5 w-5 text-slate-400" />;
+    return <Search className="h-4 w-4 text-slate-400" />;
   };
 
   const handleCheck = async () => {
@@ -403,40 +403,32 @@ export function CertificateCheckClient({
   };
 
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-slate-50 relative flex flex-col justify-between py-8 sm:py-12 md:py-16 px-4 overflow-x-hidden selection:bg-primary/20 selection:text-primary">
-      {/* Ambient background decoration */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-gradient-to-b from-primary/10 via-primary/5 to-transparent blur-3xl pointer-events-none -z-10" />
-      <div className="absolute top-24 right-1/4 w-80 h-80 bg-emerald-400/5 rounded-full blur-3xl pointer-events-none -z-10" />
-      <div className="absolute top-48 left-1/4 w-80 h-80 bg-blue-400/5 rounded-full blur-3xl pointer-events-none -z-10" />
+    <div className="min-h-screen min-h-[100dvh] bg-white text-slate-900 font-sans relative flex flex-col justify-between py-10 sm:py-14 px-4 overflow-x-hidden selection:bg-violet-100 selection:text-violet-950">
+      {/* Minimalist subtle dot matrix background */}
+      <div className="absolute inset-0 bg-[radial-gradient(#e4e4e7_1px,transparent_1px)] [background-size:20px_20px] opacity-60 pointer-events-none z-0" />
 
-      <div className="max-w-6xl mx-auto w-full flex-1">
+      <div className="max-w-6xl mx-auto w-full flex-1 relative z-10">
         {/* Header */}
         <div
-          className={`text-center max-w-3xl mx-auto transition-all duration-300 ${
+          className={`text-center max-w-2xl mx-auto transition-all duration-300 ${
             result?.found ? 'mb-6 sm:mb-8' : 'mb-8 sm:mb-10'
           }`}
         >
-          {/* Floating dual-ring badge */}
-          <div className="relative inline-flex mb-4 group">
-            <div className="absolute -inset-1.5 bg-gradient-to-r from-primary/30 to-violet-800/30 rounded-3xl blur-md opacity-75 group-hover:opacity-100 transition duration-500" />
-            <div className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-white shadow-xl shadow-primary/10 ring-1 ring-slate-900/5 flex items-center justify-center text-primary">
-              <Award className="h-8 w-8 sm:h-9 sm:w-9 text-primary transition-transform duration-300 group-hover:scale-105" />
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-md ring-2 ring-white">
-                <ShieldCheck className="w-3.5 h-3.5" />
-              </div>
-            </div>
+          {/* Minimalist Icon Box */}
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-md bg-slate-100 border border-slate-200 text-violet-900 mb-4 shadow-2xs">
+            <Award className="h-6 w-6" />
           </div>
 
           {/* Portal tag badge */}
           <div className="flex items-center justify-center mb-3">
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20 shadow-2xs">
-              <Sparkles className="w-3.5 h-3.5" />
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-mono font-semibold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">
+              <ShieldCheck className="w-3.5 h-3.5 text-violet-900" />
               <span>Official E-Certificate Verification Portal</span>
             </span>
           </div>
 
           {/* Form Title */}
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight leading-snug sm:leading-tight whitespace-pre-line break-words [text-wrap:balance]">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 tracking-tight leading-snug sm:leading-tight whitespace-pre-line break-words [text-wrap:balance]">
             {formTitle}
           </h1>
           <p className="text-slate-600 mt-2.5 text-sm sm:text-base [text-wrap:balance] max-w-xl mx-auto leading-relaxed">
@@ -447,8 +439,8 @@ export function CertificateCheckClient({
 
           {minHoursRequired && minHoursRequired > 0 ? (
             <div className="mt-3.5">
-              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-800 text-xs font-semibold border border-emerald-200/80 shadow-2xs">
-                <Clock className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-100 text-slate-700 text-xs font-mono font-medium border border-slate-200">
+                <Clock className="w-3.5 h-3.5 text-violet-900" />
                 <span>Attendance Requirement: Minimum {minHoursRequired} Hours</span>
               </span>
             </div>
@@ -457,14 +449,14 @@ export function CertificateCheckClient({
 
         {/* Check Form - Automatically hidden when certificate is found */}
         {!result?.found && (
-          <div className="max-w-xl mx-auto animate-in fade-in duration-300">
-            <Card className="border border-slate-200/90 shadow-xl shadow-slate-200/50 rounded-3xl p-6 sm:p-8 gap-5 bg-white/95 backdrop-blur-xl">
+          <div className="max-w-lg mx-auto animate-in fade-in duration-300">
+            <Card className="border border-slate-200 shadow-2xs rounded-lg p-6 sm:p-7 gap-5 bg-white">
             <CardHeader className="p-0 gap-1.5">
-              <div className="flex items-center gap-2 text-primary font-semibold text-xs tracking-wider uppercase">
-                <FileText className="w-4 h-4" />
+              <div className="flex items-center gap-1.5 text-violet-900 font-mono font-semibold text-[11px] tracking-wider uppercase">
+                <FileText className="w-3.5 h-3.5" />
                 <span>Certificate Verification</span>
               </div>
-              <CardTitle className="text-xl sm:text-2xl font-bold text-slate-900">
+              <CardTitle className="text-xl font-bold text-slate-900 tracking-tight">
                 Participant Record Verification
               </CardTitle>
               <CardDescription className="text-xs sm:text-sm text-slate-500">
@@ -473,9 +465,9 @@ export function CertificateCheckClient({
             </CardHeader>
             <CardContent className="p-0 space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="ic" className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center justify-between">
+                <Label htmlFor="ic" className="text-xs font-semibold uppercase tracking-wider text-slate-700 flex items-center justify-between">
                   <span>{modeContent.label}</span>
-                  <span className="text-[11px] font-normal text-slate-400 lowercase">{modeContent.example}</span>
+                  <span className="text-[11px] font-mono font-normal text-slate-400 lowercase">{modeContent.example}</span>
                 </Label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -490,7 +482,7 @@ export function CertificateCheckClient({
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleCheck()}
-                    className="h-13 pl-11 pr-10 text-base sm:text-lg rounded-2xl border-slate-200 bg-slate-50/60 hover:bg-white focus:bg-white focus-visible:ring-primary/20 shadow-xs transition-all"
+                    className="h-11 pl-10 pr-10 text-sm sm:text-base rounded-md border-slate-200 bg-white focus-visible:ring-violet-900/20 focus-visible:border-violet-900 shadow-2xs transition-colors"
                   />
                   {identifier.length > 0 && (
                     <button
@@ -499,7 +491,7 @@ export function CertificateCheckClient({
                         setIdentifier('');
                         inputRef.current?.focus();
                       }}
-                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
                       title="Clear"
                     >
                       <X className="h-4 w-4" />
@@ -507,13 +499,13 @@ export function CertificateCheckClient({
                   )}
                 </div>
                 {mismatchWarning ? (
-                  <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200/90 rounded-xl px-3 py-1.5 flex items-center gap-1.5 pt-0.5 animate-in fade-in duration-200 shadow-2xs">
+                  <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 flex items-center gap-1.5 animate-in fade-in duration-200">
                     <AlertCircle className="w-3.5 h-3.5 shrink-0 text-amber-600" />
                     <span>{mismatchWarning}</span>
                   </p>
                 ) : (
-                  <p className="text-[11px] text-slate-500 flex items-center gap-1.5 pt-0.5">
-                    <span>💡</span>
+                  <p className="text-xs text-slate-500 flex items-center gap-1.5 pt-0.5">
+                    <Info className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                     <span>{modeContent.hint}</span>
                   </p>
                 )}
@@ -523,16 +515,16 @@ export function CertificateCheckClient({
               <Button
                 onClick={handleCheck}
                 disabled={loading}
-                className="w-full h-13 rounded-2xl text-base font-semibold bg-gradient-to-r from-primary via-primary/95 to-primary text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 active:scale-[0.99] transition-all cursor-pointer"
+                className="w-full h-11 rounded-md text-sm font-medium bg-violet-900 hover:bg-violet-950 text-white shadow-xs transition-colors cursor-pointer"
               >
                 {loading ? (
                   <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Verifying Record...
                   </>
                 ) : (
                   <>
-                    <Search className="mr-2 h-5 w-5" />
+                    <Search className="mr-2 h-4 w-4" />
                     Verify E-Certificate Now
                   </>
                 )}
@@ -556,13 +548,13 @@ export function CertificateCheckClient({
                 setIdentifier('');
                 setTimeout(() => inputRef.current?.focus(), 50);
               }}
-              className="rounded-xl h-9 px-3.5 text-xs font-semibold text-slate-700 hover:text-slate-900 border-slate-200 bg-white shadow-2xs hover:bg-slate-50 transition-all cursor-pointer"
+              className="rounded-md h-9 px-3.5 text-xs font-medium text-slate-700 hover:text-slate-900 border-slate-200 bg-white shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5 mr-1.5 text-slate-500" />
               <span>Check Another Participant</span>
             </Button>
 
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 px-3.5 py-1 rounded-full border border-emerald-200/80 shadow-2xs">
+            <span className="inline-flex items-center gap-1.5 text-xs font-mono font-medium text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
               <span>Participant Record Verified</span>
             </span>
@@ -571,25 +563,25 @@ export function CertificateCheckClient({
           <div className="grid md:grid-cols-3 gap-6 items-start">
             {/* Left: Result Details */}
             <div className="md:col-span-1 space-y-4">
-              <Card className="border border-emerald-100 shadow-xl rounded-3xl p-0 gap-0 overflow-hidden bg-gradient-to-b from-emerald-50/90 via-emerald-50/40 to-white">
+              <Card className="border border-slate-200 shadow-2xs rounded-lg p-0 gap-0 overflow-hidden bg-white">
                 <CardContent className="p-6 text-center">
-                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-100/90 text-emerald-600 shadow-2xs border border-emerald-200/70 mb-3">
-                    <CheckCircle2 className="h-7 w-7 text-emerald-600" />
+                  <div className="inline-flex items-center justify-center w-11 h-11 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 mb-3">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-600" />
                   </div>
-                  <h3 className="text-lg font-bold text-emerald-950 mb-0.5">Certificate Found!</h3>
-                  <p className="text-xs text-emerald-700/90 mb-4">Participant record verified</p>
+                  <h3 className="text-lg font-bold text-slate-900 mb-0.5">Certificate Found!</h3>
+                  <p className="text-xs text-slate-500 mb-4">Participant record verified</p>
 
-                  <div className="text-left bg-white/95 p-4 rounded-xl border border-emerald-100 shadow-2xs text-sm space-y-3 mb-5">
+                  <div className="text-left bg-slate-50/70 p-4 rounded-md border border-slate-200 text-sm space-y-3 mb-5">
                     <div>
-                      <span className="text-[11px] font-semibold text-emerald-800 uppercase tracking-wider block mb-0.5">
+                      <span className="text-[11px] font-mono font-semibold text-slate-500 uppercase tracking-wider block mb-0.5">
                         Name
                       </span>
                       <span className="font-medium text-slate-900 break-words block leading-snug">
                         {result.name}
                       </span>
                     </div>
-                    <div className="pt-2 border-t border-slate-100">
-                      <span className="text-[11px] font-semibold text-emerald-800 uppercase tracking-wider block mb-0.5">
+                    <div className="pt-2 border-t border-slate-200/70">
+                      <span className="text-[11px] font-mono font-semibold text-slate-500 uppercase tracking-wider block mb-0.5">
                         Program
                       </span>
                       <span className="font-medium text-slate-900 break-words block leading-snug [text-wrap:balance]">
@@ -597,8 +589,8 @@ export function CertificateCheckClient({
                       </span>
                     </div>
                     {formattedDate && (
-                      <div className="pt-2 border-t border-slate-100">
-                        <span className="text-[11px] font-semibold text-emerald-800 uppercase tracking-wider block mb-0.5">
+                      <div className="pt-2 border-t border-slate-200/70">
+                        <span className="text-[11px] font-mono font-semibold text-slate-500 uppercase tracking-wider block mb-0.5">
                           Date
                         </span>
                         <span className="font-medium text-slate-900 block">
@@ -608,13 +600,13 @@ export function CertificateCheckClient({
                     )}
 
                     {dailyOptions && (
-                      <div className="pt-2.5 border-t border-slate-100 space-y-2">
+                      <div className="pt-2.5 border-t border-slate-200/70 space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-semibold text-emerald-800 uppercase tracking-wider flex items-center gap-1">
-                            <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+                          <span className="text-[11px] font-mono font-semibold text-slate-600 uppercase tracking-wider flex items-center gap-1">
+                            <Calendar className="w-3.5 h-3.5 text-violet-900" />
                             <span>Attendance Certificate Options</span>
                           </span>
-                          <span className="text-[10px] text-emerald-700 bg-emerald-100 font-medium px-2 py-0.5 rounded-full">
+                          <span className="text-[10px] font-mono text-violet-900 bg-violet-50 border border-violet-200 font-medium px-2 py-0.5 rounded">
                             {dailyOptions.length} Certificates
                           </span>
                         </div>
@@ -626,28 +618,28 @@ export function CertificateCheckClient({
                                 key={idx}
                                 type="button"
                                 onClick={() => setSelectedCertIndex(idx)}
-                                className={`w-full text-left p-2.5 rounded-xl text-xs transition-all border flex flex-col gap-0.5 cursor-pointer ${
+                                className={`w-full text-left p-2.5 rounded-md text-xs transition-colors border flex flex-col gap-0.5 cursor-pointer ${
                                   isSelected
-                                    ? 'bg-emerald-600 text-white border-emerald-700 font-semibold shadow-xs'
-                                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200/80'
+                                    ? 'bg-violet-900 text-white border-violet-900 font-semibold shadow-2xs'
+                                    : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
                                 }`}
                               >
                                 <div className="flex items-center justify-between gap-2 w-full">
                                   <span className="flex items-center gap-1.5 font-semibold">
                                     <Award
                                       className={`w-3.5 h-3.5 shrink-0 ${
-                                        isSelected ? 'text-white' : 'text-emerald-600'
+                                        isSelected ? 'text-white' : 'text-violet-900'
                                       }`}
                                     />
                                     <span>{opt.label}</span>
                                   </span>
                                   {isSelected && (
-                                    <span className="text-[10px] bg-emerald-700/80 text-white px-1.5 py-0.2 rounded font-normal shrink-0">Active</span>
+                                    <span className="text-[10px] font-mono bg-violet-800 text-white px-1.5 py-0.2 rounded font-normal shrink-0">Active</span>
                                   )}
                                 </div>
                                 <span
                                   className={`text-[11px] pl-5 leading-tight ${
-                                    isSelected ? 'text-emerald-100 font-normal' : 'text-slate-500'
+                                    isSelected ? 'text-violet-100 font-normal' : 'text-slate-500'
                                   }`}
                                 >
                                   {opt.formattedDate}
@@ -660,11 +652,11 @@ export function CertificateCheckClient({
                     )}
                   </div>
 
-                  <div className="space-y-2.5">
+                  <div className="space-y-2">
                     <Button
                       onClick={handleDownloadPDF}
                       disabled={downloadingPdf || downloadingPng}
-                      className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl shadow-md shadow-emerald-600/20 transition-all active:scale-[0.98]"
+                      className="w-full h-10 bg-violet-900 hover:bg-violet-950 text-white font-medium rounded-md shadow-xs text-xs transition-colors"
                     >
                       {downloadingPdf ? (
                         <>
@@ -682,7 +674,7 @@ export function CertificateCheckClient({
                       onClick={handleDownloadPNG}
                       disabled={downloadingPdf || downloadingPng}
                       variant="outline"
-                      className="w-full h-11 border-emerald-600 text-emerald-700 hover:bg-emerald-50 font-medium rounded-xl transition-all active:scale-[0.98]"
+                      className="w-full h-10 border-slate-200 text-slate-800 hover:bg-slate-50 font-medium rounded-md text-xs transition-colors"
                     >
                       {downloadingPng ? (
                         <>
@@ -704,10 +696,10 @@ export function CertificateCheckClient({
                         setIdentifier('');
                         setTimeout(() => inputRef.current?.focus(), 50);
                       }}
-                      className="w-full h-10 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-emerald-50/70 rounded-xl transition-all cursor-pointer mt-1"
+                      className="w-full h-9 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors cursor-pointer mt-1"
                     >
-                      <RefreshCw className="mr-2 h-3.5 w-3.5 text-emerald-700" />
-                      Check Another Participant's Certificate
+                      <RefreshCw className="mr-2 h-3.5 w-3.5 text-slate-500" />
+                      Check Another Participant&apos;s Certificate
                     </Button>
                   </div>
                 </CardContent>
@@ -716,11 +708,11 @@ export function CertificateCheckClient({
 
             {/* Right: Certificate Preview */}
             <div className="md:col-span-2">
-              <Card className="border border-slate-200/80 shadow-xl rounded-3xl p-0 gap-0 overflow-hidden bg-white">
-                <CardHeader className="px-4 sm:px-6 py-3.5 bg-white border-b border-slate-200/80 flex flex-row items-center justify-between gap-3 space-y-0">
+              <Card className="border border-slate-200 shadow-2xs rounded-lg p-0 gap-0 overflow-hidden bg-white">
+                <CardHeader className="px-4 sm:px-6 py-3.5 bg-white border-b border-slate-200 flex flex-row items-center justify-between gap-3 space-y-0">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
-                      <Award className="h-5 w-5" />
+                    <div className="w-9 h-9 rounded-md bg-slate-100 text-violet-900 flex items-center justify-center shrink-0 border border-slate-200">
+                      <Award className="h-4 w-4" />
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
@@ -728,11 +720,11 @@ export function CertificateCheckClient({
                           Live Preview
                         </CardTitle>
                         {activeDailyOption && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200/80 shrink-0">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-violet-50 text-violet-900 border border-violet-200 shrink-0">
                             {activeDailyOption.label}
                           </span>
                         )}
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80 shrink-0">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                           Ready
                         </span>
@@ -753,7 +745,7 @@ export function CertificateCheckClient({
                       onClick={() => setZoomMultiplier((prev) => Math.max(0.6, +(prev - 0.15).toFixed(2)))}
                       disabled={zoomMultiplier <= 0.6}
                       title="Zoom Out"
-                      className="h-8 w-8 rounded-lg border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                      className="h-8 w-8 rounded-md border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                     >
                       <ZoomOut className="h-3.5 w-3.5" />
                     </Button>
@@ -763,7 +755,7 @@ export function CertificateCheckClient({
                       size="sm"
                       onClick={() => setZoomMultiplier(1)}
                       title="Reset to Fit"
-                      className="h-8 px-2.5 text-xs font-medium rounded-lg border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100 min-w-[42px]"
+                      className="h-8 px-2.5 text-xs font-medium rounded-md border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100 min-w-[42px]"
                     >
                       {zoomMultiplier === 1 ? 'Fit' : `${Math.round(zoomMultiplier * 100)}%`}
                     </Button>
@@ -774,7 +766,7 @@ export function CertificateCheckClient({
                       onClick={() => setZoomMultiplier((prev) => Math.min(2.0, +(prev + 0.15).toFixed(2)))}
                       disabled={zoomMultiplier >= 2.0}
                       title="Zoom In"
-                      className="h-8 w-8 rounded-lg border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                      className="h-8 w-8 rounded-md border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                     >
                       <ZoomIn className="h-3.5 w-3.5" />
                     </Button>
@@ -784,7 +776,7 @@ export function CertificateCheckClient({
                       size="icon"
                       onClick={() => setIsFullscreenOpen(true)}
                       title="Full Screen Preview"
-                      className="h-8 w-8 rounded-lg border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                      className="h-8 w-8 rounded-md border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                     >
                       <Maximize2 className="h-3.5 w-3.5" />
                     </Button>
@@ -792,10 +784,10 @@ export function CertificateCheckClient({
                 </CardHeader>
 
                 {dailyOptions && (
-                  <div className="px-4 sm:px-6 py-2.5 bg-slate-50/90 border-b border-slate-200/80 flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+                  <div className="px-4 sm:px-6 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+                        <Calendar className="w-3.5 h-3.5 text-violet-900" />
                         <span>Select Certificate:</span>
                       </span>
                     </div>
@@ -808,15 +800,15 @@ export function CertificateCheckClient({
                             type="button"
                             onClick={() => setSelectedCertIndex(idx)}
                             title={`${opt.label} • ${opt.formattedDate}`}
-                            className={`px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap shrink-0 transition-all cursor-pointer flex items-center gap-1.5 ${
+                            className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap shrink-0 transition-colors cursor-pointer flex items-center gap-1.5 ${
                               isSelected
-                                ? 'bg-emerald-600 text-white font-semibold shadow-xs ring-2 ring-emerald-600/20'
-                                : 'bg-white border border-slate-200/90 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-2xs'
+                                ? 'bg-violet-900 text-white font-semibold shadow-2xs'
+                                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900'
                             }`}
                           >
                             <Award
                               className={`w-3.5 h-3.5 shrink-0 ${
-                                isSelected ? 'text-white' : 'text-emerald-600'
+                                isSelected ? 'text-white' : 'text-violet-900'
                               }`}
                             />
                             <span>{opt.label}</span>
@@ -873,7 +865,7 @@ export function CertificateCheckClient({
                   </div>
                 </CardContent>
 
-                <CardFooter className="px-4 sm:px-6 py-3 bg-slate-50/90 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+                <CardFooter className="px-4 sm:px-6 py-3 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
                   <div className="flex items-center gap-1.5 font-medium text-slate-600">
                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
                     <span>Verified e-Certificate • Ready for instant download</span>
@@ -887,7 +879,7 @@ export function CertificateCheckClient({
               </Card>
 
               <p className="text-center text-xs text-muted-foreground mt-2.5 flex items-center justify-center gap-1.5">
-                <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+                <ShieldCheck className="h-3.5 w-3.5 text-violet-900" />
                 <span>Authentic certificate verified directly from organizer database</span>
               </p>
             </div>
@@ -922,36 +914,36 @@ export function CertificateCheckClient({
       )}
 
         {result && !result.found && (
-          <div className="max-w-xl mx-auto mt-6 animate-in fade-in slide-in-from-bottom-3 duration-400">
+          <div className="max-w-lg mx-auto mt-6 animate-in fade-in slide-in-from-bottom-3 duration-400">
             {result.attendanceIneligible && result.attendanceDetails ? (
-              <Card className="border border-amber-200/90 shadow-xl shadow-amber-500/5 bg-gradient-to-b from-amber-50/90 via-white to-amber-50/30 rounded-3xl p-6 sm:p-7">
+              <Card className="border border-slate-200 shadow-2xs bg-white rounded-lg p-6 sm:p-7">
                 <CardContent className="p-0 text-center space-y-4">
-                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-amber-100 text-amber-700 border border-amber-200/80 mb-1 shadow-2xs">
-                    <Clock className="h-7 w-7 text-amber-600" />
+                  <div className="inline-flex items-center justify-center w-11 h-11 rounded-md bg-amber-50 text-amber-700 border border-amber-200 mb-1">
+                    <Clock className="h-5 w-5 text-amber-600" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-amber-950 mb-1.5">
+                    <h3 className="text-lg font-bold text-slate-900 mb-1.5">
                       {result.attendanceDetails.status === 'not_checked_out'
                         ? 'Check-Out Incomplete'
                         : result.attendanceDetails.status === 'no_record'
                         ? 'No Attendance Record Found'
                         : 'Attendance Hour Requirement Not Met'}
                     </h3>
-                    <p className="text-xs text-amber-900/90 max-w-md mx-auto leading-relaxed">
+                    <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
                       {result.error}
                     </p>
                   </div>
 
-                  <div className="bg-white/95 p-4 rounded-2xl border border-amber-200/80 text-left text-xs space-y-2 max-w-sm mx-auto shadow-2xs">
-                    <div className="flex justify-between items-center py-1 border-b border-amber-100">
+                  <div className="bg-slate-50/70 p-4 rounded-md border border-slate-200 text-left text-xs space-y-2 max-w-sm mx-auto">
+                    <div className="flex justify-between items-center py-1 border-b border-slate-200/70">
                       <span className="text-muted-foreground">Minimum Required Hours:</span>
                       <span className="font-bold text-slate-900">{result.attendanceDetails.requiredHours} Hours</span>
                     </div>
                     {result.attendanceDetails.status === 'insufficient_hours' && (
                       <>
-                        <div className="flex justify-between items-center py-1 border-b border-amber-100">
+                        <div className="flex justify-between items-center py-1 border-b border-slate-200/70">
                           <span className="text-muted-foreground">Your Total Attendance:</span>
-                          <span className="font-bold text-amber-800">{result.attendanceDetails.attendedFormatted}</span>
+                          <span className="font-bold text-amber-700">{result.attendanceDetails.attendedFormatted}</span>
                         </div>
                         <div className="flex justify-between items-center py-1">
                           <span className="text-muted-foreground">Shortfall:</span>
@@ -961,17 +953,17 @@ export function CertificateCheckClient({
                     )}
                   </div>
 
-                  <p className="text-[11px] text-amber-800/80 italic">
+                  <p className="text-xs text-slate-500">
                     Please contact the event organizer if you have special permission or an exemption.
                   </p>
                 </CardContent>
               </Card>
             ) : result.missingField === 'email' || result.error?.toLowerCase().includes('email field not found') ? (
               /* Missing Email column in Google Sheet */
-              <Card className="border border-amber-200/90 shadow-xl shadow-amber-500/5 bg-gradient-to-b from-amber-50/90 via-white to-amber-50/30 rounded-3xl p-6 sm:p-7 text-center">
+              <Card className="border border-slate-200 shadow-2xs bg-white rounded-lg p-6 sm:p-7 text-center">
                 <CardContent className="p-0 space-y-3">
-                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-amber-100 text-amber-700 border border-amber-200/80 mb-1 shadow-2xs">
-                    <AlertCircle className="h-7 w-7 text-amber-600" />
+                  <div className="inline-flex items-center justify-center w-11 h-11 rounded-md bg-amber-50 text-amber-700 border border-amber-200 mb-1">
+                    <AlertCircle className="h-5 w-5 text-amber-600" />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-slate-900 mb-1">
@@ -990,7 +982,7 @@ export function CertificateCheckClient({
                         setResult(null);
                         inputRef.current?.focus();
                       }}
-                      className="h-11 px-5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-medium shadow-md shadow-amber-600/20 text-xs sm:text-sm transition-all cursor-pointer"
+                      className="h-10 px-5 rounded-md bg-violet-900 hover:bg-violet-950 text-white font-medium shadow-xs text-xs sm:text-sm transition-colors cursor-pointer"
                     >
                       <CreditCard className="w-4 h-4 mr-2" />
                       Use IC / ID Number
@@ -1000,10 +992,10 @@ export function CertificateCheckClient({
               </Card>
             ) : result.missingField === 'ic' || result.error?.toLowerCase().includes('ic field not found') ? (
               /* Missing IC column in Google Sheet */
-              <Card className="border border-blue-200/90 shadow-xl shadow-blue-500/5 bg-gradient-to-b from-blue-50/90 via-white to-blue-50/30 rounded-3xl p-6 sm:p-7 text-center">
+              <Card className="border border-slate-200 shadow-2xs bg-white rounded-lg p-6 sm:p-7 text-center">
                 <CardContent className="p-0 space-y-3">
-                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-blue-100 text-blue-700 border border-blue-200/80 mb-1 shadow-2xs">
-                    <Mail className="h-7 w-7 text-blue-600" />
+                  <div className="inline-flex items-center justify-center w-11 h-11 rounded-md bg-violet-50 text-violet-900 border border-violet-200 mb-1">
+                    <Mail className="h-5 w-5 text-violet-900" />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-slate-900 mb-1">
@@ -1022,36 +1014,36 @@ export function CertificateCheckClient({
                         setResult(null);
                         inputRef.current?.focus();
                       }}
-                      className="h-11 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-md shadow-blue-600/20 text-xs sm:text-sm transition-all cursor-pointer"
+                      className="h-10 px-5 rounded-md bg-violet-900 hover:bg-violet-950 text-white font-medium shadow-xs text-xs sm:text-sm transition-colors cursor-pointer"
                     >
                       <Mail className="w-4 h-4 mr-2" />
-                      Gunakan Email Address
+                      Use Email Address
                     </Button>
                   </div>
                 </CardContent>
               </Card>
             ) : (
               /* Participant Not Found */
-              <Card className="border border-rose-200/80 shadow-xl shadow-rose-500/5 bg-gradient-to-b from-rose-50/70 via-white to-rose-50/20 rounded-3xl p-6 sm:p-7 text-center">
+              <Card className="border border-slate-200 shadow-2xs bg-white rounded-lg p-6 sm:p-7 text-center">
                 <CardContent className="p-0 space-y-4">
-                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 border border-rose-200/80 mb-1 shadow-2xs">
-                    <XCircle className="h-7 w-7 text-rose-600" />
+                  <div className="inline-flex items-center justify-center w-11 h-11 rounded-md bg-rose-50 text-rose-600 border border-rose-200 mb-1">
+                    <XCircle className="h-5 w-5 text-rose-600" />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-slate-900 mb-1">
                       Certificate Record Not Found
                     </h3>
-                    <p className="text-xs sm:text-sm text-rose-800/90 max-w-md mx-auto leading-relaxed">
+                    <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
                       No attendance record found for{' '}
-                      <span className="font-semibold text-rose-950 font-mono bg-rose-100/80 px-2 py-0.5 rounded-md">
+                      <span className="font-semibold text-rose-700 font-mono bg-rose-50 border border-rose-200 px-2 py-0.5 rounded">
                         {identifier}
                       </span>.
                     </p>
                   </div>
 
-                  <div className="bg-white/95 p-4 rounded-2xl border border-rose-100/90 text-left text-xs space-y-2 max-w-md mx-auto shadow-2xs text-slate-600">
-                    <div className="font-semibold text-slate-800 text-[11px] uppercase tracking-wider flex items-center gap-1.5">
-                      <HelpCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                  <div className="bg-slate-50/70 p-4 rounded-md border border-slate-200 text-left text-xs space-y-2 max-w-md mx-auto text-slate-600">
+                    <div className="font-mono font-semibold text-slate-800 text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                      <HelpCircle className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                       <span>Troubleshooting Tips:</span>
                     </div>
                     <ul className="space-y-1.5 pl-4 list-disc text-slate-600 leading-relaxed text-xs">
@@ -1086,10 +1078,10 @@ export function CertificateCheckClient({
                         inputRef.current?.focus();
                       }}
                       variant="outline"
-                      className="h-10 px-4 text-xs font-semibold rounded-xl border-slate-300 text-slate-700 hover:bg-slate-50 transition-all cursor-pointer"
+                      className="h-10 px-4 text-xs font-medium rounded-md border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
                     >
                       <RefreshCw className="w-3.5 h-3.5 mr-1.5 text-slate-500" />
-                      Cuba Carian Baharu
+                      Try Another Search
                     </Button>
                   </div>
                 </CardContent>
@@ -1105,17 +1097,17 @@ export function CertificateCheckClient({
         }}>
           <DialogContent
             showCloseButton={true}
-            className="max-w-5xl w-[95vw] max-h-[94vh] p-0 gap-0 overflow-hidden flex flex-col bg-slate-950 border-slate-800 text-white rounded-2xl shadow-2xl"
+            className="max-w-5xl w-[95vw] max-h-[94vh] p-0 gap-0 overflow-hidden flex flex-col bg-slate-950 border-slate-800 text-white rounded-lg shadow-2xl"
           >
             <DialogHeader className="px-5 py-3.5 bg-slate-900/90 border-b border-slate-800/80 flex flex-row items-center justify-between text-white shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
+                <div className="w-8 h-8 rounded-md bg-violet-500/15 text-violet-300 flex items-center justify-center border border-violet-500/30">
                   <Award className="h-4 w-4" />
                 </div>
                 <DialogTitle className="text-base font-semibold text-white flex items-center gap-2 flex-wrap">
                   <span>Certificate Full HD Preview</span>
                   {activeDailyOption && (
-                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-normal">
+                    <span className="text-xs px-2 py-0.5 rounded bg-violet-500/20 text-violet-200 border border-violet-500/30 font-mono font-normal">
                       {activeDailyOption.label} • {activeDailyOption.formattedDate}
                     </span>
                   )}
@@ -1131,7 +1123,7 @@ export function CertificateCheckClient({
                   onClick={() => setModalZoomMultiplier((prev) => Math.max(0.6, +(prev - 0.2).toFixed(2)))}
                   disabled={modalZoomMultiplier <= 0.6}
                   title="Zoom Out"
-                  className="h-8 w-8 rounded-lg border border-slate-750 bg-slate-800/90 text-slate-200 hover:text-white hover:bg-slate-700"
+                  className="h-8 w-8 rounded-md border border-slate-750 bg-slate-800/90 text-slate-200 hover:text-white hover:bg-slate-700"
                 >
                   <ZoomOut className="h-3.5 w-3.5" />
                 </Button>
@@ -1141,7 +1133,7 @@ export function CertificateCheckClient({
                   size="sm"
                   onClick={() => setModalZoomMultiplier((prev) => (prev === 1 ? 1.5 : 1))}
                   title={modalZoomMultiplier === 1 ? 'Zoom to 150%' : 'Reset to Fit'}
-                  className="h-8 px-2.5 text-xs font-medium rounded-lg border border-slate-750 bg-slate-800/90 text-slate-200 hover:text-white hover:bg-slate-700 min-w-[42px]"
+                  className="h-8 px-2.5 text-xs font-medium rounded-md border border-slate-750 bg-slate-800/90 text-slate-200 hover:text-white hover:bg-slate-700 min-w-[42px]"
                 >
                   {modalZoomMultiplier === 1 ? 'Fit' : `${Math.round(modalZoomMultiplier * 100)}%`}
                 </Button>
@@ -1152,7 +1144,7 @@ export function CertificateCheckClient({
                   onClick={() => setModalZoomMultiplier((prev) => Math.min(2.5, +(prev + 0.2).toFixed(2)))}
                   disabled={modalZoomMultiplier >= 2.5}
                   title="Zoom In"
-                  className="h-8 w-8 rounded-lg border border-slate-750 bg-slate-800/90 text-slate-200 hover:text-white hover:bg-slate-700"
+                  className="h-8 w-8 rounded-md border border-slate-750 bg-slate-800/90 text-slate-200 hover:text-white hover:bg-slate-700"
                 >
                   <ZoomIn className="h-3.5 w-3.5" />
                 </Button>
@@ -1209,7 +1201,7 @@ export function CertificateCheckClient({
                   size="sm"
                   onClick={handleDownloadPDF}
                   disabled={downloadingPdf || downloadingPng}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white h-8 text-xs font-semibold rounded-lg shadow-xs"
+                  className="bg-violet-800 hover:bg-violet-700 text-white h-8 text-xs font-medium rounded-md shadow-xs"
                 >
                   {downloadingPdf ? (
                     <>
@@ -1227,7 +1219,7 @@ export function CertificateCheckClient({
                   size="sm"
                   onClick={handleDownloadPNG}
                   disabled={downloadingPdf || downloadingPng}
-                  className="bg-white hover:bg-slate-100 text-slate-900 border border-slate-200 h-8 text-xs font-semibold rounded-lg shadow-xs"
+                  className="bg-white hover:bg-slate-100 text-slate-900 border border-slate-200 h-8 text-xs font-medium rounded-md shadow-xs"
                 >
                   {downloadingPng ? (
                     <>
@@ -1248,8 +1240,8 @@ export function CertificateCheckClient({
       </div>
 
       {/* Official Verification Footer */}
-      <footer className="mt-12 sm:mt-16 text-center text-xs text-slate-500 flex flex-wrap items-center justify-center gap-2 pt-6 border-t border-slate-200/70 max-w-6xl mx-auto w-full">
-        <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+      <footer className="mt-12 sm:mt-16 text-center text-xs text-slate-500 flex flex-wrap items-center justify-center gap-2 pt-6 border-t border-slate-200 max-w-6xl mx-auto w-full relative z-10">
+        <ShieldCheck className="w-4 h-4 text-violet-900 shrink-0" />
         <span>Secure Digital E-Certificate Verification System • Powered by <strong className="text-slate-700 font-semibold">KlikForm</strong></span>
       </footer>
     </div>

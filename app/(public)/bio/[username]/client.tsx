@@ -18,6 +18,7 @@ import {
   formatHandleTiles,
   getBioDisplayHandle,
   getHeroFadeMask,
+  shouldShowBioBranding,
 } from '@/lib/bio-links/themes';
 import { trackBioClickAction } from '@/actions/bio-links';
 import {
@@ -36,7 +37,6 @@ import {
   Copy,
   Check,
   QrCode,
-  MoreVertical,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -110,16 +110,6 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
     setShareOpen(true);
   };
 
-  const handleShareLink = (link: BioLink) => {
-    let targetUrl = link.url;
-    if (targetUrl.startsWith('/')) {
-      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://www.klikform.com';
-      targetUrl = `${origin}${targetUrl}`;
-    }
-    navigator.clipboard.writeText(targetUrl);
-    toast.success(`Copied link for "${link.title}"!`);
-  };
-
   const handleDownloadQr = () => {
     const svg = qrRef.current;
     if (!svg) return;
@@ -180,12 +170,7 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
             transition={{ duration: 0.35 }}
             className="w-[calc(100%+2rem)] -mx-4 relative overflow-hidden select-none"
           >
-            {/* Floating Action Overlay on top of Hero Graphic */}
-            <div className="absolute top-4 left-4 z-20">
-              <div className="w-9 h-9 rounded-full bg-black/30 hover:bg-black/45 backdrop-blur-md border border-white/25 text-white flex items-center justify-center shadow-md select-none transition-transform">
-                <Sparkles className="h-4 w-4" />
-              </div>
-            </div>
+            {/* Floating Share Action on top of Hero Graphic */}
             <div className="absolute top-4 right-4 z-20">
               <button
                 type="button"
@@ -234,10 +219,7 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
         ) : (
           <>
             {/* Standard Top Header Action Bar for Non-Hero Modes */}
-            <div className="w-full flex items-center justify-between px-1">
-              <div className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 text-white flex items-center justify-center shadow-sm select-none transition-transform">
-                <Sparkles className="h-4 w-4" />
-              </div>
+            <div className="w-full flex items-center justify-end px-1">
               <button
                 type="button"
                 onClick={handleNativeShare}
@@ -458,14 +440,14 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   style={getBioButtonCustomStyle(page.themeConfig, isHighlight)}
-                  className={`w-full py-3.5 px-4 font-semibold text-sm sm:text-base flex items-center justify-between transition-all duration-200 cursor-pointer ${getBioButtonClass(
+                  className={`w-full min-h-[60px] sm:min-h-[64px] py-3.5 px-4 font-semibold text-sm sm:text-base flex items-center justify-center transition-all duration-200 cursor-pointer ${getBioButtonClass(
                     theme,
                     page.themeConfig?.buttonStyle || 'rounded-full',
                     isHighlight
                   )} ${isHighlight ? 'animate-pulse' : ''}`}
                 >
-                  {/* Left thumbnail or invisible balance spacer */}
-                  {hasImageThumb ? (
+                  {/* Left thumbnail */}
+                  {hasImageThumb && (
                     <div className="w-8 h-8 sm:w-9 sm:h-9 shrink-0 flex items-center justify-center mr-2">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -474,9 +456,6 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
                         className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover border border-white/40 shadow-sm bg-white/20"
                       />
                     </div>
-                  ) : (
-                    /* Invisible balance spacer so title remains 100% centered against the right 3-dots button */
-                    <div className="w-8 h-8 shrink-0 mr-2 invisible pointer-events-none" aria-hidden="true" />
                   )}
 
                   {/* Center title */}
@@ -484,20 +463,10 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
                     {link.title}
                   </span>
 
-                  {/* Right 3-dots action */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleShareLink(link);
-                    }}
-                    className="w-8 h-8 rounded-full hover:bg-black/10 flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity shrink-0 cursor-pointer ml-2"
-                    title="Share link"
-                    aria-label="Share link"
-                  >
-                    <MoreVertical className="h-4 w-4" />
-                  </button>
+                  {/* Invisible right spacer when thumbnail exists so title stays 100% centered */}
+                  {hasImageThumb && (
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 shrink-0 ml-2 invisible pointer-events-none" aria-hidden="true" />
+                  )}
                 </motion.a>
               );
             })
@@ -505,27 +474,29 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
         </motion.div>
       </div>
 
-      {/* Footer Branding */}
-      <footer className="pt-6 pb-2 text-center relative z-10 shrink-0">
-        <a
-          href="https://www.klikform.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/25 hover:bg-black/35 text-white/80 hover:text-white backdrop-blur-md text-xs font-medium border border-white/10 transition-all hover:scale-105 shadow-sm"
-        >
-          <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
-          <span>
-            Create your own with <strong>KlikForm</strong>
-          </span>
-        </a>
-      </footer>
+      {/* Footer Branding — visible only on Free tier */}
+      {shouldShowBioBranding(page.userTier) && (
+        <footer className="pt-6 pb-2 text-center relative z-10 shrink-0">
+          <a
+            href="https://www.klikform.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/25 hover:bg-black/35 text-white/80 hover:text-white backdrop-blur-md text-xs font-medium border border-white/10 transition-all hover:scale-105 shadow-sm"
+          >
+            <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
+            <span>
+              Create your own with <strong>KlikForm</strong>
+            </span>
+          </a>
+        </footer>
+      )}
 
       {/* Share Dialog */}
       <Dialog open={shareOpen} onOpenChange={setShareOpen}>
-        <DialogContent className="sm:max-w-sm rounded-2xl">
+        <DialogContent className="sm:max-w-sm rounded-lg border-slate-200">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
-              <Share2 className="h-4 w-4 text-emerald-600" />
+              <Share2 className="h-4 w-4 text-violet-900" />
               Share Bio Page
             </DialogTitle>
             <DialogDescription className="text-xs">
@@ -537,7 +508,7 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
             <Button
               onClick={handleCopyPageUrl}
               variant="outline"
-              className="w-full justify-between h-10 text-xs font-medium"
+              className="w-full justify-between h-10 text-xs font-medium rounded-md border-slate-200"
             >
               <span className="flex items-center gap-2">
                 {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
@@ -558,7 +529,7 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
             >
               <Button
                 variant="outline"
-                className="w-full justify-start gap-2 h-10 text-xs font-medium bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-200"
+                className="w-full justify-start gap-2 h-10 text-xs font-medium rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-200"
               >
                 <MessageCircle className="h-4 w-4 text-emerald-600" />
                 Share on WhatsApp
@@ -571,7 +542,7 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
                 setQrOpen(true);
               }}
               variant="outline"
-              className="w-full justify-start gap-2 h-10 text-xs font-medium"
+              className="w-full justify-start gap-2 h-10 text-xs font-medium rounded-md border-slate-200"
             >
               <QrCode className="h-4 w-4" />
               View QR Code
@@ -582,7 +553,7 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
 
       {/* QR Code Dialog */}
       <Dialog open={qrOpen} onOpenChange={setQrOpen}>
-        <DialogContent className="sm:max-w-xs text-center rounded-2xl">
+        <DialogContent className="sm:max-w-xs text-center rounded-lg border-slate-200">
           <DialogHeader>
             <DialogTitle className="text-base">Scan to Visit</DialogTitle>
             <DialogDescription className="text-xs">
@@ -590,7 +561,7 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border border-gray-200 my-2 shadow-inner">
+          <div className="flex flex-col items-center justify-center p-4 bg-white rounded-lg border border-slate-200 my-2 shadow-2xs">
             <QRCodeSVG
               ref={qrRef}
               value={shareTargetUrl}
@@ -605,14 +576,14 @@ export function PublicBioClient({ page }: PublicBioClientProps) {
               variant="outline"
               size="sm"
               onClick={() => setQrOpen(false)}
-              className="flex-1 text-xs"
+              className="flex-1 text-xs rounded-md border-slate-200"
             >
               Close
             </Button>
             <Button
               size="sm"
               onClick={handleDownloadQr}
-              className="flex-1 text-xs bg-emerald-600 hover:bg-emerald-700"
+              className="flex-1 text-xs bg-violet-900 hover:bg-violet-950 text-white rounded-md shadow-xs"
             >
               Save QR
             </Button>

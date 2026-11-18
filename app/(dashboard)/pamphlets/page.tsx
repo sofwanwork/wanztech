@@ -103,7 +103,7 @@ export default async function PamphletsDashboard() {
             <CardTitle className="text-sm font-medium text-gray-600">
               Total Pages
             </CardTitle>
-            <Layers className="h-4 w-4 text-emerald-600" />
+            <Layers className="h-4 w-4 text-violet-900" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-900">{totalPages}</div>
@@ -114,21 +114,21 @@ export default async function PamphletsDashboard() {
 
       {/* Grid or Empty State */}
       {pamphlets.length === 0 ? (
-        <div className="rounded-3xl border-2 border-dashed border-gray-200 p-10 text-center bg-white/60 backdrop-blur-xs space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center mx-auto shadow-sm">
-            <BookOpen className="w-8 h-8" />
+        <div className="rounded-lg border border-dashed border-slate-200 p-10 text-center bg-white shadow-2xs space-y-4">
+          <div className="w-12 h-12 rounded-md bg-slate-100 border border-slate-200 text-violet-900 flex items-center justify-center mx-auto">
+            <BookOpen className="w-6 h-6" />
           </div>
           <div className="max-w-md mx-auto space-y-1.5">
-            <h3 className="text-lg font-bold text-gray-900">
+            <h3 className="text-lg font-bold text-slate-900">
               Create Your First Digital Program Book
             </h3>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-slate-600">
               Upload your event brochure pages (PNG/JPG or PDF), organize the program lineup, and share with an elegant QR code to your audience.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
             <CreatePamphletDialog buttonText="Create E-Pamphlet" size="lg" />
-            <Button asChild variant="outline" size="lg">
+            <Button asChild variant="outline" size="lg" className="rounded-md border-slate-200">
               <Link href="/p/demo" target="_blank" className="gap-2">
                 <ExternalLink className="w-4 h-4" />
                 <span>Preview Sample Program Book</span>

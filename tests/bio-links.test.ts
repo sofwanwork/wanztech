@@ -14,6 +14,7 @@ import {
   formatHandleTiles,
   getBioDisplayHandle,
   getHeroFadeMask,
+  shouldShowBioBranding,
 } from '@/lib/bio-links/themes';
 import { BioTheme, BioButtonStyle, BioPattern, BioFadeStyle, BioThemeConfig } from '@/lib/types/bio-links';
 
@@ -485,6 +486,18 @@ describe('KlikBio — Background Pattern Opacity', () => {
 
     expect(patternStyle.backgroundImage).toContain('radial-gradient');
     expect(opacity).toBe(0.5);
+  });
+});
+
+describe('KlikBio — Subscription Branding Visibility', () => {
+  it('shows KlikForm branding only on free tier or when tier is undefined', () => {
+    expect(shouldShowBioBranding(undefined)).toBe(true);
+    expect(shouldShowBioBranding('free')).toBe(true);
+  });
+
+  it('hides KlikForm branding for Pro and Enterprise tiers', () => {
+    expect(shouldShowBioBranding('pro')).toBe(false);
+    expect(shouldShowBioBranding('enterprise')).toBe(false);
   });
 });
 

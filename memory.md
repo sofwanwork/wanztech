@@ -1,5 +1,205 @@
 # Project Memory
 
+## Pembaikan Pemotongan Bahagian Atas Thumbnail dalam `Page List` (`ThumbnailsStrip`) - 2026-11-19
+
+- **Punca Isu & Laporan Pengguna**:
+  - Pengguna menghantar tangkapan skrin laci **PAGE LIST (6) • Click to jump to page** dalam pemapar E-Pamphlet (`components/pamphlet/viewer/thumbnails-strip.tsx`) yang menunjukkan bahagian atas semua thumbnail (termasuk cincin aktif ungu dan lencana semak) terpotong dengan bar skrol menegak di kanan, dan melaporkan: *"semua belah atas tu tak nampak"*.
+  - Had tinggi `max-h-56` (`224px`) pada `<aside>` tidak mencukupi untuk menampung kad thumbnail potret (`sm:w-24 aspect-[1/1.414]`, kapsyen, padding, serta efek `scale-105` / `-translate-y-1`). Disebabkan `overflow-x-auto` menukar `overflow-y` kepada `auto` dan `items-center` memusatkan barisan lebih tinggi di dalam kotak terhad itu, bahagian atas dan bawah thumbnail terpotong secara mendatar. Ia juga menggunakan `fixed w-[94vw]` berbanding kedudukan relatif `absolute` milik `PamphletToolbar`.
+- **Tindakan Pembaikan**:
+  - `components/pamphlet/viewer/thumbnails-strip.tsx`:
+    1. Menukarkan kelas kontena `<aside>` kepada `absolute bottom-20 left-1/2 -translate-x-1/2 z-40 w-[94%] max-w-4xl max-h-[calc(100%-7rem)] rounded-lg border shadow-lg backdrop-blur-md` supaya bebas daripada had keras `224px` serta kekal sejajar di dalam kontena `PamphletViewer` (baik di `/p/[slug]` mahupun pratonton pembina).
+    2. Mengemas kini senarai thumbnail kepada `flex items-start gap-3 overflow-x-auto overflow-y-hidden pt-3.5 pb-3 px-2.5` bagi memberi ruang atas/bawah mencukupi untuk `scale-105`, `ring-2`, dan `hover:-translate-y-1` tanpa bar skrol menegak atau pemotongan.
+    3. Memadankan lengkung kad thumbnail ke `rounded-md`.
+- **Status Ujian & Pengesahan**:
+  - `npm test`: 522/522 lulus merentas 53 fail suite.
+  - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat (`eslint .`).
+  - `npm run build`: Binaan Next.js 16.2.6 Turbopack berjaya (36 halaman statik + semua laluan dinamik).
+
+
+## Penyelarasan Tema Sistem Keseluruhan Halaman & Komponen KlikForm - 2026-11-19
+
+- **Konteks & Permintaan Pengguna**:
+  - Selepas penyelarasan `/check/[formId]`, pengguna bertanya *"ada page yg tak ikut tema ke"* dan mengarahkan *"selaraskan kesemuanya"*.
+  - Audit menyeluruh mendapati masih terdapat halaman Auth, Undang-undang, Dashboard/Builder Bio & E-Pamphlet, Form Builder, Dialog Admin, skrin ralat, serta overlay Kehadiran/Projektor yang masih menggunakan estetika lama (`blur-3xl`, `blur-xl`, `bg-emerald-600`, butang gradien, lengkung `rounded-2xl`/`rounded-3xl`, atau sisa label dwi-bahasa/Melayu).
+- **Tindakan Pembaikan**:
+  1. **Auth, Sijil & Pautan Ralat**:
+     - `app/(auth)/reset-password/page.tsx`, `app/auth/callback/page.tsx`, dan `app/(public)/verify/[id]/page.tsx`: Diselaraskan ke latar `bg-white` dengan dot grid halus, tiada `blur-3xl`/gradien, kad `rounded-lg border-slate-200`, dan butang/pemutar **Midnight Violet** (`violet-900`).
+     - `app/(public)/edit/[token]/page.tsx`: Skrin pautan tidak sah diselaraskan ke `bg-white` + dot grid, kad `rounded-lg border-slate-200`, dan kotak ikon `rounded-md`.
+  2. **Halaman Undang-undang (`privacy`, `terms`, `refund`)**:
+     - `app/(public)/privacy/page.tsx`, `app/(public)/terms/page.tsx`, `app/refund/page.tsx`: Diselaraskan ke `bg-white` + dot grid halus, kotak ikon `rounded-md bg-slate-100 border-slate-200 text-violet-900`, pautan `text-violet-900`, dan kontena utama `rounded-lg border-slate-200 shadow-2xs`.
+  3. **KlikBio & E-Pamphlet**:
+     - `app/(dashboard)/bio/client.tsx`, `app/(dashboard)/bio/loading.tsx`, dan `app/(public)/bio/[username]/client.tsx` (modal Share & QR): Ditukar daripada `bg-emerald-600` & `rounded-2xl`/`rounded-xl` kepada `violet-900` & `rounded-lg`/`rounded-md`, sambil mengekalkan paparan tema Bio pengguna.
+     - `app/(dashboard)/bio-builder/[id]/client.tsx` & `loading.tsx`: Kemaskini panel builder (`rounded-lg`), tab/pilihan/input (`rounded-md`), gantikan aksen/butang/suis/slider `emerald-600` builder kepada `violet-900`, dan buang label dwi-bahasa (`Warna Butang`, `Pratetap Warna Pantas`, `Corak Latar`, `Kelegapan Corak`) tanpa menjejaskan `MobileMockupView`.
+     - `app/(dashboard)/pamphlets/page.tsx`, `app/(dashboard)/pamphlets/client.tsx`, dan `app/(dashboard)/pamphlet-builder/[id]/client.tsx`: Diselaraskan ke `rounded-lg`/`rounded-md`, `border-slate-200`, dan aksen `violet-900`.
+  4. **Builder Borang, Template Sijil & Admin Dialog**:
+     - `app/builder/[id]/client.tsx`: Selaraskan pemilih bilangan hari (`bg-violet-900 rounded-md` + `1 Day`, `7 Days (1 Wk)`, `14 Days (2 Wks)`, `30 Days (1 Mo)`) dan butang *Open Projector Screen* (`bg-violet-900 hover:bg-violet-950 rounded-md`).
+     - `app/(dashboard)/certificates/builder/page.tsx`: Tukar butang upgrade Pro (*Limit Reached*, *Upgrade to Create More*) daripada gradien amber kepada `bg-violet-900 hover:bg-violet-950 text-white rounded-md shadow-xs`.
+     - `components/admin/edit-subscription-dialog.tsx`: Diselaraskan ke `rounded-lg`/`rounded-md`, `violet-900`, tiada gradien, dan 100% Bahasa Inggeris.
+  5. **Skrin Projektor & Overlay Borang Awam**:
+     - `app/(public)/present/[id]/client.tsx`: Kekalkan mod projektor gelap `bg-[#020617]` dengan dot grid gelap halus, buang halo kabur `blur-[120px]`/`blur-[100px]`/`blur-xl`, selaraskan kad QR ke `rounded-lg` dan butang kepada `bg-violet-900 hover:bg-violet-950`.
+     - `app/(public)/form/[id]/client.tsx`: Selaraskan kad overlay kehadiran/anti-penipuan/keputusan/borang kepada `rounded-lg`/`rounded-md`, tukar butang gradien & `bg-emerald-600` CTA utama ke `bg-violet-900 hover:bg-violet-950`, serta tukar label baki kepada Bahasa Inggeris (`Statement`, `Row Progress:`, `answered`), sambil memelihara tema tersuai `form.theme` milik pembuat borang. *(Juga menormalkan 3 baris CRLF/LF bercampur pada `getPatternCSS`).*
+- **Status Ujian & Pengesahan**:
+  - `npm test`: 522/522 lulus merentas 53 fail suite (`vitest run`).
+  - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat / 0 amaran (`eslint .`).
+  - `npm run build`: Binaan Next.js 16.2.6 Turbopack berjaya (36 halaman statik + semua laluan dinamik).
+
+
+## Penyelarasan Tema Sistem Portal Semakan E-Sijil (`/check/[formId]`) - 2026-11-19
+
+- **Punca Isu & Maklum Balas Pengguna**:
+  - Pengguna berkongsi tangkapan skrin portal semakan e-sijil `/check/[formId]` dan melaporkan: *"page ni je tak ikut tema sistem"*.
+  - Halaman `app/(public)/check/[formId]/client.tsx` masih mengekalkan gaya lama pra-30 Oktober (latar `bg-slate-50` dengan 3 bebola kabur `blur-3xl`, halo `blur-md` di belakang ikon, kad `rounded-3xl` dengan `backdrop-blur-xl` dan `shadow-xl`, input & butang `rounded-2xl` bergradien, warna butang `emerald-600`, serta sisa teks Bahasa Melayu seperti `atau nama@email.com`, `Gunakan Email Address`, dan `Cuba Carian Baharu`).
+- **Tindakan Pembaikan**:
+  - `app/(public)/check/[formId]/client.tsx`:
+    1. Menyelaraskan latar belakang kepada `bg-white` dengan grid titik halus (`bg-[radial-gradient(#e4e4e7_1px,transparent_1px)] [background-size:20px_20px] opacity-60`) serta membuang kesemua `blur-3xl` dan `blur-md`.
+    2. Menukar ikon pengepala dan lencana portal kepada geometri kemas (`w-12 h-12 rounded-md bg-slate-100 border border-slate-200 text-violet-900` dan lencana `rounded font-mono`).
+    3. Mengemas kini semua kad (carian, keputusan, amaran kehadiran, medan tiada, tidak dijumpai, dan pratonton langsung) kepada `rounded-lg border border-slate-200 bg-white shadow-2xs`, serta input dan butang kepada `rounded-md`.
+    4. Menyelaraskan semua tindakan utama dan pilihan aktif kepada **Midnight Violet** (`bg-violet-900 hover:bg-violet-950 text-white`), dan membuang `bg-gradient-to-r`/`bg-gradient-to-b` serta butang `emerald-600` (kecuali warna semantik kecil pada lencana status disahkan).
+    5. Menyelaraskan kesemua teks ke 100% Bahasa Inggeris (`or name@email.com`, `Use Email Address`, `Try Another Search`) sambil mengekalkan logik tangkapan PDF/PNG HD dan penskalaan `ResizeObserver`.
+- **Status Ujian & Pengesahan**:
+  - `npm test`: 522/522 lulus merentas 53 fail suite.
+  - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat / 0 amaran (`eslint .`).
+  - `npm run build`: Binaan Next.js 16.2.6 Turbopack berjaya (36 halaman statik + semua laluan dinamik).
+
+
+## Penyingkiran Butang `+ Page Break` Berganda dalam Kad Soalan (`FieldsEditor`) - 2026-11-19
+
+- **Punca Isu & Laporan Pengguna**:
+  - Pengguna menghantar tangkapan skrin kad `Question 1` yang membulatkan dua butang `+ Page Break` pada kad yang sama (`+ Page Break` di `CardHeader` dan `+ + Add Page Break here` di bahagian bawah `CardContent`) dengan laporan: *"page break ada 2 kali"*.
+- **Tindakan Pembaikan**:
+  - `components/forms/fields-editor/index.tsx` (`SortableField`): Membuang baris pintasan berulang (`Want the next question on a new page?` + `<Plus /> + Add Page Break here`) di bahagian bawah `CardContent`, mengekalkan satu butang `+ Page Break` / `Active Break` yang kemas pada `CardHeader` (dan butang `+ Add Page Break` di bahagian bawah senarai borang).
+- **Status Ujian & Pengesahan**:
+  - `npm test`: 522/522 lulus merentas 53 fail suite.
+  - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat / 0 amaran (`eslint .`).
+  - `npm run build`: Binaan Next.js 16.2.6 Turbopack berjaya (36 halaman statik + semua laluan dinamik).
+
+
+## Pencegahan Page Break Permulaan & Penomboran Soalan Sebenar pada `FieldsEditor` - 2026-11-19
+
+- **Punca Isu & Pertanyaan Pengguna**:
+  - Pengguna berkongsi tangkapan skrin **Form Fields** yang memaparkan `PAGE BREAK` di baris pertama diikuti `Question 2`, lalu bertanya: *"first mmg start dengan page break ke?"*.
+  - Pemeriksaan ke atas `actions/forms.ts` (`createFormAction`) mengesahkan borang baharu sebenarnya bermula dengan `fields: []` (tiada Page Break). Namun di `components/forms/fields-editor/index.tsx`:
+    1. Butang `+ Add Page Break` di bahagian bawah sebelum ini sentiasa dipaparkan dan boleh diklik walaupun borang masih kosong (atau jika soalan pertama dipadam/diseret ke bawah), menyebabkan `pagebreak` berada di indeks `0`.
+    2. Penomboran `Question {index + 1}` mengira penanda `pagebreak` sebagai soalan, menjadikan soalan pertama selepasnya dilabel `Question 2`.
+- **Tindakan Pembaikan**:
+  1. `lib/forms/pagination.ts`:
+     - Tambah `getFieldDisplayNumber(fields, index)` untuk mengira nombor soalan tanpa mengira item `pagebreak`.
+     - Tambah `canAppendPageBreak(fields)` supaya `pagebreak` hanya boleh ditambah di penghujung apabila wujud sekurang-kurangnya satu medan bukan-pagebreak dan item terakhir bukan `pagebreak`.
+  2. `components/forms/fields-editor/index.tsx`:
+     - Menggunakan `getFieldDisplayNumber` pada tajuk kad soalan (`Question {questionNumber}`), `DragOverlay`, dan sasaran `#tour-drag-handle` (`questionNumber === 1`).
+     - Menyembunyikan butang `+ Add Page Break` di bahagian bawah apabila tiada soalan bukan-pagebreak, dan menyahaktifkannya (`disabled={!allowAppendPageBreak}`) jika item terakhir sudah pun `pagebreak`.
+     - Memaparkan nota jelas apabila `pagebreak` berada di `index === 0` (*"No questions above this break (ignored on live form — safe to delete)"*).
+  3. `tests/pagination.test.ts`:
+     - Menambah ujian unit untuk `getFieldDisplayNumber` dan `canAppendPageBreak` (15/15 lulus).
+- **Status Ujian & Pengesahan**:
+  - `npm test`: 522/522 lulus merentas 53 fail suite.
+  - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat / 0 amaran (`eslint .`).
+  - `npm run build`: Binaan Next.js 16.2.6 Turbopack berjaya (36 halaman statik + semua laluan dinamik).
+
+
+## Penyelarasan Teks Panduan Pengesahan E-Sijil (Sokongan IC & Email) pada Form Builder - 2026-11-19
+
+- **Punca Isu & Pertanyaan Pengguna**:
+  - Pengguna bertanya berserta tangkapan skrin kad **E-Cert Settings** di Form Builder: *"kenapa takde utk email ya"* (merujuk kepada kotak *Important Info* yang hanya menyenaraikan `"Name"` / `"Nama"` dan `"IC"` / `"No IC"` / `"No. KP"`).
+  - Pemeriksaan ke atas `actions/certificates.ts` (`checkCertificateByICOrEmail`), `lib/certificates/headers.ts` (`isEmailHeader`, `detectVerificationMode`), dan `app/(public)/check/[formId]/client.tsx` mengesahkan pengesahan melalui **Email** sudah pun disokong sepenuhnya di belakang tabir dan di portal semakan `/check/[formId]`, cuma teks panduan statik di `app/builder/[id]/client.tsx` masih menggunakan teks lama khusus IC.
+- **Tindakan Pembaikan**:
+  - `app/builder/[id]/client.tsx`:
+    - Mengemas kini `CardDescription` kad **E-Cert Settings** kepada *"Enable e-certificate for participants to download with IC or Email verification"*.
+    - Mengemas kini kotak *Important Info* untuk menerangkan keperluan medan nama (`"Name"`, `"Full Name"`, atau `"Nama"`) serta medan pengesahan **IC** (`"IC"`, `"No IC"`, `"No. KP"`, `"NRIC"`) atau **Email** (`"Email"`, `"E-mel"`, atau jenis medan *Email*).
+- **Status Ujian & Pengesahan**:
+  - `npm test`: 519/519 lulus merentas 53 fail suite.
+  - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat / 0 amaran (`eslint .`).
+  - `npm run build`: Binaan Next.js 16.2.6 Turbopack berjaya (36 halaman statik + semua laluan dinamik).
+
+
+## Pembuangan Ikon Bulat `Sparkles` Penjuru Atas Kiri pada Bio Links - 2026-11-18
+
+- **Punca Isu & Permintaan Pengguna**:
+  - Pengguna berkongsi tangkapan skrin halaman awam `@metmalaysia` dengan bulatan merah pada ikon bulat `Sparkles` di penjuru atas kiri banner dan meminta: *"yg tu nak buang"*.
+- **Tindakan Pembaikan**:
+  1. `app/(public)/bio/[username]/client.tsx` (`PublicBioClient`):
+     - Membuang ikon bulat hiasan `Sparkles` di penjuru atas kiri untuk kedua-dua mod Hero (`absolute top-4 left-4`) dan mod bukan Hero (`justify-between` ditukar kepada `justify-end` supaya butang `Share2` kekal kemas di sebelah kanan).
+  2. `app/(dashboard)/bio-builder/[id]/client.tsx` (`MobileMockupView`):
+     - Membuang ikon bulat hiasan `Sparkles` di penjuru atas kiri pada simulator telefon untuk kedua-dua mod Hero dan mod bukan Hero (`justify-end` untuk butang `Share2`).
+- **Status Ujian & Pengesahan**:
+  - `npm test`: 519/519 lulus merentas 53 fail suite.
+  - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat / 0 amaran (`eslint .`).
+  - `npm run build`: Binaan Next.js 16.2.6 Turbopack berjaya (36 halaman statik + semua laluan dinamik).
+
+
+## Kawalan Paparan Penjenamaan KlikForm pada Bio Links Mengikut Pelan (Free Tier Only) - 2026-11-18
+
+- **Punca Isu & Permintaan Pengguna**:
+  - Pengguna menghantar tangkapan skrin halaman awam `@metmalaysia` dengan bulatan merah pada footer `"Create your own with KlikForm"` dan meminta: *"yg sy highlight tu kalau free tier je nampak"*.
+  - Sebelum ini, footer penjenamaan KlikForm pada `PublicBioClient` dan `MobileMockupView` dipaparkan tanpa syarat kepada semua pengguna termasuk pelanggan `Pro` dan `Enterprise` (tidak selaras dengan `/form/[id]` dan jadual pelan `/pricing` yang menjanjikan *"Remove KlikForm branding"*).
+- **Tindakan Pembaikan**:
+  1. `lib/types/bio-links.ts`: Tambah `userTier?: SubscriptionTier` pada antara muka `BioPage` (diwarisi oleh `BioPageWithLinks`).
+  2. `lib/constants/subscription-tiers.ts` & `lib/storage/subscription.ts`:
+     - Tambah pembantu tulen `resolveEffectiveTierFromRow(sub, nowMs)` yang mengekalkan `'pro'`/`'enterprise'` hanya jika `status === 'active'` dan belum melepasi `current_period_end`, selainnya turun kepada `'free'`.
+     - Tambah `getEffectiveTierForUser(userId)` menggunakan `createAdminClient()` untuk halaman awam tanpa log masuk (*fail-safe* ke `'free'`).
+  3. `lib/storage/bio-links.ts` & `lib/bio-links/themes.ts`:
+     - Kembalikan `userTier` secara selari dalam `getBioPageById` (melalui `getEffectiveTier`) dan `getBioPageByUsername` (melalui `getEffectiveTierForUser(pageRow.user_id)`, dibungkus `reactCache` selamat untuk berkongsi pertanyaan antara `generateMetadata` dan komponen halaman).
+     - Tambah pembantu tulen `shouldShowBioBranding(userTier)` (`!userTier || userTier === 'free'`).
+  4. `app/(public)/bio/[username]/client.tsx` & `app/(dashboard)/bio-builder/[id]/client.tsx`:
+     - Paparkan footer `"Create your own with KlikForm"` (`PublicBioClient`) dan `"Powered by KlikForm"` (`MobileMockupView`) hanya apabila `shouldShowBioBranding(page.userTier)` bernilai `true`.
+  5. `tests/bio-links.test.ts`, `tests/tier-limits.test.ts`, `tests/bio-storage.test.ts`:
+     - Tambah ujian unit untuk `shouldShowBioBranding`, `resolveEffectiveTierFromRow`, serta penyelesaian `userTier` (`pro` vs `free`) pada `getBioPageByUsername`.
+- **Status Ujian & Pengesahan**:
+  - `npm test`: 519/519 lulus merentas 53 fail suite.
+  - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat / 0 amaran (`eslint .`).
+  - `npm run build`: Binaan Next.js 16.2.6 Turbopack berjaya (36 halaman statik + semua laluan dinamik).
+
+
+## Pembuangan Ikon 3-Titik (`MoreVertical`) pada Butang Pautan KlikBio - 2026-11-18
+
+- **Punca Isu & Permintaan Pengguna**:
+  - Pengguna menghantar tangkapan skrin halaman awam `@metmalaysia` dengan bulatan merah pada ikon 3-titik (`⋮`) di sebelah kanan butang pautan dan meminta: *"boleh ke buang titik ni"*.
+- **Tindakan Pembaikan**:
+  1. `app/(public)/bio/[username]/client.tsx` (`PublicBioClient`):
+     - Membuang butang tindakan 3-titik (`MoreVertical`) di sebelah kanan setiap butang pautan, import `MoreVertical`, serta fungsi `handleShareLink` yang tidak lagi digunakan (butang kongsi profil di penjuru atas kanan `Share2` kekal berfungsi).
+     - Mengemas kini reka letak kapsul pautan (`min-h-[60px] sm:min-h-[64px] justify-center`): apabila pautan tiada gambar thumbnail kiri (`!hasImageThumb`), ruang pengimbang halimunan di kiri dibuang supaya tajuk panjang mendapat ruang penuh di tengah; apabila `hasImageThumb` wujud, ruang pengimbang halimunan di sebelah kanan (`w-8 h-8 sm:w-9 sm:h-9 ml-2`) mengekalkan tajuk tepat di tengah secara simetri.
+  2. `app/(dashboard)/bio-builder/[id]/client.tsx` (`MobileMockupView`):
+     - Membuang ikon `MoreVertical` dan import `MoreVertical` daripada simulator telefon langsung, serta menyelaraskan kapsul pautan kepada `min-h-[44px] justify-center` dengan pengimbang simetri kanan hanya apabila `hasImageThumb` wujud.
+- **Status Ujian & Pengesahan**:
+  - `npm test`: 513/513 lulus merentas 53 fail suite.
+  - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat / 0 amaran (`eslint .`).
+  - `npm run build`: Binaan Next.js 16 Turbopack berjaya (36 halaman statik + semua laluan dinamik).
+
+
+## Penambahbaikan Visual & Fizik 3D Flipbook E-Pamphlet (Termasuk Pembaikan Selakan Terputus & Bayang Silinder) - 2026-11-18
+
+- **Punca Isu & Permintaan Pengguna**:
+  - Pengguna meminta: *"boleh tak cantikkan sikit 3d flip di e pamphlet"* dan kemudian berkongsi tangkapan skrin lipatan halaman (*"kenapa macam tu ya"*) yang menunjukkan jalur silinder kelabu gelap pada margin putih, jurang antara helaian melengkung dan halaman kanan, serta kotak bayang kelabu rata di sebelah kiri.
+  - Siasatan kod dan sumber `node_modules/page-flip/src/` mengenal pasti:
+    1. `onPageChange` (fungsi anak panah inline daripada `PamphletViewer`), `soundEnabled`, dan `zoom` berada dalam array kebergantungan `useEffect` inisialisasi `PageFlip`, menyebabkan keseluruhan instans `PageFlip` dimusnahkan (`hostEl.innerHTML = ''`) dan dimuat semula secara asinkroni setiap kali `flip` atau `zoom` berubah.
+    2. `maxShadowOpacity: 0.55` menghasilkan gradien berganda `.stf__innerShadow` berkelegapan tinggi (`5% -> 55% -> 15% -> 55%`) yang kelihatan seperti paip logam berkilat di atas ruang margin putih (`object-contain` bagi foto landskap dalam buku potret) serta `.stf__outerShadow` yang terlalu pekat apabila tiada helaian bawah pada mod kulit tunggal (`showCover: true`).
+    3. Sebelum ini pada mod dwi-halaman (`totalPages > 2`), `box-shadow` dan tulang tengah diletakkan pada keseluruhan `bookWidth`, meninggalkan bayang kosong pada sebelah Muka Depan/Belakang tunggal.
+- **Tindakan Pembaikan**:
+  1. `components/pamphlet/viewer/flipbook-view.tsx`:
+     - Membina `computeBookStageLayout` untuk mengira anjakan tengah dinamik (`stageShiftX`), kelebaran & kedudukan bayang aktif (`activeShadowLeft`, `activeShadowWidth`), serta status paparan tulang tengah (`showCenterSpine`).
+     - Memindahkan `onPageChange` dan `soundEnabled` ke `useRef` (`onPageChangeRef`, `soundEnabledRef`) serta menggantikan `useMouseEvents: zoom <= 1` dengan kelas `pointer-events-none` pada `hostRef` ketika `zoom > 1`; mengeluarkan ketiganya daripada array kebergantungan `useEffect` supaya `PageFlip` tidak pernah dibina semula semasa selakan atau zum.
+     - Menurunkan `maxShadowOpacity` kepada `0.2` dan menyelaras `flippingTime` kepada `520ms` berserta pelembutan gradien tulang tengah (`rgba(15,23,42,0.26)` / `0.42`).
+  2. `app/globals.css`:
+     - Menambah pencahayaan silinder halaman (`.stf__page-lighting`), kemasan ketebalan tepi kertas dalaman (`.stf__item.--left` / `.--right`), serta menyelaras `.stf__spine-inner-shadow` (`width: 44px`, puncak `0.20`).
+  3. `tests/pamphlet.test.ts`:
+     - Menambah 4 ujian unit `computeBookStageLayout` (22/22 ujian dalam `tests/pamphlet.test.ts` lulus).
+- **Status Ujian & Pengesahan**:
+  - `npm test`: 513/513 lulus merentas 53 fail suite.
+  - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat / 0 amaran (`eslint .`).
+  - `npm run build`: Binaan Next.js 16 Turbopack berjaya (36 halaman statik + semua laluan dinamik).
+  - Pengesahan pelayar langsung pada `http://localhost:3000/flipbook`: navigasi penuh `1 / 6` -> `2-3 / 6` -> `4-5 / 6` -> `6 / 6` dan kembali tanpa teardown DOM atau ralat konsol; ujian seretan aktif pada `2-3 / 6` dan `1 / 6` mengesahkan lipatan kertas lembut tanpa jalur silinder keras.
+
+
 ## Ciri Duplicate Borang (Duplicate Form on My Forms & Form Builder) - 2026-11-17
 
 - **Punca Isu & Permintaan Pengguna**:

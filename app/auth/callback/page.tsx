@@ -73,10 +73,11 @@ function AuthCallbackContent() {
     }, [router, searchParams]);
 
     return (
-        <div className="flex h-screen w-full items-center justify-center bg-gray-50">
-            <div className="flex flex-col items-center gap-4">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="text-sm text-gray-500">{status}</p>
+        <div className="flex h-screen w-full items-center justify-center bg-white text-slate-900 relative overflow-hidden">
+            <div className="absolute inset-0 bg-[radial-gradient(#e4e4e7_1px,transparent_1px)] [background-size:20px_20px] opacity-60 z-0 pointer-events-none" />
+            <div className="relative z-10 flex flex-col items-center gap-3 p-6 rounded-lg border border-slate-200 bg-white shadow-2xs">
+                <Loader2 className="h-7 w-7 animate-spin text-violet-900" />
+                <p className="text-sm font-medium text-slate-600">{status}</p>
             </div>
         </div>
     );
@@ -86,10 +87,11 @@ export default function AuthCallbackPage() {
     return (
         <Suspense
             fallback={
-                <div className="flex h-screen w-full items-center justify-center bg-gray-50">
-                    <div className="flex flex-col items-center gap-4">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        <p className="text-sm text-gray-500">Loading...</p>
+                <div className="flex h-screen w-full items-center justify-center bg-white text-slate-900 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[radial-gradient(#e4e4e7_1px,transparent_1px)] [background-size:20px_20px] opacity-60 z-0 pointer-events-none" />
+                    <div className="relative z-10 flex flex-col items-center gap-3 p-6 rounded-lg border border-slate-200 bg-white shadow-2xs">
+                        <Loader2 className="h-7 w-7 animate-spin text-violet-900" />
+                        <p className="text-sm font-medium text-slate-600">Loading...</p>
                     </div>
                 </div>
             }

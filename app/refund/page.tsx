@@ -10,34 +10,36 @@ export const metadata: Metadata = {
 
 export default function RefundPage() {
     return (
-        <div className="min-h-screen bg-gray-50/50 pb-24">
+        <div className="min-h-screen bg-white text-slate-900 relative pb-24">
+            <div className="absolute inset-0 bg-[radial-gradient(#e4e4e7_1px,transparent_1px)] [background-size:20px_20px] opacity-60 z-0 pointer-events-none" />
+
             {/* Header / Hero Section */}
-            <div className="bg-white border-b border-gray-100 pt-16 pb-12">
+            <div className="relative z-10 bg-white border-b border-slate-200 pt-16 pb-12">
                 <div className="container mx-auto px-4 md:px-6 max-w-4xl">
                     <Link href="/">
-                        <Button variant="ghost" size="sm" className="mb-6 -ml-3 text-gray-500 hover:text-gray-900">
+                        <Button variant="ghost" size="sm" className="mb-6 -ml-3 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-md">
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Back to Home
                         </Button>
                     </Link>
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                        <div className="h-12 w-12 rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center text-violet-900">
                             <RefreshCcw className="h-6 w-6" />
                         </div>
-                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">Refund Policy</h1>
+                        <h1 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">Refund Policy</h1>
                     </div>
-                    <p className="text-gray-500 text-lg">
+                    <p className="text-slate-600 text-lg">
                         Detailed terms regarding the eligibility and process for refunds and compensation.
                     </p>
-                    <div className="mt-6 flex items-center text-sm text-gray-400">
+                    <div className="mt-6 flex items-center text-sm text-slate-500">
                         Last updated: 20 February 2026
                     </div>
                 </div>
             </div>
 
             {/* Content */}
-            <div className="container mx-auto px-4 md:px-6 max-w-4xl mt-12">
-                <div className="bg-white rounded-2xl p-8 md:p-12 shadow-sm border border-gray-100">
+            <div className="relative z-10 container mx-auto px-4 md:px-6 max-w-4xl mt-12">
+                <div className="bg-white rounded-lg p-8 md:p-12 shadow-2xs border border-slate-200">
 
                     <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mt-8 mb-4 first:mt-0">1. Basic Refund Policy</h2>
                     <p className="text-gray-600 leading-relaxed mb-4">
@@ -71,7 +73,7 @@ export default function RefundPage() {
                         To submit a refund policy review with our support team:
                     </p>
                     <ol className="list-decimal pl-6 mb-6 text-gray-600 space-y-2">
-                        <li>Please formally email the case details to: <a href="mailto:support@klikform.com" className="text-primary hover:underline font-medium">support@klikform.com</a>.</li>
+                        <li>Please formally email the case details to: <a href="mailto:support@klikform.com" className="text-violet-900 hover:underline font-medium">support@klikform.com</a>.</li>
                         <li>Email Subject Title: "Refund Policy Review: [Your Email / Username]".</li>
                         <li>Include in the copy (screenshot of the original receipt or receipt confirmation number, along with a deep targeted description / justification of the disputed issue).</li>
                     </ol>

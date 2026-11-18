@@ -18,10 +18,11 @@ export default async function VerifyPage({ params }: PageProps) {
   if (form && form.eCertificateEnabled) {
     // Redirect to the IC check page for this form
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-white to-primary/10 flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-gray-600">Redirecting to verification page...</p>
+      <div className="min-h-screen bg-white text-slate-900 relative overflow-hidden flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-[radial-gradient(#e4e4e7_1px,transparent_1px)] [background-size:20px_20px] opacity-60 z-0 pointer-events-none" />
+        <div className="relative z-10 text-center p-6 rounded-lg border border-slate-200 bg-white shadow-2xs">
+          <div className="animate-spin h-7 w-7 border-4 border-violet-900 border-t-transparent rounded-full mx-auto mb-3" />
+          <p className="text-sm font-medium text-slate-600">Redirecting to verification page...</p>
           <meta httpEquiv="refresh" content={`0;url=/check/${id}`} />
         </div>
       </div>

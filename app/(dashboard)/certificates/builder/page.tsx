@@ -65,7 +65,7 @@ export default async function CertificateBuilderPage({
           </NewCertificateDialog>
         ) : (
           <PricingModal>
-            <Button className="gap-2 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white border-0">
+            <Button className="gap-2 bg-violet-900 hover:bg-violet-950 text-white rounded-md shadow-xs">
               <Plus className="h-4 w-4" />
               Limit Reached
             </Button>
@@ -122,7 +122,7 @@ export default async function CertificateBuilderPage({
               <PricingModal>
                 <Button
                   size="lg"
-                  className="shadow-xl shadow-amber-500/30 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white border-0"
+                  className="bg-violet-900 hover:bg-violet-950 text-white rounded-md shadow-xs"
                 >
                   Upgrade to Create More
                 </Button>

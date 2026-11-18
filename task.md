@@ -1,3 +1,243 @@
+# Pembaikan Pemotongan Bahagian Atas Thumbnail dalam `Page List` (`ThumbnailsStrip`) ✅ SELESAI
+
+**Konteks & Laporan Pengguna**:
+- Pengguna berkongsi tangkapan skrin panel **PAGE LIST (6) • Click to jump to page** dalam pemapar E-Pamphlet dengan bulatan merah pada bahagian atas thumbnail halaman 2 & 3, dan melaporkan: *"semua belah atas tu tak nampak"*.
+- **Punca**: Kontena `<aside>` pada [thumbnails-strip.tsx](file:///c:/Users/Sofwan/Desktop/klikform/components/pamphlet/viewer/thumbnails-strip.tsx#L39) dihadkan oleh `max-h-56` (`224px`), sedangkan baris thumbnail potret (`w-20 sm:w-24 aspect-[1/1.414]`, tajuk, padding, serta `scale-105` / `hover:-translate-y-1`) memerlukan ~`250px` ketinggian. Di dalam kontena skrol mendatar (`flex items-center ... overflow-x-auto`), lebar melintang memaksa `overflow-y: auto`, lalu memotong bahagian atas (bingkai ungu & lencana semak aktif) serta bahagian bawah teks dan memaparkan bar skrol menegak di sebelah kanan. Tambahan pula ia menggunakan `fixed w-[94vw]` berbanding `absolute` seperti bar alat bawah (`PamphletToolbar`).
+
+### Pelan Tindakan Pelaksanaan
+- [x] 1. **Kemas kini Susun Atur & Ruang Atas/Bawah ([thumbnails-strip.tsx](file:///c:/Users/Sofwan/Desktop/klikform/components/pamphlet/viewer/thumbnails-strip.tsx))**:
+  - Buang had keras `max-h-56` dan tukar kedudukan kepada `absolute bottom-20 left-1/2 -translate-x-1/2 z-40 w-[94%] max-w-4xl max-h-[calc(100%-7rem)] rounded-lg shadow-lg backdrop-blur-md` selaras dengan `PamphletToolbar` (supaya berfungsi tepat di halaman awam `/p/[slug]` dan pratonton pembina).
+  - Tukar kontena senarai thumbnail kepada `flex items-start gap-3 overflow-x-auto overflow-y-hidden pt-3.5 pb-3 px-2.5` supaya skala `scale-105`, hover `-translate-y-1`, dan `ring-2` sentiasa mempunyai ruang atas/bawah yang mencukupi tanpa bar skrol menegak atau pemotongan tepi.
+- [x] 2. **Pengesahan & Dokumentasi**:
+  - Jalankan `npm test` (522/522 lulus merentas 53 fail suite), `npm run typecheck` (0 ralat), `npm run lint` (0 ralat), dan `npm run build` (berjaya, 36 halaman statik).
+  - Kemas kini `task.md` dan `memory.md`.
+
+### Seksyen Reviu
+- **Pemaparan Penuh Tanpa Pemotongan**: Penyingkiran `max-h-56`, penambahan ruang legar menegak (`pt-3.5 pb-3 px-2.5` bersama `items-start` dan `overflow-y-hidden`), serta penyelarasan kedudukan relatif `absolute bottom-20 w-[94%]` memastikan keseluruhan thumbnail (penjuru atas, lencana aktif, dan kapsyen bawah) kelihatan penuh pada paparan potret mahupun landskap tanpa bar skrol menegak.
+
+---
+
+# Penyelarasan Tema Sistem Keseluruhan Halaman & Komponen KlikForm ✅ SELESAI
+
+**Konteks & Permintaan Pengguna**:
+- Selepas menyelaraskan `/check/[formId]`, pengguna bertanya *"ada page yg tak ikut tema ke"* dan seterusnya mengarahkan: *"selaraskan kesemuanya"*.
+- **Standard Tema Sistem KlikForm**: Minimalis & Anti-AI-Slop (*Less Radiant* tanpa halo `blur-3xl`/`blur-xl` atau butang gradien), *Less Curve* (`rounded-lg` untuk kad/kontena/modal, `rounded-md` untuk butang/input/kotak ikon), warna jenama utama **Midnight Violet** (`bg-violet-900 hover:bg-violet-950` / `#4C1D95`), latar `bg-white` + grid titik halus (`radial-gradient(#e4e4e7_1px,transparent_1px)`) pada halaman awam/auth kendiri, sempadan `border-slate-200`, dan teks UI 100% Bahasa Inggeris.
+
+### Pelan Tindakan Pelaksanaan
+- [x] 1. **Halaman Auth & Undang-undang (`reset-password`, `auth/callback`, `privacy`, `terms`, `refund`, `edit/[token]`, `verify/[id]`)**:
+  - Selaraskan [reset-password/page.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/(auth)/reset-password/page.tsx), [auth/callback/page.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/auth/callback/page.tsx), dan [verify/[id]/page.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/(public)/verify/[id]/page.tsx) kepada latar `bg-white` + grid titik halus, tiada `blur-3xl`/gradien, kad `rounded-lg border-slate-200`, butang & pemutar `violet-900`.
+  - Selaraskan [privacy/page.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/(public)/privacy/page.tsx), [terms/page.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/(public)/terms/page.tsx), dan [refund/page.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/refund/page.tsx) kepada `bg-white` + grid titik halus, kotak ikon `rounded-md bg-slate-100 border-slate-200 text-violet-900`, dan kad kandungan `rounded-lg border-slate-200`.
+  - Selaraskan skrin ralat pautan tidak sah dalam [edit/[token]/page.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/(public)/edit/[token]/page.tsx) kepada `bg-white` + grid titik halus, kad `rounded-lg border-slate-200`, dan kotak ikon `rounded-md`.
+- [x] 2. **Dashboard & Builder Bio + E-Pamphlet (`bio`, `bio-builder`, `bio/[username]`, `pamphlets`, `pamphlet-builder`)**:
+  - Selaraskan [bio/client.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/(dashboard)/bio/client.tsx), [bio/loading.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/(dashboard)/bio/loading.tsx), dan dialog Share/QR di [bio/[username]/client.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/(public)/bio/[username]/client.tsx) kepada `violet-900` & `rounded-lg`/`rounded-md` sambil mengekalkan warna tema pratonton Bio pengguna.
+  - Selaraskan [bio-builder/[id]/client.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/(dashboard)/bio-builder/[id]/client.tsx) & [loading.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/(dashboard)/bio-builder/[id]/loading.tsx): kemaskan semua panel builder (`rounded-lg`), tab/pilihan/input (`rounded-md`), gantikan `bg-emerald-600` / `accent-emerald-600` builder kepada `violet-900`, serta buang label dwi-bahasa (`/ Warna Butang`, `Pratetap Warna Pantas`, `/ Corak Latar`, `/ Kelegapan Corak`) tanpa mengubah pratonton `MobileMockupView`.
+  - Selaraskan [pamphlets/page.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/(dashboard)/pamphlets/page.tsx), [pamphlets/client.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/(dashboard)/pamphlets/client.tsx), dan [pamphlet-builder/[id]/client.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/(dashboard)/pamphlet-builder/[id]/client.tsx) kepada `rounded-lg`/`rounded-md`, `border-slate-200`, dan aksen `violet-900`.
+- [x] 3. **Builder Borang, Template Sijil & Dialog Admin (`builder/[id]`, `certificates/builder`, `edit-subscription-dialog`)**:
+  - Selaraskan 2 bahagian baki dalam [app/builder/[id]/client.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/builder/[id]/client.tsx): pemilih tempoh hari (`bg-violet-900 rounded-md` + 100% Bahasa Inggeris `1 Day`, `7 Days (1 Wk)`, `14 Days (2 Wks)`, `30 Days (1 Mo)`) dan butang *Open Projector Screen* (`bg-violet-900 hover:bg-violet-950 rounded-md`).
+  - Selaraskan butang upgrade dalam [certificates/builder/page.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/(dashboard)/certificates/builder/page.tsx) (*Limit Reached* & *Upgrade to Create More* kepada `bg-violet-900 hover:bg-violet-950 text-white rounded-md shadow-xs`).
+  - Selaraskan [components/admin/edit-subscription-dialog.tsx](file:///c:/Users/Sofwan/Desktop/klikform/components/admin/edit-subscription-dialog.tsx): `rounded-lg`/`rounded-md`, header/butang **Midnight Violet** tanpa gradien, dan 100% Bahasa Inggeris.
+- [x] 4. **Skrin Projektor & Overlay Kehadiran Borang Awam (`present/[id]`, `form/[id]`)**:
+  - Selaraskan [present/[id]/client.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/(public)/present/[id]/client.tsx): kekalkan mod gelap projektor berimpak tinggi `bg-[#020617]` dengan grid halus, buang halo kabur `blur-[120px]`/`blur-[100px]`/`blur-xl`, selaraskan lengkung (`rounded-lg`/`rounded-md`), dan tukar butang *Open Form Builder* kepada `bg-violet-900 hover:bg-violet-950`.
+  - Selaraskan overlay kehadiran, skrin kunci anti-penipuan, kad penutup/skala dan kontena dalam [form/[id]/client.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/(public)/form/[id]/client.tsx): `rounded-lg`/`rounded-md`, gantikan butang gradien & `bg-emerald-600` CTA utama kepada `bg-violet-900 hover:bg-violet-950`, bersihkan baki teks Melayu (`Statement`, `Row Progress:`, `answered`), sambil mengekalkan pemboleh ubah warna tema borang pilihan pengguna (`form.theme`).
+- [x] 5. **Pengesahan & Dokumentasi**:
+  - Jalankan `npm test` (522/522 lulus merentas 53 fail suite), `npm run typecheck` (0 ralat), `npm run lint` (0 ralat / 0 amaran), dan `npm run build` (berjaya, 36 halaman statik).
+  - Kemas kini `task.md` dan `memory.md`.
+
+### Seksyen Reviu
+- **Konsistensi Tema Sistem Menyeluruh**: Kesemua 17 fail UI/halaman yang dikenal pasti terkeluar daripada sistem reka bentuk KlikForm kini telah diselaraskan ke **Midnight Violet (`violet-900`)**, geometri **Less Curve** (`rounded-lg` / `rounded-md`), estetika **Minimalist / Less Radiant** (`bg-white` + dot grid halus tanpa `blur-3xl` / butang gradien), serta 100% teks antaramuka Bahasa Inggeris — sementara tema tersuai milik pengguna (prapaparan Bio, corak E-Pamphlet, mod gelap projektor, dan tema `form.theme` pada borang awam) tetap terpelihara tanpa regresi.
+
+---
+
+# Penyelarasan Tema Sistem Portal Semakan E-Sijil (`/check/[formId]`) ✅ SELESAI
+
+**Konteks & Maklum Balas Pengguna**:
+- Pengguna berkongsi tangkapan skrin halaman awam `/check/[formId]` (`genz`) dan melaporkan: *"page ni je tak ikut tema sistem"*.
+- **Punca**: Halaman `/check/[formId]` (`app/(public)/check/[formId]/client.tsx`) direka bentuk pada 19 Oktober sebelum penyelarasan tema sistem KlikForm pada 30 Oktober & 2 November (Minimalis, Anti-AI-Slop, *Less Radiant*, *Less Curve*, Midnight Violet `#4C1D95`, latar putih dengan grid titik halus, dan 100% Bahasa Inggeris). Ia masih menggunakan `blur-3xl` neon orbs, `rounded-3xl`/`rounded-2xl`, butang `bg-gradient-to-r`, warna `emerald-600` pada hasil/muat turun, serta beberapa teks Bahasa Melayu (`atau nama@email.com`, `Gunakan Email Address`, `Cuba Carian Baharu`).
+
+### Pelan Tindakan Pelaksanaan
+- [x] 1. **Penyelarasan Visual & Geometri Sistem (`app/(public)/check/[formId]/client.tsx`)**:
+  - Gantikan latar `bg-slate-50` + 3 `blur-3xl` neon orbs dengan latar `bg-white` + corak titik halus (`radial-gradient(#e4e4e7_1px,transparent_1px)`) selaras dengan `/verify/[id]`, `/pricing`, dan `/login`.
+  - Buang kesan `blur-md` bersinar pada ikon teratas; gunakan bekas ikon kemas `w-12 h-12 rounded-md bg-slate-100 border border-slate-200 text-violet-900` dan lencana mono geometri `rounded`.
+  - Selaraskan semua kad (`rounded-lg border-slate-200 bg-white shadow-2xs`), input & butang (`rounded-md`), serta butang tindakan utama kepada **Midnight Violet** (`bg-violet-900 hover:bg-violet-950 text-white`) — termasuk *Verify E-Certificate Now*, pemilihan sijil harian aktif, *Download PDF*, dan butang pembetulan carian (`Use IC / ID Number`, `Use Email Address`).
+  - Selaraskan teks 100% Bahasa Inggeris (`or name@email.com`, `Use Email Address`, `Try Another Search`) serta kekalkan logik tangkapan PDF/PNG HD dan skala kanvas tanpa perubahan.
+- [x] 2. **Ujian & Pengesahan Kualiti**:
+  - Jalankan `npm test` (522/522 lulus merentas 53 fail suite), `npm run typecheck` (0 ralat), `npm run lint` (0 ralat / 0 amaran), dan `npm run build` (berjaya).
+- [x] 3. **Dokumentasi**:
+  - Kemas kini `task.md` dan `memory.md`.
+
+### Seksyen Reviu
+- **Keserasian Sistem Reka Bentuk KlikForm**: `app/(public)/check/[formId]/client.tsx` kini sepadan 100% dengan halaman lain (`/verify/[id]`, `/pricing`, `/login`, dan `/certificates`) — latar putih bersih dengan grid titik halus tanpa `blur-3xl`, geometri *less curve* (`rounded-lg` untuk kad, `rounded-md` untuk input dan butang, `rounded` untuk lencana mono), aksen **Midnight Violet** (`violet-900`), serta 100% Bahasa Inggeris sambil mengekalkan susun atur *workbench* pratonton sijil HD, penskalaan dinamik `ResizeObserver`, dan tangkapan PDF/PNG `html2canvas-pro`.
+
+---
+
+# Penyingkiran Butang Page Break Berganda dalam Kad Soalan (`FieldsEditor`) ✅ SELESAI
+
+**Konteks & Laporan Pengguna**:
+- Pengguna berkongsi tangkapan skrin kad `Question 1` yang membulatkan kedua-dua butang `+ Page Break` di penjuru kanan atas kad dan `+ + Add Page Break here` di penjuru kanan bawah kad, dengan maklum balas: *"page break ada 2 kali"*.
+- **Punca**: Setiap kad soalan (`SortableField` di `components/forms/fields-editor/index.tsx`) mempunyai dua pencetus `insertPageBreak(index)` yang serupa — satu di `CardHeader` (`+ Page Break` / `Active Break`) dan satu lagi di bahagian bawah `CardContent` (`+ + Add Page Break here`, yang turut mengandungi simbol `+` berganda).
+
+### Pelan Tindakan Pelaksanaan
+- [x] 1. **Kemas kini `SortableField` (`components/forms/fields-editor/index.tsx`)**:
+  - Buang baris pintasan berulang di bahagian bawah `CardContent` (`Want the next question on a new page?` + `+ + Add Page Break here`).
+  - Kekalkan satu kawalan tunggal yang kemas dan konsisten pada `CardHeader` (`+ Page Break` / `Active Break`) bersama butang `Duplicate` dan `Delete`, serta butang `+ Add Page Break` di bahagian bawah senarai borang.
+- [x] 2. **Ujian & Pengesahan Kualiti**:
+  - Jalankan `npm test` (522/522 lulus merentas 53 fail suite), `npm run typecheck` (0 ralat), `npm run lint` (0 ralat / 0 amaran), dan `npm run build` (berjaya).
+- [x] 3. **Dokumentasi**:
+  - Kemas kini `task.md`, `memory.md`, dan `lessons.md`.
+
+### Seksyen Reviu
+- **Satu Kawalan Tunggal per Kad**: Membuang pintasan `+ + Add Page Break here` di dasar `CardContent` menghapuskan pertindihan dua butang tindakan serupa dalam kad yang sama (terutama pada kad pendek) serta membuang ralat simbol `+` berganda. Pengguna masih boleh menyisipkan `Page Break` terus selepas mana-mana soalan melalui butang `+ Page Break` di `CardHeader`, atau di hujung borang melalui `+ Add Page Break`.
+
+---
+
+# Pencegahan Page Break Permulaan & Pembetulan Penomboran Soalan (`FieldsEditor`) ✅ SELESAI
+
+**Konteks & Pertanyaan Pengguna**:
+- Pengguna berkongsi tangkapan skrin **Form Fields** dengan `PAGE BREAK` di baris pertama diikuti `Question 2` dan bertanya: *"first mmg start dengan page break ke?"*.
+- **Punca**:
+  1. Borang baharu (`createFormAction`) bermula kosong (`fields: []`) tanpa `pagebreak`, namun butang `+ Add Page Break` di bahagian bawah sebelum ini boleh ditekan walaupun borang belum mempunyai sebarang soalan (atau jika soalan pertama dipadam / diseret ke bawah).
+  2. Penomboran `Question {index + 1}` mengira penanda `pagebreak` sebagai satu soalan, menjadikan soalan pertama selepas `pagebreak` dipaparkan sebagai `Question 2`.
+
+### Pelan Tindakan Pelaksanaan
+- [x] 1. **Pembantu Penomboran & Pengawalan Page Break (`lib/forms/pagination.ts`)**:
+  - Tambah `getFieldDisplayNumber(fields, index)` yang mengabaikan penanda `pagebreak` daripada penomboran kad soalan.
+  - Tambah `canAppendPageBreak(fields)` untuk menghalang penambahan `pagebreak` apabila tiada soalan wujud atau apabila item terakhir sudah pun `pagebreak`.
+- [x] 2. **Kemas kini `FieldsEditor` (`components/forms/fields-editor/index.tsx`)**:
+  - Guna `getFieldDisplayNumber` dalam `SortableField`, `DragOverlay`, dan sasaran `#tour-drag-handle`.
+  - Sembunyikan butang bawah `+ Add Page Break` apabila borang tiada soalan bukan-pagebreak, dan nyahaktifkan jika item terakhir sudah pun `pagebreak`.
+  - Paparkan mesej jelas pada `pagebreak` di indeks `0` (*"No questions above this break (ignored on live form — safe to delete)"*).
+- [x] 3. **Ujian Unit & Pengesahan Kualiti**:
+  - Tambah ujian unit untuk `getFieldDisplayNumber` dan `canAppendPageBreak` dalam `tests/pagination.test.ts` (15/15 lulus).
+  - Jalankan `npm test` (522/522 lulus merentas 53 fail suite), `npm run typecheck` (0 ralat), `npm run lint` (0 ralat / 0 amaran), dan `npm run build` (berjaya).
+- [x] 4. **Dokumentasi**:
+  - Kemas kini `task.md` dan `memory.md`.
+
+### Seksyen Reviu
+- **Pengawalan Bahagian Kosong & Penomboran Sebenar**: Menyembunyikan `+ Add Page Break` pada borang kosong (`!fields.some(f => f.type !== 'pagebreak')`) menghalang pengguna daripada menambah `pagebreak` di kedudukan pertama secara tidak sengaja, manakala `getFieldDisplayNumber` memastikan soalan sentiasa dinomborkan `Question 1`, `Question 2`, dan seterusnya tanpa mengira penanda `pagebreak`. Pada borang awam (`app/(public)/form/[id]/client.tsx`), halaman kosong akibat `pagebreak` permulaan turut digugurkan secara automatik (`filter(p => p.length > 0)`), dan di Form Builder pengguna kini melihat nota jelas bahawa `pagebreak` di indeks `0` selamat untuk dibuang.
+
+---
+
+# Penyelarasan Teks Panduan Pengesahan E-Sijil (Sokongan IC & Email) pada Form Builder ✅ SELESAI
+
+**Konteks & Pertanyaan Pengguna**:
+- Pengguna berkongsi tangkapan skrin kad **E-Cert Settings** di Form Builder (`app/builder/[id]/client.tsx`) dengan bulatan merah pada kotak *Important Info* dan bertanya: *"kenapa takde utk email ya"*.
+- **Punca**: Sistem semakan e-sijil (`actions/certificates.ts`, `lib/certificates/headers.ts`, dan `app/(public)/check/[formId]/client.tsx`) sebenarnya sudah menyokong pengesahan melalui **Email** dan **IC** (serta mengesan mod `email_only` / `ic_only` / `both` secara automatik), tetapi teks penerangan statik dalam kad **E-Cert Settings** di Form Builder masih menggunakan teks lama yang hanya menyebut IC.
+
+### Pelan Tindakan Pelaksanaan
+- [x] 1. **Kemas kini Teks Panduan Form Builder (`app/builder/[id]/client.tsx`)**:
+  - Kemas kini penerangan `CardDescription` kad **E-Cert Settings** kepada *"Enable e-certificate for participants to download with IC or Email verification"*.
+  - Kemas kini kotak *Important Info* untuk menerangkan bahawa borang memerlukan medan nama (`"Name"`, `"Full Name"`, atau `"Nama"`) dan medan pengesahan sama ada **IC** (`"IC"`, `"No IC"`, `"No. KP"`, `"NRIC"`) atau **Email** (`"Email"`, `"E-mel"`, atau jenis medan *Email*).
+- [x] 2. **Ujian & Pengesahan Kualiti**:
+  - Jalankan `npm test` (519/519 lulus merentas 53 fail suite), `npm run typecheck` (0 ralat), `npm run lint` (0 ralat / 0 amaran), dan `npm run build` (berjaya).
+- [x] 3. **Dokumentasi**:
+  - Kemas kini `task.md` dan `memory.md`.
+
+### Seksyen Reviu
+- **Kejelasan antara Kod Pelayan dan Panduan UI**: `checkCertificateByICOrEmail` (`actions/certificates.ts`) dan `detectVerificationMode` (`lib/certificates/headers.ts`) sudah pun menyokong pengesahan melalui medan Email (`isEmailHeader` atau medan jenis `email`) serta IC (`isIcHeader`). Mengemas kini teks `CardDescription` dan kotak *Important Info* di `app/builder/[id]/client.tsx` menghapuskan kekeliruan pengguna bahawa hanya medan IC yang disokong.
+
+---
+
+# Pembuangan Ikon Sparkles Penjuru Atas Kiri pada Bio Links ✅ SELESAI
+
+**Konteks & Permintaan Pengguna**:
+- Pengguna berkongsi tangkapan skrin halaman awam `@metmalaysia` dengan bulatan merah pada ikon bulat `Sparkles` di penjuru atas kiri banner dan meminta: *"yg tu nak buang"*.
+
+### Pelan Tindakan Pelaksanaan
+- [x] 1. **Halaman Awam Bio Links (`app/(public)/bio/[username]/client.tsx`)**:
+  - Buang butang bulat hiasan `Sparkles` di penjuru atas kiri bagi mod Hero dan mod bukan Hero (`justify-end` untuk mengekalkan butang `Share2` di kanan).
+- [x] 2. **Simulator Telefon Bio Builder (`app/(dashboard)/bio-builder/[id]/client.tsx`)**:
+  - Buang ikon bulat `Sparkles` di penjuru atas kiri dalam `MobileMockupView` (kedua-dua mod Hero dan bukan Hero) supaya pratonton studio sepadan 100% dengan paparan awam.
+- [x] 3. **Ujian & Pengesahan Kualiti**:
+  - Jalankan `npm test` (519/519 lulus merentas 53 fail suite), `npm run typecheck` (0 ralat), `npm run lint` (0 ralat / 0 amaran), dan `npm run build` (berjaya).
+- [x] 4. **Dokumentasi**:
+  - Kemas kini `task.md` dan `memory.md`.
+
+### Seksyen Reviu
+- **Penjuru Atas Bersih**: Ikon bulat hiasan `Sparkles` di sebelah kiri atas tidak mempunyai sebarang tindakan klik; membuangnya daripada kedua-dua mod Hero dan mod bukan Hero pada `PublicBioClient` dan `MobileMockupView` menjadikan sepanduk dan pengepala lebih kemas sementara butang kongsi `Share2` kekal di penjuru atas kanan (`justify-end` untuk mod bukan Hero).
+
+---
+
+# Kawalan Penjenamaan KlikForm Bio Links Mengikut Pelan Langganan (Free Tier Only) ✅ SELESAI
+
+**Konteks & Permintaan Pengguna**:
+- Pengguna berkongsi tangkapan skrin halaman awam `@metmalaysia` dengan bulatan merah pada lencana footer `"Create your own with KlikForm"` dan meminta: *"yg sy highlight tu kalau free tier je nampak"*.
+
+### Pelan Tindakan Pelaksanaan
+- [x] 1. **Jenis & Pembantu Peringkat Langganan (`lib/types/bio-links.ts`, `lib/constants/subscription-tiers.ts`, `lib/storage/subscription.ts`)**:
+  - Tambah `userTier?: SubscriptionTier` pada antara muka `BioPage`.
+  - Bina pembantu tulen `resolveEffectiveTierFromRow` di `lib/constants/subscription-tiers.ts` dan `getEffectiveTierForUser(userId)` di `lib/storage/subscription.ts` bagi menyemak pelan aktif pemilik (mengambil kira status tidak aktif dan tarikh tamat tempoh).
+- [x] 2. **Lapisan Storan & Tema Bio Links (`lib/storage/bio-links.ts`, `lib/bio-links/themes.ts`)**:
+  - Kembalikan `userTier` secara selari dalam `getBioPageByUsername` (dengan `React.cache` selamat untuk mengelakkan pertanyaan berganda) dan `getBioPageById`.
+  - Tambah pembantu `shouldShowBioBranding(userTier)` di `lib/bio-links/themes.ts`.
+- [x] 3. **Paparan Awam & Simulator Bio Builder (`app/(public)/bio/[username]/client.tsx`, `app/(dashboard)/bio-builder/[id]/client.tsx`)**:
+  - Paparkan footer `"Create your own with KlikForm"` pada halaman awam dan `"Powered by KlikForm"` pada `MobileMockupView` hanya apabila `shouldShowBioBranding(page.userTier)` benar (Free tier).
+- [x] 4. **Ujian Unit & Pengesahan Kualiti**:
+  - Tambah ujian unit untuk `shouldShowBioBranding`, `resolveEffectiveTierFromRow`, serta `getBioPageByUsername` (`tests/bio-links.test.ts`, `tests/tier-limits.test.ts`, `tests/bio-storage.test.ts`).
+  - Jalankan `npm test` (519/519 lulus merentas 53 fail suite), `npm run typecheck` (0 ralat), `npm run lint` (0 ralat / 0 amaran), dan `npm run build` (berjaya).
+- [x] 5. **Dokumentasi**:
+  - Kemas kini `task.md` dan `memory.md`.
+
+### Seksyen Reviu
+- **Penguatkuasaan Pelan Aktif (*Effective Tier*)**: `getEffectiveTierForUser(userId)` menggunakan `resolveEffectiveTierFromRow` untuk memastikan hanya pemilik pelan `pro` atau `enterprise` yang berstatus `active` dan belum tamat tempoh (`current_period_end`) disembunyikan lencana penjenamaan KlikForm. Jika pelan tamat tempoh, dalam *grace period*, dibatalkan, atau ketiadaan rekod langganan, ia turun semula ke `'free'` dan memaparkan lencana tersebut — selaras dengan ciri *"Remove KlikForm branding"* pada halaman harga (`/pricing`) dan tingkah laku sedia ada pada borang awam (`/form/[id]`).
+
+---
+
+# Pembuangan Butang 3-Titik pada Pautan Bio Links (KlikBio Clean Link Buttons) ✅ SELESAI
+
+**Konteks & Permintaan Pengguna**:
+- Pengguna meminta berserta tangkapan skrin halaman awam `@metmalaysia`: *"boleh ke buang titik ni"* (merujuk kepada ikon 3-titik menegak `⋮` di sebelah kanan setiap butang pautan).
+
+### Pelan Tindakan Pelaksanaan
+- [x] 1. **Halaman Awam Bio Links (`app/(public)/bio/[username]/client.tsx`)**:
+  - Buang butang 3-titik (`MoreVertical`) dan pembantu `handleShareLink` yang tidak lagi digunakan.
+  - Kekalkan ketinggian butang kapsul yang seragam (`min-h-[60px] sm:min-h-[64px]`) serta penjajaran teks tepat di tengah: simpan *invisible right balance spacer* hanya apabila pautan mempunyai gambar thumbnail kiri (`hasImageThumb`), dan buang ruang pengimbang apabila tiada thumbnail supaya tajuk panjang mempunyai ruang penuh.
+- [x] 2. **Simulator Telefon Bio Builder (`app/(dashboard)/bio-builder/[id]/client.tsx`)**:
+  - Buang paparan ikon 3-titik (`MoreVertical`) dalam `MobileMockupView` agar pratonton selari 100% dengan halaman awam.
+  - Kekalkan ketinggian seragam (`min-h-[44px]`) dan pengimbang simetri kanan hanya apabila `hasImageThumb` aktif.
+- [x] 3. **Ujian & Pengesahan Kualiti**:
+  - Jalankan `npm test` (513/513 lulus merentas 53 fail suite), `npm run typecheck` (0 ralat), `npm run lint` (0 ralat / 0 amaran), dan `npm run build` (binaan Next.js 16 Turbopack berjaya).
+- [x] 4. **Dokumentasi**:
+  - Kemas kini `task.md` dan `memory.md`.
+
+### Seksyen Reviu
+- **Reka Letak Bersih & Simetri**: Membuang ikon 3-titik (`MoreVertical`) di sebelah kanan butang pautan pada `PublicBioClient` dan `MobileMockupView`. Untuk pautan tanpa thumbnail kiri, ruang pengimbang sebelah kiri turut dibuang supaya tajuk pautan mendapat kelebaran penuh sambil mengekalkan ketinggian kapsul (`min-h-[60px] sm:min-h-[64px]` pada paparan awam; `min-h-[44px]` pada mockup studio). Untuk pautan yang mempunyai thumbnail kiri, ruang pengimbang halimunan di sebelah kanan memastikan tajuk kekal terpusat secara simetri. Butang kongsi keseluruhan halaman Bio di penjuru atas kanan (`Share2`) dikekalkan.
+
+---
+
+# Penambahbaikan Visual & Fizik 3D Flipbook E-Pamphlet ✅ SELESAI
+
+**Konteks & Permintaan Pengguna**:
+- Pengguna meminta: *"boleh tak cantikkan sikit 3d flip di e pamphlet"*.
+- Susulan tangkapan skrin pengguna (*"kenapa macam tu ya"*), pemeriksaan mendalam ke atas enjin StPageFlip dan integrasi React mengenal pasti punca silinder kelabu keras dan halaman kosong/terputus semasa selakan aktif.
+
+### Pelan Tindakan Pelaksanaan
+- [x] 1. **Penjajaran Dinamik Muka Depan / Belakang & Bayang Adaptif (`components/pamphlet/viewer/flipbook-view.tsx`)**:
+  - Bina fungsi `computeBookStageLayout` untuk mengesan keadaan kulit buku tunggal (`isFrontCoverSolo`, `isBackCoverSolo`) berbanding hamparan 2 halaman terbuka.
+  - Pusatkan kedudukan buku secara dinamik (`stageShiftX`) apabila berada pada Muka Depan (Page 1) atau Muka Belakang tunggal supaya tidak kelihatan senget ke sebelah skrin, dan meluncur lancar ke tengah apabila dibuka ke hamparan 2 halaman.
+  - Asingkan bayang buku (*Dynamic Book Shadow Layer*) dan bayang lantai (*Ground Shadow*) mengikut `activeShadowLeft` dan `activeShadowWidth` supaya tiada lagi kotak bayang kosong di sebelah kiri semasa di Muka Depan.
+  - Sembunyikan tulang tengah (*Center Spine Crease*) secara pintar apabila buku tertutup pada Muka Depan/Belakang tunggal dan paparkan semula apabila buku dibuka.
+- [x] 2. **Pencahayaan Kertas 3D Silinder, Ketebalan Helaian & Fizik Selakan (`app/globals.css`, `components/pamphlet/viewer/flipbook-view.tsx`)**:
+  - Perhalusi `flippingTime` kepada `520ms` dan turunkan `maxShadowOpacity` daripada `0.55` kepada `0.2` untuk mengelakkan jalur bayang silinder gelap/logam keras pada margin putih kertas sambil mengekalkan lengkungan kertas semula jadi.
+  - Tambah pencahayaan silinder halaman (`.stf__page-lighting`), lembutkan `.stf__spine-inner-shadow` (`0.20`, lebar `44px`), dan kemas tepi kertas berlapis halus pada `.stf__item.--left` dan `.--right` dalam `app/globals.css`.
+  - Kemas kini tulang tengah 3D (`w-6`) dengan lurah optik lembut dan pantulan mikro-spekular berkembar.
+- [x] 3. **Pembaikan Kestabilan Kitaran Hayat `PageFlip` (`components/pamphlet/viewer/flipbook-view.tsx`)**:
+  - Simpan `onPageChange` dan `soundEnabled` dalam `ref` (`onPageChangeRef`, `soundEnabledRef`) serta gantikan `useMouseEvents: zoom <= 1` dengan `pointer-events-none` pada `hostRef` apabila `zoom > 1`.
+  - Buang `onPageChange`, `soundEnabled`, dan `zoom` daripada senarai kebergantungan `useEffect` inisialisasi `PageFlip` supaya instans buku tidak pernah dimusnahkan dan dibina semula setiap kali halaman diselak.
+- [x] 4. **Ujian Unit, Pengesahan Pelayar & Kualiti (`tests/pamphlet.test.ts`)**:
+  - Tambah ujian unit untuk `computeBookStageLayout` (22/22 lulus dalam `tests/pamphlet.test.ts`).
+  - Uji interaksi langsung di pelayar (`/flipbook`) bagi selakan depan & belakang serta seretan separuh jalan — disahkan tiada teardown DOM, tiada ralat konsol, dan tiada jalur logam gelap pada margin putih.
+  - Jalankan `npm test` (513/513 lulus merentas 53 fail), `npm run typecheck` (0 ralat), `npm run lint` (0 ralat), dan `npm run build` (berjaya).
+- [x] 5. **Dokumentasi**:
+  - Kemas kini `task.md`, `memory.md`, dan `lessons.md`.
+
+### Seksyen Reviu
+- **Punca Asal Isu Tangkapan Skrin (*"kenapa macam tu ya"*)**:
+  1. *Teardown & Rebuild Semasa Selakan*: `onPageChange` (fungsi anak panah inline dari `PamphletViewer`), `soundEnabled`, dan `zoom` dimasukkan ke dalam kebergantungan `useEffect` `PageFlip`, menyebabkan keseluruhan DOM buku (`hostEl.innerHTML = ''`) dimusnahkan dan dimuat semula secara asinkroni setiap kali `flip` berlaku.
+  2. *Bayang Lipatan Terlalu Gelap (`maxShadowOpacity: 0.55`)*: Enjin StPageFlip melukis gradien berganda (`5% -> 0.55 -> 15% -> 0.05 -> 35% -> 0.55`) pada `.stf__innerShadow`; pada halaman potret bermargin putih luas (imej landskap dengan `object-contain`), ini membentuk jalur silinder kelabu berkilat seperti paip logam, manakala `.stf__outerShadow` melukis kotak kelabu tajam di belakang lipatan apabila slot sebelah tiada helaian bawah.
+- **Penghapusan Bayang Kotak Kosong pada Muka Depan (`showCover: true`)**: Dalam mod dwi-halaman StPageFlip, Muka Depan duduk di sebelah kanan manakala separuh kiri kanvas adalah kosong. Mengasingkan lapisan bayang (`activeShadowLeft`, `activeShadowWidth`) dan menganjakkan pentas buku (`stageShiftX`) memastikan Muka Depan dan Belakang berada tepat di tengah skrin tanpa sebarang bayang kotak hantu di ruang kosong.
+
+---
+
 # Ciri Duplicate Borang (Duplicate Form Feature) ✅ SELESAI
 
 **Konteks & Permintaan Pengguna**:

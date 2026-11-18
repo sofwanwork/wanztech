@@ -35,6 +35,59 @@ interface SpreadState {
   rightPageNum: number | null;
 }
 
+export interface BookStageLayout {
+  isFrontCoverSolo: boolean;
+  isBackCoverSolo: boolean;
+  isCoverSolo: boolean;
+  /** Horizontal translation (px) to keep solo front/back covers centered in the viewport */
+  stageShiftX: number;
+  /** Left offset (px) inside the book container for the active book drop-shadow */
+  activeShadowLeft: number;
+  /** Width (px) of the active book drop-shadow (1 page when closed cover, 2 pages when open) */
+  activeShadowWidth: number;
+  /** Whether the center spine crease should be rendered */
+  showCenterSpine: boolean;
+}
+
+/**
+ * Computes dynamic centering and shadow bounds for 3D flipbook stage so solo covers
+ * are centered without an empty-half ghost shadow box.
+ */
+export function computeBookStageLayout(params: {
+  isTwoPageSpread: boolean;
+  totalPages: number;
+  currentPage: number;
+  bookWidth: number;
+  pageWidth: number;
+}): BookStageLayout {
+  const { isTwoPageSpread, totalPages, currentPage, bookWidth, pageWidth } = params;
+  const hasSoloCover = isTwoPageSpread && totalPages > 2;
+  const isFrontCoverSolo = hasSoloCover && currentPage <= 1;
+  const isBackCoverSolo =
+    hasSoloCover && currentPage >= totalPages && totalPages % 2 === 0;
+  const isCoverSolo = isFrontCoverSolo || isBackCoverSolo;
+
+  const stageShiftX = isFrontCoverSolo
+    ? -Math.round(pageWidth / 2)
+    : isBackCoverSolo
+      ? Math.round(pageWidth / 2)
+      : 0;
+
+  const activeShadowWidth = isCoverSolo ? pageWidth : bookWidth;
+  const activeShadowLeft = isFrontCoverSolo ? pageWidth : 0;
+  const showCenterSpine = isTwoPageSpread && !isCoverSolo;
+
+  return {
+    isFrontCoverSolo,
+    isBackCoverSolo,
+    isCoverSolo,
+    stageShiftX,
+    activeShadowLeft,
+    activeShadowWidth,
+    showCenterSpine,
+  };
+}
+
 /**
  * Computes spread state for 2-page display mode (backward-compatible & tested in Vitest)
  */
@@ -244,6 +297,12 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
     const currentPageRef = React.useRef(currentPage);
     currentPageRef.current = currentPage;
 
+    const onPageChangeRef = React.useRef(onPageChange);
+    onPageChangeRef.current = onPageChange;
+
+    const soundEnabledRef = React.useRef(soundEnabled);
+    soundEnabledRef.current = soundEnabled;
+
     // Instantiate StPageFlip with realistic corner physics
     React.useEffect(() => {
       const hostEl = hostRef.current;
@@ -285,13 +344,17 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
             pageEl.dataset.density = 'soft';
 
             // Subtle paper border
-            pageEl.style.border = '1px solid rgba(203, 213, 225, 0.45)';
+            pageEl.style.border = '1px solid rgba(203, 213, 225, 0.55)';
 
-            // Inner spine concave gradient shadow in two-page spread (dynamically positions on left/right edge via CSS)
+            // Inner spine concave gradient shadow and cylindrical paper sheen in two-page spread
             if (isTwoPageSpread) {
               const shadowEl = document.createElement('div');
               shadowEl.className = 'stf__spine-inner-shadow pointer-events-none';
               pageEl.appendChild(shadowEl);
+
+              const lightingEl = document.createElement('div');
+              lightingEl.className = 'stf__page-lighting pointer-events-none';
+              pageEl.appendChild(lightingEl);
             }
 
             // Page content: high-definition image or graceful fallback
@@ -329,17 +392,17 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
             minHeight: 150,
             maxHeight: 2400,
             drawShadow: true,
-            flippingTime: 450,
+            flippingTime: 520,
             usePortrait: !isTwoPageSpread,
             startPage: startPageIdx,
             startZIndex: 10,
             autoSize: false,
-            maxShadowOpacity: 0.48,
+            maxShadowOpacity: 0.2,
             showCover: isTwoPageSpread && totalPages > 2,
             mobileScrollSupport: true,
             showPageCorners: true,
             disableFlipByClick: false,
-            useMouseEvents: zoom <= 1,
+            useMouseEvents: true,
             clickEventForward: true,
           });
 
@@ -366,14 +429,14 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
           // Page change event listener
           pageFlipInstance.on('flip', (e: { data: number }) => {
             const nextPg = e.data + 1;
-            onPageChange?.(nextPg);
+            onPageChangeRef.current?.(nextPg);
           });
 
           // Interactive flipping states and audio trigger
           pageFlipInstance.on('changeState', (e: { data: string }) => {
             if (e.data === 'flipping') {
               isTurningRef.current = true;
-              if (soundEnabled) {
+              if (soundEnabledRef.current) {
                 playPageTurnSound();
               }
             } else if (e.data === 'read') {
@@ -403,17 +466,7 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
           hostEl.innerHTML = '';
         }
       };
-    }, [
-      isMounted,
-      pages,
-      pageWidth,
-      bookHeight,
-      isTwoPageSpread,
-      totalPages,
-      soundEnabled,
-      zoom,
-      onPageChange,
-    ]);
+    }, [isMounted, pages, pageWidth, bookHeight, isTwoPageSpread, totalPages]);
 
     // External page synchronization (e.g. from thumbnail drawer or toolbar input)
     React.useEffect(() => {
@@ -501,6 +554,14 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
     const canGoPrev = totalPages > 1 && currentPage > 1;
     const canGoNext = totalPages > 1 && currentPage < totalPages;
 
+    const stageLayout = computeBookStageLayout({
+      isTwoPageSpread,
+      totalPages,
+      currentPage,
+      bookWidth,
+      pageWidth,
+    });
+
     if (!pages || pages.length === 0) {
       return null;
     }
@@ -537,7 +598,7 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
           </div>
         )}
 
-        {/* Previous Page Floating Circle Button */}
+        {/* Previous Page Floating Button */}
         {canGoPrev && (
           <button
             type="button"
@@ -548,14 +609,14 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                 onPrevPage();
               }
             }}
-            className="flex absolute left-3 sm:left-6 z-40 h-10 w-10 md:h-11 md:w-11 rounded-md bg-black/60 hover:bg-black/90 text-white items-center justify-center backdrop-blur-md shadow-2xl transition-transform active:scale-95 border border-white/20 cursor-pointer"
+            className="group flex absolute left-3 sm:left-6 z-40 h-10 w-10 md:h-11 md:w-11 rounded-full bg-slate-900/65 hover:bg-slate-900/90 text-white items-center justify-center backdrop-blur-md shadow-[0_8px_24px_rgba(0,0,0,0.28)] transition-all duration-200 hover:scale-105 active:scale-95 border border-white/20 cursor-pointer"
             title="Turn to Previous Page"
           >
-            <ChevronLeft className="h-6 w-6" />
+            <ChevronLeft className="h-5 w-5 transition-transform duration-200 group-hover:-translate-x-0.5" />
           </button>
         )}
 
-        {/* Next Page Floating Circle Button */}
+        {/* Next Page Floating Button */}
         {canGoNext && (
           <button
             type="button"
@@ -566,10 +627,10 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
                 onNextPage();
               }
             }}
-            className="flex absolute right-3 sm:right-6 z-40 h-10 w-10 md:h-11 md:w-11 rounded-md bg-black/60 hover:bg-black/90 text-white items-center justify-center backdrop-blur-md shadow-2xl transition-transform active:scale-95 border border-white/20 cursor-pointer"
+            className="group flex absolute right-3 sm:right-6 z-40 h-10 w-10 md:h-11 md:w-11 rounded-full bg-slate-900/65 hover:bg-slate-900/90 text-white items-center justify-center backdrop-blur-md shadow-[0_8px_24px_rgba(0,0,0,0.28)] transition-all duration-200 hover:scale-105 active:scale-95 border border-white/20 cursor-pointer"
             title="Turn to Next Page"
           >
-            <ChevronRight className="h-6 w-6" />
+            <ChevronRight className="h-5 w-5 transition-transform duration-200 group-hover:translate-x-0.5" />
           </button>
         )}
 
@@ -586,54 +647,71 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
             cursor: zoom > 1 ? (isPanDraggingRef.current ? 'grabbing' : 'grab') : 'default',
           }}
         >
-          {/* Ground Flat Drop Shadow Ellipse */}
+          {/* Smoothly Centered Book Stage Wrapper */}
           <div
-            className="absolute pointer-events-none transition-all duration-500 ease-out z-0"
-            style={{
-              width: `${bookWidth * 1.05}px`,
-              height: isLandscape ? '36px' : '44px',
-              bottom: isLandscape ? '-20px' : '-24px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              borderRadius: '50%',
-              background:
-                'radial-gradient(ellipse at center, rgba(0, 0, 0, 0.22) 0%, rgba(0, 0, 0, 0.08) 40%, rgba(0, 0, 0, 0.02) 65%, transparent 78%)',
-              filter: 'blur(4px)',
-            }}
-          />
-
-          {/* StPageFlip Host Container with Realistic 3D Center Spine */}
-          <div
-            className="relative flex items-center justify-center select-none shadow-[0_8px_32px_-4px_rgba(0,0,0,0.18),0_2px_12px_-2px_rgba(0,0,0,0.08)] rounded-md"
+            className="relative flex items-center justify-center select-none transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
             style={{
               width: `${bookWidth}px`,
               height: `${bookHeight}px`,
+              transform: `translateX(${stageLayout.stageShiftX}px)`,
             }}
           >
-            {/* Unmanaged PageFlip Mount Host */}
+            {/* Adaptive Ground Contact Drop Shadow Ellipse (tracks active page bounds) */}
             <div
-              ref={hostRef}
-              className="w-full h-full relative"
+              className="absolute pointer-events-none transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] z-0"
+              style={{
+                width: `${Math.round(stageLayout.activeShadowWidth * 1.06)}px`,
+                height: isLandscape ? '38px' : '46px',
+                bottom: isLandscape ? '-22px' : '-26px',
+                left: `${Math.round(stageLayout.activeShadowLeft + stageLayout.activeShadowWidth / 2)}px`,
+                transform: 'translateX(-50%)',
+                borderRadius: '50%',
+                background:
+                  'radial-gradient(ellipse at center, rgba(15, 23, 42, 0.26) 0%, rgba(15, 23, 42, 0.11) 42%, rgba(15, 23, 42, 0.03) 68%, transparent 82%)',
+                filter: 'blur(5px)',
+              }}
             />
 
-            {/* Realistic 3D Center Spine System (Tulang Belakang Buku di Tengah) */}
+            {/* Adaptive Book Perimeter Elevation Shadow (never casts ghost shadow on empty cover side) */}
+            <div
+              className="absolute top-0 bottom-0 pointer-events-none transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] rounded-[4px] z-[1]"
+              style={{
+                left: `${stageLayout.activeShadowLeft}px`,
+                width: `${stageLayout.activeShadowWidth}px`,
+                boxShadow:
+                  '0 20px 48px -10px rgba(15, 23, 42, 0.26), 0 8px 20px -4px rgba(15, 23, 42, 0.14), 0 1px 4px rgba(15, 23, 42, 0.08)',
+              }}
+            />
+
+            {/* Unmanaged PageFlip Mount Host (disable mouse interaction cleanly during zoom pan without destroying instance) */}
+            <div
+              ref={hostRef}
+              className={cn('w-full h-full relative z-[2]', zoom > 1 && 'pointer-events-none')}
+            />
+
+            {/* Realistic 3D Center Spine System (Tulang Belakang Buku di Tengah — hanya apabila buku terbuka) */}
             {isTwoPageSpread && (
-              <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-4 pointer-events-none z-[12] overflow-hidden flex items-center justify-center">
+              <div
+                className={cn(
+                  'absolute inset-y-0 left-1/2 -translate-x-1/2 w-6 pointer-events-none z-[12] overflow-hidden flex items-center justify-center transition-opacity duration-300',
+                  stageLayout.showCenterSpine ? 'opacity-100' : 'opacity-0'
+                )}
+              >
                 {/* Concave spine gutter shadow gradient */}
                 <div
                   className="absolute inset-0"
                   style={{
                     background:
-                      'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.04) 18%, rgba(0,0,0,0.20) 46%, rgba(0,0,0,0.36) 50%, rgba(0,0,0,0.20) 54%, rgba(0,0,0,0.04) 82%, transparent 100%)',
+                      'linear-gradient(to right, transparent 0%, rgba(15,23,42,0.02) 14%, rgba(15,23,42,0.12) 42%, rgba(15,23,42,0.26) 50%, rgba(15,23,42,0.12) 58%, rgba(15,23,42,0.02) 86%, transparent 100%)',
                   }}
                 />
-                {/* Hairline Center Crease with Specular Ridge */}
+                {/* Hairline Center Crease with Dual Specular Ridges */}
                 <div
                   className="w-[1.5px] h-full"
                   style={{
                     background:
-                      'linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.55) 50%, rgba(0,0,0,0.35) 100%)',
-                    boxShadow: '1px 0 0 rgba(255,255,255,0.2)',
+                      'linear-gradient(to bottom, rgba(15,23,42,0.22) 0%, rgba(15,23,42,0.42) 50%, rgba(15,23,42,0.22) 100%)',
+                    boxShadow: '-1px 0 0 rgba(255,255,255,0.2), 1px 0 0 rgba(255,255,255,0.24)',
                   }}
                 />
               </div>

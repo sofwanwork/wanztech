@@ -4,26 +4,26 @@ export default function BioBuilderLoading() {
       {/* Header bar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 bg-gray-200 rounded-lg" />
+          <div className="h-9 w-9 bg-slate-200 rounded-md" />
           <div className="space-y-1">
-            <div className="h-6 w-48 bg-gray-200 rounded" />
-            <div className="h-4 w-32 bg-gray-100 rounded" />
+            <div className="h-6 w-48 bg-slate-200 rounded" />
+            <div className="h-4 w-32 bg-slate-100 rounded" />
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="h-9 w-24 bg-gray-200 rounded-md" />
-          <div className="h-9 w-28 bg-gray-200 rounded-md" />
+          <div className="h-9 w-24 bg-slate-200 rounded-md" />
+          <div className="h-9 w-28 bg-slate-200 rounded-md" />
         </div>
       </div>
 
       {/* Main split view */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        <div className="lg:col-span-7 bg-white rounded-2xl border border-gray-200 p-6 space-y-6">
-          <div className="h-10 bg-gray-100 rounded-xl" />
+        <div className="lg:col-span-7 bg-white rounded-lg border border-slate-200 shadow-2xs p-6 space-y-6">
+          <div className="h-10 bg-slate-100 rounded-md" />
           <div className="space-y-4">
-            <div className="h-12 bg-gray-100 rounded-xl" />
-            <div className="h-20 bg-gray-100 rounded-xl" />
-            <div className="h-20 bg-gray-100 rounded-xl" />
+            <div className="h-12 bg-slate-100 rounded-md" />
+            <div className="h-20 bg-slate-100 rounded-md" />
+            <div className="h-20 bg-slate-100 rounded-md" />
           </div>
         </div>
 

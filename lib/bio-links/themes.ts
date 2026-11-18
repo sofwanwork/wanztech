@@ -1,5 +1,6 @@
 import type React from 'react';
 import { BioTheme, BioButtonStyle, BioSocialLinks, BioPattern, BioFadeStyle, BioThemeConfig } from '@/lib/types/bio-links';
+import type { SubscriptionTier } from '@/lib/types/subscription';
 
 export interface ThemeDefinition {
   id: BioTheme;
@@ -665,6 +666,14 @@ export function getBioPatternOpacity(themeConfig?: BioThemeConfig): number {
     return clamped / 100;
   }
   return 1;
+}
+
+/**
+ * Determines whether the KlikForm branding badge should be rendered on bio pages.
+ * Visible only on Free tier (or when tier is unspecified); hidden for Pro & Enterprise.
+ */
+export function shouldShowBioBranding(userTier?: SubscriptionTier): boolean {
+  return !userTier || userTier === 'free';
 }
 
 

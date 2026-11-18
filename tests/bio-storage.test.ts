@@ -33,12 +33,19 @@ vi.mock('@/utils/supabase/admin', () => ({
   })),
 }));
 
+const mockSubState = vi.hoisted(() => ({
+  effectiveTier: 'free' as 'free' | 'pro' | 'enterprise',
+  effectiveTierForUser: 'free' as 'free' | 'pro' | 'enterprise',
+}));
+
 vi.mock('@/lib/storage/subscription', () => ({
-  getEffectiveTier: vi.fn(async () => 'free'),
+  getEffectiveTier: vi.fn(async () => mockSubState.effectiveTier),
+  getEffectiveTierForUser: vi.fn(async () => mockSubState.effectiveTierForUser),
 }));
 
 import {
   getBioPages,
+  getBioPageByUsername,
   createBioPage,
 } from '@/lib/storage/bio-links';
 
@@ -123,5 +130,47 @@ describe('KlikBio — Storage Operations', () => {
         title: 'Second Page',
       })
     ).rejects.toThrow('free bio pages limit');
+  });
+
+  it('getBioPageByUsername includes owner userTier for branding visibility control', async () => {
+    const samplePageRow = {
+      id: 'p-met',
+      user_id: 'u-met',
+      username: 'metmalaysia',
+      title: 'MET Malaysia',
+      bio: '',
+      avatar_url: '',
+      theme: 'sky',
+      theme_config: {},
+      social_links: {},
+      is_active: true,
+      views: 42,
+      created_at: '2026-10-01T00:00:00Z',
+      updated_at: '2026-10-01T00:00:00Z',
+    };
+
+    const pageBuilder: any = {};
+    pageBuilder.select = vi.fn().mockReturnValue(pageBuilder);
+    pageBuilder.ilike = vi.fn().mockReturnValue(pageBuilder);
+    pageBuilder.eq = vi.fn().mockReturnValue(pageBuilder);
+    pageBuilder.single = vi.fn().mockResolvedValue({ data: samplePageRow, error: null });
+
+    const linksBuilder: any = {};
+    linksBuilder.select = vi.fn().mockReturnValue(linksBuilder);
+    linksBuilder.eq = vi.fn().mockReturnValue(linksBuilder);
+    linksBuilder.order = vi.fn().mockResolvedValue({ data: [], error: null });
+
+    mockState.from.mockImplementation((table: string) => {
+      if (table === 'bio_pages') return pageBuilder;
+      return linksBuilder;
+    });
+
+    mockSubState.effectiveTierForUser = 'pro';
+    const proPage = await getBioPageByUsername('metmalaysia');
+    expect(proPage?.userTier).toBe('pro');
+
+    mockSubState.effectiveTierForUser = 'free';
+    const freePage = await getBioPageByUsername('metmalaysia');
+    expect(freePage?.userTier).toBe('free');
   });
 });

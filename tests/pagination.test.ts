@@ -4,6 +4,8 @@ import {
   isMultiPage,
   findAdjacentNonEmptyPage,
   lastNonEmptyPageIndex,
+  getFieldDisplayNumber,
+  canAppendPageBreak,
 } from '@/lib/forms/pagination';
 import type { FormField } from '@/lib/types';
 
@@ -103,6 +105,27 @@ describe('pagebreak insertion between questions', () => {
     expect(hasNextPageBreak(0)).toBe(true);  // q1 has pagebreak below it
     expect(hasNextPageBreak(1)).toBe(false); // pb has q2 below it
     expect(hasNextPageBreak(2)).toBe(false); // q2 is at end
+  });
+});
+
+describe('getFieldDisplayNumber', () => {
+  it('excludes pagebreak markers when numbering questions', () => {
+    const fields = [f('pb0', 'pagebreak'), f('q1'), f('pb1', 'pagebreak'), f('q2')];
+    expect(getFieldDisplayNumber(fields, 1)).toBe(1);
+    expect(getFieldDisplayNumber(fields, 3)).toBe(2);
+  });
+});
+
+describe('canAppendPageBreak', () => {
+  it('disallows appending a pagebreak on an empty form or after another pagebreak', () => {
+    expect(canAppendPageBreak([])).toBe(false);
+    expect(canAppendPageBreak([f('pb0', 'pagebreak')])).toBe(false);
+    expect(canAppendPageBreak([f('q1'), f('pb1', 'pagebreak')])).toBe(false);
+  });
+
+  it('allows appending a pagebreak when the form ends with a non-pagebreak field', () => {
+    expect(canAppendPageBreak([f('q1')])).toBe(true);
+    expect(canAppendPageBreak([f('q1'), f('pb1', 'pagebreak'), f('q2')])).toBe(true);
   });
 });
 

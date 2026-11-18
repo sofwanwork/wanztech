@@ -23,15 +23,16 @@ export default async function EditResponsePage({ params }: PageProps) {
   const lookup = await getEditToken(token);
   if (!lookup.valid) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-sm border p-8 text-center space-y-3">
-          <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+      <div className="min-h-screen flex items-center justify-center p-6 bg-white text-slate-900 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(#e4e4e7_1px,transparent_1px)] [background-size:20px_20px] opacity-60 z-0 pointer-events-none" />
+        <div className="relative z-10 max-w-md w-full bg-white rounded-lg shadow-2xs border border-slate-200 p-8 text-center space-y-3">
+          <div className="w-12 h-12 rounded-md bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto">
             <AlertCircle className="w-6 h-6" />
           </div>
-          <h1 className="text-xl font-semibold text-gray-900">
+          <h1 className="text-xl font-semibold text-slate-900">
             Invalid Link
           </h1>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-slate-600">
             {lookup.reason === 'expired' &&
               'This link has expired. Please contact the organizer for a new link.'}
             {lookup.reason === 'used' &&

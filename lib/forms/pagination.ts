@@ -56,3 +56,22 @@ export function lastNonEmptyPageIndex(visiblePages: FormField[][]): number {
   }
   return 0;
 }
+
+/**
+ * 1-based display number for a non-pagebreak item in the Form Builder.
+ * Excludes `pagebreak` markers so a leading or intermediate page break
+ * never shifts "Question 1" into "Question 2".
+ */
+export function getFieldDisplayNumber(fields: FormField[], index: number): number {
+  return fields.slice(0, index + 1).filter((f) => f.type !== 'pagebreak').length;
+}
+
+/**
+ * Whether appending a new `pagebreak` at the end of `fields` is meaningful.
+ * Disallowed when there are no non-pagebreak items yet (would create a leading break)
+ * or when the last item is already a `pagebreak` (would create consecutive breaks).
+ */
+export function canAppendPageBreak(fields: FormField[]): boolean {
+  if (!fields.some((f) => f.type !== 'pagebreak')) return false;
+  return fields[fields.length - 1]?.type !== 'pagebreak';
+}

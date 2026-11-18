@@ -25,6 +25,7 @@ import { Trash2, GripVertical, Plus, Copy, List, Columns3, Check } from 'lucide-
 import { v4 as uuidv4 } from 'uuid';
 import { cn } from '@/lib/utils';
 import { isScaleLikeOptions } from '@/lib/forms/scale-guide';
+import { canAppendPageBreak, getFieldDisplayNumber } from '@/lib/forms/pagination';
 import {
   Accordion,
   AccordionContent,
@@ -105,6 +106,7 @@ function SortableField({
   const rulesCount = norm?.rules?.length ?? 0;
   const isConditionalActive = rulesCount > 0;
   const hasNextPageBreak = allFields[index + 1]?.type === 'pagebreak';
+  const questionNumber = getFieldDisplayNumber(allFields, index);
 
   // Page break renders as a distinct divider, not a normal question card —
   // no label/description/type editor (those confused users). Still draggable
@@ -135,7 +137,9 @@ function SortableField({
                 Page Break
               </span>
               <span className="text-xs text-slate-500 truncate hidden sm:inline">
-                Questions below this line will start on a new page
+                {index === 0
+                  ? 'No questions above this break (ignored on live form — safe to delete)'
+                  : 'Questions below this line will start on a new page'}
               </span>
             </div>
           </div>
@@ -165,10 +169,10 @@ function SortableField({
     >
       <Card>
         <CardHeader className="py-3 px-4 bg-muted/30 flex flex-row items-center gap-2">
-          <div {...attributes} {...listeners} suppressHydrationWarning className="cursor-move touch-none hover:bg-slate-200/60 p-1 -ml-1 rounded transition-colors" id={index === 0 ? "tour-drag-handle" : undefined}>
+          <div {...attributes} {...listeners} suppressHydrationWarning className="cursor-move touch-none hover:bg-slate-200/60 p-1 -ml-1 rounded transition-colors" id={questionNumber === 1 ? "tour-drag-handle" : undefined}>
             <GripVertical className="h-4 w-4 text-slate-400 group-hover:text-slate-700" />
           </div>
-          <span className="text-sm font-medium">Question {index + 1}</span>
+          <span className="text-sm font-medium">Question {questionNumber}</span>
           <div className="flex items-center gap-1.5 ml-auto">
             {hasNextPageBreak ? (
               <span
@@ -989,26 +993,6 @@ function SortableField({
               </AccordionItem>
             </Accordion>
           )}
-
-          {/* Quick Page Break shortcut at the bottom of question card */}
-          {!hasNextPageBreak && (
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-              <span className="text-[11px] text-slate-400 truncate">
-                Want the next question on a new page?
-              </span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => insertPageBreak?.(index)}
-                className="h-7 px-2.5 text-xs font-medium text-slate-600 hover:text-primary hover:bg-primary/5 rounded-md flex items-center gap-1 cursor-pointer shrink-0"
-                title="Add page break below this question"
-              >
-                <Plus className="h-3.5 w-3.5 text-primary" />
-                <span>+ Add Page Break here</span>
-              </Button>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>
@@ -1241,7 +1225,11 @@ export function FieldsEditor({ fields, onChange }: FieldsEditorProps) {
     }, 50);
   };
 
+  const hasNonPageBreakFields = fields.some((f) => f.type !== 'pagebreak');
+  const allowAppendPageBreak = canAppendPageBreak(fields);
+
   const addPageBreak = () => {
+    if (!allowAppendPageBreak) return;
     onChange([
       ...fields,
       { id: uuidv4(), type: 'pagebreak', label: 'Page Break', required: false },
@@ -1343,7 +1331,7 @@ export function FieldsEditor({ fields, onChange }: FieldsEditorProps) {
                   <div className="flex items-center gap-2 min-w-0">
                     <GripVertical className="h-4 w-4 text-primary shrink-0" />
                     <span className="text-xs font-bold px-2 py-0.5 rounded bg-primary/10 text-primary uppercase shrink-0">
-                      Question {activeIndex + 1} • {activeField.type}
+                      Question {getFieldDisplayNumber(fields, activeIndex)} • {activeField.type}
                     </span>
                     <span className="text-sm font-semibold text-slate-800 truncate">
                       {activeField.label || '(Untitled)'}
@@ -1371,15 +1359,22 @@ export function FieldsEditor({ fields, onChange }: FieldsEditorProps) {
           <Plus className="mr-2 h-4 w-4" />
           Add Question
         </Button>
-        <Button
-          onClick={addPageBreak}
-          variant="outline"
-          className="w-full"
-          title="Split the form into multiple pages"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Add Page Break
-        </Button>
+        {hasNonPageBreakFields && (
+          <Button
+            onClick={addPageBreak}
+            variant="outline"
+            disabled={!allowAppendPageBreak}
+            className="w-full"
+            title={
+              allowAppendPageBreak
+                ? 'Split the form into multiple pages'
+                : 'Add a question below the current page break first'
+            }
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Page Break
+          </Button>
+        )}
       </div>
     </div>
   );

@@ -2,6 +2,8 @@
  * Type definitions for KlikBio (Linktree-style bio links)
  */
 
+import type { SubscriptionTier } from './subscription';
+
 export type BioLinkType = 'link' | 'whatsapp' | 'form' | 'header' | 'divider';
 
 export type BioTheme =
@@ -85,6 +87,7 @@ export interface BioPage {
   socialLinks: BioSocialLinks;
   isActive: boolean;
   views: number;
+  userTier?: SubscriptionTier;
   createdAt: string;
   updatedAt: string;
 }

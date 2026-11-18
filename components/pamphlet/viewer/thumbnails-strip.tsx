@@ -36,12 +36,12 @@ export function ThumbnailsStrip({
     <aside
       aria-label="Page Thumbnails"
       className={cn(
-        'fixed bottom-20 left-1/2 -translate-x-1/2 z-40 w-[94vw] max-w-4xl max-h-56 rounded-2xl border shadow-2xl backdrop-blur-2xl p-3 sm:p-4 flex flex-col gap-2 transition-all animate-in fade-in zoom-in-95 duration-200',
+        'absolute bottom-20 left-1/2 -translate-x-1/2 z-40 w-[94%] max-w-4xl max-h-[calc(100%-7rem)] rounded-lg border shadow-lg backdrop-blur-md p-3 sm:p-4 flex flex-col gap-2 transition-all animate-in fade-in zoom-in-95 duration-200',
         themeObj.toolbarBg
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b pb-2 border-current/15">
+      <div className="flex items-center justify-between border-b pb-2 border-current/15 shrink-0">
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold uppercase tracking-wider">
             Page List ({pages.length})
@@ -62,7 +62,7 @@ export function ThumbnailsStrip({
       </div>
 
       {/* Horizontal Scrollable Thumbnails List */}
-      <div className="flex items-center gap-3 overflow-x-auto py-2 px-1 scrollbar-thin scrollbar-thumb-current/20">
+      <div className="flex items-start gap-3 overflow-x-auto overflow-y-hidden pt-3.5 pb-3 px-2.5 scrollbar-thin scrollbar-thumb-current/20">
         {pages.map((page) => {
           const isActive = page.pageNumber === currentPage;
           return (
@@ -72,17 +72,17 @@ export function ThumbnailsStrip({
                 onSelectPage(page.pageNumber);
               }}
               className={cn(
-                'group flex flex-col items-center gap-1.5 shrink-0 transition-all transform hover:-translate-y-1 focus:outline-none',
+                'group flex flex-col items-center gap-1.5 shrink-0 transition-transform hover:-translate-y-1 focus:outline-none',
                 isActive && 'scale-105'
               )}
             >
               {/* Thumbnail Image Box */}
               <div
                 className={cn(
-                  'relative rounded-lg overflow-hidden border-2 shadow-md bg-black/10 transition-all',
+                  'relative rounded-md overflow-hidden border-2 shadow-xs bg-black/10 transition-colors',
                   isLandscape ? 'w-24 sm:w-28 aspect-[1.414/1]' : 'w-20 sm:w-24 aspect-[1/1.414]',
                   isActive
-                    ? 'border-primary ring-2 ring-primary/40 shadow-lg'
+                    ? 'border-primary ring-2 ring-primary/40 shadow-sm'
                     : 'border-current/20 hover:border-primary/60'
                 )}
               >

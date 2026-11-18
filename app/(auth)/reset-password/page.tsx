@@ -53,55 +53,55 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="flex h-screen w-full items-center justify-center bg-[#fafafa] relative overflow-hidden pb-24">
-      {/* Background Decor */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-        <div className="absolute -top-[20%] -right-[10%] w-[70vw] h-[70vw] bg-violet-200/30 rounded-full blur-3xl" />
-        <div className="absolute top-[40%] -left-[10%] w-[50vw] h-[50vw] bg-indigo-200/30 rounded-full blur-3xl" />
-      </div>
+    <div className="flex flex-col min-h-screen w-full items-center justify-center bg-white text-slate-900 relative overflow-hidden py-8">
+      {/* Subtle Grid Accent (No Radiant Glow) */}
+      <div className="absolute inset-0 bg-[radial-gradient(#e4e4e7_1px,transparent_1px)] [background-size:20px_20px] opacity-60 z-0 pointer-events-none" />
 
       <motion.div
         className="z-10 w-full max-w-md px-4"
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
+        transition={{ duration: 0.4, ease: 'easeOut' }}
       >
         <div className="mb-6 text-center flex flex-col items-center">
-          <div className="h-16 w-16 relative mb-4 drop-shadow-xl hover:scale-105 transition-transform duration-300 rounded-2xl overflow-hidden">
+          <div className="h-10 w-10 relative mb-2 rounded-md overflow-hidden border border-slate-200">
             <Image
               src="/logo.png"
               alt="KlikForm Logo"
               fill
-              sizes="64px"
+              sizes="48px"
               className="object-contain"
               priority
             />
           </div>
+          <h1 className="text-xl font-bold tracking-tight text-slate-900">KlikForm</h1>
         </div>
 
-        <Card className="border-gray-200 shadow-xl bg-white/80 backdrop-blur-sm">
+        <Card className="border-slate-200 shadow-sm bg-white rounded-lg">
           <CardHeader>
-            <CardTitle>Reset Password</CardTitle>
-            <CardDescription>Enter your new password below.</CardDescription>
+            <CardTitle className="text-slate-900">Reset Password</CardTitle>
+            <CardDescription className="text-slate-600">
+              Enter your new password below.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="password">New Password</Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                 <Input
                   id="password"
                   name="password"
                   autoComplete="new-password"
                   type={showPassword ? 'text' : 'password'}
-                  className="pl-10 pr-10"
+                  className="pl-10 pr-10 rounded-md border-slate-200"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 focus:outline-none"
+                  className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 focus:outline-none"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -110,20 +110,20 @@ export default function ResetPasswordPage() {
             <div className="space-y-2">
               <Label htmlFor="confirm-password">Confirm Password</Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                 <Input
                   id="confirm-password"
                   name="confirm-password"
                   autoComplete="new-password"
                   type={showConfirmPassword ? 'text' : 'password'}
-                  className="pl-10 pr-10"
+                  className="pl-10 pr-10 rounded-md border-slate-200"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 focus:outline-none"
+                  className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 focus:outline-none"
                 >
                   {showConfirmPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -136,7 +136,7 @@ export default function ResetPasswordPage() {
           </CardContent>
           <CardFooter>
             <Button
-              className="w-full bg-black hover:bg-gray-800 text-white"
+              className="w-full bg-violet-900 hover:bg-violet-950 text-white rounded-md h-10 text-xs font-medium shadow-xs"
               onClick={handleUpdatePassword}
               disabled={loading}
             >

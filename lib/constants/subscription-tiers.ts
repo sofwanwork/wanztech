@@ -58,3 +58,30 @@ export const TIER_PRICING = {
     period: 'month',
   },
 } as const;
+
+/**
+ * Resolve the effective subscription tier from a database subscription row.
+ * Inactive statuses (expired, cancelled, grace_period) or past period ends
+ * fall back to 'free' so public/paid privileges stay enforced.
+ */
+export function resolveEffectiveTierFromRow(
+  sub?: {
+    tier?: string | null;
+    status?: string | null;
+    current_period_end?: string | null;
+  } | null,
+  nowMs = Date.now()
+): SubscriptionTier {
+  if (!sub?.tier || sub.tier === 'free') return 'free';
+  if (sub.status && sub.status !== 'active') return 'free';
+  if (sub.current_period_end) {
+    const periodEnd = new Date(sub.current_period_end);
+    if (!Number.isNaN(periodEnd.getTime()) && periodEnd.getTime() < nowMs) {
+      return 'free';
+    }
+  }
+  if (sub.tier === 'pro' || sub.tier === 'enterprise') {
+    return sub.tier;
+  }
+  return 'free';
+}

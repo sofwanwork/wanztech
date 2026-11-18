@@ -102,16 +102,24 @@ export function CreateBioDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant={variant} size={size} className="gap-2 shadow-sm font-medium">
+        <Button
+          variant={variant}
+          size={size}
+          className={`gap-2 rounded-md font-medium ${
+            variant === 'default'
+              ? 'bg-violet-900 hover:bg-violet-950 text-white shadow-xs'
+              : 'shadow-2xs'
+          }`}
+        >
           <Plus className="h-4 w-4" />
           {buttonText}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md rounded-lg border-slate-200">
         <form onSubmit={handleCreate}>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl">
-              <Sparkles className="h-5 w-5 text-emerald-600" />
+            <DialogTitle className="flex items-center gap-2 text-xl text-slate-900">
+              <Sparkles className="h-5 w-5 text-violet-900" />
               Create Bio Link Page
             </DialogTitle>
             <DialogDescription>
@@ -121,15 +129,15 @@ export function CreateBioDialog({
 
           <div className="space-y-4 py-4">
             {error && (
-              <div className="p-3 text-sm rounded-lg bg-red-50 text-red-700 border border-red-200">
+              <div className="p-3 text-sm rounded-md bg-red-50 text-red-700 border border-red-200">
                 {error}
               </div>
             )}
 
             <div className="space-y-2">
               <Label htmlFor="bio-username">Handle / Username</Label>
-              <div className="flex rounded-md shadow-sm">
-                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-xs sm:text-sm">
+              <div className="flex rounded-md shadow-2xs">
+                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-slate-200 bg-slate-50 text-slate-500 text-xs sm:text-sm">
                   klikform.com/bio/
                 </span>
                 <Input
@@ -137,12 +145,12 @@ export function CreateBioDialog({
                   value={username}
                   onChange={handleUsernameChange}
                   placeholder="myname"
-                  className="rounded-l-none font-mono text-sm"
+                  className="rounded-l-none font-mono text-sm border-slate-200"
                   required
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                Your public URL will be <span className="font-semibold text-gray-700">/bio/{username || 'yourhandle'}</span>
+                Your public URL will be <span className="font-semibold text-slate-700">/bio/{username || 'yourhandle'}</span>
               </p>
             </div>
 
@@ -153,6 +161,7 @@ export function CreateBioDialog({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. Wan Studio | Creator & Tech"
+                className="border-slate-200"
               />
             </div>
 
@@ -167,10 +176,10 @@ export function CreateBioDialog({
                       key={tKey}
                       type="button"
                       onClick={() => setTheme(tKey)}
-                      className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border text-xs font-medium transition-all ${
+                      className={`flex flex-col items-center gap-1.5 p-2 rounded-md border text-xs font-medium transition-colors ${
                         isSelected
-                          ? 'border-emerald-600 bg-emerald-50/80 ring-2 ring-emerald-500 text-emerald-950 font-semibold'
-                          : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                          ? 'border-violet-900 bg-violet-50/70 ring-1 ring-violet-900/20 text-violet-950 font-semibold'
+                          : 'border-slate-200 hover:border-slate-300 text-slate-700'
                       }`}
                     >
                       <span
@@ -288,7 +297,7 @@ export function BioPageCard({ page, appUrl }: BioPageCardProps) {
             checked={isActive}
             onCheckedChange={handleToggleActive}
             disabled={isUpdating}
-            className="scale-75 data-[state=checked]:bg-emerald-500"
+            className="scale-75 data-[state=checked]:bg-violet-900"
           />
         </label>
       </div>
@@ -307,11 +316,11 @@ export function BioPageCard({ page, appUrl }: BioPageCardProps) {
                   const fallback = (e.target as HTMLElement).nextElementSibling as HTMLElement;
                   if (fallback) fallback.style.display = 'flex';
                 }}
-                className="w-16 h-16 rounded-full object-cover ring-4 ring-white shadow-md bg-white"
+                className="w-16 h-16 rounded-full object-cover ring-4 ring-white shadow-sm bg-white"
               />
             ) : null}
             <div
-              className={`w-16 h-16 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold text-2xl flex items-center justify-center ring-4 ring-white shadow-md ${
+              className={`w-16 h-16 rounded-full bg-violet-900 text-white font-bold text-2xl flex items-center justify-center ring-4 ring-white shadow-sm ${
                 page.avatarUrl ? 'hidden' : ''
               }`}
             >
@@ -322,14 +331,14 @@ export function BioPageCard({ page, appUrl }: BioPageCardProps) {
 
         {/* Profile Info - Title, Handle & Bio with generous room */}
         <div className="space-y-0.5">
-          <h3 className="font-bold text-gray-900 truncate text-base leading-tight">
+          <h3 className="font-bold text-slate-900 truncate text-base leading-tight">
             {page.title || page.username}
           </h3>
-          <p className="text-xs font-mono text-emerald-600 truncate">
+          <p className="text-xs font-mono text-violet-900 truncate">
             @{page.username}
           </p>
           {page.bio && (
-            <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed pt-1">
+            <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed pt-1">
               {page.bio}
             </p>
           )}
@@ -337,14 +346,14 @@ export function BioPageCard({ page, appUrl }: BioPageCardProps) {
 
         {/* Public URL Box */}
         <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-md border border-slate-200 text-xs font-mono">
-          <span className="truncate flex-1 font-mono text-gray-700 select-all pl-1">
+          <span className="truncate flex-1 font-mono text-slate-700 select-all pl-1">
             {publicUrl}
           </span>
           <Button
             variant="ghost"
             size="icon"
             onClick={handleCopy}
-            className="h-7 w-7 text-gray-500 hover:text-gray-900 shrink-0"
+            className="h-7 w-7 text-slate-500 hover:text-slate-900 shrink-0"
             title="Copy Public Link"
           >
             {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
@@ -353,7 +362,7 @@ export function BioPageCard({ page, appUrl }: BioPageCardProps) {
             href={publicUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center h-7 w-7 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 shrink-0 transition-colors"
+            className="inline-flex items-center justify-center h-7 w-7 rounded-md text-slate-500 hover:text-slate-900 hover:bg-slate-100 shrink-0 transition-colors"
             title="Open Live Bio"
           >
             <ExternalLink className="h-3.5 w-3.5" />
@@ -362,26 +371,26 @@ export function BioPageCard({ page, appUrl }: BioPageCardProps) {
 
         {/* Stats Row */}
         <div className="grid grid-cols-2 gap-2 pt-1 text-xs">
-          <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-50/70 border border-gray-100">
-            <Eye className="h-3.5 w-3.5 text-gray-400" />
-            <span className="text-gray-500">Views:</span>
-            <span className="font-semibold text-gray-900 ml-auto">{page.views}</span>
+          <div className="flex items-center gap-2 p-2 rounded-md bg-slate-50 border border-slate-200">
+            <Eye className="h-3.5 w-3.5 text-slate-400" />
+            <span className="text-slate-500">Views:</span>
+            <span className="font-semibold text-slate-900 ml-auto">{page.views}</span>
           </div>
-          <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-50/70 border border-gray-100">
-            <MousePointerClick className="h-3.5 w-3.5 text-gray-400" />
-            <span className="text-gray-500">Theme:</span>
-            <span className="font-semibold text-gray-900 ml-auto truncate capitalize">{theme.name}</span>
+          <div className="flex items-center gap-2 p-2 rounded-md bg-slate-50 border border-slate-200">
+            <MousePointerClick className="h-3.5 w-3.5 text-slate-400" />
+            <span className="text-slate-500">Theme:</span>
+            <span className="font-semibold text-slate-900 ml-auto truncate capitalize">{theme.name}</span>
           </div>
         </div>
       </div>
 
       {/* Action Footer */}
-      <div className="p-3.5 bg-gray-50/70 border-t border-gray-100 flex items-center justify-between gap-2">
+      <div className="p-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2">
         <Button
           variant="outline"
           size="sm"
           onClick={() => setQrOpen(true)}
-          className="gap-1.5 text-xs text-gray-700 hover:text-gray-900 shadow-none border-gray-200"
+          className="gap-1.5 text-xs text-slate-700 hover:text-slate-900 shadow-none border-slate-200 rounded-md"
         >
           <QrCode className="h-3.5 w-3.5" />
           QR Code
@@ -394,13 +403,13 @@ export function BioPageCard({ page, appUrl }: BioPageCardProps) {
                 variant="ghost"
                 size="icon"
                 disabled={isDeleting}
-                className="h-8 w-8 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md"
                 title="Delete Bio Page"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent>
+            <AlertDialogContent className="rounded-lg border-slate-200">
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete "@{page.username}"?</AlertDialogTitle>
                 <AlertDialogDescription>
@@ -408,10 +417,10 @@ export function BioPageCard({ page, appUrl }: BioPageCardProps) {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel className="rounded-md">Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={handleDelete}
-                  className="bg-red-600 hover:bg-red-700 text-white"
+                  className="bg-red-600 hover:bg-red-700 text-white rounded-md"
                 >
                   Delete Page
                 </AlertDialogAction>
@@ -420,7 +429,7 @@ export function BioPageCard({ page, appUrl }: BioPageCardProps) {
           </AlertDialog>
 
           <Link href={`/bio-builder/${page.id}`}>
-            <Button size="sm" className="gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 shadow-sm font-medium">
+            <Button size="sm" className="gap-1.5 text-xs bg-violet-900 hover:bg-violet-950 text-white rounded-md shadow-xs font-medium">
               <Edit className="h-3.5 w-3.5" />
               Open Builder
             </Button>
@@ -430,7 +439,7 @@ export function BioPageCard({ page, appUrl }: BioPageCardProps) {
 
       {/* QR Code Dialog */}
       <Dialog open={qrOpen} onOpenChange={setQrOpen}>
-        <DialogContent className="sm:max-w-sm text-center">
+        <DialogContent className="sm:max-w-sm text-center rounded-lg border-slate-200">
           <DialogHeader>
             <DialogTitle className="text-center text-lg">QR Code for @{page.username}</DialogTitle>
             <DialogDescription className="text-center text-xs">
@@ -438,7 +447,7 @@ export function BioPageCard({ page, appUrl }: BioPageCardProps) {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-gray-200 shadow-sm my-2">
+          <div className="flex flex-col items-center justify-center p-4 bg-white rounded-lg border border-slate-200 shadow-2xs my-2">
             <QRCodeSVG
               ref={qrRef}
               value={publicUrl}
@@ -446,7 +455,7 @@ export function BioPageCard({ page, appUrl }: BioPageCardProps) {
               level="H"
               includeMargin={true}
             />
-            <p className="font-mono text-xs text-gray-500 mt-2 truncate max-w-full">
+            <p className="font-mono text-xs text-slate-500 mt-2 truncate max-w-full">
               {publicUrl}
             </p>
           </div>
@@ -456,7 +465,7 @@ export function BioPageCard({ page, appUrl }: BioPageCardProps) {
               variant="outline"
               size="sm"
               onClick={handleCopy}
-              className="w-full gap-1.5 text-xs shadow-xs"
+              className="w-full gap-1.5 text-xs rounded-md shadow-2xs border-slate-200"
             >
               <Share2 className="h-3.5 w-3.5" />
               {copied ? 'Copied Link!' : 'Copy Link'}
@@ -464,7 +473,7 @@ export function BioPageCard({ page, appUrl }: BioPageCardProps) {
             <Button
               size="sm"
               onClick={downloadQR}
-              className="w-full gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+              className="w-full gap-1.5 text-xs bg-violet-900 hover:bg-violet-950 text-white rounded-md shadow-xs"
             >
               <Download className="h-3.5 w-3.5" />
               Download PNG

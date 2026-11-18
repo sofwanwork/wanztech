@@ -9,7 +9,7 @@ import {
 import { PAMPHLET_THEMES, DEFAULT_PAMPHLET_THEME } from '@/lib/pamphlets/themes';
 import { mapPamphletFromRow } from '@/lib/storage/pamphlets';
 import { PamphletTheme, PamphletPageItem } from '@/lib/types/pamphlets';
-import { computeSpread } from '@/components/pamphlet/viewer/flipbook-view';
+import { computeSpread, computeBookStageLayout } from '@/components/pamphlet/viewer/flipbook-view';
 
 describe('E-Pamphlet — Slug Validation & Cleaning', () => {
   it('accepts valid pamphlet slugs', () => {
@@ -289,6 +289,76 @@ describe('E-Pamphlet — Touch Slider & Auto Slider Mechanics', () => {
     expect(getSafePageIndex(0, totalPages)).toBe(0);
     expect(getSafePageIndex(99, totalPages)).toBe(2);
     expect(getSafePageIndex(-5, totalPages)).toBe(0);
+  });
+});
+
+describe('E-Pamphlet — 3D Stage Dynamic Cover Centering & Adaptive Shadow (computeBookStageLayout)', () => {
+  it('centers the front cover and restricts shadow to right page on Page 1 of a multi-page two-page spread', () => {
+    const layout = computeBookStageLayout({
+      isTwoPageSpread: true,
+      totalPages: 6,
+      currentPage: 1,
+      bookWidth: 900,
+      pageWidth: 450,
+    });
+
+    expect(layout.isFrontCoverSolo).toBe(true);
+    expect(layout.isBackCoverSolo).toBe(false);
+    expect(layout.isCoverSolo).toBe(true);
+    expect(layout.stageShiftX).toBe(-225);
+    expect(layout.activeShadowLeft).toBe(450);
+    expect(layout.activeShadowWidth).toBe(450);
+    expect(layout.showCenterSpine).toBe(false);
+  });
+
+  it('expands shadow to full 2-page spread and shows center spine on inside pages', () => {
+    const layout = computeBookStageLayout({
+      isTwoPageSpread: true,
+      totalPages: 6,
+      currentPage: 2,
+      bookWidth: 900,
+      pageWidth: 450,
+    });
+
+    expect(layout.isCoverSolo).toBe(false);
+    expect(layout.stageShiftX).toBe(0);
+    expect(layout.activeShadowLeft).toBe(0);
+    expect(layout.activeShadowWidth).toBe(900);
+    expect(layout.showCenterSpine).toBe(true);
+  });
+
+  it('centers the back cover and restricts shadow to left page on the final page of an even-page book', () => {
+    const layout = computeBookStageLayout({
+      isTwoPageSpread: true,
+      totalPages: 6,
+      currentPage: 6,
+      bookWidth: 900,
+      pageWidth: 450,
+    });
+
+    expect(layout.isFrontCoverSolo).toBe(false);
+    expect(layout.isBackCoverSolo).toBe(true);
+    expect(layout.isCoverSolo).toBe(true);
+    expect(layout.stageShiftX).toBe(225);
+    expect(layout.activeShadowLeft).toBe(0);
+    expect(layout.activeShadowWidth).toBe(450);
+    expect(layout.showCenterSpine).toBe(false);
+  });
+
+  it('keeps single-page mode unshifted with no center spine', () => {
+    const layout = computeBookStageLayout({
+      isTwoPageSpread: false,
+      totalPages: 6,
+      currentPage: 1,
+      bookWidth: 450,
+      pageWidth: 450,
+    });
+
+    expect(layout.isCoverSolo).toBe(false);
+    expect(layout.stageShiftX).toBe(0);
+    expect(layout.activeShadowLeft).toBe(0);
+    expect(layout.activeShadowWidth).toBe(450);
+    expect(layout.showCenterSpine).toBe(false);
   });
 });
 

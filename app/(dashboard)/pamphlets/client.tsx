@@ -123,16 +123,24 @@ export function CreatePamphletDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant={variant} size={size} className="gap-2 shadow-sm font-semibold">
+        <Button
+          variant={variant}
+          size={size}
+          className={`gap-2 rounded-md font-medium ${
+            variant === 'default'
+              ? 'bg-violet-900 hover:bg-violet-950 text-white shadow-xs'
+              : 'shadow-2xs'
+          }`}
+        >
           <Plus className="w-4 h-4" />
           {buttonText}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md rounded-lg border-slate-200">
         <form onSubmit={handleCreate}>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-primary" />
+            <DialogTitle className="flex items-center gap-2 text-slate-900">
+              <BookOpen className="w-5 h-5 text-violet-900" />
               Create New E-Pamphlet
             </DialogTitle>
             <DialogDescription>
@@ -142,7 +150,7 @@ export function CreatePamphletDialog({
 
           <div className="space-y-4 py-4">
             {error && (
-              <div className="rounded-xl bg-destructive/10 p-3 text-xs text-destructive font-medium border border-destructive/20">
+              <div className="rounded-md bg-destructive/10 p-3 text-xs text-destructive font-medium border border-destructive/20">
                 {error}
               </div>
             )}
@@ -188,10 +196,10 @@ export function CreatePamphletDialog({
                 <button
                   type="button"
                   onClick={() => setDisplayMode('flipbook')}
-                  className={`p-2.5 rounded-xl border text-xs font-medium flex flex-col items-center gap-1 transition-all ${
+                  className={`p-2.5 rounded-md border text-xs font-medium flex flex-col items-center gap-1 transition-colors ${
                     displayMode === 'flipbook'
-                      ? 'border-primary bg-primary/10 text-primary font-bold shadow-xs'
-                      : 'border-border hover:bg-accent'
+                      ? 'border-violet-900 bg-violet-50/70 text-violet-950 font-semibold shadow-2xs'
+                      : 'border-slate-200 hover:bg-slate-50 text-slate-700'
                   }`}
                 >
                   <BookOpen className="w-4 h-4" />
@@ -200,10 +208,10 @@ export function CreatePamphletDialog({
                 <button
                   type="button"
                   onClick={() => setDisplayMode('slide')}
-                  className={`p-2.5 rounded-xl border text-xs font-medium flex flex-col items-center gap-1 transition-all ${
+                  className={`p-2.5 rounded-md border text-xs font-medium flex flex-col items-center gap-1 transition-colors ${
                     displayMode === 'slide'
-                      ? 'border-primary bg-primary/10 text-primary font-bold shadow-xs'
-                      : 'border-border hover:bg-accent'
+                      ? 'border-violet-900 bg-violet-50/70 text-violet-950 font-semibold shadow-2xs'
+                      : 'border-slate-200 hover:bg-slate-50 text-slate-700'
                   }`}
                 >
                   <Layers className="w-4 h-4" />
@@ -212,10 +220,10 @@ export function CreatePamphletDialog({
                 <button
                   type="button"
                   onClick={() => setDisplayMode('vertical')}
-                  className={`p-2.5 rounded-xl border text-xs font-medium flex flex-col items-center gap-1 transition-all ${
+                  className={`p-2.5 rounded-md border text-xs font-medium flex flex-col items-center gap-1 transition-colors ${
                     displayMode === 'vertical'
-                      ? 'border-primary bg-primary/10 text-primary font-bold shadow-xs'
-                      : 'border-border hover:bg-accent'
+                      ? 'border-violet-900 bg-violet-50/70 text-violet-950 font-semibold shadow-2xs'
+                      : 'border-slate-200 hover:bg-slate-50 text-slate-700'
                   }`}
                 >
                   <Calendar className="w-4 h-4" />
@@ -231,6 +239,7 @@ export function CreatePamphletDialog({
               variant="outline"
               onClick={() => setOpen(false)}
               disabled={isPending}
+              className="rounded-md border-slate-200"
             >
               Cancel
             </Button>
@@ -352,13 +361,13 @@ export function PamphletCard({
             checked={isActive}
             onCheckedChange={handleToggleActive}
             disabled={isPending}
-            className="scale-75 data-[state=checked]:bg-emerald-500"
+            className="scale-75 data-[state=checked]:bg-violet-900"
           />
         </div>
 
         {/* Display Mode Pill */}
         <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md rounded px-2 py-0.5 z-10 text-[10px] font-semibold text-white/90 border border-white/15 capitalize flex items-center gap-1">
-          <BookOpen className="w-3 h-3 text-primary" />
+          <BookOpen className="w-3 h-3 text-violet-300" />
           {pamphlet.displayMode === 'flipbook' ? '3D Flipbook' : pamphlet.displayMode}
         </div>
 
@@ -376,12 +385,12 @@ export function PamphletCard({
       {/* Details & Stats */}
       <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
         <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground pt-1">
-          <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-2 border border-gray-100">
-            <Layers className="w-4 h-4 text-emerald-600 shrink-0" />
+          <div className="flex items-center gap-1.5 bg-slate-50 rounded-md p-2 border border-slate-200/80">
+            <Layers className="w-4 h-4 text-violet-900 shrink-0" />
             <span className="truncate">{pageCount} {pageCount === 1 ? 'Page' : 'Pages'}</span>
           </div>
-          <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-2 border border-gray-100">
-            <Eye className="w-4 h-4 text-sky-600 shrink-0" />
+          <div className="flex items-center gap-1.5 bg-slate-50 rounded-md p-2 border border-slate-200/80">
+            <Eye className="w-4 h-4 text-slate-500 shrink-0" />
             <span className="truncate">{pamphlet.views || 0} {pamphlet.views === 1 ? 'View' : 'Views'}</span>
           </div>
         </div>
@@ -475,7 +484,7 @@ export function PamphletCard({
 
       {/* QR Code Modal for Printing */}
       <Dialog open={qrOpen} onOpenChange={setQrOpen}>
-        <DialogContent className="sm:max-w-md text-center">
+        <DialogContent className="sm:max-w-md text-center rounded-lg border-slate-200">
           <DialogHeader>
             <DialogTitle className="text-center font-bold">
               Event E-Pamphlet QR Code
@@ -488,7 +497,7 @@ export function PamphletCard({
           <div className="py-4 flex flex-col items-center justify-center gap-3">
             <div
               ref={qrRef}
-              className="p-5 bg-white rounded-2xl border-2 border-primary/20 shadow-lg"
+              className="p-5 bg-white rounded-lg border border-slate-200 shadow-2xs"
             >
               <QRCodeSVG
                 value={publicUrl}
@@ -499,8 +508,8 @@ export function PamphletCard({
             </div>
 
             <div className="text-center">
-              <p className="text-sm font-bold text-gray-900">{pamphlet.title}</p>
-              <p className="text-xs font-mono text-muted-foreground">{publicUrl}</p>
+              <p className="text-sm font-bold text-slate-900">{pamphlet.title}</p>
+              <p className="text-xs font-mono text-slate-500">{publicUrl}</p>
             </div>
           </div>
 
@@ -509,7 +518,7 @@ export function PamphletCard({
               variant="outline"
               size="sm"
               onClick={handleCopy}
-              className="w-full gap-1.5"
+              className="w-full gap-1.5 rounded-md border-slate-200"
             >
               {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
               <span>Copy URL</span>
@@ -518,7 +527,7 @@ export function PamphletCard({
               variant="default"
               size="sm"
               onClick={handleDownloadQrPng}
-              className="w-full gap-1.5 font-semibold"
+              className="w-full gap-1.5 font-medium bg-violet-900 hover:bg-violet-950 text-white rounded-md shadow-xs"
             >
               <Download className="w-4 h-4" />
               <span>Download PNG</span>
@@ -549,7 +558,7 @@ export function PamphletDatabaseNotice({ sqlScript }: { sqlScript: string }) {
   };
 
   return (
-    <div className="rounded-2xl border border-amber-300 bg-amber-50/90 p-5 md:p-6 shadow-xs">
+    <div className="rounded-lg border border-amber-300 bg-amber-50/90 p-5 md:p-6 shadow-2xs">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
@@ -568,14 +577,14 @@ export function PamphletDatabaseNotice({ sqlScript }: { sqlScript: string }) {
             variant="outline"
             size="sm"
             onClick={() => setShowSql(!showSql)}
-            className="border-amber-300 bg-amber-100/60 hover:bg-amber-100 text-amber-900 text-xs"
+            className="border-amber-300 bg-amber-100/60 hover:bg-amber-100 text-amber-900 text-xs rounded-md"
           >
             {showSql ? 'Hide SQL' : 'View SQL Script'}
           </Button>
           <Button
             size="sm"
             onClick={handleCopySql}
-            className="bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs gap-1.5 shadow-xs"
+            className="bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs gap-1.5 rounded-md shadow-xs"
           >
             {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
             <span>{copied ? 'Copied!' : 'Copy SQL Script'}</span>
@@ -586,7 +595,7 @@ export function PamphletDatabaseNotice({ sqlScript }: { sqlScript: string }) {
       {showSql && (
         <div className="mt-4 pt-4 border-t border-amber-200/80">
           <div className="relative">
-            <pre className="max-h-56 overflow-auto p-3.5 rounded-xl bg-gray-900 text-gray-100 font-mono text-xs leading-relaxed">
+            <pre className="max-h-56 overflow-auto p-3.5 rounded-md bg-slate-900 text-slate-100 font-mono text-xs leading-relaxed">
               <code>{sqlScript}</code>
             </pre>
           </div>

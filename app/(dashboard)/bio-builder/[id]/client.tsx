@@ -46,6 +46,7 @@ import {
   formatHandleTiles,
   getBioDisplayHandle,
   getHeroFadeMask,
+  shouldShowBioBranding,
 } from '@/lib/bio-links/themes';
 import { toValidHexColor } from '@/lib/utils';
 import {
@@ -118,7 +119,6 @@ import {
   CheckCircle2,
   Upload,
   Loader2,
-  MoreVertical,
   Image as ImageIcon,
   Share2,
   Palette,
@@ -421,33 +421,33 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
   };
 
   return (
-    <div className="bg-gray-50/50 pb-8 sm:pb-12">
+    <div className="bg-slate-50/60 pb-8 sm:pb-12">
       {/* Sticky Header Bar */}
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-gray-200 px-3 sm:px-4 md:px-8 py-2.5 sm:py-3 flex items-center justify-between gap-2 min-w-0">
+      <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-3 sm:px-4 md:px-8 py-2.5 sm:py-3 flex items-center justify-between gap-2 min-w-0">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
           <Link href="/bio" className="shrink-0">
-            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 text-gray-500 hover:text-gray-900 shrink-0">
+            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 text-slate-500 hover:text-slate-900 rounded-md shrink-0">
               <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
           </Link>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-              <h1 className="font-bold text-gray-900 text-sm sm:text-base md:text-xl truncate">
+              <h1 className="font-bold text-slate-900 text-sm sm:text-base md:text-xl truncate">
                 {page.title || page.username}
               </h1>
-              <span className="text-[10px] sm:text-xs font-mono px-1.5 sm:px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0 hidden sm:inline-block truncate">
+              <span className="text-[10px] sm:text-xs font-mono px-1.5 sm:px-2 py-0.5 rounded bg-violet-50 text-violet-900 border border-violet-200 shrink-0 hidden sm:inline-block truncate">
                 @{page.username}
               </span>
             </div>
-            <p className="text-[11px] text-gray-500 sm:hidden truncate font-mono mt-0.5">
+            <p className="text-[11px] text-slate-500 sm:hidden truncate font-mono mt-0.5">
               @{page.username}
             </p>
-            <p className="text-xs text-gray-500 hidden sm:block">
+            <p className="text-xs text-slate-500 hidden sm:block">
               {savedStatus === 'saving' ? (
                 <span className="text-amber-600 animate-pulse">Saving changes...</span>
               ) : (
-                <span className="text-emerald-600 flex items-center gap-1">
-                  <CheckCircle2 className="h-3 w-3" /> Saved to cloud
+                <span className="text-slate-600 flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3 text-emerald-600" /> Saved to cloud
                 </span>
               )}
             </p>
@@ -460,9 +460,9 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
             variant="outline"
             size="sm"
             onClick={() => setMobilePreviewOpen(true)}
-            className="lg:hidden gap-1 text-xs text-gray-700 h-8 px-2 sm:px-3 shrink-0"
+            className="lg:hidden gap-1 text-xs text-slate-700 border-slate-200 rounded-md h-8 px-2 sm:px-3 shrink-0"
           >
-            <Smartphone className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+            <Smartphone className="h-3.5 w-3.5 text-violet-900 shrink-0" />
             <span>Preview</span>
           </Button>
 
@@ -470,7 +470,7 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
             variant="outline"
             size="sm"
             onClick={handleCopyLink}
-            className="gap-1.5 text-xs hidden sm:flex h-8 shrink-0"
+            className="gap-1.5 text-xs hidden sm:flex h-8 shrink-0 border-slate-200 rounded-md"
           >
             {copied ? <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0" /> : <Copy className="h-3.5 w-3.5 shrink-0" />}
             {copied ? 'Copied' : 'Copy Link'}
@@ -482,7 +482,7 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
             rel="noopener noreferrer"
             className="shrink-0"
           >
-            <Button size="sm" className="gap-1 text-xs bg-emerald-600 hover:bg-emerald-700 shadow-sm font-medium h-8 px-2.5 sm:px-3 shrink-0">
+            <Button size="sm" className="gap-1 text-xs bg-violet-900 hover:bg-violet-950 text-white rounded-md shadow-xs font-medium h-8 px-2.5 sm:px-3 shrink-0">
               <ExternalLink className="h-3.5 w-3.5 shrink-0" />
               <span className="hidden sm:inline">View Public</span> Bio
             </Button>
@@ -496,23 +496,23 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
           {/* Left Column: Settings Tabs */}
           <div className="lg:col-span-7 space-y-6 min-w-0 w-full">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full min-w-0">
-              <TabsList className="grid grid-cols-4 w-full h-10 sm:h-11 bg-gray-100 p-1 sm:p-1.5 rounded-xl min-w-0">
-                <TabsTrigger value="links" className="h-full rounded-lg text-[11px] sm:text-xs md:text-sm font-medium gap-1 sm:gap-1.5 py-0 px-1 sm:px-2 flex items-center justify-center min-w-0">
+              <TabsList className="grid grid-cols-4 w-full h-10 sm:h-11 bg-slate-100 border border-slate-200 p-1 rounded-md min-w-0">
+                <TabsTrigger value="links" className="h-full rounded text-[11px] sm:text-xs md:text-sm font-medium gap-1 sm:gap-1.5 py-0 px-1 sm:px-2 flex items-center justify-center min-w-0">
                   <LinkIcon className="h-3.5 w-3.5 shrink-0" />
                   <span className="truncate">Links</span>
                 </TabsTrigger>
-                <TabsTrigger value="theme" className="h-full rounded-lg text-[11px] sm:text-xs md:text-sm font-medium gap-1 sm:gap-1.5 py-0 px-1 sm:px-2 flex items-center justify-center min-w-0">
+                <TabsTrigger value="theme" className="h-full rounded text-[11px] sm:text-xs md:text-sm font-medium gap-1 sm:gap-1.5 py-0 px-1 sm:px-2 flex items-center justify-center min-w-0">
                   <Sparkles className="h-3.5 w-3.5 shrink-0" />
                   <span className="truncate">Design</span>
                 </TabsTrigger>
-                <TabsTrigger value="profile" className="h-full rounded-lg text-[11px] sm:text-xs md:text-sm font-medium gap-1 sm:gap-1.5 py-0 px-1 sm:px-2 flex items-center justify-center min-w-0">
+                <TabsTrigger value="profile" className="h-full rounded text-[11px] sm:text-xs md:text-sm font-medium gap-1 sm:gap-1.5 py-0 px-1 sm:px-2 flex items-center justify-center min-w-0">
                   <Instagram className="h-3.5 w-3.5 shrink-0" />
                   <span className="truncate">Profile</span>
                 </TabsTrigger>
-                <TabsTrigger value="share" className="h-full rounded-lg text-[11px] sm:text-xs md:text-sm font-medium gap-1 sm:gap-1.5 py-0 px-1 sm:px-2 flex items-center justify-center min-w-0">
+                <TabsTrigger value="share" className="h-full rounded text-[11px] sm:text-xs md:text-sm font-medium gap-1 sm:gap-1.5 py-0 px-1 sm:px-2 flex items-center justify-center min-w-0">
                   <QrCode className="h-3.5 w-3.5 shrink-0" />
                   <span className="truncate sm:hidden">Share</span>
-                  <span className="truncate hidden sm:inline">Share & QR</span>
+                  <span className="truncate hidden sm:inline">Share &amp; QR</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -520,8 +520,8 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
               <TabsContent value="links" className="space-y-4 pt-4 min-w-0">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
                   <div className="min-w-0">
-                    <h3 className="text-base font-semibold text-gray-900 truncate">Your Bio Links</h3>
-                    <p className="text-xs text-gray-500">Drag to reorder your links and buttons.</p>
+                    <h3 className="text-base font-semibold text-slate-900 truncate">Your Bio Links</h3>
+                    <p className="text-xs text-slate-500">Drag to reorder your links and buttons.</p>
                   </div>
                   <div className="shrink-0 self-start sm:self-auto">
                     <AddLinkDialog
@@ -533,13 +533,13 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                 </div>
 
                 {links.length === 0 ? (
-                  <div className="rounded-2xl border-2 border-dashed border-gray-200 p-8 text-center bg-white space-y-3">
-                    <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
+                  <div className="rounded-lg border border-dashed border-slate-200 p-8 text-center bg-white shadow-2xs space-y-3">
+                    <div className="w-12 h-12 rounded-md bg-slate-100 border border-slate-200 text-violet-900 flex items-center justify-center mx-auto">
                       <LinkIcon className="w-6 h-6" />
                     </div>
                     <div className="space-y-1">
-                      <h4 className="font-semibold text-gray-900 text-sm">No links added yet</h4>
-                      <p className="text-xs text-gray-500 max-w-sm mx-auto">
+                      <h4 className="font-semibold text-slate-900 text-sm">No links added yet</h4>
+                      <p className="text-xs text-slate-500 max-w-sm mx-auto">
                         Add your first link, WhatsApp chat button, or KlikForm form to showcase on your bio page.
                       </p>
                     </div>
@@ -586,10 +586,10 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
 
               {/* TAB 2: DESIGN & THEME */}
               <TabsContent value="theme" className="space-y-6 pt-4">
-                <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4 shadow-sm">
+                <div className="bg-white rounded-lg border border-slate-200 p-5 space-y-4 shadow-2xs">
                   <div>
-                    <h3 className="text-base font-semibold text-gray-900">Color Themes</h3>
-                    <p className="text-xs text-gray-500">Pick from 9 pre-crafted aesthetic color palettes.</p>
+                    <h3 className="text-base font-semibold text-slate-900">Color Themes</h3>
+                    <p className="text-xs text-slate-500">Pick from 9 pre-crafted aesthetic color palettes.</p>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -601,23 +601,23 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                           key={tKey}
                           type="button"
                           onClick={() => handleSavePage({ theme: tKey })}
-                          className={`relative flex flex-col p-3 rounded-xl border text-left transition-all ${
+                          className={`relative flex flex-col p-3 rounded-md border text-left transition-colors ${
                             isSelected
-                              ? 'border-emerald-600 bg-emerald-50/50 ring-2 ring-emerald-500/40 shadow-sm'
-                              : 'border-gray-200 hover:border-gray-300 bg-white'
+                              ? 'border-violet-900 bg-violet-50/70 ring-1 ring-violet-900/20 shadow-2xs'
+                              : 'border-slate-200 hover:border-slate-300 bg-white'
                           }`}
                         >
                           <div
-                            className={`h-12 w-full rounded-lg ${t.bg} flex items-center justify-center p-2 mb-2 shadow-inner`}
+                            className={`h-12 w-full rounded ${t.bg} flex items-center justify-center p-2 mb-2 shadow-inner`}
                           >
                             <div className="w-full h-3 rounded-full bg-white/30 backdrop-blur-sm" />
                           </div>
-                          <span className="font-semibold text-xs text-gray-900">{t.name}</span>
-                          <span className="text-[10px] text-gray-500 truncate">{t.description}</span>
+                          <span className="font-semibold text-xs text-slate-900">{t.name}</span>
+                          <span className="text-[10px] text-slate-500 truncate">{t.description}</span>
                           {isSelected && (
                             <span className="absolute top-2 right-2 flex h-2 w-2">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600" />
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-900" />
                             </span>
                           )}
                         </button>
@@ -626,10 +626,10 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                   </div>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4 shadow-sm">
+                <div className="bg-white rounded-lg border border-slate-200 p-5 space-y-4 shadow-2xs">
                   <div>
-                    <h3 className="text-base font-semibold text-gray-900">Button Corner Styles</h3>
-                    <p className="text-xs text-gray-500">Choose the shape and appearance of link buttons.</p>
+                    <h3 className="text-base font-semibold text-slate-900">Button Corner Styles</h3>
+                    <p className="text-xs text-slate-500">Choose the shape and appearance of link buttons.</p>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -646,14 +646,14 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                               themeConfig: { ...page.themeConfig, buttonStyle: bKey },
                             })
                           }
-                          className={`p-3 rounded-xl border text-center transition-all ${
+                          className={`p-3 rounded-md border text-center transition-colors ${
                             isSelected
-                              ? 'border-emerald-600 bg-emerald-50/50 ring-2 ring-emerald-500/40 text-emerald-950 font-semibold shadow-sm'
-                              : 'border-gray-200 hover:border-gray-300 text-gray-700 bg-white'
+                              ? 'border-violet-900 bg-violet-50/70 ring-1 ring-violet-900/20 text-violet-950 font-semibold shadow-2xs'
+                              : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white'
                           }`}
                         >
                           <div
-                            className={`py-2 px-3 border border-gray-300 bg-gray-50 text-xs mb-1.5 font-medium ${b.class}`}
+                            className={`py-2 px-3 border border-slate-300 bg-slate-50 text-xs mb-1.5 font-medium ${b.class}`}
                           >
                             Sample Button
                           </div>
@@ -665,14 +665,14 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                 </div>
 
                 {/* Button Colors & Appearance */}
-                <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-5 shadow-sm">
+                <div className="bg-white rounded-lg border border-slate-200 p-5 space-y-5 shadow-2xs">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                        <Palette className="w-4 h-4 text-emerald-600" />
-                        Button Colors & Appearance / Warna Butang
+                      <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+                        <Palette className="w-4 h-4 text-violet-900" />
+                        Button Colors &amp; Appearance
                       </h3>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-slate-500">
                         Choose a quick button color palette or customize button fill, text, and border colors.
                       </p>
                     </div>
@@ -709,8 +709,8 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
 
                   {/* Quick Color Presets Grid */}
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-gray-700">
-                      Quick Color Palettes (Pratetap Warna Pantas)
+                    <label className="text-xs font-semibold text-slate-700">
+                      Quick Color Palettes
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                       {BIO_BUTTON_PRESETS.map((preset) => {
@@ -751,16 +751,16 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                                 handleSavePage({ themeConfig: updated });
                               }
                             }}
-                            className={`p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between ${
+                            className={`p-2.5 rounded-md border text-left transition-colors flex flex-col justify-between ${
                               isPresetActive
-                                ? 'border-emerald-600 bg-emerald-50/50 ring-2 ring-emerald-500/40 shadow-xs'
-                                : 'border-gray-200 hover:border-gray-300 bg-white'
+                                ? 'border-violet-900 bg-violet-50/70 ring-1 ring-violet-900/20 shadow-2xs'
+                                : 'border-slate-200 hover:border-slate-300 bg-white'
                             }`}
                           >
                             <div
-                              className={`h-9 w-full rounded-lg ${preset.previewBg} ${
+                              className={`h-9 w-full rounded ${preset.previewBg} ${
                                 preset.previewBorder || 'border border-black/10'
-                              } flex items-center justify-center px-2 mb-1.5 shadow-xs`}
+                              } flex items-center justify-center px-2 mb-1.5 shadow-2xs`}
                               style={
                                 preset.buttonColor
                                   ? {
@@ -778,10 +778,10 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                                 Button Link
                               </span>
                             </div>
-                            <span className="font-semibold text-xs text-gray-900 truncate">
+                            <span className="font-semibold text-xs text-slate-900 truncate">
                               {preset.name}
                             </span>
-                            <span className="text-[10px] text-gray-500 truncate">
+                            <span className="text-[10px] text-slate-500 truncate">
                               {preset.description}
                             </span>
                           </button>
@@ -791,17 +791,17 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                   </div>
 
                   {/* Fine-grained Custom Color Pickers */}
-                  <div className="pt-3 border-t border-gray-100 space-y-3">
-                    <label className="text-xs font-semibold text-gray-700">
-                      Fine-Tune Colors (Warna Butang Tersuai)
+                  <div className="pt-3 border-t border-slate-100 space-y-3">
+                    <label className="text-xs font-semibold text-slate-700">
+                      Fine-Tune Custom Colors
                     </label>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {/* Button Background */}
-                      <div className="p-3 rounded-xl border border-gray-200 bg-gray-50/50 space-y-2">
+                      <div className="p-3 rounded-md border border-slate-200 bg-slate-50/70 space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-gray-700">Button Background</span>
-                          <span className="text-[11px] font-mono text-gray-500 truncate max-w-[120px]">
+                          <span className="text-xs font-medium text-slate-700">Button Background</span>
+                          <span className="text-[11px] font-mono text-slate-500 truncate max-w-[120px]">
                             {page.themeConfig?.buttonColor || 'Theme Default'}
                           </span>
                         </div>
@@ -819,7 +819,7 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                               setPage((p) => ({ ...p, themeConfig: updated }));
                             }}
                             onBlur={() => handleSavePage({ themeConfig: page.themeConfig })}
-                            className="w-9 h-9 rounded-lg border border-gray-300 cursor-pointer p-0.5 bg-white shrink-0"
+                            className="w-9 h-9 rounded-md border border-slate-300 cursor-pointer p-0.5 bg-white shrink-0"
                           />
                           <Input
                             placeholder="#ffffff or rgba(...)"
@@ -840,10 +840,10 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                       </div>
 
                       {/* Button Text Color */}
-                      <div className="p-3 rounded-xl border border-gray-200 bg-gray-50/50 space-y-2">
+                      <div className="p-3 rounded-md border border-slate-200 bg-slate-50/70 space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-gray-700">Text & Icon Color</span>
-                          <span className="text-[11px] font-mono text-gray-500 truncate max-w-[120px]">
+                          <span className="text-xs font-medium text-slate-700">Text &amp; Icon Color</span>
+                          <span className="text-[11px] font-mono text-slate-500 truncate max-w-[120px]">
                             {page.themeConfig?.buttonTextColor || 'Theme Default'}
                           </span>
                         </div>
@@ -861,7 +861,7 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                               setPage((p) => ({ ...p, themeConfig: updated }));
                             }}
                             onBlur={() => handleSavePage({ themeConfig: page.themeConfig })}
-                            className="w-9 h-9 rounded-lg border border-gray-300 cursor-pointer p-0.5 bg-white shrink-0"
+                            className="w-9 h-9 rounded-md border border-slate-300 cursor-pointer p-0.5 bg-white shrink-0"
                           />
                           <Input
                             placeholder="#ffffff"
@@ -882,10 +882,10 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                       </div>
 
                       {/* Button Border Color */}
-                      <div className="p-3 rounded-xl border border-gray-200 bg-gray-50/50 space-y-2">
+                      <div className="p-3 rounded-md border border-slate-200 bg-slate-50/70 space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-gray-700">Border / Outline Color</span>
-                          <span className="text-[11px] font-mono text-gray-500 truncate max-w-[120px]">
+                          <span className="text-xs font-medium text-slate-700">Border / Outline Color</span>
+                          <span className="text-[11px] font-mono text-slate-500 truncate max-w-[120px]">
                             {page.themeConfig?.buttonBorderColor || 'Theme Default'}
                           </span>
                         </div>
@@ -903,7 +903,7 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                               setPage((p) => ({ ...p, themeConfig: updated }));
                             }}
                             onBlur={() => handleSavePage({ themeConfig: page.themeConfig })}
-                            className="w-9 h-9 rounded-lg border border-gray-300 cursor-pointer p-0.5 bg-white shrink-0"
+                            className="w-9 h-9 rounded-md border border-slate-300 cursor-pointer p-0.5 bg-white shrink-0"
                           />
                           <Input
                             placeholder="#ffffff or rgba(...)"
@@ -924,10 +924,10 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                       </div>
 
                       {/* Highlighted Button Background */}
-                      <div className="p-3 rounded-xl border border-gray-200 bg-gray-50/50 space-y-2">
+                      <div className="p-3 rounded-md border border-slate-200 bg-slate-50/70 space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-gray-700">Highlighted Button Fill</span>
-                          <span className="text-[11px] font-mono text-gray-500 truncate max-w-[120px]">
+                          <span className="text-xs font-medium text-slate-700">Highlighted Button Fill</span>
+                          <span className="text-[11px] font-mono text-slate-500 truncate max-w-[120px]">
                             {page.themeConfig?.highlightButtonColor || 'Theme Default'}
                           </span>
                         </div>
@@ -945,7 +945,7 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                               setPage((p) => ({ ...p, themeConfig: updated }));
                             }}
                             onBlur={() => handleSavePage({ themeConfig: page.themeConfig })}
-                            className="w-9 h-9 rounded-lg border border-gray-300 cursor-pointer p-0.5 bg-white shrink-0"
+                            className="w-9 h-9 rounded-md border border-slate-300 cursor-pointer p-0.5 bg-white shrink-0"
                           />
                           <Input
                             placeholder="#10b981"
@@ -968,10 +968,10 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                   </div>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4 shadow-sm">
+                <div className="bg-white rounded-lg border border-slate-200 p-5 space-y-4 shadow-2xs">
                   <div>
-                    <h3 className="text-base font-semibold text-gray-900">Background Patterns / Corak Latar</h3>
-                    <p className="text-xs text-gray-500">Add subtle decorative textures over your page background.</p>
+                    <h3 className="text-base font-semibold text-slate-900">Background Patterns</h3>
+                    <p className="text-xs text-slate-500">Add subtle decorative textures over your page background.</p>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -990,14 +990,14 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                               themeConfig: { ...page.themeConfig, pattern: pKey },
                             })
                           }
-                          className={`relative flex flex-col p-3 rounded-xl border text-left transition-all ${
+                          className={`relative flex flex-col p-3 rounded-md border text-left transition-colors ${
                             isSelected
-                              ? 'border-emerald-600 bg-emerald-50/50 ring-2 ring-emerald-500/40 shadow-sm'
-                              : 'border-gray-200 hover:border-gray-300 bg-white'
+                              ? 'border-violet-900 bg-violet-50/70 ring-1 ring-violet-900/20 shadow-2xs'
+                              : 'border-slate-200 hover:border-slate-300 bg-white'
                           }`}
                         >
                           <div
-                            className={`h-14 w-full rounded-lg ${activeTheme.bg} relative overflow-hidden mb-2 shadow-inner flex items-center justify-center`}
+                            className={`h-14 w-full rounded ${activeTheme.bg} relative overflow-hidden mb-2 shadow-inner flex items-center justify-center`}
                           >
                             {pKey !== 'none' ? (
                               <div
@@ -1010,12 +1010,12 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                               </span>
                             )}
                           </div>
-                          <span className="font-semibold text-xs text-gray-900">{p.name}</span>
-                          <span className="text-[10px] text-gray-500 truncate">{p.description}</span>
+                          <span className="font-semibold text-xs text-slate-900">{p.name}</span>
+                          <span className="text-[10px] text-slate-500 truncate">{p.description}</span>
                           {isSelected && (
                             <span className="absolute top-2 right-2 flex h-2 w-2">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600" />
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-900" />
                             </span>
                           )}
                         </button>
@@ -1025,18 +1025,18 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
 
                   {/* Pattern Opacity Control (Visible when active pattern selected) */}
                   {page.themeConfig?.pattern && page.themeConfig.pattern !== 'none' && (
-                    <div className="pt-4 border-t border-gray-100 space-y-3">
+                    <div className="pt-4 border-t border-slate-100 space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold text-gray-800">
-                              Pattern Opacity / Kelegapan Corak
+                            <span className="text-xs font-semibold text-slate-800">
+                              Pattern Opacity
                             </span>
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold font-mono">
+                            <span className="px-2 py-0.5 rounded bg-violet-50 text-violet-900 border border-violet-200 text-[11px] font-bold font-mono">
                               {page.themeConfig?.patternOpacity ?? 100}%
                             </span>
                           </div>
-                          <p className="text-[11px] text-gray-500">
+                          <p className="text-[11px] text-slate-500">
                             Adjust the visual transparency of the pattern texture over your background.
                           </p>
                         </div>
@@ -1048,7 +1048,7 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                               setPage((p) => ({ ...p, themeConfig: updated }));
                               handleSavePage({ themeConfig: updated });
                             }}
-                            className="text-[11px] text-gray-400 hover:text-gray-700 underline underline-offset-2 transition-colors shrink-0"
+                            className="text-[11px] text-slate-400 hover:text-slate-700 underline underline-offset-2 transition-colors shrink-0"
                           >
                             Reset (100%)
                           </button>
@@ -1058,7 +1058,7 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                       {/* Slider Input */}
                       <div className="space-y-1.5 pt-1">
                         <div className="flex items-center gap-3">
-                          <span className="text-[11px] font-medium text-gray-400 shrink-0">10%</span>
+                          <span className="text-[11px] font-medium text-slate-400 shrink-0">10%</span>
                           <input
                             type="range"
                             min={10}
@@ -1084,15 +1084,15 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                                 themeConfig: { ...page.themeConfig, patternOpacity: val },
                               });
                             }}
-                            className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                            className="w-full h-2 bg-slate-100 rounded-md appearance-none cursor-pointer accent-violet-900 focus:outline-none focus:ring-2 focus:ring-violet-900/30"
                           />
-                          <span className="text-[11px] font-medium text-gray-400 shrink-0">100%</span>
+                          <span className="text-[11px] font-medium text-slate-400 shrink-0">100%</span>
                         </div>
                       </div>
 
                       {/* Quick Presets */}
                       <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                        <span className="text-[11px] text-gray-400 mr-1">Presets:</span>
+                        <span className="text-[11px] text-slate-400 mr-1">Presets:</span>
                         {[
                           { label: 'Subtle', val: 25 },
                           { label: 'Soft', val: 50 },
@@ -1110,10 +1110,10 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                                 setPage((p) => ({ ...p, themeConfig: updated }));
                                 handleSavePage({ themeConfig: updated });
                               }}
-                              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
                                 isActive
-                                  ? 'bg-emerald-600 text-white shadow-xs font-semibold'
-                                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200/60'
+                                  ? 'bg-violet-900 text-white shadow-xs font-semibold'
+                                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
                               }`}
                             >
                               {preset.val}% <span className="opacity-75 font-normal text-[10px]">({preset.label})</span>
@@ -1128,14 +1128,14 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
 
               {/* TAB 3: PROFILE & SOCIALS */}
               <TabsContent value="profile" className="space-y-6 pt-4">
-                <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4 shadow-sm">
-                  <h3 className="text-base font-semibold text-gray-900">Profile Details</h3>
+                <div className="bg-white rounded-lg border border-slate-200 p-5 space-y-4 shadow-2xs">
+                  <h3 className="text-base font-semibold text-slate-900">Profile Details</h3>
 
                   <div className="space-y-3">
                     <div className="space-y-1.5">
                       <Label htmlFor="edit-username">Handle / Slug</Label>
-                      <div className="flex rounded-md shadow-sm">
-                        <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-xs">
+                      <div className="flex rounded-md shadow-2xs">
+                        <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-slate-200 bg-slate-50 text-slate-500 text-xs">
                           klikform.com/bio/
                         </span>
                         <Input
@@ -1180,7 +1180,7 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
 
                     {/* Header Style Selector */}
                     <div className="space-y-2 pt-1">
-                      <Label className="text-xs font-semibold text-gray-900">Header Display Style</Label>
+                      <Label className="text-xs font-semibold text-slate-900">Header Display Style</Label>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                         <button
                           type="button"
@@ -1192,18 +1192,18 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                               },
                             })
                           }
-                          className={`p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 ${
+                          className={`p-3 rounded-md border text-left transition-colors flex items-start gap-2.5 ${
                             (page.themeConfig?.headerType || 'avatar') === 'avatar'
-                              ? 'border-emerald-600 bg-emerald-50/60 ring-2 ring-emerald-500/40 shadow-sm'
-                              : 'border-gray-200 hover:border-gray-300 bg-white'
+                              ? 'border-violet-900 bg-violet-50/70 ring-1 ring-violet-900/20 shadow-2xs'
+                              : 'border-slate-200 hover:border-slate-300 bg-white'
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                          <div className="w-8 h-8 rounded-md bg-violet-100 text-violet-900 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
                             {(page.title || page.username).charAt(0).toUpperCase()}
                           </div>
                           <div className="min-w-0">
-                            <span className="font-semibold text-xs text-gray-900 block truncate">Classic Avatar</span>
-                            <span className="text-[10px] text-gray-500 block truncate">Circular profile photo</span>
+                            <span className="font-semibold text-xs text-slate-900 block truncate">Classic Avatar</span>
+                            <span className="text-[10px] text-slate-500 block truncate">Circular profile photo</span>
                           </div>
                         </button>
 
@@ -1218,18 +1218,18 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                               },
                             })
                           }
-                          className={`p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 ${
+                          className={`p-3 rounded-md border text-left transition-colors flex items-start gap-2.5 ${
                             page.themeConfig?.headerType === 'hero'
-                              ? 'border-emerald-600 bg-emerald-50/60 ring-2 ring-emerald-500/40 shadow-sm'
-                              : 'border-gray-200 hover:border-gray-300 bg-white'
+                              ? 'border-violet-900 bg-violet-50/70 ring-1 ring-violet-900/20 shadow-2xs'
+                              : 'border-slate-200 hover:border-slate-300 bg-white'
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 text-white flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5 shadow-xs">
+                          <div className="w-8 h-8 rounded-md bg-slate-900 text-white flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
                             <Sparkles className="h-4 w-4 text-white" />
                           </div>
                           <div className="min-w-0">
-                            <span className="font-semibold text-xs text-gray-900 block truncate">Hero Banner (Fade)</span>
-                            <span className="text-[10px] text-gray-500 block truncate">Full-bleed bottom fade</span>
+                            <span className="font-semibold text-xs text-slate-900 block truncate">Hero Banner (Fade)</span>
+                            <span className="text-[10px] text-slate-500 block truncate">Full-bleed bottom fade</span>
                           </div>
                         </button>
 
@@ -1244,18 +1244,18 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                               },
                             })
                           }
-                          className={`p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 ${
+                          className={`p-3 rounded-md border text-left transition-colors flex items-start gap-2.5 ${
                             page.themeConfig?.headerType === 'poster'
-                              ? 'border-emerald-600 bg-emerald-50/60 ring-2 ring-emerald-500/40 shadow-sm'
-                              : 'border-gray-200 hover:border-gray-300 bg-white'
+                              ? 'border-violet-900 bg-violet-50/70 ring-1 ring-violet-900/20 shadow-2xs'
+                              : 'border-slate-200 hover:border-slate-300 bg-white'
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-sky-500 to-indigo-600 text-white flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5 shadow-xs">
+                          <div className="w-8 h-8 rounded-md bg-violet-900 text-white flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
                             <ImageIcon className="h-4 w-4 text-white" />
                           </div>
                           <div className="min-w-0">
-                            <span className="font-semibold text-xs text-gray-900 block truncate">Event Poster</span>
-                            <span className="text-[10px] text-gray-500 block truncate">Framed flyer card</span>
+                            <span className="font-semibold text-xs text-slate-900 block truncate">Event Poster</span>
+                            <span className="text-[10px] text-slate-500 block truncate">Framed flyer card</span>
                           </div>
                         </button>
                       </div>
@@ -1265,14 +1265,14 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                     {page.themeConfig?.headerType === 'poster' || page.themeConfig?.headerType === 'hero' ? (
                       <div className="space-y-3 pt-1">
                         <div className="space-y-2">
-                          <Label className="text-xs font-semibold text-gray-900">
+                          <Label className="text-xs font-semibold text-slate-900">
                             {page.themeConfig?.headerType === 'hero'
                               ? 'Hero Banner Graphic (Top Bleed with Fade)'
                               : 'Event Poster / Flyer Image'}
                           </Label>
-                          <div className="p-3 rounded-xl border border-gray-200 bg-gray-50/50 space-y-3">
+                          <div className="p-3 rounded-md border border-slate-200 bg-slate-50/70 space-y-3">
                             {/* Poster preview */}
-                            <div className="relative rounded-lg overflow-hidden border border-gray-200 bg-white max-h-48 flex items-center justify-center">
+                            <div className="relative rounded-md overflow-hidden border border-slate-200 bg-white max-h-48 flex items-center justify-center">
                               {posterPreview || page.themeConfig?.posterUrl ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img
@@ -1281,8 +1281,8 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                                   className="w-full h-auto max-h-48 object-contain"
                                 />
                               ) : (
-                                <div className="py-8 text-center text-xs text-gray-400 flex flex-col items-center gap-1.5">
-                                  <ImageIcon className="h-8 w-8 text-gray-300" />
+                                <div className="py-8 text-center text-xs text-slate-400 flex flex-col items-center gap-1.5">
+                                  <ImageIcon className="h-8 w-8 text-slate-300" />
                                   <span>No image uploaded yet. Upload an event flyer or banner.</span>
                                 </div>
                               )}
@@ -1304,13 +1304,13 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                                   variant="outline"
                                   size="sm"
                                   disabled={isUploadingPoster}
-                                  className="gap-1.5 cursor-pointer bg-white text-xs h-8"
+                                  className="gap-1.5 cursor-pointer bg-white text-xs h-8 rounded-md border-slate-200"
                                 >
                                   <Label htmlFor="poster-upload" className="cursor-pointer flex items-center gap-1.5">
                                     {isUploadingPoster ? (
-                                      <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-600" />
+                                      <Loader2 className="h-3.5 w-3.5 animate-spin text-violet-900" />
                                     ) : (
-                                      <Upload className="h-3.5 w-3.5 text-emerald-600" />
+                                      <Upload className="h-3.5 w-3.5 text-violet-900" />
                                     )}
                                     {isUploadingPoster
                                       ? 'Uploading...'
@@ -1327,7 +1327,7 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                                     size="sm"
                                     onClick={handleRemovePoster}
                                     disabled={isUploadingPoster}
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs h-8 px-2"
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs h-8 px-2 rounded-md"
                                   >
                                     <Trash2 className="h-3.5 w-3.5 mr-1" />
                                     Remove
@@ -1338,7 +1338,7 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                               <button
                                 type="button"
                                 onClick={() => setShowPosterUrlInput(!showPosterUrlInput)}
-                                className="text-emerald-600 hover:underline hover:text-emerald-700 font-medium text-[11px]"
+                                className="text-violet-900 hover:underline hover:text-violet-950 font-medium text-[11px]"
                               >
                                 {showPosterUrlInput ? 'Hide URL' : 'Paste URL instead'}
                               </button>
@@ -1388,14 +1388,14 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                                         },
                                       })
                                     }
-                                    className={`p-2 rounded-xl border text-center transition-all cursor-pointer ${
+                                    className={`p-2 rounded-md border text-center transition-colors cursor-pointer ${
                                       isSelected
-                                        ? 'border-emerald-600 bg-emerald-50 text-emerald-950 font-semibold ring-1 ring-emerald-500/30'
-                                        : 'border-gray-200 hover:border-gray-300 text-gray-700 bg-white'
+                                        ? 'border-violet-900 bg-violet-50/70 text-violet-950 font-semibold ring-1 ring-violet-900/20'
+                                        : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white'
                                     }`}
                                   >
                                     <span className="text-xs block font-medium">{fStyle.label}</span>
-                                    <span className="text-[10px] text-gray-500 block truncate">{fStyle.desc}</span>
+                                    <span className="text-[10px] text-slate-500 block truncate">{fStyle.desc}</span>
                                   </button>
                                 );
                               })}
@@ -1405,7 +1405,7 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
 
                         {/* Handle Badge Style Picker */}
                         <div className="space-y-1.5">
-                          <Label className="text-xs font-semibold text-gray-900">Handle Badge Style</Label>
+                          <Label className="text-xs font-semibold text-slate-900">Handle Badge Style</Label>
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                             {[
                               { id: 'stencil', label: 'Stencil (@USER)', desc: 'Monofett stencil' },
@@ -1428,14 +1428,14 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                                       },
                                     })
                                   }
-                                  className={`p-2 rounded-xl border text-center transition-all ${
+                                  className={`p-2 rounded-md border text-center transition-colors ${
                                     isSelected
-                                      ? 'border-emerald-600 bg-emerald-50 text-emerald-950 font-semibold ring-1 ring-emerald-500/30'
-                                      : 'border-gray-200 hover:border-gray-300 text-gray-700 bg-white'
+                                      ? 'border-violet-900 bg-violet-50/70 text-violet-950 font-semibold ring-1 ring-violet-900/20'
+                                      : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white'
                                   }`}
                                 >
                                   <span className="text-xs block font-medium">{bStyle.label}</span>
-                                  <span className="text-[10px] text-gray-500 block truncate">{bStyle.desc}</span>
+                                  <span className="text-[10px] text-slate-500 block truncate">{bStyle.desc}</span>
                                 </button>
                               );
                             })}
@@ -1444,9 +1444,9 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
 
                         {/* Custom Handle Display (Mixed Case) */}
                         {(page.themeConfig?.badgeStyle || (page.themeConfig?.headerType === 'hero' ? 'stencil' : 'tiles')) !== 'none' && (
-                          <div className="space-y-1.5 p-3 rounded-xl border border-gray-200 bg-gray-50/70">
+                          <div className="space-y-1.5 p-3 rounded-md border border-slate-200 bg-slate-50/70">
                             <div className="flex items-center justify-between">
-                              <Label htmlFor="custom-handle-text" className="text-xs font-semibold text-gray-900 cursor-pointer">
+                              <Label htmlFor="custom-handle-text" className="text-xs font-semibold text-slate-900 cursor-pointer">
                                 Custom Handle Display (Mixed Case)
                               </Label>
                               {page.themeConfig?.customHandle && (
@@ -1467,14 +1467,14 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                                       },
                                     });
                                   }}
-                                  className="text-[11px] text-emerald-600 hover:text-emerald-700 hover:underline font-medium"
+                                  className="text-[11px] text-violet-900 hover:text-violet-950 hover:underline font-medium"
                                 >
                                   Reset to @{page.username}
                                 </button>
                               )}
                             </div>
-                            <div className="flex rounded-md shadow-xs">
-                              <span className="inline-flex items-center px-2.5 rounded-l-md border border-r-0 border-gray-300 bg-gray-100 text-gray-500 font-mono text-xs select-none">
+                            <div className="flex rounded-md shadow-2xs">
+                              <span className="inline-flex items-center px-2.5 rounded-l-md border border-r-0 border-slate-200 bg-slate-100 text-slate-500 font-mono text-xs select-none">
                                 @
                               </span>
                               <Input
@@ -1503,20 +1503,20 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                                 maxLength={30}
                               />
                             </div>
-                            <p className="text-[11px] text-gray-500">
-                              Display custom casing (e.g. <span className="font-semibold text-gray-700">MetMalaysia</span>) on your handle badge without changing your URL link (<span className="font-mono text-gray-600">/bio/{page.username}</span>).
+                            <p className="text-[11px] text-slate-500">
+                              Display custom casing (e.g. <span className="font-semibold text-slate-700">MetMalaysia</span>) on your handle badge without changing your URL link (<span className="font-mono text-slate-600">/bio/{page.username}</span>).
                             </p>
                           </div>
                         )}
 
                         {/* Option to toggle uppercase handle transformation */}
                         {(page.themeConfig?.badgeStyle || (page.themeConfig?.headerType === 'hero' ? 'stencil' : 'tiles')) !== 'none' && (
-                          <div className="flex items-center justify-between p-3 rounded-xl border border-gray-200 bg-gray-50/70">
+                          <div className="flex items-center justify-between p-3 rounded-md border border-slate-200 bg-slate-50/70">
                             <div className="space-y-0.5 pr-2">
-                              <Label htmlFor="uppercase-handle-badge" className="text-xs font-semibold text-gray-900 cursor-pointer">
+                              <Label htmlFor="uppercase-handle-badge" className="text-xs font-semibold text-slate-900 cursor-pointer">
                                 Uppercase Handle Badge
                               </Label>
-                              <p className="text-[11px] text-gray-500">
+                              <p className="text-[11px] text-slate-500">
                                 Transform handle to ALL CAPS (@{(page.themeConfig?.customHandle || page.username || 'user').toUpperCase()}) instead of mixed/natural case.
                               </p>
                             </div>
@@ -1537,12 +1537,12 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
 
                         {/* Option to hide redundant title text below flyer in Hero mode */}
                         {page.themeConfig?.headerType === 'hero' && (
-                          <div className="flex items-center justify-between p-3 rounded-xl border border-gray-200 bg-gray-50/70">
+                          <div className="flex items-center justify-between p-3 rounded-md border border-slate-200 bg-slate-50/70">
                             <div className="space-y-0.5 pr-2">
-                              <Label htmlFor="hide-hero-title" className="text-xs font-semibold text-gray-900 cursor-pointer">
+                              <Label htmlFor="hide-hero-title" className="text-xs font-semibold text-slate-900 cursor-pointer">
                                 Hide Title Text Below Poster
                               </Label>
-                              <p className="text-[11px] text-gray-500">
+                              <p className="text-[11px] text-slate-500">
                                 Recommended if your flyer/poster already displays the event or account title.
                               </p>
                             </div>
@@ -1565,7 +1565,7 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                       /* CLASSIC AVATAR MODE */
                       <div className="space-y-2">
                         <Label>Profile Picture / Avatar</Label>
-                        <div className="flex items-center gap-3.5 p-3 rounded-xl border border-gray-200 bg-gray-50/50">
+                        <div className="flex items-center gap-3.5 p-3 rounded-md border border-slate-200 bg-slate-50/70">
                           {/* Current avatar preview */}
                           <div className="relative shrink-0">
                             {avatarPreview || page.avatarUrl ? (
@@ -1573,10 +1573,10 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                               <img
                                 src={avatarPreview || page.avatarUrl}
                                 alt="Avatar preview"
-                                className="w-14 h-14 rounded-full object-cover border-2 border-emerald-500/30 shadow-sm bg-white"
+                                className="w-14 h-14 rounded-full object-cover border-2 border-violet-200 shadow-2xs bg-white"
                               />
                             ) : (
-                              <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 text-white font-bold text-lg flex items-center justify-center border-2 border-gray-200 shadow-sm">
+                              <div className="w-14 h-14 rounded-full bg-violet-900 text-white font-bold text-lg flex items-center justify-center border-2 border-slate-200 shadow-2xs">
                                 {(page.title || page.username).charAt(0).toUpperCase()}
                               </div>
                             )}
@@ -1598,13 +1598,13 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                                 variant="outline"
                                 size="sm"
                                 disabled={isUploadingAvatar}
-                                className="gap-1.5 cursor-pointer bg-white text-xs h-8"
+                                className="gap-1.5 cursor-pointer bg-white text-xs h-8 rounded-md border-slate-200"
                               >
                                 <Label htmlFor="avatar-upload" className="cursor-pointer flex items-center gap-1.5">
                                   {isUploadingAvatar ? (
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-600" />
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin text-violet-900" />
                                   ) : (
-                                    <Upload className="h-3.5 w-3.5 text-emerald-600" />
+                                    <Upload className="h-3.5 w-3.5 text-violet-900" />
                                   )}
                                   {isUploadingAvatar
                                     ? 'Uploading...'
@@ -1621,7 +1621,7 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                                   size="sm"
                                   onClick={handleRemoveAvatar}
                                   disabled={isUploadingAvatar}
-                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs h-8 px-2"
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs h-8 px-2 rounded-md"
                                 >
                                   <Trash2 className="h-3.5 w-3.5 mr-1" />
                                   Remove
@@ -1633,7 +1633,7 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                               <button
                                 type="button"
                                 onClick={() => setShowUrlInput(!showUrlInput)}
-                                className="text-emerald-600 hover:underline hover:text-emerald-700 font-medium ml-2"
+                                className="text-violet-900 hover:underline hover:text-violet-950 font-medium ml-2"
                               >
                                 {showUrlInput ? 'Hide URL' : 'Paste URL instead'}
                               </button>
@@ -1664,7 +1664,7 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                   </div>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4 shadow-sm">
+                <div className="bg-white rounded-lg border border-slate-200 p-5 space-y-4 shadow-2xs">
                   <div>
                     <h3 className="text-base font-semibold text-gray-900">Social Media Handles</h3>
                     <p className="text-xs text-gray-500">
@@ -1716,16 +1716,16 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
 
               {/* TAB 4: SHARE & QR */}
               <TabsContent value="share" className="space-y-6 pt-4">
-                <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-6 shadow-sm">
+                <div className="bg-white rounded-lg border border-slate-200 p-6 space-y-6 shadow-2xs">
                   <div>
-                    <h3 className="text-base font-semibold text-gray-900">Share Your Bio Link</h3>
-                    <p className="text-xs text-gray-500">
+                    <h3 className="text-base font-semibold text-slate-900">Share Your Bio Link</h3>
+                    <p className="text-xs text-slate-500">
                       Promote your personalized bio page across social channels and print materials.
                     </p>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row items-center gap-6 p-4 rounded-2xl bg-gray-50 border border-gray-200">
-                    <div className="p-3 bg-white rounded-2xl border border-gray-200 shadow-sm shrink-0">
+                  <div className="flex flex-col sm:flex-row items-center gap-6 p-4 rounded-lg bg-slate-50 border border-slate-200">
+                    <div className="p-3 bg-white rounded-lg border border-slate-200 shadow-2xs shrink-0">
                       <QRCodeSVG
                         ref={qrRef}
                         value={publicUrl}
@@ -1736,8 +1736,8 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                     </div>
                     <div className="space-y-3 flex-1 text-center sm:text-left">
                       <div>
-                        <h4 className="font-semibold text-gray-900 text-sm">Dynamic QR Code</h4>
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <h4 className="font-semibold text-slate-900 text-sm">Dynamic QR Code</h4>
+                        <p className="text-xs text-slate-500 mt-0.5">
                           Download this high-resolution QR code for name cards, posters, and flyers.
                         </p>
                       </div>
@@ -1745,7 +1745,7 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                         <Button
                           size="sm"
                           onClick={downloadQR}
-                          className="gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 shadow-sm"
+                          className="gap-1.5 text-xs bg-violet-900 hover:bg-violet-950 text-white rounded-md shadow-xs"
                         >
                           <Download className="h-3.5 w-3.5" />
                           Download PNG
@@ -1754,7 +1754,7 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                           variant="outline"
                           size="sm"
                           onClick={handleCopyLink}
-                          className="gap-1.5 text-xs"
+                          className="gap-1.5 text-xs rounded-md border-slate-200"
                         >
                           <Copy className="h-3.5 w-3.5" />
                           {copied ? 'Copied URL' : 'Copy URL'}
@@ -1765,13 +1765,13 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
 
                   {/* Share Shortcuts */}
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-gray-700">Quick Share</Label>
+                    <Label className="text-xs font-semibold text-slate-700">Quick Share</Label>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       <a
                         href={`https://wa.me/?text=${encodeURIComponent(`Jom layari profil saya: ${publicUrl}`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs font-medium hover:bg-emerald-100 transition-colors"
+                        className="flex items-center justify-center gap-2 p-2.5 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs font-medium hover:bg-emerald-100 transition-colors"
                       >
                         <MessageCircle className="h-4 w-4 text-emerald-600" />
                         WhatsApp
@@ -1780,7 +1780,7 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                         href={`https://t.me/share/url?url=${encodeURIComponent(publicUrl)}&text=${encodeURIComponent(`Profil saya: ${page.title}`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-sky-200 bg-sky-50 text-sky-800 text-xs font-medium hover:bg-sky-100 transition-colors"
+                        className="flex items-center justify-center gap-2 p-2.5 rounded-md border border-sky-200 bg-sky-50 text-sky-800 text-xs font-medium hover:bg-sky-100 transition-colors"
                       >
                         <Send className="h-4 w-4 text-sky-600" />
                         Telegram
@@ -1789,16 +1789,16 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                         href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out my bio link: ${publicUrl}`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 text-xs font-medium hover:bg-gray-100 transition-colors"
+                        className="flex items-center justify-center gap-2 p-2.5 rounded-md border border-slate-200 bg-slate-50 text-slate-800 text-xs font-medium hover:bg-slate-100 transition-colors"
                       >
-                        <Twitter className="h-4 w-4 text-gray-700" />
+                        <Twitter className="h-4 w-4 text-slate-700" />
                         X / Twitter
                       </a>
                       <a
                         href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(publicUrl)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-blue-200 bg-blue-50 text-blue-800 text-xs font-medium hover:bg-blue-100 transition-colors"
+                        className="flex items-center justify-center gap-2 p-2.5 rounded-md border border-blue-200 bg-blue-50 text-blue-800 text-xs font-medium hover:bg-blue-100 transition-colors"
                       >
                         <Facebook className="h-4 w-4 text-blue-600" />
                         Facebook
@@ -1934,8 +1934,8 @@ function SortableBioLinkItem({
     <div
       ref={setNodeRef}
       style={style}
-      className={`bg-white rounded-xl border ${
-        isDragging ? 'border-emerald-500 shadow-lg' : 'border-gray-200 shadow-sm'
+      className={`bg-white rounded-lg border ${
+        isDragging ? 'border-violet-900 shadow-sm ring-1 ring-violet-900/20' : 'border-slate-200 shadow-2xs'
       } p-2.5 sm:p-3.5 flex items-center gap-2 sm:gap-3 transition-colors min-w-0 w-full`}
     >
       {/* Drag Grip Handle */}
@@ -1944,7 +1944,7 @@ function SortableBioLinkItem({
         {...attributes}
         {...listeners}
         suppressHydrationWarning
-        className="text-gray-400 hover:text-gray-700 cursor-grab active:cursor-grabbing p-1 touch-none shrink-0"
+        className="text-slate-400 hover:text-slate-700 cursor-grab active:cursor-grabbing p-1 touch-none shrink-0"
         title="Drag to reorder"
       >
         <GripVertical className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -1952,12 +1952,12 @@ function SortableBioLinkItem({
 
       {/* Type Icon or Thumbnail Image */}
       {link.icon ? (
-        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden border border-gray-200 shrink-0 bg-gray-50 flex items-center justify-center">
+        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden border border-slate-200 shrink-0 bg-slate-50 flex items-center justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={link.icon} alt="" className="w-full h-full object-cover" />
         </div>
       ) : (
-        <div className="p-1.5 sm:p-2 rounded-lg bg-gray-50 border border-gray-100 shrink-0">
+        <div className="p-1.5 sm:p-2 rounded-md bg-slate-50 border border-slate-200 shrink-0">
           {getIconForType()}
         </div>
       )}
@@ -1965,7 +1965,7 @@ function SortableBioLinkItem({
       {/* Link Info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-          <h4 className="font-semibold text-gray-900 text-xs sm:text-sm truncate">{link.title}</h4>
+          <h4 className="font-semibold text-slate-900 text-xs sm:text-sm truncate">{link.title}</h4>
           {link.highlight && (
             <span className="text-[9px] sm:text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-200 shrink-0">
               Glow
@@ -1973,7 +1973,7 @@ function SortableBioLinkItem({
           )}
         </div>
         {link.type !== 'header' && (
-          <p className="text-[11px] sm:text-xs text-gray-500 font-mono truncate mt-0.5">{link.url || 'No URL configured'}</p>
+          <p className="text-[11px] sm:text-xs text-slate-500 font-mono truncate mt-0.5">{link.url || 'No URL configured'}</p>
         )}
       </div>
 
@@ -1983,7 +1983,7 @@ function SortableBioLinkItem({
           checked={isActive}
           onCheckedChange={handleToggleActive}
           disabled={isUpdating}
-          className="scale-75 data-[state=checked]:bg-emerald-600 shrink-0"
+          className="scale-75 data-[state=checked]:bg-violet-900 shrink-0"
           title="Toggle visibility"
         />
 
@@ -1993,13 +1993,13 @@ function SortableBioLinkItem({
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-gray-400 hover:text-gray-900"
+              className="h-8 w-8 text-slate-400 hover:text-slate-900"
               title="Edit Link"
             >
               <Edit2 className="h-3.5 w-3.5" />
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto rounded-lg border-slate-200">
             <form onSubmit={handleSaveEdit} className="min-w-0 max-w-full">
               <DialogHeader>
                 <DialogTitle>Edit Link Block</DialogTitle>
@@ -2073,13 +2073,13 @@ function SortableBioLinkItem({
 
                 {/* Thumbnail Picker */}
                 {type !== 'header' && (
-                  <div className="space-y-1.5 p-3 rounded-xl border border-gray-200 bg-gray-50/50">
+                  <div className="space-y-1.5 p-3 rounded-md border border-slate-200 bg-slate-50/70">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs font-semibold text-gray-900">Thumbnail Image (Optional)</Label>
+                      <Label className="text-xs font-semibold text-slate-900">Thumbnail Image (Optional)</Label>
                       <button
                         type="button"
                         onClick={() => setShowThumbUrl(!showThumbUrl)}
-                        className="text-emerald-600 hover:underline text-[11px] font-medium"
+                        className="text-violet-900 hover:underline text-[11px] font-medium"
                       >
                         {showThumbUrl ? 'Hide URL' : 'Paste URL'}
                       </button>
@@ -2092,11 +2092,11 @@ function SortableBioLinkItem({
                           <img
                             src={icon}
                             alt="Thumbnail"
-                            className="w-10 h-10 rounded-full object-cover border border-gray-300 shadow-xs bg-white"
+                            className="w-10 h-10 rounded-full object-cover border border-slate-300 shadow-2xs bg-white"
                           />
                         </div>
                       ) : (
-                        <div className="w-10 h-10 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 shrink-0">
+                        <div className="w-10 h-10 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 shrink-0">
                           <ImageIcon className="h-4 w-4" />
                         </div>
                       )}
@@ -2139,13 +2139,13 @@ function SortableBioLinkItem({
                           variant="outline"
                           size="sm"
                           disabled={isUploadingThumb}
-                          className="h-8 text-xs bg-white cursor-pointer"
+                          className="h-8 text-xs bg-white cursor-pointer rounded-md border-slate-200"
                         >
                           <Label htmlFor={`thumb-upload-${link.id}`} className="cursor-pointer flex items-center gap-1.5">
                             {isUploadingThumb ? (
-                              <Loader2 className="h-3 w-3 animate-spin text-emerald-600" />
+                              <Loader2 className="h-3 w-3 animate-spin text-violet-900" />
                             ) : (
-                              <Upload className="h-3 w-3 text-emerald-600" />
+                              <Upload className="h-3 w-3 text-violet-900" />
                             )}
                             {icon ? 'Change' : 'Upload Thumbnail'}
                           </Label>
@@ -2156,7 +2156,7 @@ function SortableBioLinkItem({
                             variant="ghost"
                             size="sm"
                             onClick={() => setIcon('')}
-                            className="h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 px-2"
+                            className="h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 px-2 rounded-md"
                           >
                             Remove
                           </Button>
@@ -2176,25 +2176,25 @@ function SortableBioLinkItem({
                 )}
 
                 {type !== 'header' && (
-                  <div className="flex items-center justify-between p-3 rounded-xl border bg-gray-50">
+                  <div className="flex items-center justify-between p-3 rounded-md border border-slate-200 bg-slate-50/70">
                     <div>
-                      <p className="text-xs font-semibold text-gray-900">Highlight Animation (Pulse)</p>
-                      <p className="text-[11px] text-gray-500">Draw visitor attention to this priority button.</p>
+                      <p className="text-xs font-semibold text-slate-900">Highlight Animation (Pulse)</p>
+                      <p className="text-[11px] text-slate-500">Draw visitor attention to this priority button.</p>
                     </div>
                     <Switch
                       checked={highlight}
                       onCheckedChange={setHighlight}
-                      className="data-[state=checked]:bg-amber-500"
+                      className="data-[state=checked]:bg-violet-900"
                     />
                   </div>
                 )}
               </div>
 
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
+                <Button type="button" variant="outline" onClick={() => setEditOpen(false)} className="rounded-md border-slate-200">
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isUpdating} className="bg-emerald-600 hover:bg-emerald-700">
+                <Button type="submit" disabled={isUpdating} className="bg-violet-900 hover:bg-violet-950 text-white rounded-md shadow-xs">
                   Save Changes
                 </Button>
               </DialogFooter>
@@ -2314,12 +2314,12 @@ function AddLinkDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 shadow-sm font-medium">
+        <Button size="sm" className="gap-1.5 text-xs bg-violet-900 hover:bg-violet-950 text-white rounded-md shadow-xs font-medium">
           <Plus className="h-4 w-4" />
           {buttonText}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto rounded-lg border-slate-200">
         <form onSubmit={handleAdd} className="min-w-0 max-w-full">
           <DialogHeader>
             <DialogTitle>Add New Link / Block</DialogTitle>
@@ -2344,17 +2344,17 @@ function AddLinkDialog({
                       key={id}
                       type="button"
                       onClick={() => setType(id as BioLinkType)}
-                      className={`flex flex-col text-left p-3 rounded-xl border transition-all min-w-0 ${
+                      className={`flex flex-col text-left p-3 rounded-md border transition-colors min-w-0 ${
                         isSelected
-                          ? 'border-emerald-600 bg-emerald-50 ring-2 ring-emerald-500/30'
-                          : 'border-gray-200 hover:border-gray-300 bg-white'
+                          ? 'border-violet-900 bg-violet-50/70 ring-1 ring-violet-900/20'
+                          : 'border-slate-200 hover:border-slate-300 bg-white'
                       }`}
                     >
-                      <div className="flex items-center gap-1.5 font-semibold text-xs text-gray-900 mb-0.5 min-w-0">
-                        <Icon className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                      <div className="flex items-center gap-1.5 font-semibold text-xs text-slate-900 mb-0.5 min-w-0">
+                        <Icon className="h-3.5 w-3.5 text-violet-900 shrink-0" />
                         <span className="truncate">{label}</span>
                       </div>
-                      <span className="text-[11px] text-gray-500 truncate">{desc}</span>
+                      <span className="text-[11px] text-slate-500 truncate">{desc}</span>
                     </button>
                   );
                 })}
@@ -2433,13 +2433,13 @@ function AddLinkDialog({
 
             {/* Thumbnail Picker */}
             {type !== 'header' && (
-              <div className="space-y-1.5 p-3 rounded-xl border border-gray-200 bg-gray-50/50">
+              <div className="space-y-1.5 p-3 rounded-md border border-slate-200 bg-slate-50/70">
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs font-semibold text-gray-900">Thumbnail Image (Optional)</Label>
+                  <Label className="text-xs font-semibold text-slate-900">Thumbnail Image (Optional)</Label>
                   <button
                     type="button"
                     onClick={() => setShowThumbUrl(!showThumbUrl)}
-                    className="text-emerald-600 hover:underline text-[11px] font-medium"
+                    className="text-violet-900 hover:underline text-[11px] font-medium"
                   >
                     {showThumbUrl ? 'Hide URL' : 'Paste URL'}
                   </button>
@@ -2452,11 +2452,11 @@ function AddLinkDialog({
                       <img
                         src={icon}
                         alt="Thumbnail"
-                        className="w-10 h-10 rounded-full object-cover border border-gray-300 shadow-xs bg-white"
+                        className="w-10 h-10 rounded-full object-cover border border-slate-300 shadow-2xs bg-white"
                       />
                     </div>
                   ) : (
-                    <div className="w-10 h-10 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 shrink-0">
+                    <div className="w-10 h-10 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 shrink-0">
                       <ImageIcon className="h-4 w-4" />
                     </div>
                   )}
@@ -2499,13 +2499,13 @@ function AddLinkDialog({
                       variant="outline"
                       size="sm"
                       disabled={isUploadingThumb}
-                      className="h-8 text-xs bg-white cursor-pointer"
+                      className="h-8 text-xs bg-white cursor-pointer rounded-md border-slate-200"
                     >
                       <Label htmlFor="new-thumb-upload" className="cursor-pointer flex items-center gap-1.5">
                         {isUploadingThumb ? (
-                          <Loader2 className="h-3 w-3 animate-spin text-emerald-600" />
+                          <Loader2 className="h-3 w-3 animate-spin text-violet-900" />
                         ) : (
-                          <Upload className="h-3 w-3 text-emerald-600" />
+                          <Upload className="h-3 w-3 text-violet-900" />
                         )}
                         {icon ? 'Change Photo' : 'Upload Thumbnail'}
                       </Label>
@@ -2516,7 +2516,7 @@ function AddLinkDialog({
                         variant="ghost"
                         size="sm"
                         onClick={() => setIcon('')}
-                        className="h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 px-2"
+                        className="h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 px-2 rounded-md"
                       >
                         Remove
                       </Button>
@@ -2536,25 +2536,25 @@ function AddLinkDialog({
             )}
 
             {type !== 'header' && (
-              <div className="flex items-center justify-between p-3 rounded-xl border bg-gray-50">
+              <div className="flex items-center justify-between p-3 rounded-md border border-slate-200 bg-slate-50/70">
                 <div>
-                  <p className="text-xs font-semibold text-gray-900">Highlight Animation</p>
-                  <p className="text-[11px] text-gray-500">Makes the button subtly glow and stand out.</p>
+                  <p className="text-xs font-semibold text-slate-900">Highlight Animation</p>
+                  <p className="text-[11px] text-slate-500">Makes the button subtly glow and stand out.</p>
                 </div>
                 <Switch
                   checked={highlight}
                   onCheckedChange={setHighlight}
-                  className="data-[state=checked]:bg-amber-500"
+                  className="data-[state=checked]:bg-violet-900"
                 />
               </div>
             )}
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} className="rounded-md border-slate-200">
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending} className="bg-emerald-600 hover:bg-emerald-700">
+            <Button type="submit" disabled={isPending} className="bg-violet-900 hover:bg-violet-950 text-white rounded-md shadow-xs">
               {isPending ? 'Adding...' : 'Add to Bio'}
             </Button>
           </DialogFooter>
@@ -2640,12 +2640,7 @@ function MobileMockupView({
           {/* HERO MODE: True Full-Bleed Edge-to-Edge with Overlay Action Buttons */}
           {isHeroMode ? (
             <div className="w-[calc(100%+2rem)] -mx-4 relative overflow-hidden select-none rounded-t-[38px]">
-              {/* Floating Action Overlay on top of Hero Graphic inside Mockup */}
-              <div className="absolute top-4 left-4 z-20">
-                <div className="w-7 h-7 rounded-full bg-black/30 hover:bg-black/45 backdrop-blur-md border border-white/25 text-white flex items-center justify-center shadow-xs select-none">
-                  <Sparkles className="h-3.5 w-3.5" />
-                </div>
-              </div>
+              {/* Floating Share Action on top of Hero Graphic inside Mockup */}
               <div className="absolute top-4 right-4 z-20">
                 <div className="w-7 h-7 rounded-full bg-black/30 hover:bg-black/45 backdrop-blur-md border border-white/25 text-white flex items-center justify-center shadow-xs select-none">
                   <Share2 className="h-3.5 w-3.5" />
@@ -2688,10 +2683,7 @@ function MobileMockupView({
           ) : (
             <>
               {/* Standard Top Header Action Bar for Non-Hero Modes */}
-              <div className="w-full flex items-center justify-between px-1">
-                <div className="w-7 h-7 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white flex items-center justify-center shadow-xs select-none">
-                  <Sparkles className="h-3.5 w-3.5" />
-                </div>
+              <div className="w-full flex items-center justify-end px-1">
                 <div className="w-7 h-7 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white flex items-center justify-center shadow-xs select-none">
                   <Share2 className="h-3.5 w-3.5" />
                 </div>
@@ -2848,14 +2840,14 @@ function MobileMockupView({
                   <div
                     key={l.id}
                     style={getBioButtonCustomStyle(page.themeConfig, isHighlight)}
-                    className={`w-full py-2.5 px-3 font-medium text-xs flex items-center justify-between transition-all select-none ${getBioButtonClass(
+                    className={`w-full min-h-[44px] py-2.5 px-3 font-medium text-xs flex items-center justify-center transition-all select-none ${getBioButtonClass(
                       theme,
                       page.themeConfig?.buttonStyle || 'rounded-full',
                       isHighlight
                     )} ${isHighlight ? 'animate-pulse' : ''}`}
                   >
-                    {/* Left thumbnail or invisible balance spacer */}
-                    {hasImageThumb ? (
+                    {/* Left thumbnail */}
+                    {hasImageThumb && (
                       <div className="w-6 h-6 shrink-0 flex items-center justify-center mr-1.5">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
@@ -2864,9 +2856,6 @@ function MobileMockupView({
                           className="w-5 h-5 rounded-full object-cover border border-white/40 shadow-xs bg-white/20"
                         />
                       </div>
-                    ) : (
-                      /* Invisible balance spacer so title is centered against 3-dots button */
-                      <div className="w-6 h-6 shrink-0 mr-1.5 invisible pointer-events-none" aria-hidden="true" />
                     )}
 
                     {/* Centered title */}
@@ -2874,10 +2863,10 @@ function MobileMockupView({
                       {l.title}
                     </span>
 
-                    {/* Right 3-dots */}
-                    <div className="w-6 h-6 rounded-full flex items-center justify-center opacity-70 shrink-0 ml-1.5">
-                      <MoreVertical className="h-3.5 w-3.5" />
-                    </div>
+                    {/* Invisible right spacer when thumbnail exists so title stays centered */}
+                    {hasImageThumb && (
+                      <div className="w-6 h-6 shrink-0 ml-1.5 invisible pointer-events-none" aria-hidden="true" />
+                    )}
                   </div>
                 );
               })
@@ -2885,13 +2874,15 @@ function MobileMockupView({
           </div>
         </div>
 
-        {/* Footer Brand */}
-        <div className="mt-6 mb-2 relative z-10 shrink-0">
-          <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/20 text-white/75 backdrop-blur-md text-[10px]">
-            <Sparkles className="h-3 w-3 text-emerald-400" />
-            <span>Powered by <strong>KlikForm</strong></span>
+        {/* Footer Brand — visible only on Free tier */}
+        {shouldShowBioBranding(page.userTier) && (
+          <div className="mt-6 mb-2 relative z-10 shrink-0">
+            <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/20 text-white/75 backdrop-blur-md text-[10px]">
+              <Sparkles className="h-3 w-3 text-emerald-400" />
+              <span>Powered by <strong>KlikForm</strong></span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

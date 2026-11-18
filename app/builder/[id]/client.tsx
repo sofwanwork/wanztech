@@ -1254,7 +1254,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                   />
                 </div>
                 <CardDescription>
-                  Enable e-certificate for participants to download with IC verification
+                  Enable e-certificate for participants to download with IC or Email verification
                 </CardDescription>
               </CardHeader>
 
@@ -1268,13 +1268,17 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                         <p className="font-medium mb-1">Important Info:</p>
                         <ul className="list-disc list-inside space-y-1 text-blue-700">
                           <li>
-                            Your form needs a field <strong>&quot;Name&quot;</strong> or{' '}
+                            Your form needs a field <strong>&quot;Name&quot;</strong>,{' '}
+                            <strong>&quot;Full Name&quot;</strong>, or{' '}
                             <strong>&quot;Nama&quot;</strong> for the certificate name
                           </li>
                           <li>
-                            Your form needs a field <strong>&quot;IC&quot;</strong>,{' '}
-                            <strong>&quot;No IC&quot;</strong>, or{' '}
-                            <strong>&quot;No. KP&quot;</strong> for verification
+                            Your form needs an <strong>IC</strong> field (
+                            <strong>&quot;IC&quot;</strong>, <strong>&quot;No IC&quot;</strong>,{' '}
+                            <strong>&quot;No. KP&quot;</strong>, <strong>&quot;NRIC&quot;</strong>)
+                            or an <strong>Email</strong> field (
+                            <strong>&quot;Email&quot;</strong>, <strong>&quot;E-mel&quot;</strong>,
+                            or Email field type) for verification
                           </li>
                         </ul>
                       </div>
@@ -1813,13 +1817,13 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                                     }))
                                   }
                                   className={cn(
-                                    'px-2.5 py-1 rounded-lg text-xs font-medium transition-all',
+                                    'px-2.5 py-1 rounded-md text-xs font-medium transition-colors',
                                     isSelected
-                                      ? 'bg-emerald-600 text-white shadow-xs font-semibold'
-                                      : 'bg-white hover:bg-emerald-50 text-slate-700 border border-slate-200/80 hover:border-emerald-300'
+                                      ? 'bg-violet-900 text-white shadow-xs font-semibold'
+                                      : 'bg-white hover:bg-violet-50 text-slate-700 border border-slate-200 hover:border-violet-300'
                                   )}
                                 >
-                                  {days === 1 ? '1 Hari' : days === 7 ? '7 Hari (1 Mggu)' : days === 14 ? '14 Hari (2 Mggu)' : days === 30 ? '30 Hari (1 Bulan)' : `${days} Hari`}
+                                  {days === 1 ? '1 Day' : days === 7 ? '7 Days (1 Wk)' : days === 14 ? '14 Days (2 Wks)' : days === 30 ? '30 Days (1 Mo)' : `${days} Days`}
                                 </button>
                               );
                             })}
@@ -2212,7 +2216,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                             <Button
                               type="button"
                               size="sm"
-                              className="bg-emerald-600 hover:bg-emerald-500 text-white shrink-0 text-xs shadow"
+                              className="bg-violet-900 hover:bg-violet-950 text-white shrink-0 text-xs rounded-md shadow-xs"
                               asChild
                             >
                               <Link href={`/present/${form.id}`} target="_blank">
