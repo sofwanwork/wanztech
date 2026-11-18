@@ -15,6 +15,7 @@
   - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
   - `npm run lint`: 0 ralat (`eslint .`).
   - `npm run build`: Binaan Next.js 16.2.6 Turbopack berjaya (36 halaman statik + semua laluan dinamik).
+- **Vercel Production Deployment (2026-11-19)**: Deployment `dpl_B6pVBQ4RjUQB5tb6oxkKaM1GGrif` pushed live to `https://www.klikform.com` (`https://klikform-ld2hyrh9o-sofwan-jailanis-projects.vercel.app`). Commit `2e40e87` active on `origin/master`.
 
 
 ## Penyelarasan Tema Sistem Keseluruhan Halaman & Komponen KlikForm - 2026-11-19
