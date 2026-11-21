@@ -23,7 +23,6 @@ import {
   Award,
   QrCode,
   MessageCircle,
-  FileText,
   Play,
   Pause,
 } from 'lucide-react';
@@ -39,6 +38,7 @@ import {
   PamphletTheme,
 } from '@/lib/types/pamphlets';
 import { PAMPHLET_THEMES, DEFAULT_PAMPHLET_THEME } from '@/lib/pamphlets/themes';
+import { formatFlipbookPageLabel } from '@/lib/pamphlets/flip-geometry';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -52,7 +52,6 @@ interface ToolbarProps {
   soundEnabled: boolean;
   isFullscreen: boolean;
   showThumbnails: boolean;
-  pageSpreadMode?: 'auto' | 'single' | 'double';
   isTwoPageSpread?: boolean;
   forceMobile?: boolean;
   onPageChange: (pageNumber: number) => void;
@@ -60,7 +59,6 @@ interface ToolbarProps {
   onPrevPage?: () => void;
   onDisplayModeChange: (mode: PamphletDisplayMode) => void;
   onThemeChange: (theme: PamphletTheme) => void;
-  onToggleSpreadMode?: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onZoomReset: () => void;
@@ -88,7 +86,6 @@ export function PamphletToolbar({
   onPrevPage,
   onDisplayModeChange,
   onThemeChange,
-  onToggleSpreadMode,
   onZoomIn,
   onZoomOut,
   onZoomReset,
@@ -447,7 +444,10 @@ export function PamphletToolbar({
         <Button
           variant="ghost"
           size="icon"
-          disabled={currentPage <= 1}
+          disabled={
+            currentPage <= 1 ||
+            (displayMode === 'flipbook' && Boolean(isTwoPageSpread) && totalPages === 2)
+          }
           onClick={onPrevPage || (() => onPageChange(Math.max(1, currentPage - 1)))}
           className="h-8 w-8 rounded-full"
           title="Previous Page"
@@ -466,8 +466,12 @@ export function PamphletToolbar({
         >
           <LayoutGrid className="h-3.5 w-3.5 opacity-70 shrink-0" />
           <span className="font-mono whitespace-nowrap text-xs">
-            {!isMobileLayout && (isTwoPageSpread ?? isDesktop) && displayMode === 'flipbook' && currentPage > 1 && currentPage < totalPages
-              ? `${currentPage % 2 === 0 ? currentPage : currentPage - 1}-${Math.min(totalPages, (currentPage % 2 === 0 ? currentPage : currentPage - 1) + 1)} / ${totalPages}`
+            {displayMode === 'flipbook'
+              ? formatFlipbookPageLabel({
+                  currentPage,
+                  totalPages,
+                  isTwoPageSpread: isTwoPageSpread ?? !isMobileLayout,
+                })
               : `${currentPage} / ${totalPages || 1}`}
           </span>
         </button>
@@ -476,7 +480,10 @@ export function PamphletToolbar({
         <Button
           variant="ghost"
           size="icon"
-          disabled={currentPage >= totalPages}
+          disabled={
+            currentPage >= totalPages ||
+            (displayMode === 'flipbook' && Boolean(isTwoPageSpread) && totalPages === 2)
+          }
           onClick={onNextPage || (() => onPageChange(Math.min(totalPages, currentPage + 1)))}
           className="h-8 w-8 rounded-full"
           title="Next Page"
@@ -505,33 +512,6 @@ export function PamphletToolbar({
               <>
                 <Play className="h-3.5 w-3.5 fill-current shrink-0" />
                 <span className="hidden sm:inline">Auto</span>
-              </>
-            )}
-          </Button>
-        )}
-
-        {/* Spread Mode Toggle (Desktop only) */}
-        {!isMobileLayout && displayMode === 'flipbook' && onToggleSpreadMode && totalPages >= 2 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onToggleSpreadMode}
-            className="h-8 px-2 text-xs gap-1.5 rounded-xl hover:bg-current/10 shrink-0 font-medium"
-            title={
-              isTwoPageSpread
-                ? 'Currently displayed in 2 Pages (Click to switch to 1 Page)'
-                : 'Currently displayed in 1 Page (Click to switch to 2 Pages)'
-            }
-          >
-            {isTwoPageSpread ? (
-              <>
-                <BookOpen className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span className="hidden sm:inline">2 Pages</span>
-              </>
-            ) : (
-              <>
-                <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span className="hidden sm:inline">1 Page</span>
               </>
             )}
           </Button>

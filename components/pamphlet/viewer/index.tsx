@@ -8,6 +8,7 @@ import {
 } from '@/lib/types/pamphlets';
 import { PAMPHLET_THEMES, DEFAULT_PAMPHLET_THEME } from '@/lib/pamphlets/themes';
 import { playPageTurnSound, getPamphletOrientation } from '@/lib/pamphlets/utils';
+import { resolveIsTwoPageSpread } from '@/lib/pamphlets/flip-geometry';
 import { PamphletToolbar } from './toolbar';
 import { ThumbnailsStrip } from './thumbnails-strip';
 import { FlipbookView, FlipbookViewRef } from './flipbook-view';
@@ -35,8 +36,10 @@ export function PamphletViewer({
   const [theme, setTheme] = React.useState<PamphletTheme>(
     pamphlet.theme || DEFAULT_PAMPHLET_THEME
   );
-  const [pageSpreadMode, setPageSpreadMode] = React.useState<'auto' | 'single' | 'double'>('auto');
-  const [isWideScreen, setIsWideScreen] = React.useState(true);
+  const [viewportSize, setViewportSize] = React.useState<{ width: number; height: number }>({
+    width: 1280,
+    height: 800,
+  });
   const [zoom, setZoom] = React.useState(1);
   const [soundEnabled, setSoundEnabled] = React.useState(false);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
@@ -57,15 +60,34 @@ export function PamphletViewer({
     }
   }, [displayMode]);
 
-  // Sync widescreen status deterministically after hydration
+  // Sync viewport/container dimensions deterministically after hydration (supports mobile rotate)
   React.useEffect(() => {
-    const checkWideScreen = () => {
-      setIsWideScreen(window.innerWidth >= 880);
+    const updateViewport = () => {
+      if (forceMobile && containerRef.current) {
+        const { clientWidth, clientHeight } = containerRef.current;
+        if (clientWidth > 0 && clientHeight > 0) {
+          setViewportSize({ width: clientWidth, height: clientHeight });
+          return;
+        }
+      }
+      setViewportSize({ width: window.innerWidth, height: window.innerHeight });
     };
-    checkWideScreen();
-    window.addEventListener('resize', checkWideScreen);
-    return () => window.removeEventListener('resize', checkWideScreen);
-  }, []);
+    updateViewport();
+    window.addEventListener('resize', updateViewport);
+    window.addEventListener('orientationchange', updateViewport);
+    const ro =
+      forceMobile && containerRef.current
+        ? new ResizeObserver(() => updateViewport())
+        : null;
+    if (ro && containerRef.current) {
+      ro.observe(containerRef.current);
+    }
+    return () => {
+      window.removeEventListener('resize', updateViewport);
+      window.removeEventListener('orientationchange', updateViewport);
+      ro?.disconnect();
+    };
+  }, [forceMobile]);
 
   const pages = React.useMemo(() => {
     return Array.isArray(pamphlet.pages) ? pamphlet.pages : [];
@@ -92,24 +114,13 @@ export function PamphletViewer({
   }, [isAutoSliding, displayMode, totalPages, soundEnabled]);
 
   const isTwoPageSpread = React.useMemo(() => {
-    return (
-      !forceMobile &&
-      totalPages >= 2 &&
-      pageSpreadMode !== 'single' &&
-      (pageSpreadMode === 'double' || (totalPages > 2 && isWideScreen))
-    );
-  }, [forceMobile, totalPages, pageSpreadMode, isWideScreen]);
-
-  const handleToggleSpreadMode = React.useCallback(() => {
-    setPageSpreadMode((prev) => {
-      const isCurrentlyDouble =
-        !forceMobile &&
-        totalPages >= 2 &&
-        prev !== 'single' &&
-        (prev === 'double' || (totalPages > 2 && isWideScreen));
-      return isCurrentlyDouble ? 'single' : 'double';
+    return resolveIsTwoPageSpread({
+      totalPages,
+      viewportWidth: viewportSize.width,
+      viewportHeight: viewportSize.height,
+      forceMobile,
     });
-  }, [forceMobile, totalPages, isWideScreen]);
+  }, [forceMobile, totalPages, viewportSize.width, viewportSize.height]);
 
   // Track view once on mount if not in builder/preview mode
   React.useEffect(() => {
@@ -247,7 +258,6 @@ export function PamphletViewer({
         soundEnabled={soundEnabled}
         isFullscreen={isFullscreen}
         showThumbnails={showThumbnails}
-        pageSpreadMode={pageSpreadMode}
         isTwoPageSpread={isTwoPageSpread}
         forceMobile={forceMobile}
         onPageChange={handlePageChange}
@@ -255,7 +265,6 @@ export function PamphletViewer({
         onPrevPage={handlePrevPage}
         onDisplayModeChange={setDisplayMode}
         onThemeChange={setTheme}
-        onToggleSpreadMode={handleToggleSpreadMode}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
         onZoomReset={handleZoomReset}
@@ -287,7 +296,7 @@ export function PamphletViewer({
                 currentPage={currentPage}
                 zoom={zoom}
                 orientation={orientation}
-                pageSpreadMode={pageSpreadMode}
+                isTwoPageSpread={isTwoPageSpread}
                 forceMobile={forceMobile}
                 onPrevPage={handlePrevPage}
                 onNextPage={handleNextPage}

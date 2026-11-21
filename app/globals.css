@@ -315,21 +315,19 @@
 
 /* StPageFlip 3D Realistic Inner Spine Crease, Cylindrical Paper Sheen & Tactile Edge Bevel */
 .stf__item.--left {
-  border-radius: 4px 0 0 4px;
+  border-radius: 3px 0 0 3px;
   box-shadow:
-    inset 2px 0 0 rgba(255, 255, 255, 0.85),
-    inset 3px 0 0 rgba(203, 213, 225, 0.55),
+    inset 1px 0 0 rgba(255, 255, 255, 0.85),
     inset 0 1px 0 rgba(255, 255, 255, 0.7),
-    inset 0 -1px 0 rgba(148, 163, 184, 0.25);
+    inset 0 -1px 0 rgba(148, 163, 184, 0.22);
 }
 
 .stf__item.--right {
-  border-radius: 0 4px 4px 0;
+  border-radius: 0 3px 3px 0;
   box-shadow:
-    inset -2px 0 0 rgba(255, 255, 255, 0.85),
-    inset -3px 0 0 rgba(203, 213, 225, 0.55),
+    inset -1px 0 0 rgba(255, 255, 255, 0.85),
     inset 0 1px 0 rgba(255, 255, 255, 0.7),
-    inset 0 -1px 0 rgba(148, 163, 184, 0.25);
+    inset 0 -1px 0 rgba(148, 163, 184, 0.22);
 }
 
 .stf__item.--left .stf__spine-inner-shadow {

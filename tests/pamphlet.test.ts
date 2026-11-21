@@ -10,6 +10,12 @@ import { PAMPHLET_THEMES, DEFAULT_PAMPHLET_THEME } from '@/lib/pamphlets/themes'
 import { mapPamphletFromRow } from '@/lib/storage/pamphlets';
 import { PamphletTheme, PamphletPageItem } from '@/lib/types/pamphlets';
 import { computeSpread, computeBookStageLayout } from '@/components/pamphlet/viewer/flipbook-view';
+import {
+  computeBookEdgeThickness,
+  computeSoloCoverCloseGeometry,
+  resolveIsTwoPageSpread,
+  formatFlipbookPageLabel,
+} from '@/lib/pamphlets/flip-geometry';
 
 describe('E-Pamphlet — Slug Validation & Cleaning', () => {
   it('accepts valid pamphlet slugs', () => {
@@ -168,86 +174,75 @@ describe('E-Pamphlet — 3D Flipbook computeSpread Logic', () => {
   });
 });
 
-describe('E-Pamphlet — 1-Click Page Spread Mode Toggle Logic', () => {
-  function getIsTwoPageSpread(
-    mode: 'auto' | 'single' | 'double',
-    totalPages: number,
-    isWideScreen: boolean,
-    forceMobile = false
-  ): boolean {
-    return (
-      !forceMobile &&
-      totalPages >= 2 &&
-      mode !== 'single' &&
-      (mode === 'double' || (totalPages > 2 && isWideScreen))
-    );
-  }
-
-  function toggleSpreadMode(
-    prev: 'auto' | 'single' | 'double',
-    totalPages: number,
-    isWideScreen: boolean,
-    forceMobile = false
-  ): 'single' | 'double' {
-    const isCurrentlyDouble = getIsTwoPageSpread(prev, totalPages, isWideScreen, forceMobile);
-    return isCurrentlyDouble ? 'single' : 'double';
-  }
-
-  it('switches a 2-page document from 1-page to 2-page on the very FIRST click', () => {
-    const totalPages = 2;
-    const isWideScreen = true;
-
-    // Initial state: 'auto' defaults to 1 page for 2-page documents
-    let mode: 'auto' | 'single' | 'double' = 'auto';
-    expect(getIsTwoPageSpread(mode, totalPages, isWideScreen)).toBe(false);
-
-    // First click: MUST immediately switch to 'double' (2 pages)
-    mode = toggleSpreadMode(mode, totalPages, isWideScreen);
-    expect(mode).toBe('double');
-    expect(getIsTwoPageSpread(mode, totalPages, isWideScreen)).toBe(true);
-
-    // Second click: switches back to 'single' (1 page)
-    mode = toggleSpreadMode(mode, totalPages, isWideScreen);
-    expect(mode).toBe('single');
-    expect(getIsTwoPageSpread(mode, totalPages, isWideScreen)).toBe(false);
-
-    // Third click: switches back to 'double' (2 pages)
-    mode = toggleSpreadMode(mode, totalPages, isWideScreen);
-    expect(mode).toBe('double');
-    expect(getIsTwoPageSpread(mode, totalPages, isWideScreen)).toBe(true);
+describe('E-Pamphlet — Responsive 3D Flipbook Spread Mode (Desktop 2-Page, Mobile Portrait 1-Page / Landscape 2-Page)', () => {
+  it('always renders 2-page spread on desktop viewports for 2+ pages (no 1-page mode)', () => {
+    expect(
+      resolveIsTwoPageSpread({ totalPages: 6, viewportWidth: 1280, viewportHeight: 800 })
+    ).toBe(true);
+    expect(
+      resolveIsTwoPageSpread({ totalPages: 2, viewportWidth: 1440, viewportHeight: 900 })
+    ).toBe(true);
+    expect(
+      resolveIsTwoPageSpread({ totalPages: 6, viewportWidth: 768, viewportHeight: 1024 })
+    ).toBe(true);
+    // Single-page document stays 1-page
+    expect(
+      resolveIsTwoPageSpread({ totalPages: 1, viewportWidth: 1280, viewportHeight: 800 })
+    ).toBe(false);
   });
 
-  it('switches a multi-page document on desktop from 2-page to 1-page on the very FIRST click', () => {
-    const totalPages = 6;
-    const isWideScreen = true;
-
-    // Initial state: 'auto' defaults to 2-page spread on desktop
-    let mode: 'auto' | 'single' | 'double' = 'auto';
-    expect(getIsTwoPageSpread(mode, totalPages, isWideScreen)).toBe(true);
-
-    // First click: MUST immediately switch to 'single' (1 page)
-    mode = toggleSpreadMode(mode, totalPages, isWideScreen);
-    expect(mode).toBe('single');
-    expect(getIsTwoPageSpread(mode, totalPages, isWideScreen)).toBe(false);
-
-    // Second click: switches back to 'double' (2 pages)
-    mode = toggleSpreadMode(mode, totalPages, isWideScreen);
-    expect(mode).toBe('double');
-    expect(getIsTwoPageSpread(mode, totalPages, isWideScreen)).toBe(true);
+  it('renders 1-page on mobile vertical (portrait) viewports', () => {
+    expect(
+      resolveIsTwoPageSpread({ totalPages: 6, viewportWidth: 390, viewportHeight: 844 })
+    ).toBe(false);
+    expect(
+      resolveIsTwoPageSpread({ totalPages: 6, viewportWidth: 375, viewportHeight: 667 })
+    ).toBe(false);
+    expect(
+      resolveIsTwoPageSpread({ totalPages: 6, viewportWidth: 430, viewportHeight: 932 })
+    ).toBe(false);
   });
 
-  it('switches a multi-page document on mobile from 1-page to 2-page on the very FIRST click', () => {
-    const totalPages = 6;
-    const isWideScreen = false;
+  it('renders 2-page spread on mobile horizontal (landscape) viewports', () => {
+    expect(
+      resolveIsTwoPageSpread({ totalPages: 6, viewportWidth: 667, viewportHeight: 375 })
+    ).toBe(true);
+    expect(
+      resolveIsTwoPageSpread({ totalPages: 6, viewportWidth: 844, viewportHeight: 390 })
+    ).toBe(true);
+    expect(
+      resolveIsTwoPageSpread({ totalPages: 6, viewportWidth: 568, viewportHeight: 320 })
+    ).toBe(true);
+  });
 
-    // Initial state: 'auto' on narrow screen defaults to 1 page
-    let mode: 'auto' | 'single' | 'double' = 'auto';
-    expect(getIsTwoPageSpread(mode, totalPages, isWideScreen)).toBe(false);
+  it('respects forceMobile container orientation (builder phone simulator)', () => {
+    expect(
+      resolveIsTwoPageSpread({
+        totalPages: 6,
+        viewportWidth: 400,
+        viewportHeight: 780,
+        forceMobile: true,
+      })
+    ).toBe(false);
+    expect(
+      resolveIsTwoPageSpread({
+        totalPages: 6,
+        viewportWidth: 780,
+        viewportHeight: 400,
+        forceMobile: true,
+      })
+    ).toBe(true);
+  });
 
-    // First click: MUST immediately switch to 'double' (2 pages)
-    mode = toggleSpreadMode(mode, totalPages, isWideScreen);
-    expect(mode).toBe('double');
-    expect(getIsTwoPageSpread(mode, totalPages, isWideScreen)).toBe(true);
+  it('formats flipbook page indicator labels accurately across 1-page and 2-page spreads', () => {
+    expect(formatFlipbookPageLabel({ currentPage: 1, totalPages: 6, isTwoPageSpread: true })).toBe('1 / 6');
+    expect(formatFlipbookPageLabel({ currentPage: 2, totalPages: 6, isTwoPageSpread: true })).toBe('2-3 / 6');
+    expect(formatFlipbookPageLabel({ currentPage: 3, totalPages: 6, isTwoPageSpread: true })).toBe('2-3 / 6');
+    expect(formatFlipbookPageLabel({ currentPage: 4, totalPages: 6, isTwoPageSpread: true })).toBe('4-5 / 6');
+    expect(formatFlipbookPageLabel({ currentPage: 6, totalPages: 6, isTwoPageSpread: true })).toBe('6 / 6');
+    expect(formatFlipbookPageLabel({ currentPage: 5, totalPages: 5, isTwoPageSpread: true })).toBe('4-5 / 5');
+    expect(formatFlipbookPageLabel({ currentPage: 1, totalPages: 2, isTwoPageSpread: true })).toBe('1-2 / 2');
+    expect(formatFlipbookPageLabel({ currentPage: 2, totalPages: 6, isTwoPageSpread: false })).toBe('2 / 6');
   });
 });
 
@@ -359,6 +354,173 @@ describe('E-Pamphlet — 3D Stage Dynamic Cover Centering & Adaptive Shadow (com
     expect(layout.activeShadowLeft).toBe(0);
     expect(layout.activeShadowWidth).toBe(450);
     expect(layout.showCenterSpine).toBe(false);
+  });
+});
+
+describe('E-Pamphlet — 3D Solo-Cover Close Clipping Geometry (computeSoloCoverCloseGeometry)', () => {
+  it('clips the lifted left page along the fold crease when closing to the front cover (2-3 -> 1)', () => {
+    const geom = computeSoloCoverCloseGeometry({
+      direction: 'back',
+      pageWidth: 400,
+      pageHeight: 560,
+      bookWidth: 800,
+      topIntersect: { x: 90, y: 0 },
+      sideIntersect: null,
+      bottomIntersect: { x: 50, y: 560 },
+    });
+
+    // Element x=0 is outer-left, x=400 is spine; peeled outer-left [0..310] / [0..350] is clipped away
+    expect(geom.clipPath).toBe(
+      'polygon(400.00px 0.00px, 310.00px 0.00px, 350.00px 560.00px, 400.00px 560.00px)'
+    );
+    expect(geom.flatExtent).toBe(50);
+    expect(geom.shadowWidth).toBe(450);
+    expect(geom.shadowLeft).toBe(350);
+  });
+
+  it('clips the lifted right page along the fold crease when closing to the back cover (4-5 -> 6)', () => {
+    const geom = computeSoloCoverCloseGeometry({
+      direction: 'forward',
+      pageWidth: 400,
+      pageHeight: 560,
+      bookWidth: 800,
+      topIntersect: { x: 90, y: 0 },
+      sideIntersect: null,
+      bottomIntersect: { x: 50, y: 560 },
+    });
+
+    // Element x=0 is spine, x=400 is outer-right; peeled outer-right [90..400] / [50..400] is clipped away
+    expect(geom.clipPath).toBe(
+      'polygon(0.00px 0.00px, 90.00px 0.00px, 50.00px 560.00px, 0.00px 560.00px)'
+    );
+    expect(geom.flatExtent).toBe(50);
+    expect(geom.shadowLeft).toBe(0);
+    expect(geom.shadowWidth).toBe(450);
+  });
+
+  it('handles top outer corner peel while keeping the unpeeled bottom corner intact', () => {
+    const geom = computeSoloCoverCloseGeometry({
+      direction: 'back',
+      pageWidth: 400,
+      pageHeight: 560,
+      bookWidth: 800,
+      topIntersect: { x: 340, y: 0 },
+      sideIntersect: { x: 400, y: 80 },
+      bottomIntersect: null,
+    });
+
+    expect(geom.clipPath).toBe(
+      'polygon(400.00px 0.00px, 60.00px 0.00px, 0.00px 80.00px, 0.00px 560.00px, 400.00px 560.00px)'
+    );
+    expect(geom.flatExtent).toBe(340);
+    expect(geom.shadowLeft).toBe(60);
+    expect(geom.shadowWidth).toBe(740);
+  });
+
+  it('handles bottom outer corner peel while keeping the unpeeled top corner intact', () => {
+    const geom = computeSoloCoverCloseGeometry({
+      direction: 'forward',
+      pageWidth: 400,
+      pageHeight: 560,
+      bookWidth: 800,
+      topIntersect: null,
+      sideIntersect: { x: 400, y: 470 },
+      bottomIntersect: { x: 320, y: 560 },
+    });
+
+    expect(geom.clipPath).toBe(
+      'polygon(0.00px 0.00px, 400.00px 0.00px, 400.00px 470.00px, 320.00px 560.00px, 0.00px 560.00px)'
+    );
+    expect(geom.flatExtent).toBe(320);
+    expect(geom.shadowLeft).toBe(0);
+    expect(geom.shadowWidth).toBe(720);
+  });
+
+  it('clamps slightly out-of-bounds intersection points and collapses degenerate end-of-flip frames cleanly', () => {
+    const clamped = computeSoloCoverCloseGeometry({
+      direction: 'forward',
+      pageWidth: 400,
+      pageHeight: 560,
+      bookWidth: 800,
+      topIntersect: { x: -1, y: 0 },
+      sideIntersect: null,
+      bottomIntersect: { x: 402, y: 561 },
+    });
+    expect(clamped.clipPath).toBe(
+      'polygon(0.00px 0.00px, 0.00px 0.00px, 400.00px 560.00px, 0.00px 560.00px)'
+    );
+    expect(clamped.flatExtent).toBe(0);
+    expect(clamped.shadowLeft).toBe(0);
+    expect(clamped.shadowWidth).toBe(400);
+
+    const degenerateBack = computeSoloCoverCloseGeometry({
+      direction: 'back',
+      pageWidth: 400,
+      pageHeight: 560,
+      bookWidth: 800,
+      topIntersect: null,
+      sideIntersect: null,
+      bottomIntersect: null,
+    });
+    expect(degenerateBack.flatExtent).toBe(0);
+    expect(degenerateBack.shadowLeft).toBe(400);
+    expect(degenerateBack.shadowWidth).toBe(400);
+  });
+});
+
+describe('E-Pamphlet — Dynamic 3D Outer Paper-Stack Thickness (computeBookEdgeThickness)', () => {
+  it('makes right stack thick and left stack thin near the start, and reverses near the end (6-page book)', () => {
+    // Page 1 (Front Cover): 0 on left, full stack on right
+    const cover = computeBookEdgeThickness({ totalPages: 6, currentPage: 1, isTwoPageSpread: true });
+    expect(cover.leftThickness).toBe(0);
+    expect(cover.rightThickness).toBe(cover.maxThickness);
+    expect(cover.rightThickness).toBeGreaterThanOrEqual(10);
+
+    // Spread 2-3: few pages on left (thin), many pages on right (thick)
+    const early = computeBookEdgeThickness({ totalPages: 6, currentPage: 2, isTwoPageSpread: true });
+    expect(early.leftThickness).toBe(2);
+    expect(early.rightThickness).toBeGreaterThan(early.leftThickness * 3);
+
+    // Spread 4-5: many pages on left (thick), few pages on right (thin)
+    const late = computeBookEdgeThickness({ totalPages: 6, currentPage: 4, isTwoPageSpread: true });
+    expect(late.leftThickness).toBe(early.rightThickness);
+    expect(late.rightThickness).toBe(early.leftThickness);
+
+    // Page 6 (Back Cover): full stack on left, 0 on right
+    const back = computeBookEdgeThickness({ totalPages: 6, currentPage: 6, isTwoPageSpread: true });
+    expect(back.leftThickness).toBe(back.maxThickness);
+    expect(back.rightThickness).toBe(0);
+  });
+
+  it('progressively shifts thickness from right to left across a large 20-page book', () => {
+    const start = computeBookEdgeThickness({ totalPages: 20, currentPage: 2, isTwoPageSpread: true });
+    const mid = computeBookEdgeThickness({ totalPages: 20, currentPage: 10, isTwoPageSpread: true });
+    const end = computeBookEdgeThickness({ totalPages: 20, currentPage: 18, isTwoPageSpread: true });
+
+    expect(start.leftThickness).toBeLessThan(mid.leftThickness);
+    expect(mid.leftThickness).toBeLessThan(end.leftThickness);
+    expect(start.rightThickness).toBeGreaterThan(mid.rightThickness);
+    expect(mid.rightThickness).toBeGreaterThan(end.rightThickness);
+    expect(mid.leftThickness).toBe(mid.rightThickness);
+    expect(start.maxThickness).toBeLessThanOrEqual(18);
+  });
+
+  it('handles 1-page, 2-page, odd-page, and single-page vertical modes cleanly', () => {
+    expect(
+      computeBookEdgeThickness({ totalPages: 1, currentPage: 1, isTwoPageSpread: true })
+    ).toEqual({ leftThickness: 0, rightThickness: 0, maxThickness: 0 });
+
+    const twoPage = computeBookEdgeThickness({ totalPages: 2, currentPage: 1, isTwoPageSpread: true });
+    expect(twoPage.leftThickness).toBe(2);
+    expect(twoPage.rightThickness).toBe(2);
+
+    // Single-page mobile vertical mode: right stack thins down to 0 on the final page
+    const mobileFirst = computeBookEdgeThickness({ totalPages: 6, currentPage: 1, isTwoPageSpread: false });
+    const mobileMid = computeBookEdgeThickness({ totalPages: 6, currentPage: 3, isTwoPageSpread: false });
+    const mobileLast = computeBookEdgeThickness({ totalPages: 6, currentPage: 6, isTwoPageSpread: false });
+    expect(mobileFirst.leftThickness).toBe(0);
+    expect(mobileFirst.rightThickness).toBeGreaterThan(mobileMid.rightThickness);
+    expect(mobileLast.rightThickness).toBe(0);
   });
 });
 

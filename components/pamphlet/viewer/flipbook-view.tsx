@@ -4,6 +4,13 @@ import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { SizeType } from 'page-flip';
 import { PamphletPageItem, PamphletOrientation } from '@/lib/types/pamphlets';
+import {
+  computeBookEdgeThickness,
+  computeSoloCoverCloseGeometry,
+  resolveIsTwoPageSpread,
+  type BookEdgeThickness,
+  type FlipPoint,
+} from '@/lib/pamphlets/flip-geometry';
 import { playPageTurnSound } from '@/lib/pamphlets/utils';
 import { cn } from '@/lib/utils';
 
@@ -17,7 +24,7 @@ export interface FlipbookViewProps {
   currentPage: number;
   zoom: number;
   orientation?: PamphletOrientation;
-  pageSpreadMode?: 'auto' | 'single' | 'double';
+  isTwoPageSpread?: boolean;
   forceMobile?: boolean;
   onPrevPage: () => void;
   onNextPage: () => void;
@@ -161,7 +168,7 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
       currentPage,
       zoom,
       orientation,
-      pageSpreadMode = 'auto',
+      isTwoPageSpread: isTwoPageSpreadProp,
       forceMobile = false,
       soundEnabled = false,
       onPrevPage,
@@ -173,6 +180,11 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
   ) {
     const containerRef = React.useRef<HTMLDivElement>(null);
     const hostRef = React.useRef<HTMLDivElement>(null);
+    const perimeterShadowRef = React.useRef<HTMLDivElement>(null);
+    const groundShadowRef = React.useRef<HTMLDivElement>(null);
+    const leftStackRef = React.useRef<HTMLDivElement>(null);
+    const rightStackRef = React.useRef<HTMLDivElement>(null);
+    const spineElRef = React.useRef<HTMLDivElement | null>(null);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const pageFlipInstanceRef = React.useRef<any>(null);
     const isTurningRef = React.useRef(false);
@@ -220,25 +232,36 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
     const defaultPageRatio = isLandscape ? 1.414 : 0.707;
     const singlePageRatio = detectedRatio || pages[0]?.aspectRatio || defaultPageRatio;
 
-    // Determine two-page spread status
+    // Determine two-page spread status (single source of truth from parent or viewport geometry)
     const isTwoPageSpread =
-      !forceMobile &&
-      totalPages >= 2 &&
-      pageSpreadMode !== 'single' &&
-      (pageSpreadMode === 'double' ||
-        (totalPages > 2 &&
-          ((containerDimensions.width >= 768 && !isLandscape) ||
-            (containerDimensions.width >= 960 && isLandscape))));
+      isTwoPageSpreadProp ??
+      resolveIsTwoPageSpread({
+        totalPages,
+        viewportWidth: containerDimensions.width,
+        viewportHeight: containerDimensions.height,
+        forceMobile,
+      });
 
-    // Calculate dimensions
+    const isVeryCompactHeight = containerDimensions.height < 450;
+    const stagePadTop = isVeryCompactHeight ? 8 : 20;
+    const stagePadBottom = isVeryCompactHeight ? 68 : 88;
+    const verticalBreathingRoom = isVeryCompactHeight ? 20 : 36;
+
+    // Calculate dimensions (explicitly reserves bottom floating toolbar zone + breathing room)
     let bookWidth: number;
     let bookHeight: number;
 
     if (isTwoPageSpread) {
-      const availW = Math.max(280, containerDimensions.width - 48);
-      const availH = Math.max(260, containerDimensions.height - 110);
+      const availW = Math.max(
+        240,
+        containerDimensions.width - (isVeryCompactHeight ? 32 : 48)
+      );
+      const availH = Math.max(
+        130,
+        containerDimensions.height - stagePadTop - stagePadBottom - verticalBreathingRoom
+      );
       const spreadRatio = singlePageRatio * 2;
-      let targetH = Math.min(availH, isLandscape ? 580 : 660);
+      let targetH = Math.min(availH, isLandscape ? 580 : 640);
       let targetW = targetH * spreadRatio;
 
       if (targetW > availW * 0.98) {
@@ -248,9 +271,12 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
       bookWidth = Math.round(targetW);
       bookHeight = Math.round(targetH);
     } else {
-      const availW = Math.max(260, containerDimensions.width - 24);
-      const availH = Math.max(200, containerDimensions.height - 96);
-      let targetH = Math.min(availH, isLandscape ? 560 : 700);
+      const availW = Math.max(240, containerDimensions.width - 24);
+      const availH = Math.max(
+        160,
+        containerDimensions.height - stagePadTop - stagePadBottom - verticalBreathingRoom
+      );
+      let targetH = Math.min(availH, isLandscape ? 560 : 680);
       let targetW = targetH * singlePageRatio;
 
       if (targetW > availW) {
@@ -262,6 +288,29 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
     }
 
     const pageWidth = isTwoPageSpread ? Math.round(bookWidth / 2) : bookWidth;
+    if (isTwoPageSpread) {
+      bookWidth = pageWidth * 2;
+    }
+
+    const stageLayout = computeBookStageLayout({
+      isTwoPageSpread,
+      totalPages,
+      currentPage,
+      bookWidth,
+      pageWidth,
+    });
+
+    const stageLayoutRef = React.useRef<BookStageLayout>(stageLayout);
+    stageLayoutRef.current = stageLayout;
+
+    const edgeThickness = computeBookEdgeThickness({
+      totalPages,
+      currentPage,
+      isTwoPageSpread,
+    });
+
+    const edgeThicknessRef = React.useRef<BookEdgeThickness>(edgeThickness);
+    edgeThicknessRef.current = edgeThickness;
 
     // Measure viewport on mount and on window resize
     React.useEffect(() => {
@@ -276,15 +325,8 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
       updateSize();
       setIsMounted(true);
 
-      const ro = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
-            setContainerDimensions({
-              width: entry.contentRect.width,
-              height: entry.contentRect.height,
-            });
-          }
-        }
+      const ro = new ResizeObserver(() => {
+        updateSize();
       });
       ro.observe(containerRef.current);
       window.addEventListener('resize', updateSize);
@@ -387,9 +429,9 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
             width: pageWidth,
             height: bookHeight,
             size: 'fixed' as unknown as SizeType,
-            minWidth: 150,
+            minWidth: 80,
             maxWidth: 2400,
-            minHeight: 150,
+            minHeight: 100,
             maxHeight: 2400,
             drawShadow: true,
             flippingTime: 520,
@@ -426,9 +468,225 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
             // Graceful fallback
           }
 
-          // Page change event listener
+          // Mount 3D Center Spine inside .stf__block at z-index 14 (above static pages 11/13,
+          // cleanly underneath the actively turning flippingPage at 15 and shadows at 20)
+          let spineEl: HTMLDivElement | null = null;
+          if (isTwoPageSpread) {
+            const distEl = pageFlipInstance.getUI?.()?.getDistElement?.() as
+              | HTMLElement
+              | undefined;
+            if (distEl) {
+              spineEl = document.createElement('div');
+              spineEl.className = 'stf__center-spine pointer-events-none';
+              const initialRect = pageFlipInstance.getRender?.()?.getRect?.();
+              const spineLeft = initialRect ? initialRect.left + initialRect.pageWidth - 12 : pageWidth - 12;
+              const spineTop = initialRect ? initialRect.top : 0;
+              const spineHeight = initialRect ? initialRect.height : bookHeight;
+              spineEl.style.cssText = [
+                'position: absolute',
+                `left: ${spineLeft}px`,
+                `top: ${spineTop}px`,
+                `height: ${spineHeight}px`,
+                'width: 24px',
+                'z-index: 14',
+                'overflow: hidden',
+                'display: flex',
+                'align-items: center',
+                'justify-content: center',
+                'pointer-events: none',
+                'transition: opacity 300ms ease',
+                `opacity: ${stageLayoutRef.current.showCenterSpine ? '1' : '0'}`,
+              ].join(';');
+
+              const gutterEl = document.createElement('div');
+              gutterEl.style.cssText =
+                'position: absolute; inset: 0; background: linear-gradient(to right, transparent 0%, rgba(15,23,42,0.02) 14%, rgba(15,23,42,0.12) 42%, rgba(15,23,42,0.26) 50%, rgba(15,23,42,0.12) 58%, rgba(15,23,42,0.02) 86%, transparent 100%);';
+
+              const creaseEl = document.createElement('div');
+              creaseEl.style.cssText =
+                'width: 1.5px; height: 100%; background: linear-gradient(to bottom, rgba(15,23,42,0.22) 0%, rgba(15,23,42,0.42) 50%, rgba(15,23,42,0.22) 100%); box-shadow: -1px 0 0 rgba(255,255,255,0.2), 1px 0 0 rgba(255,255,255,0.24);';
+
+              spineEl.appendChild(gutterEl);
+              spineEl.appendChild(creaseEl);
+              distEl.appendChild(spineEl);
+              spineElRef.current = spineEl;
+            }
+          }
+
+          // Patch HTMLRender.drawFrame so closing into a solo front/back cover with soft pages
+          // clips the lifted static page cleanly along the fold crease (StPageFlip sets
+          // bottomPage === flippingPage on single-page cover spreads, leaving the lifted page
+          // unclipped underneath unless we clip it here).
+          const render = pageFlipInstance.getRender?.();
+          const flipCtrl = pageFlipInstance.getFlipController?.();
+          if (render && typeof render.drawFrame === 'function') {
+            const originalDrawFrame = render.drawFrame.bind(render);
+            let wasClosingSoloCover = false;
+            let lastClippedEl: HTMLElement | null = null;
+
+            const clearClippedEl = () => {
+              if (!lastClippedEl) return;
+              lastClippedEl.style.clipPath = '';
+              (
+                lastClippedEl.style as CSSStyleDeclaration & { webkitClipPath?: string }
+              ).webkitClipPath = '';
+              lastClippedEl = null;
+            };
+
+            const restoreStageShadows = () => {
+              const layout = stageLayoutRef.current;
+              const edge = edgeThicknessRef.current;
+              const fullShadowLeft = layout.activeShadowLeft - edge.leftThickness;
+              const fullShadowWidth =
+                layout.activeShadowWidth + edge.leftThickness + edge.rightThickness;
+              const perimeterEl = perimeterShadowRef.current;
+              if (perimeterEl) {
+                perimeterEl.style.transition = '';
+                perimeterEl.style.left = `${fullShadowLeft}px`;
+                perimeterEl.style.width = `${fullShadowWidth}px`;
+              }
+              const groundEl = groundShadowRef.current;
+              if (groundEl) {
+                groundEl.style.transition = '';
+                groundEl.style.width = `${Math.round(fullShadowWidth * 1.06)}px`;
+                groundEl.style.left = `${Math.round(fullShadowLeft + fullShadowWidth / 2)}px`;
+              }
+              const leftStackEl = leftStackRef.current;
+              if (leftStackEl) {
+                leftStackEl.style.transition = '';
+                leftStackEl.style.opacity = edge.leftThickness > 0 ? '1' : '0';
+              }
+              const rightStackEl = rightStackRef.current;
+              if (rightStackEl) {
+                rightStackEl.style.transition = '';
+                rightStackEl.style.opacity = edge.rightThickness > 0 ? '1' : '0';
+              }
+              if (spineEl) {
+                spineEl.style.transition = 'opacity 300ms ease';
+                spineEl.style.opacity = layout.showCenterSpine ? '1' : '0';
+              }
+            };
+
+            render.drawFrame = () => {
+              originalDrawFrame();
+
+              if (spineEl) {
+                const rect = render.getRect?.();
+                if (rect) {
+                  spineEl.style.left = `${rect.left + rect.pageWidth - 12}px`;
+                  spineEl.style.top = `${rect.top}px`;
+                  spineEl.style.height = `${rect.height}px`;
+                }
+              }
+
+              const flippingPage = render.flippingPage;
+              const bottomPage = render.bottomPage;
+              const isLandscapeRender = render.getOrientation?.() === 'landscape';
+              const isSoftFlip = flippingPage?.getDrawingDensity?.() === 'soft';
+
+              if (isLandscapeRender && flippingPage && bottomPage === flippingPage && isSoftFlip) {
+                const calc = flipCtrl?.getCalculation?.();
+                const rawDir = render.getDirection?.();
+                const dir: 'forward' | 'back' = rawDir === 1 ? 'back' : 'forward';
+                const liftedPage = dir === 'back' ? render.leftPage : render.rightPage;
+                const liftedEl = liftedPage?.getElement?.() as HTMLElement | undefined;
+                const rect = render.getRect?.();
+
+                if (calc && liftedEl && rect) {
+                  const geom = computeSoloCoverCloseGeometry({
+                    direction: dir,
+                    pageWidth: rect.pageWidth,
+                    pageHeight: rect.height,
+                    bookWidth,
+                    topIntersect: (calc.topIntersectPoint ?? null) as FlipPoint | null,
+                    sideIntersect: (calc.sideIntersectPoint ?? null) as FlipPoint | null,
+                    bottomIntersect: (calc.bottomIntersectPoint ?? null) as FlipPoint | null,
+                  });
+
+                  if (lastClippedEl && lastClippedEl !== liftedEl) {
+                    clearClippedEl();
+                  }
+                  liftedEl.style.clipPath = geom.clipPath;
+                  (
+                    liftedEl.style as CSSStyleDeclaration & { webkitClipPath?: string }
+                  ).webkitClipPath = geom.clipPath;
+                  lastClippedEl = liftedEl;
+
+                  // Suppress outerShadow over empty background (no page beneath the lifted leaf)
+                  const outerShadowEl = render.outerShadow as HTMLElement | null | undefined;
+                  if (outerShadowEl) {
+                    outerShadowEl.style.display = 'none';
+                  }
+
+                  // Hide the lifted side's outer page-stack immediately so no sliver floats on empty space
+                  const edge = edgeThicknessRef.current;
+                  const activeLeftEdge = dir === 'back' ? 0 : edge.leftThickness;
+                  const activeRightEdge = dir === 'forward' ? 0 : edge.rightThickness;
+                  if (dir === 'back' && leftStackRef.current) {
+                    leftStackRef.current.style.transition = 'none';
+                    leftStackRef.current.style.opacity = '0';
+                  } else if (dir === 'forward' && rightStackRef.current) {
+                    rightStackRef.current.style.transition = 'none';
+                    rightStackRef.current.style.opacity = '0';
+                  }
+
+                  // Shrink perimeter and ground shadows smoothly to the still-flat book footprint
+                  const dynShadowLeft = geom.shadowLeft - activeLeftEdge;
+                  const dynShadowWidth = geom.shadowWidth + activeLeftEdge + activeRightEdge;
+                  const perimeterEl = perimeterShadowRef.current;
+                  if (perimeterEl) {
+                    perimeterEl.style.transition = 'none';
+                    perimeterEl.style.left = `${dynShadowLeft}px`;
+                    perimeterEl.style.width = `${dynShadowWidth}px`;
+                  }
+                  const groundEl = groundShadowRef.current;
+                  if (groundEl) {
+                    groundEl.style.transition = 'none';
+                    groundEl.style.width = `${Math.round(dynShadowWidth * 1.06)}px`;
+                    groundEl.style.left = `${Math.round(dynShadowLeft + dynShadowWidth / 2)}px`;
+                  }
+
+                  // Fade center spine smoothly as the solo cover closes
+                  if (spineEl) {
+                    const progress =
+                      typeof calc.getFlippingProgress === 'function'
+                        ? calc.getFlippingProgress()
+                        : 0;
+                    spineEl.style.transition = 'none';
+                    spineEl.style.opacity = String(Math.max(0, Math.min(1, 1 - progress / 85)));
+                  }
+
+                  wasClosingSoloCover = true;
+                }
+              } else if (wasClosingSoloCover || lastClippedEl) {
+                clearClippedEl();
+                restoreStageShadows();
+                wasClosingSoloCover = false;
+              }
+            };
+          }
+
+          // Page change event listener — update stageLayoutRef synchronously before the final
+          // drawFrame() of the animation runs so shadows/spine transition with zero 1-frame flash
           pageFlipInstance.on('flip', (e: { data: number }) => {
             const nextPg = e.data + 1;
+            const nextLayout = computeBookStageLayout({
+              isTwoPageSpread,
+              totalPages,
+              currentPage: nextPg,
+              bookWidth,
+              pageWidth,
+            });
+            stageLayoutRef.current = nextLayout;
+            edgeThicknessRef.current = computeBookEdgeThickness({
+              totalPages,
+              currentPage: nextPg,
+              isTwoPageSpread,
+            });
+            if (spineEl) {
+              spineEl.style.transition = 'opacity 300ms ease';
+              spineEl.style.opacity = nextLayout.showCenterSpine ? '1' : '0';
+            }
             onPageChangeRef.current?.(nextPg);
           });
 
@@ -452,8 +710,26 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
 
       initPageFlip();
 
+      const perimeterShadowNode = perimeterShadowRef.current;
+      const groundShadowNode = groundShadowRef.current;
+      const leftStackNode = leftStackRef.current;
+      const rightStackNode = rightStackRef.current;
+
       return () => {
         destroyed = true;
+        spineElRef.current = null;
+        if (perimeterShadowNode) {
+          perimeterShadowNode.style.transition = '';
+        }
+        if (groundShadowNode) {
+          groundShadowNode.style.transition = '';
+        }
+        if (leftStackNode) {
+          leftStackNode.style.transition = '';
+        }
+        if (rightStackNode) {
+          rightStackNode.style.transition = '';
+        }
         if (pageFlipInstanceRef.current) {
           try {
             pageFlipInstanceRef.current.destroy();
@@ -466,7 +742,15 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
           hostEl.innerHTML = '';
         }
       };
-    }, [isMounted, pages, pageWidth, bookHeight, isTwoPageSpread, totalPages]);
+    }, [isMounted, pages, pageWidth, bookWidth, bookHeight, isTwoPageSpread, totalPages]);
+
+    // Sync center spine visibility on external page jumps (e.g. thumbnail strip or toolbar)
+    React.useEffect(() => {
+      if (spineElRef.current) {
+        spineElRef.current.style.transition = 'opacity 300ms ease';
+        spineElRef.current.style.opacity = stageLayout.showCenterSpine ? '1' : '0';
+      }
+    }, [stageLayout.showCenterSpine]);
 
     // External page synchronization (e.g. from thumbnail drawer or toolbar input)
     React.useEffect(() => {
@@ -551,16 +835,9 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
       isPanDraggingRef.current = false;
     };
 
-    const canGoPrev = totalPages > 1 && currentPage > 1;
-    const canGoNext = totalPages > 1 && currentPage < totalPages;
-
-    const stageLayout = computeBookStageLayout({
-      isTwoPageSpread,
-      totalPages,
-      currentPage,
-      bookWidth,
-      pageWidth,
-    });
+    const isStaticTwoPagePair = isTwoPageSpread && totalPages === 2;
+    const canGoPrev = totalPages > 1 && !isStaticTwoPagePair && currentPage > 1;
+    const canGoNext = totalPages > 1 && !isStaticTwoPagePair && currentPage < totalPages;
 
     if (!pages || pages.length === 0) {
       return null;
@@ -573,7 +850,10 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
         onMouseMove={handleMouseMovePan}
         onMouseUp={handleMouseUpPan}
         onMouseLeave={handleMouseUpPan}
-        className="relative w-full h-full flex items-center justify-center p-2 sm:p-4 md:p-6 select-none overflow-hidden"
+        className={cn(
+          'relative w-full h-full flex items-center justify-center select-none overflow-hidden',
+          isVeryCompactHeight ? 'pt-2 pb-[68px] px-3' : 'pt-5 pb-[88px] px-3 sm:px-4 md:px-6'
+        )}
         style={{
           touchAction: zoom > 1 ? 'auto' : 'none',
         }}
@@ -656,14 +936,27 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
               transform: `translateX(${stageLayout.stageShiftX}px)`,
             }}
           >
-            {/* Adaptive Ground Contact Drop Shadow Ellipse (tracks active page bounds) */}
+            {/* Adaptive Ground Contact Drop Shadow Ellipse (tracks active page + stack bounds) */}
             <div
+              ref={groundShadowRef}
               className="absolute pointer-events-none transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] z-0"
               style={{
-                width: `${Math.round(stageLayout.activeShadowWidth * 1.06)}px`,
+                width: `${Math.round(
+                  (stageLayout.activeShadowWidth +
+                    edgeThickness.leftThickness +
+                    edgeThickness.rightThickness) *
+                    1.06
+                )}px`,
                 height: isLandscape ? '38px' : '46px',
                 bottom: isLandscape ? '-22px' : '-26px',
-                left: `${Math.round(stageLayout.activeShadowLeft + stageLayout.activeShadowWidth / 2)}px`,
+                left: `${Math.round(
+                  stageLayout.activeShadowLeft -
+                    edgeThickness.leftThickness +
+                    (stageLayout.activeShadowWidth +
+                      edgeThickness.leftThickness +
+                      edgeThickness.rightThickness) /
+                      2
+                )}px`,
                 transform: 'translateX(-50%)',
                 borderRadius: '50%',
                 background:
@@ -674,12 +967,65 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
 
             {/* Adaptive Book Perimeter Elevation Shadow (never casts ghost shadow on empty cover side) */}
             <div
+              ref={perimeterShadowRef}
               className="absolute top-0 bottom-0 pointer-events-none transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] rounded-[4px] z-[1]"
               style={{
-                left: `${stageLayout.activeShadowLeft}px`,
-                width: `${stageLayout.activeShadowWidth}px`,
+                left: `${stageLayout.activeShadowLeft - edgeThickness.leftThickness}px`,
+                width: `${
+                  stageLayout.activeShadowWidth +
+                  edgeThickness.leftThickness +
+                  edgeThickness.rightThickness
+                }px`,
                 boxShadow:
                   '0 20px 48px -10px rgba(15, 23, 42, 0.26), 0 8px 20px -4px rgba(15, 23, 42, 0.14), 0 1px 4px rgba(15, 23, 42, 0.08)',
+              }}
+            />
+
+            {/* Dynamic 3D Left Outer Paper Stack (thickens as more pages accumulate on the left) */}
+            <div
+              ref={leftStackRef}
+              data-testid="flipbook-left-stack"
+              className="absolute top-[2px] bottom-[2px] pointer-events-none transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] z-[1]"
+              style={{
+                right: `${bookWidth}px`,
+                width: `${edgeThickness.leftThickness}px`,
+                opacity: edgeThickness.leftThickness > 0 ? 1 : 0,
+                borderRadius: '3px 0 0 3px',
+                borderTop:
+                  edgeThickness.leftThickness > 0 ? '1px solid rgba(148, 163, 184, 0.55)' : '0',
+                borderBottom:
+                  edgeThickness.leftThickness > 0 ? '1px solid rgba(148, 163, 184, 0.65)' : '0',
+                borderLeft:
+                  edgeThickness.leftThickness > 0 ? '1px solid rgba(148, 163, 184, 0.72)' : '0',
+                backgroundImage: [
+                  'linear-gradient(to bottom, rgba(15, 23, 42, 0.12) 0%, transparent 5%, transparent 94%, rgba(15, 23, 42, 0.18) 100%)',
+                  'linear-gradient(to left, rgba(15, 23, 42, 0.08) 0%, rgba(255, 255, 255, 0.22) 28%, rgba(15, 23, 42, 0.05) 72%, rgba(15, 23, 42, 0.16) 100%)',
+                  'repeating-linear-gradient(to left, #ffffff 0px, #f8fafc 1.5px, #cbd5e1 1.5px, #cbd5e1 2.5px)',
+                ].join(', '),
+              }}
+            />
+
+            {/* Dynamic 3D Right Outer Paper Stack (thickens as more pages sit on the right) */}
+            <div
+              ref={rightStackRef}
+              data-testid="flipbook-right-stack"
+              className="absolute top-[2px] bottom-[2px] pointer-events-none transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] z-[1]"
+              style={{
+                left: `${bookWidth}px`,
+                width: `${edgeThickness.rightThickness}px`,
+                opacity: edgeThickness.rightThickness > 0 ? 1 : 0,
+                borderRadius: '0 3px 3px 0',
+                borderTop:
+                  edgeThickness.rightThickness > 0 ? '1px solid rgba(148, 163, 184, 0.55)' : '0',
+                borderBottom:
+                  edgeThickness.rightThickness > 0 ? '1px solid rgba(148, 163, 184, 0.65)' : '0',
+                borderRight:
+                  edgeThickness.rightThickness > 0 ? '1px solid rgba(148, 163, 184, 0.72)' : '0',
+                backgroundImage: [
+                  'linear-gradient(to bottom, rgba(15, 23, 42, 0.12) 0%, transparent 5%, transparent 94%, rgba(15, 23, 42, 0.18) 100%)',
+                  'linear-gradient(to right, rgba(15, 23, 42, 0.08) 0%, rgba(255, 255, 255, 0.22) 28%, rgba(15, 23, 42, 0.05) 72%, rgba(15, 23, 42, 0.16) 100%)',
+                  'repeating-linear-gradient(to right, #ffffff 0px, #f8fafc 1.5px, #cbd5e1 1.5px, #cbd5e1 2.5px)',
+                ].join(', '),
               }}
             />
 
@@ -688,34 +1034,6 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
               ref={hostRef}
               className={cn('w-full h-full relative z-[2]', zoom > 1 && 'pointer-events-none')}
             />
-
-            {/* Realistic 3D Center Spine System (Tulang Belakang Buku di Tengah — hanya apabila buku terbuka) */}
-            {isTwoPageSpread && (
-              <div
-                className={cn(
-                  'absolute inset-y-0 left-1/2 -translate-x-1/2 w-6 pointer-events-none z-[12] overflow-hidden flex items-center justify-center transition-opacity duration-300',
-                  stageLayout.showCenterSpine ? 'opacity-100' : 'opacity-0'
-                )}
-              >
-                {/* Concave spine gutter shadow gradient */}
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background:
-                      'linear-gradient(to right, transparent 0%, rgba(15,23,42,0.02) 14%, rgba(15,23,42,0.12) 42%, rgba(15,23,42,0.26) 50%, rgba(15,23,42,0.12) 58%, rgba(15,23,42,0.02) 86%, transparent 100%)',
-                  }}
-                />
-                {/* Hairline Center Crease with Dual Specular Ridges */}
-                <div
-                  className="w-[1.5px] h-full"
-                  style={{
-                    background:
-                      'linear-gradient(to bottom, rgba(15,23,42,0.22) 0%, rgba(15,23,42,0.42) 50%, rgba(15,23,42,0.22) 100%)',
-                    boxShadow: '-1px 0 0 rgba(255,255,255,0.2), 1px 0 0 rgba(255,255,255,0.24)',
-                  }}
-                />
-              </div>
-            )}
           </div>
         </div>
       </div>

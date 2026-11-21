@@ -1,5 +1,96 @@
 # Project Memory
 
+## Ketebalan Tindanan Helaian Dinamik Kiri & Kanan 3D Flipbook (`FlipbookView`) - 2026-11-20
+
+- **Konteks & Permintaan Pengguna**:
+  - Pengguna menghantar tangkapan skrin hamparan `4-5 / 6` dengan bulatan merah pada tepi luar kiri dan kanan buku, dan meminta: *"boleh ke kalau bila swipe ke kanan sampai byk pagi ke kanan, nampak tebal belah kanan dan kiri nipis, kalau kiri pun sama jgk"*.
+- **Tindakan Pembaikan**:
+  1. `lib/pamphlets/flip-geometry.ts`:
+     - Tambah `computeBookEdgeThickness({ totalPages, currentPage, isTwoPageSpread })` yang mengira ketebalan tepi tindanan kertas kiri dan kanan secara progresif berdasarkan bilangan helaian fizikal di setiap sisi tulang buku (`1 / 6`: L `0px`, R `12px`; `2-3 / 6`: L `2px`, R `10px`; `4-5 / 6`: L `10px`, R `2px`; `6 / 6`: L `12px`, R `0px`; maksimum `18px` untuk buku besar, serta penyusutan sisi kanan dalam mod 1 halaman mobile menegak).
+  2. `components/pamphlet/viewer/flipbook-view.tsx`:
+     - Tambah lapisan tindanan tepi kertas 3D dinamik (`leftStackRef`, `rightStackRef`) dengan garisan helaian kertas berlapis berulang (`2.5px`), teduhan silinder halus, dan peralihan lebar lancar `500ms`.
+     - Menyembunyikan sisi tindanan yang diangkat secara serta-merta semasa selakan penutup kulit tunggal (`2-3 -> 1` dan `4-5 -> 6`), mengemas kini `edgeThicknessRef` secara segerak pada acara `'flip'`, serta meluaskan bayang bingkai dan lantai merangkumi lebar tindanan aktif.
+  3. `app/globals.css`:
+     - Melembutkan bevel dalaman statik `.stf__item.--left` dan `.--right` (`inset 1px`) supaya kontras tindanan luar nipis vs tebal kelihatan jelas dan semula jadi.
+  4. `tests/pamphlet.test.ts`:
+     - Menambah 3 ujian unit `computeBookEdgeThickness` (32/32 lulus dalam `tests/pamphlet.test.ts`).
+- **Status Ujian & Pengesahan**:
+  - `npm test`: 532/532 lulus merentas 53 fail suite.
+  - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat (`eslint .`).
+  - `npm run build`: Binaan Next.js 16.2.6 Turbopack berjaya (36 halaman statik + semua laluan dinamik).
+  - Pengesahan pelayar langsung pada `http://localhost:3000/flipbook` (`1280×800`, 0 ralat konsol): `1 / 6` (L `0px`, R `12px`), `2-3 / 6` (L `2px`, R `10px`), `4-5 / 6` (L `10px`, R `2px`), dan `6 / 6` (L `12px`, R `0px`).
+
+
+## Pembaikan Amaran `Slow execution` `instrumentation-client.ts` & Ralat `404 /favicon.ico` - 2026-11-20
+
+- **Punca Isu & Laporan Pengguna**:
+  - Pengguna menghantar log konsol pelayar: `[Client Instrumentation Hook] Slow execution detected: 347ms` dan `:3000/favicon.ico:1 Failed to load resource: the server responded with a status of 404 (Not Found)`.
+  - `NEXT_PUBLIC_SENTRY_DSN` wujud dalam `.env.local`, menyebabkan `instrumentation-client.ts` memuatkan `./sentry.client.config` (termasuk `Sentry.replayIntegration()`) dan `@sentry/nextjs` secara segerak sebelum hidrasi React (~347ms, melebihi bajet 16ms Next.js 16).
+  - Projek menjana ikon melalui `app/icon.tsx` (`/icon`) tanpa laluan `/favicon.ico`, menyebabkan permintaan automatik pelayar ke `/favicon.ico` gagal dengan `404`.
+- **Tindakan Pembaikan**:
+  1. `instrumentation-client.ts`:
+     - Menjalankan Sentry klien dalam produksi sahaja secara lalai (atau apabila `NEXT_PUBLIC_SENTRY_ENABLE_DEV === 'true'`) dan menangguhkan pemuatan dinamik (`import('./sentry.client.config')` + `captureRouterTransitionStart`) melalui `requestIdleCallback` (sandaran `setTimeout(..., 0)`) supaya pelaksanaan segerak kekal `< 1ms`.
+  2. `next.config.ts`:
+     - Menambah `rewrites()` untuk memetakan `/favicon.ico` terus ke `/icon` (`app/icon.tsx`) supaya `/favicon.ico` mengembalikan `200 OK` (`image/png`) tanpa mengganggu keutamaan `app/icon.tsx`.
+- **Status Ujian & Pengesahan**:
+  - `npm test`: 529/529 lulus merentas 53 fail suite.
+  - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat (`eslint .`).
+  - `npm run build`: Binaan Next.js 16.2.6 Turbopack berjaya (36 halaman statik + semua laluan dinamik).
+  - Pengesahan pelayar langsung (`http://localhost:3000/flipbook` & `http://localhost:3000/favicon.ico`): `/favicon.ico` memulangkan `200 OK` (`image/png`), 0 permintaan gagal, dan 0 ralat konsol.
+
+
+## Kunci Mod 3D Flipbook (Desktop 2 Halaman, Mobile Tegak 1 Halaman / Melintang 2 Halaman) - 2026-11-20
+
+- **Konteks & Permintaan Pengguna**:
+  - Pengguna meminta berserta tangkapan skrin bar navigasi bawah (`4-5 / 6` bersama butang `[2 Pages]`): *"3d flip ni buat 2 pages je, tak perlu 1 page"*, dan menjelaskan: *"utk desktop view 2 pages, tapi utk mobile view 1 page utk vertical dan 2 pages utk horizontal"*.
+- **Tindakan Pembaikan**:
+  1. `lib/pamphlets/flip-geometry.ts`:
+     - Tambah `resolveIsTwoPageSpread({ totalPages, viewportWidth, viewportHeight, forceMobile })` sebagai sumber kebenaran tunggal: Desktop (`viewportWidth >= 768` dan `!forceMobile`) sentiasa 2 halaman bagi dokumen `>= 2` halaman; Mobile (`< 768` atau `forceMobile`) memaparkan 1 halaman ketika menegak (`width <= height`) dan 2 halaman ketika melintang (`width > height`).
+     - Tambah `formatFlipbookPageLabel({ currentPage, totalPages, isTwoPageSpread })` supaya label penunjuk halaman sentiasa tepat merentas semua orientasi (`1 / 6`, `2-3 / 6`, `4-5 / 6`, `6 / 6`, `1-2 / 2`, `4-5 / 5`, serta `3 / 6` pada mobile menegak).
+  2. `components/pamphlet/viewer/index.tsx`:
+     - Membuang keadaan `pageSpreadMode` dan `handleToggleSpreadMode`.
+     - Menjejak `viewportSize` menerusi `resize`, `orientationchange`, dan `ResizeObserver` (untuk `forceMobile` di pratonton pembina), lalu menyalurkan `isTwoPageSpread` tunggal yang sama ke `PamphletToolbar` dan `FlipbookView`.
+  3. `components/pamphlet/viewer/toolbar.tsx`:
+     - Membuang butang toggle `2 Pages` / `1 Page`, ikon `FileText`, dan prop tidak digunakan (`pageSpreadMode`, `onToggleSpreadMode`).
+     - Menggunakan `formatFlipbookPageLabel` pada penunjuk halaman bar bawah serta menyahaktifkan anak panah kiri/kanan pada pasangan 2 halaman statik (`totalPages === 2` dalam mod 2 halaman).
+  4. `components/pamphlet/viewer/flipbook-view.tsx`:
+     - Menerima `isTwoPageSpread` terus daripada induk (dengan sandaran `resolveIsTwoPageSpread`), menyeragamkan `ResizeObserver` kepada `clientWidth`/`clientHeight`, menurunkan `minWidth: 80` / `minHeight: 100` pada `PageFlip`, serta memperuntukkan zon bar bawah secara eksplisit (`pt-5 pb-[88px]` + `verticalBreathingRoom: 36px` pada desktop/normal; `pt-2 pb-[68px]` + `verticalBreathingRoom: 20px` pada ketinggian kontena `< 450px`) susulan maklum balas *"rapat sgt dengan buku"* supaya wujud ruang lega kemas antara buku dan bar navigasi bawah (`~45px` pada `1280×540`, `~21px` pada `667×375`).
+  5. `tests/pamphlet.test.ts`:
+     - Menggantikan ujian mock toggle lama dengan 5 ujian unit sebenar bagi `resolveIsTwoPageSpread` dan `formatFlipbookPageLabel` (29/29 lulus dalam `tests/pamphlet.test.ts`).
+- **Status Ujian & Pengesahan**:
+  - `npm test`: 529/529 lulus merentas 53 fail suite.
+  - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat (`eslint .`).
+  - `npm run build`: Binaan Next.js 16.2.6 Turbopack berjaya (36 halaman statik + semua laluan dinamik).
+  - Pengesahan pelayar langsung pada `http://localhost:3000/flipbook` (0 ralat konsol): Desktop `1280×800` (2 halaman `2-3 / 6`, tiada butang toggle `2 Pages`), Mobile Menegak `390×844` (1 halaman `3 / 6`), dan Mobile Melintang `667×375` (2 halaman `2-3 / 6`, `326×244`, sifar pertindihan).
+
+
+## Pembaikan Halaman Sebelumnya Kekal Kelihatan Semasa Selakan 3D ke Kulit Tunggal (`FlipbookView`) - 2026-11-20
+
+- **Punca Isu & Laporan Pengguna**:
+  - Pengguna menghantar tangkapan skrin selakan 3D (`2-3 / 6` -> `1 / 6`) dengan bulatan merah pada halaman kiri (Page 2) yang masih kelihatan penuh di belakang helaian Muka Depan yang sedang diselak, dan bertanya: *"kenapa bila nk 3d flip page last tu masih nampak ya"*.
+  - Pemeriksaan terhadap sumber enjin `page-flip` (`PageCollection.ts`, `HTMLRender.ts`, `FlipCalculation.ts`) mengenal pasti dua punca serentak:
+    1. Dalam mod dwi-halaman dengan `showCover: true` apabila semua halaman ditetapkan kepada `density: 'soft'`, selakan ke kulit tunggal (**`2-3 -> 1`** undur atau **`4-5 -> 6`** mara ke halaman terakhir) menyasarkan hamparan 1-halaman (`spread.length === 1`). `getBottomPage()` dan `getFlippingPage()` mengembalikan elemen DOM yang sama (`bottomPage === flippingPage`), lalu `flippingPage.draw()` menimpa `bottomPage`. Kerana `HTMLRender.drawSoft()` melukis halaman statik (`leftPage` / `rightPage`) tanpa potongan (`simpleDraw`), keseluruhan halaman yang sedang diangkat (Page 2 di kiri atau Page 5 di kanan) kekal terpampang di belakang lipatan, manakala `.stf__outerShadow` dan bayang pentas luaran (`bookWidth`) meninggalkan bayang kotak pada ruang kosong.
+    2. Lapisan tulang tengah (`z-[12]`) yang diletakkan di luar `hostRef` (`relative z-[2]`) dan `.stf__parent` (`transform: translateZ(0)`) terperangkap dalam konteks tindanan berasingan, menyebabkannya memotong secara menegak di atas helaian yang sedang diselak (`z: 15`).
+- **Tindakan Pembaikan**:
+  1. `lib/pamphlets/flip-geometry.ts`:
+     - Membina fungsi tulen `computeSoloCoverCloseGeometry` yang mengira poligon `clip-path` kawasan masih rata (pelengkap tepat bagi garisan lipatan daripada `topIntersectPoint`, `sideIntersectPoint`, `bottomIntersectPoint` untuk kedua-dua arah `back` dan `forward`) serta sempadan bayang dinamik (`shadowLeft`, `shadowWidth`, `flatExtent`).
+  2. `components/pamphlet/viewer/flipbook-view.tsx`:
+     - Membalut `render.drawFrame` bagi keadaan `orientation === 'landscape' && flippingPage && bottomPage === flippingPage && density === 'soft'` supaya halaman yang diangkat (`leftPage` / `rightPage`) dipotong kemas tepat di garisan lipatan (`clipPath` + `webkitClipPath`), `.stf__outerShadow` disembunyikan pada ruang kosong, dan `perimeterShadowRef` / `groundShadowRef` mengecut lancar secara masa nyata (`transition: none`) mengikut garisan lipatan tanpa kelipan 1-bingkai (mengemas kini `stageLayoutRef` secara segerak dalam acara `'flip'`).
+     - Memindahkan elemen tulang tengah (`stf__center-spine`) terus ke dalam `.stf__block` (`getUI().getDistElement()`) pada `z-index: 14` (`startZIndex + 4`) berpandukan `render.getRect()` supaya berada di atas halaman statik (`11`/`13`) dan di bawah helaian sedang diselak (`15`), serta pudar lancar semasa kulit ditutup.
+     - Memastikan `bookWidth === pageWidth * 2` tepat pada mod dwi-halaman.
+  3. `tests/pamphlet.test.ts`:
+     - Menambah 5 ujian unit `computeSoloCoverCloseGeometry` merangkumi arah `back` (`2-3 -> 1`), arah `forward` (`4-5 -> 6`), lipatan bucu atas/bawah, penyempitan sempadan (*clamping*), dan bingkai penutup penuh (27/27 ujian dalam `tests/pamphlet.test.ts` lulus).
+- **Status Ujian & Pengesahan**:
+  - `npm test`: 527/527 lulus merentas 53 fail suite.
+  - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat (`eslint .`).
+  - `npm run build`: Binaan Next.js 16.2.6 Turbopack berjaya (36 halaman statik + semua laluan dinamik).
+  - Pengesahan pelayar langsung pada `http://localhost:3000/flipbook` (`1280x800`, 0 ralat konsol): tangkapan skrin seretan aktif pada `2-3 -> 1` dan `4-5 -> 6` mengesahkan sifar sisa halaman di ruang kosong, sifar kotak bayang hantu, dan tulang tengah kekal kemas di bawah helaian yang diselak.
+
+
 ## Pembaikan Pemotongan Bahagian Atas Thumbnail dalam `Page List` (`ThumbnailsStrip`) - 2026-11-19
 
 - **Punca Isu & Laporan Pengguna**:

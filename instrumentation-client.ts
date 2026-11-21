@@ -1,16 +1,29 @@
 // Next.js 16 / Sentry v10 load client-side instrumentation from this file.
-// When Sentry is unconfigured (e.g. local dev without DSN), we avoid loading
-// the heavy Sentry bundle upfront so execution time stays well under Next.js 16ms threshold.
-const hasSentry = Boolean(process.env.NEXT_PUBLIC_SENTRY_DSN);
+// Defer Sentry initialization off the critical pre-hydration path so this hook
+// stays well under Next.js's 16ms budget in both development and production.
+const shouldInitSentry =
+  Boolean(process.env.NEXT_PUBLIC_SENTRY_DSN) &&
+  (process.env.NODE_ENV === 'production' ||
+    process.env.NEXT_PUBLIC_SENTRY_ENABLE_DEV === 'true');
 
-if (hasSentry) {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  require('./sentry.client.config');
+let captureTransition: ((href: string, navigationType: string) => void) | null = null;
+
+if (shouldInitSentry && typeof window !== 'undefined') {
+  const bootSentry = () => {
+    void Promise.all([import('./sentry.client.config'), import('@sentry/nextjs')]).then(
+      ([, Sentry]) => {
+        captureTransition = Sentry.captureRouterTransitionStart;
+      }
+    );
+  };
+
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(bootSentry, { timeout: 2000 });
+  } else {
+    setTimeout(bootSentry, 0);
+  }
 }
 
-export const onRouterTransitionStart = hasSentry
-  ? // eslint-disable-next-line @typescript-eslint/no-require-imports
-    require('@sentry/nextjs').captureRouterTransitionStart
-  : undefined;
-
-
+export function onRouterTransitionStart(href: string, navigationType: string): void {
+  captureTransition?.(href, navigationType);
+}

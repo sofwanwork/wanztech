@@ -5,6 +5,14 @@ const nextConfig: NextConfig = {
   images: {
     // unoptimized: true, // Enabled Image Optimization
   },
+  async rewrites() {
+    return [
+      {
+        source: '/favicon.ico',
+        destination: '/icon',
+      },
+    ];
+  },
   async redirects() {
     return [
       {
