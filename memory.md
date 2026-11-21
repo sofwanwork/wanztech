@@ -20,6 +20,7 @@
   - `npm run lint`: 0 ralat (`eslint .`).
   - `npm run build`: Binaan Next.js 16.2.6 Turbopack berjaya (36 halaman statik + semua laluan dinamik).
   - Pengesahan pelayar langsung pada `http://localhost:3000/flipbook` (`1280×800`, 0 ralat konsol): `1 / 6` (L `0px`, R `12px`), `2-3 / 6` (L `2px`, R `10px`), `4-5 / 6` (L `10px`, R `2px`), dan `6 / 6` (L `12px`, R `0px`).
+- **Vercel Production Deployment (2026-11-21)**: Deployment `dpl_nYwnw3ghbwq7UWWwG3tUJ6ETBuoi` pushed live to `https://www.klikform.com` (`https://klikform-gznk1njxt-sofwan-jailanis-projects.vercel.app`). Commit `9e0fdd0` active on `origin/master`.
 
 
 ## Pembaikan Amaran `Slow execution` `instrumentation-client.ts` & Ralat `404 /favicon.ico` - 2026-11-20
