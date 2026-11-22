@@ -1,5 +1,7 @@
 import { CertificateElement, CertificateCategory } from '@/lib/types';
 
+export type CertificateOrientation = 'landscape' | 'portrait';
+
 export interface CertificatePreset {
   id: string;
   name: string;
@@ -16,7 +18,7 @@ export const CERTIFICATE_PRESETS: CertificatePreset[] = [
   {
     id: 'blank',
     name: 'Blank Canvas',
-    description: 'Start from scratch with standard text layout.',
+    description: 'Start from scratch or upload your own background.',
     category: 'other',
     width: 1123,
     height: 794,
@@ -1069,4 +1071,142 @@ export const CERTIFICATE_PRESETS: CertificatePreset[] = [
 
 export function getPresetById(id: string): CertificatePreset | undefined {
   return CERTIFICATE_PRESETS.find((p) => p.id === id);
+}
+
+export function adaptElementsForOrientation(
+  elements: CertificateElement[],
+  sourceWidth: number,
+  sourceHeight: number,
+  orientation: CertificateOrientation
+): { width: number; height: number; elements: CertificateElement[] } {
+  const isSourcePortrait = sourceHeight > sourceWidth;
+  const wantPortrait = orientation === 'portrait';
+
+  if (isSourcePortrait === wantPortrait) {
+    return { width: sourceWidth, height: sourceHeight, elements };
+  }
+
+  const nextWidth = sourceHeight;
+  const nextHeight = sourceWidth;
+  const ratioX = nextWidth / sourceWidth;
+  const ratioY = nextHeight / sourceHeight;
+
+  const adapted = elements.map((el) => {
+    // Preserve inset margins for full-canvas decorative borders
+    if (
+      el.type === 'shape' &&
+      el.shapeType === 'rectangle' &&
+      el.width >= sourceWidth * 0.85 &&
+      el.height >= sourceHeight * 0.85
+    ) {
+      const insetX = sourceWidth - el.width;
+      const insetY = sourceHeight - el.height;
+      return {
+        ...el,
+        x: Math.round(nextWidth / 2),
+        y: Math.round(nextHeight / 2),
+        width: Math.max(40, nextWidth - insetX),
+        height: Math.max(40, nextHeight - insetY),
+      };
+    }
+
+    // Preserve full-width horizontal accent bars pinned near top/bottom edge
+    if (
+      el.type === 'shape' &&
+      el.shapeType === 'rectangle' &&
+      el.width >= sourceWidth * 0.9 &&
+      el.height < sourceHeight * 0.2
+    ) {
+      const nextY =
+        el.y < sourceHeight * 0.2
+          ? el.y
+          : el.y > sourceHeight * 0.8
+            ? nextHeight - (sourceHeight - el.y)
+            : Math.round(el.y * ratioY);
+      return {
+        ...el,
+        x: Math.round(nextWidth / 2),
+        y: nextY,
+        width: nextWidth,
+      };
+    }
+
+    // Preserve full-height vertical accent bars pinned near left/right edge
+    if (
+      el.type === 'shape' &&
+      el.shapeType === 'rectangle' &&
+      el.height >= sourceHeight * 0.9 &&
+      el.width < sourceWidth * 0.2
+    ) {
+      const nextX =
+        el.x < sourceWidth * 0.2
+          ? el.x
+          : el.x > sourceWidth * 0.8
+            ? nextWidth - (sourceWidth - el.x)
+            : Math.round(el.x * ratioX);
+      return {
+        ...el,
+        x: nextX,
+        y: Math.round(nextHeight / 2),
+        height: nextHeight,
+      };
+    }
+
+    const nextX = Math.round(el.x * ratioX);
+    const nextY = Math.round(el.y * ratioY);
+
+    if (el.type === 'shape' && el.shapeType === 'line') {
+      return {
+        ...el,
+        x: nextX,
+        y: nextY,
+        width: Math.max(80, Math.round(el.width * ratioX)),
+      };
+    }
+
+    if (el.type === 'text' || el.type === 'placeholder') {
+      const maxTextWidth = Math.max(160, nextWidth - 110);
+      const scaledWidth = Math.min(maxTextWidth, Math.max(140, Math.round(el.width * ratioX)));
+      const scaledFontSize =
+        el.fontSize && el.fontSize >= 32
+          ? Math.max(24, Math.round(el.fontSize * 0.85))
+          : el.fontSize;
+      const halfW = scaledWidth / 2;
+      const clampedX = Math.min(nextWidth - halfW - 24, Math.max(halfW + 24, nextX));
+
+      return {
+        ...el,
+        x: Math.round(clampedX),
+        y: nextY,
+        width: scaledWidth,
+        ...(scaledFontSize !== undefined ? { fontSize: scaledFontSize } : {}),
+      };
+    }
+
+    return {
+      ...el,
+      x: nextX,
+      y: nextY,
+    };
+  });
+
+  return { width: nextWidth, height: nextHeight, elements: adapted };
+}
+
+export function resolvePresetForOrientation(
+  preset: CertificatePreset,
+  orientation: CertificateOrientation
+): CertificatePreset {
+  const adapted = adaptElementsForOrientation(
+    preset.elements,
+    preset.width,
+    preset.height,
+    orientation
+  );
+  return {
+    ...preset,
+    width: adapted.width,
+    height: adapted.height,
+    elements: adapted.elements,
+  };
 }

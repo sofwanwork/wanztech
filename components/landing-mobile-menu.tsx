@@ -3,8 +3,10 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Menu, CreditCard, LogIn, UserPlus, Users, FileSpreadsheet, Award, Link as LinkIcon, QrCode, Sparkles, Layers } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { Menu, Home, CreditCard, LogIn, UserPlus, Users, FileSpreadsheet, Award, Link as LinkIcon, QrCode, Sparkles, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import {
     Sheet,
     SheetContent,
@@ -15,6 +17,8 @@ import {
 
 export function LandingMobileMenu() {
     const [open, setOpen] = useState(false);
+    const pathname = usePathname();
+    const isHome = pathname === '/';
 
     return (
         <div className="md:hidden">
@@ -32,7 +36,11 @@ export function LandingMobileMenu() {
 
                     {/* Header */}
                     <div className="p-5 border-b border-slate-200/80 flex items-center justify-between bg-slate-50/60">
-                        <div className="flex items-center gap-2 font-bold text-lg">
+                        <Link
+                            href="/"
+                            onClick={() => setOpen(false)}
+                            className="flex items-center gap-2 font-bold text-lg rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-900"
+                        >
                             <div className="relative h-7 w-7 rounded-md overflow-hidden">
                                 <Image
                                     src="/logo.png"
@@ -45,12 +53,37 @@ export function LandingMobileMenu() {
                             <span className="tracking-tight text-slate-900">
                                 <span className="text-violet-900">Klik</span>Form
                             </span>
-                        </div>
+                        </Link>
                     </div>
 
                     {/* Menu Items */}
-                    <div className="flex-1 overflow-y-auto py-5 px-4">
+                    <div className="flex-1 overflow-y-auto py-4 px-4 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                         <nav className="flex flex-col gap-1">
+                            <Link
+                                href="/"
+                                className={cn(
+                                    "flex items-center gap-3 p-2 text-sm font-medium rounded-md transition-colors",
+                                    isHome
+                                        ? "bg-violet-50/80 text-violet-900"
+                                        : "text-slate-800 hover:bg-slate-100"
+                                )}
+                                onClick={() => setOpen(false)}
+                            >
+                                <div
+                                    className={cn(
+                                        "h-8 w-8 rounded-md border flex items-center justify-center shrink-0",
+                                        isHome
+                                            ? "bg-violet-100/80 border-violet-200 text-violet-900"
+                                            : "bg-slate-100 border-slate-200 text-slate-700"
+                                    )}
+                                >
+                                    <Home className="h-4 w-4" />
+                                </div>
+                                <span>Home</span>
+                            </Link>
+
+                            <div className="border-t border-slate-200/80 my-2.5" />
+
                             <p className="px-2 text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-1.5 font-semibold">Products</p>
                             
                             <Link

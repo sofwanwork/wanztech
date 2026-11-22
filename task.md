@@ -1,3 +1,110 @@
+# Pengemasan Paparan Telefon (Phone View) Pratonton Interaktif Landing (`LandingHero`) ✅ SELESAI
+
+**Konteks & Permintaan Pengguna**:
+- Pengguna menghantar tangkapan skrin telefon bagi tetingkap pratonton interaktif (`Smart Forms | E-Cert Studio | Google Sheets | KlikBio`) di halaman utama yang menunjukkan 4 tab terpecah 2 baris & `KlikBio` terpotong di tepi kanan, lencana `Live Form` terpecah 2 baris, serta butang `Simulate Submission` & `PDPA consent enforced` berhimpit menjadi 2 baris, lalu meminta: *"kemaskan sikit utk phone view"*.
+
+### Pelan Tindakan Pelaksanaan
+- [x] 1. **Kemas Kini Reka Letak Responsif `LandingHero` ([components/landing/landing-hero.tsx](file:///c:/Users/Sofwan/Desktop/klikform/components/landing/landing-hero.tsx))**:
+  - **Bar Tab Chrome**: Tukar bar tab kepada grid 2×2 simetri pada telefon (`grid grid-cols-2 sm:flex`) dengan `whitespace-nowrap` supaya kesemua 4 tab (`Smart Forms`, `E-Cert Studio`, `Google Sheets`, `KlikBio`) kelihatan penuh tanpa pemotongan atau pemecahan 2 baris, berserta pil URL mini di baris titik tetingkap.
+  - **Tab `Smart Forms`**: Susun lencana `LIVE INTERACTIVE PREVIEW` & `• Live Form` (`whitespace-nowrap shrink-0`) sebaris kemas di atas tajuk penuh, longgarkan padding luar/dalam telefon (`p-3 sm:p-6`, `p-4 sm:p-6`), dan susun footer menegak pada telefon (`flex-col-reverse sm:flex-row`) dengan butang `Simulate Submission` lebar penuh 1 baris (`w-full sm:w-auto h-10 sm:h-8 whitespace-nowrap`).
+  - **Tab `E-Cert Studio`, `Google Sheets`, & `KlikBio`**: Selaraskan susunan kawalan, footer sijil/QR, header & jadual Google Sheets (`whitespace-nowrap` + `no-scrollbar`), serta nota bawah agar kekal kemas pada skrin 360px–390px.
+- [x] 2. **Pengesahan & Dokumentasi**:
+  - Jalankan `npm run typecheck`, `npm run lint`, dan `npm test` (534/534 lulus).
+  - Kemas kini `task.md` dan `memory.md`.
+
+### Seksyen Reviu
+- **Pratonton Interaktif Bebas Himpitan pada Telefon**: Semua 4 tab, lencana status, dan butang tindakan kini tampil 1 baris yang kemas, seimbang, dan mesra sentuhan pada paparan telefon tanpa mengubah reka letak desktop.
+
+---
+
+# Penambahan Pautan Kembali ke `Home` dalam Menu Mudah Alih Landing (`LandingMobileMenu`) ✅ SELESAI
+
+**Konteks & Laporan Pengguna**:
+- Pengguna berkongsi tangkapan skrin drawer menu mudah alih landing dan bertanya: *"macam mana nk balik ke home?"*.
+- Dalam [landing-mobile-menu.tsx](file:///c:/Users/Sofwan/Desktop/klikform/components/landing-mobile-menu.tsx), logo **KlikForm** pada pengepala drawer hanya `<div>` statik (tidak boleh diklik) dan tiada pautan `Home` di dalam senarai menu.
+
+### Pelan Tindakan Pelaksanaan
+- [x] 1. **Kemas Kini `LandingMobileMenu` ([components/landing-mobile-menu.tsx](file:///c:/Users/Sofwan/Desktop/klikform/components/landing-mobile-menu.tsx))**:
+  - Jadikan logo **KlikForm** pada pengepala drawer sebagai `<Link href="/">` yang menutup menu bila diklik.
+  - Tambah item menu **`Home`** (dengan ikon `Home` dan sorotan laluan aktif `usePathname() === '/'`) di bahagian paling atas senarai navigasi.
+  - Tambah `no-scrollbar` pada senarai skrol menu.
+- [x] 2. **Pengesahan & Dokumentasi**:
+  - Jalankan `npm run typecheck`, `npm run lint`, dan `npm test` (534/534 lulus).
+  - Kemas kini `task.md` dan `memory.md`.
+
+### Seksyen Reviu
+- **Navigasi Kembali ke Home Jelas**: Pengguna mudah alih kini boleh kembali ke halaman utama (`/`) terus dari dalam drawer sama ada melalui item **`Home`** di bahagian atas menu atau dengan mengetik logo **KlikForm**.
+
+---
+
+# Pembaikan Gelang Fokus Ungu Automatik pada Butang Tutup `×` (`Sheet` & `Dialog`) ✅ SELESAI
+
+**Konteks & Laporan Pengguna**:
+- Pengguna berkongsi tangkapan skrin menu mudah alih landing (`LandingMobileMenu`) dengan bulatan merah pada butang tutup `×` di bucu atas kanan yang mempunyai gelang ungu (`ring-2 ring-ring`) sebaik sahaja drawer dibuka, dan bertanya: *"kenapa active ya?"*.
+- **Punca Akar**:
+  - Dalam `LandingMobileMenu`, kesemua pautan menu dan butang `Login` / `Sign Up Free` (`asChild <Link>`) adalah elemen `<a>`. Apabila `Sheet` dibuka, `@radix-ui/react-focus-scope` menjalankan `focusFirst(removeLinks(getTabbableCandidates(container)))` yang melangkau elemen `<a>`, lalu memfokuskan satu-satunya elemen `<button>` iaitu butang tutup `×`.
+  - Di [sheet.tsx](file:///c:/Users/Sofwan/Desktop/klikform/components/ui/sheet.tsx#L69) dan [dialog.tsx](file:///c:/Users/Sofwan/Desktop/klikform/components/ui/dialog.tsx#L65), kelas lalai `focus:ring-2 focus:ring-ring focus:ring-offset-2` menggunakan `:focus` (aktif pada semua fokus programatik termasuk klik tetikus/sentuhan), bukan `:focus-visible`.
+
+### Pelan Tindakan Pelaksanaan
+- [x] 1. **Tukar `focus:ring-*` ke `focus-visible:ring-*` ([components/ui/sheet.tsx](file:///c:/Users/Sofwan/Desktop/klikform/components/ui/sheet.tsx), [components/ui/dialog.tsx](file:///c:/Users/Sofwan/Desktop/klikform/components/ui/dialog.tsx))**:
+  - Tukar kelas pada `SheetPrimitive.Close` dan `DialogPrimitive.Close` kepada `focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2` (+ `cursor-pointer`) sambil mengekalkan `focus:outline-hidden` agar klik/sentuhan kekal bersih manakala navigasi papan kekunci (`Tab`) masih memaparkan penunjuk fokus WCAG.
+- [x] 2. **Pengesahan & Dokumentasi**:
+  - Jalankan `npm run typecheck`, `npm run lint`, dan `npm test` (534/534 lulus).
+  - Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
+
+### Seksyen Reviu
+- **Tiada Gelang Fokus Palsu pada Klik/Sentuhan**: Membuka menu mudah alih atau sebarang modal menggunakan tetikus/sentuhan kini tidak lagi memaparkan kotak/gelang fokus ungu pada butang `×`, sambil mengekalkan aksesibiliti penuh bagi pengguna papan kekunci.
+
+---
+
+# Penyederhanaan Aliran Penciptaan & Senarai E-Cert Builder (Buang Kategori Wajib, Tambah Orientasi A4 & Carian) ✅ SELESAI
+
+**Konteks & Permintaan Pengguna**:
+- Pengguna berkongsi tangkapan skrin modal **Create New Certificate** (2 tab: *Pre-Built Presets* dengan label `CATEGORY: ...` + *Blank Categories* dengan 5 kategori kosong identik) serta bar filter 6 kategori di belakangnya, bertanya: *"macam pening pulak bila ada byk kategori utk sijil, apa cadangan awak?"*, lalu mengesahkan: *"proceed dengan cadangan utama"*.
+
+### Pelan Tindakan Pelaksanaan
+- [x] 1. **Penyesuaian Orientasi A4 pada Preset ([lib/certificates/presets.ts](file:///c:/Users/Sofwan/Desktop/klikform/lib/certificates/presets.ts), [actions/certificate-template.ts](file:///c:/Users/Sofwan/Desktop/klikform/actions/certificate-template.ts))**:
+  - Tambah `CertificateOrientation` (`'landscape' | 'portrait'`), `adaptElementsForOrientation`, dan `resolvePresetForOrientation` yang melaraskan sempadan bingkai penuh, bar mendatar/menegak, garisan, teks, dan kedudukan secara kemas apabila mencipta sijil dalam orientasi `A4 Portrait` (`794×1123`) atau `A4 Landscape` (`1123×794`).
+  - Terima `orientation` dalam `createCertificateTemplateAction` sambil mengekalkan nilai lalai `category` secara senyap di belakang tabir untuk keserasian penuh pangkalan data dan ciri *Certificate by Category* dalam Form Builder.
+- [x] 2. **Modal 1-Skrin Tanpa Tab Kategori ([components/certificates/new-certificate-dialog.tsx](file:///c:/Users/Sofwan/Desktop/klikform/components/certificates/new-certificate-dialog.tsx))**:
+  - Buang tab *Blank Categories* dan semua label `CATEGORY: ...` pada kad preset.
+  - Tambah pemilih **Paper Orientation** (*Landscape* / *Portrait*) dan pratonton mini orientasi dinamik bagi keenam-enam templat permulaan (*Blank Canvas* + 5 preset) dalam tema Midnight Violet (`violet-900`, `rounded-lg`/`rounded-md`).
+- [x] 3. **Senarai E-Cert Builder Tanpa Filter Kategori & Dengan Carian ([app/(dashboard)/certificates/builder/page.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/(dashboard)/certificates/builder/page.tsx), [components/certificates/certificate-templates-grid.tsx](file:///c:/Users/Sofwan/Desktop/klikform/components/certificates/certificate-templates-grid.tsx), [components/certificates/certificate-template-card.tsx](file:///c:/Users/Sofwan/Desktop/klikform/components/certificates/certificate-template-card.tsx))**:
+  - Buang 6 pil penapis kategori (`All | School | Corporate | Training | Event | Other`) dan lencana kategori atas bucu thumbnail kad.
+  - Tambah kotak carian segera ikut nama sijil (`Search certificates...`) dengan butang kosongkan dan kiraan templat.
+- [x] 4. **Ujian & Pengesahan ([tests/certificate-presets.test.ts](file:///c:/Users/Sofwan/Desktop/klikform/tests/certificate-presets.test.ts))**:
+  - Tambah ujian unit `resolvePresetForOrientation` untuk kesemua 6 preset dalam orientasi `landscape` dan `portrait`.
+  - Jalankan `npm run typecheck`, `npm run lint`, `npm test` (534/534 lulus), dan `npm run build`.
+  - Kemas kini `task.md` dan `memory.md`.
+
+### Seksyen Reviu
+- **Pengalaman Cipta Sijil Ringkas & Jelas**: Pengguna kini terus memilih orientasi (*Landscape* / *Portrait*) dan reka letak permulaan daripada satu paparan bersih tanpa terkeliru antara tab *Blank Categories* dan label kategori preset, manakala halaman senarai E-Cert Builder kini lebih lapang dengan carian pantas ikut nama.
+
+---
+
+# Pembaikan Bar Zum Terapung (Floating Zoom Bar) Certificate Builder Terikut Skrol ✅ SELESAI
+
+**Konteks & Laporan Pengguna**:
+- Pengguna berkongsi tangkapan skrin kanvas Certificate Builder pada mod zum `100%` (orientasi potret A4) yang membulatkan bar zum terapung (`- | 100% | + | 100%`) berada di tengah-tengah sijil ketika diskrol, dan bertanya: *"kenapa bila scroll dia macam ni ya, tak kekalkan di bawah"*.
+- **Punca Akar**:
+  - Dalam [app/(dashboard)/certificates/builder/[id]/client.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/(dashboard)/certificates/builder/[id]/client.tsx), bar zum terapung (`absolute bottom-20 md:bottom-4 left-1/2 -translate-x-1/2`) diletakkan **terus di dalam** kontena skrol kanvas (`overflow-auto relative`).
+  - Mengikut spesifikasi CSS, elemen `position: absolute` di dalam kontena skrol (`overflow: auto; position: relative`) disandarkan pada kotak awal kandungan (`scrollTop = 0, scrollLeft = 0`) dan bergerak naik/melintang bersama kandungan apabila pengguna menatal kanvas yang lebih besar daripada ruang paparan (contohnya `100%` pada A4 potret).
+
+### Pelan Tindakan Pelaksanaan
+- [x] 1. **Asingkan Kontena Sauh Viewport dan Kontena Skrol ([app/(dashboard)/certificates/builder/[id]/client.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/(dashboard)/certificates/builder/[id]/client.tsx))**:
+  - Jadikan kontena luar (`ref={containerRef}`) sebagai sauh viewport tidak berskrol (`flex-1 min-w-0 min-h-0 relative bg-slate-100/90 select-none overflow-hidden`) supaya `ResizeObserver` stabil tanpa kelipan bar skrol dan bar zum sentiasa terpaku pada bahagian bawah ruang kanvas.
+  - Letakkan kontena skrol kanvas sebagai anak berasingan (`absolute inset-0 z-0 overflow-auto`) dengan pembalut dalaman (`min-w-full min-h-full w-max flex items-center justify-center p-3 sm:p-4 md:p-6 pb-32 md:pb-20`) supaya bahagian bawah sijil boleh diskrol melepasi bar zum tanpa bertindih serta mengasingkan tindanan kanvas (`z-40`/`z-50`) di dalam konteks `z-0`.
+  - Kekalkan bar zum terapung sebagai adik-beradik langsung kontena skrol (`absolute bottom-20 md:bottom-5 left-1/2 -translate-x-1/2 z-30`) supaya kekal melekat di tengah bawah viewport semasa skrol menegak mahupun mendatar (termasuk ruang selamat di atas bar skrol mendatar Windows).
+  - Selaraskan `padX` / `padY` dalam `fitScale` supaya sepadan dengan kontena sauh luar (`isMobileViewport = screenW < 768`, `padY: 148 / 112`) dan tiada bar skrol atau pertindihan dalam mod `Fit`.
+- [x] 2. **Pengesahan & Dokumentasi**:
+  - Jalankan `npm run typecheck`, `npm run lint`, `npm test`, dan `npm run build`.
+  - Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
+
+### Seksyen Reviu
+- **Bar Zum Kekal Terpaku di Bawah**: Mengasingkan kontena sauh (`relative overflow-hidden`) daripada viewport berskrol (`absolute inset-0 z-0 overflow-auto`) memastikan kapsul zum sentiasa berada di bahagian bawah-tengah ruang kanvas pada sebarang tahap zum dan kedudukan skrol, di samping memberi ruang lega bawah (`pb-32 md:pb-20`) agar elemen di bahagian bawah sijil tidak terlindung.
+
+---
+
 # Ketebalan Tindanan Helaian Dinamik Kiri & Kanan 3D Flipbook (`FlipbookView`) ✅ SELESAI
 
 **Konteks & Permintaan Pengguna**:

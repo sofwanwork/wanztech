@@ -3,7 +3,6 @@
 import { useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { FileImage, Copy, Loader2, Sparkles } from 'lucide-react';
 import { cloneCertificateTemplateAction } from '@/actions/certificate-template';
@@ -69,18 +68,6 @@ export function CertificateTemplateCard({ template }: CertificateTemplateCardPro
           {!isLoading && (
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <span className="text-white font-medium">Edit</span>
-            </div>
-          )}
-
-          {/* Category Badge (Overlay) */}
-          {template.category && (
-            <div className="absolute top-2 right-2">
-              <Badge
-                variant="secondary"
-                className="bg-white/95 text-[10px] font-mono font-semibold shadow-2xs text-slate-800 rounded px-2 py-0.5 border border-slate-200/80"
-              >
-                {template.category.charAt(0).toUpperCase() + template.category.slice(1)}
-              </Badge>
             </div>
           )}
         </div>

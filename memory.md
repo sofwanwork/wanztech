@@ -1,5 +1,92 @@
 # Project Memory
 
+## Pengemasan Paparan Telefon (Phone View) Pratonton Interaktif Landing (`LandingHero`) - 2026-11-23
+
+- **Konteks & Permintaan Pengguna**:
+  - Pengguna berkongsi tangkapan skrin telefon bagi tetingkap pratonton interaktif di halaman utama dan meminta: *"kemaskan sikit utk phone view"*.
+  - Pada lebar telefon (`360px–390px`), bar 4 tab (`Smart Forms`, `E-Cert Studio`, `Google Sheets`, `KlikBio`) berhimpit kepada 2 baris dengan `KlikBio` terpotong di tepi kanan, lencana `Live Form` pecah 2 baris, dan footer borang (`PDPA consent enforced` + butang `Simulate Submission`) terhimpit kepada 2 baris.
+- **Tindakan Pembaikan**:
+  - `components/landing/landing-hero.tsx`:
+    1. Menukar bar tab kepada grid 2×2 kemas pada mudah alih (`grid grid-cols-2 sm:flex`, `whitespace-nowrap`) supaya semua 4 tab terpapar penuh tanpa terpotong dan kembali menjadi 1 baris pada desktop, serta menampilkan pil URL ringkas sebaris dengan titik tetingkap.
+    2. Mengemas padding kontena pada mudah alih (`p-3 sm:p-6 md:p-8`, kad `p-4 sm:p-6`).
+    3. Dalam tab `Smart Forms`, meletakkan lencana `LIVE INTERACTIVE PREVIEW` & `Live Form` (`whitespace-nowrap shrink-0`) pada satu baris metadata di atas tajuk penuh, serta menyusun footer secara menegak (`flex-col-reverse sm:flex-row`) dengan butang `Simulate Submission` lebar penuh 1 baris (`w-full sm:w-auto h-10 sm:h-8 whitespace-nowrap`).
+    4. Mengemas susunan mudah alih pada tab `E-Cert Studio` (kawalan, footer QR/tarikh, nota bawah), `Google Sheets` (butang `Simulate New Row`, jadual `whitespace-nowrap` + `no-scrollbar`, footer), dan `KlikBio`.
+- **Status Ujian & Pengesahan**:
+  - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat (`eslint .`).
+  - `npm test`: 534/534 lulus merentas 53 fail suite (`vitest run`).
+
+
+## Penambahan Pautan Kembali ke `Home` dalam Menu Mudah Alih Landing (`LandingMobileMenu`) - 2026-11-23
+
+- **Konteks & Laporan Pengguna**:
+  - Pengguna berkongsi tangkapan skrin drawer menu mudah alih landing dan bertanya: *"macam mana nk balik ke home?"*.
+  - Dalam `components/landing-mobile-menu.tsx`, logo **KlikForm** pada pengepala drawer adalah `<div>` tidak boleh diklik dan tiada pautan `Home` dalam senarai menu.
+- **Tindakan Pembaikan**:
+  - `components/landing-mobile-menu.tsx`:
+    1. Menukar logo **KlikForm** pada pengepala drawer menjadi `<Link href="/" onClick={() => setOpen(false)}>`.
+    2. Menambah item navigasi **`Home`** dengan ikon `Home` serta sorotan laluan aktif (`usePathname() === '/'`) di bahagian paling atas senarai menu, berserta `no-scrollbar`.
+- **Status Ujian & Pengesahan**:
+  - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat (`eslint .`).
+  - `npm test`: 534/534 lulus merentas 53 fail suite (`vitest run`).
+
+
+## Pembaikan Gelang Fokus Ungu Automatik pada Butang Tutup `×` (`Sheet` & `Dialog`) - 2026-11-23
+
+- **Punca Isu & Laporan Pengguna**:
+  - Pengguna menghantar tangkapan skrin drawer menu mudah alih landing (`LandingMobileMenu`) dengan bulatan merah pada butang tutup `×` yang mempunyai gelang fokus ungu sebaik dibuka, dan bertanya: *"kenapa active ya?"*.
+  - Apabila `Sheet` dibuka, `@radix-ui/react-focus-scope` memanggil `focusFirst(removeLinks(getTabbableCandidates(container)))` yang melangkau semua pautan `<a>` (`Online Forms`, `Pricing & Plans`, `Login`, `Sign Up Free`), lalu memberi fokus automatik kepada satu-satunya `<button>` iaitu butang tutup `×`. Kelas lalai `focus:ring-2 focus:ring-ring focus:ring-offset-2` pada `SheetPrimitive.Close` dan `DialogPrimitive.Close` memaparkan gelang ungu walaupun dibuka melalui klik/sentuhan.
+- **Tindakan Pembaikan**:
+  - `components/ui/sheet.tsx` & `components/ui/dialog.tsx`: Menukar `focus:ring-ring focus:ring-2 focus:ring-offset-2` kepada `focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2` (+ `cursor-pointer`) supaya gelang fokus hanya muncul untuk navigasi papan kekunci (`Tab`), bukan apabila dibuka melalui klik atau sentuhan.
+- **Status Ujian & Pengesahan**:
+  - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat (`eslint .`).
+  - `npm test`: 534/534 lulus merentas 53 fail suite (`vitest run`).
+
+
+## Penyederhanaan Aliran Penciptaan & Senarai E-Cert Builder (Buang Kategori Wajib, Tambah Orientasi A4 & Carian) - 2026-11-23
+
+- **Konteks & Permintaan Pengguna**:
+  - Pengguna berkongsi tangkapan skrin modal **Create New Certificate** (2 tab: *Pre-Built Presets* dengan label `CATEGORY: ...` + *Blank Categories* dengan 5 kategori kosong identik) bersama 6 pil filter kategori di `/certificates/builder`, bertanya: *"macam pening pulak bila ada byk kategori utk sijil, apa cadangan awak?"*, dan bersetuju: *"proceed dengan cadangan utama"*.
+- **Tindakan Pembaikan**:
+  1. `lib/certificates/presets.ts`:
+     - Tambah `CertificateOrientation` (`'landscape' | 'portrait'`), `adaptElementsForOrientation`, dan `resolvePresetForOrientation` untuk melaraskan kesemua 6 starter preset (`Blank Canvas`, `Royal Gold`, `Corporate Blue`, `Academic Classic`, `Modern Training`, `Luxury Dark`) secara kemas ke dalam dimensi A4 Portrait (`794×1123`) atau A4 Landscape (`1123×794`) termasuk pemeliharaan margin bingkai penuh, bar mendatar/menegak, garisan, dan lebar teks.
+  2. `actions/certificate-template.ts`:
+     - Terima `orientation` daripada `FormData` dalam `createCertificateTemplateAction` dan gunakan `resolvePresetForOrientation` / `adaptElementsForOrientation`, sambil mengekalkan nilai lalai `category` secara senyap di belakang tabir bagi keserasian penuh pangkalan data dan ciri *Certificate by Category* dalam Form Builder.
+  3. `components/certificates/new-certificate-dialog.tsx`:
+     - Permudahkan kepada modal 1-skrin tanpa tab *Blank Categories* dan tanpa label `CATEGORY: ...`.
+     - Tambah pemilih **Paper Orientation** (*Landscape* / *Portrait*) dan pratonton mini orientasi dinamik bagi kesemua 6 starter layout dengan tema Midnight Violet (`violet-900`, `rounded-lg`/`rounded-md`).
+  4. `app/(dashboard)/certificates/builder/page.tsx`, `components/certificates/certificate-templates-grid.tsx`, & `components/certificates/certificate-template-card.tsx`:
+     - Buang 6 pil filter kategori (`All | School | Corporate | Training | Event | Other`) dan lencana kategori di bucu thumbnail kad.
+     - Tambah komponen klien `CertificateTemplatesGrid` dengan kotak carian segera ikut nama (`Search certificates...`), kiraan templat, dan grid responsif `lg:grid-cols-3 2xl:grid-cols-4`.
+  5. `tests/certificate-presets.test.ts`:
+     - Tambah ujian unit `resolvePresetForOrientation` bagi kesemua 6 preset dalam orientasi `landscape` dan `portrait` (15/15 lulus dalam `tests/certificate-presets.test.ts`).
+- **Status Ujian & Pengesahan**:
+  - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat (`eslint .`).
+  - `npm test`: 534/534 lulus merentas 53 fail suite (`vitest run`).
+  - `npm run build`: Binaan produksi Next.js 16.2.6 Turbopack berjaya sepenuhnya (36 halaman statik + semua laluan dinamik).
+
+
+## Pembaikan Bar Zum Terapung (Floating Zoom Bar) Certificate Builder Terikut Skrol - 2026-11-23
+
+- **Punca Isu & Laporan Pengguna**:
+  - Pengguna berkongsi tangkapan skrin kanvas Certificate Builder (`100%` zoom, A4 potret) dengan bulatan merah pada bar zum terapung (`- | 100% | + | 100%`) yang terapung di tengah sijil ketika diskrol, dan bertanya: *"kenapa bila scroll dia macam ni ya, tak kekalkan di bawah"*.
+  - Dalam `app/(dashboard)/certificates/builder/[id]/client.tsx`, bar zum terapung (`absolute bottom-20 md:bottom-4 left-1/2 -translate-x-1/2`) diletakkan **di dalam** kontena skrol kanvas (`overflow-auto relative`). Dalam CSS, anak `position: absolute` di dalam kontena `overflow: auto; position: relative` disandarkan pada kotak kandungan awal (`scrollTop = 0, scrollLeft = 0`) dan akan bergerak naik/ke sisi mengikut skrol apabila kanvas melimpah.
+- **Tindakan Pembaikan**:
+  - `app/(dashboard)/certificates/builder/[id]/client.tsx`:
+    1. Menukarkan kontena luar (`ref={containerRef}`) kepada sauh viewport tidak berskrol (`flex-1 min-w-0 min-h-0 relative bg-slate-100/90 select-none overflow-hidden`) supaya `ResizeObserver` stabil dan bar zum sentiasa terpaku pada bahagian bawah ruang kanvas.
+    2. Mengasingkan kontena skrol kanvas ke lapisan dalaman (`absolute inset-0 z-0 overflow-auto`) dengan pembalut pemusatan & padding (`min-w-full min-h-full w-max flex items-center justify-center p-3 sm:p-4 md:p-6 pb-32 md:pb-20`) supaya bahagian bawah sijil boleh diskrol melepasi bar zum dengan selesa serta mengasingkan tindanan dalaman kanvas (`z-40`/`z-50`) dalam konteks `z-0`.
+    3. Mengekalkan bar zum terapung sebagai adik-beradik langsung kontena skrol (`absolute bottom-20 md:bottom-5 left-1/2 -translate-x-1/2 z-30`) supaya kekal terpaku di tengah bawah viewport semasa skrol menegak atau mendatar (dan berada di atas bar skrol mendatar Windows).
+    4. Menyelaraskan pengiraan `padX` / `padY` pada `fitScale` (`isMobileViewport = screenW < 768`, `padY: 148 / 112`) supaya selari dengan dimensi kontena sauh luar dan padding baharu tanpa bar skrol atau pertindihan dalam mod `Fit`.
+- **Status Ujian & Pengesahan**:
+  - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat (`eslint .`).
+  - `npm test`: 532/532 lulus merentas 53 fail suite (`vitest run`).
+  - `npm run build`: Binaan produksi Next.js 16.2.6 Turbopack berjaya sepenuhnya (36 halaman statik + semua laluan dinamik).
+
+
 ## Penyelarasan Penuh Bahasa Inggeris Sejagat (Termasuk Dashboard Admin) - 2026-11-22
 
 - **Konteks & Permintaan Pengguna**:
@@ -36,6 +123,7 @@
   - `npm run lint`: 0 ralat (`eslint .`).
   - `npm test`: 532/532 lulus merentas 53 fail suite (`vitest run`).
   - `npm run build`: Binaan produksi Next.js 16.2.6 Turbopack berjaya sepenuhnya (36 halaman statik + semua laluan dinamik).
+- **Vercel Production Deployment (2026-11-22)**: Deployment `dpl_3hHFwhMUaGE1ntFJhxuWQ8LTQz7x` pushed live to `https://www.klikform.com` (`https://klikform-9cxv44tx8-sofwan-jailanis-projects.vercel.app`). Commit `a252ac6` active on `origin/master`.
 
 
 ## Penyingkiran Bar Skrol Mendatar pada Jadual Klien Admin (`ClientTable` & `Table`) - 2026-11-22

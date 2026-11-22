@@ -1,48 +1,29 @@
 import { getCertificateTemplates } from '@/lib/storage/certificates';
 import { Button } from '@/components/ui/button';
-import { Plus, FileImage } from 'lucide-react';
-import Link from 'next/link';
-import { CertificateTemplateCard } from '@/components/certificates/certificate-template-card';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { Plus, AlertTriangle } from 'lucide-react';
 import { canCreateCertificate } from '@/lib/storage/subscription';
 import { PricingModal } from '@/components/pricing-modal';
-import { AlertTriangle } from 'lucide-react';
 import { NewCertificateDialog } from '@/components/certificates/new-certificate-dialog';
+import { CertificateTemplatesGrid } from '@/components/certificates/certificate-templates-grid';
 
 export const dynamic = 'force-dynamic';
-
-const CATEGORIES = [
-  { id: 'all', label: 'All' },
-  { id: 'school', label: 'School' },
-  { id: 'corporate', label: 'Corporate' },
-  { id: 'training', label: 'Training' },
-  { id: 'event', label: 'Event' },
-  { id: 'other', label: 'Other' },
-];
 
 export default async function CertificateBuilderPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string; error?: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
-  const { category: categoryParam, error: errorParam } = await searchParams;
-  const allTemplates = await getCertificateTemplates();
-  const selectedCategory = categoryParam || 'all';
+  const { error: errorParam } = await searchParams;
+  const templates = await getCertificateTemplates();
   const error = errorParam ? decodeURIComponent(errorParam) : null;
-
   const { allowed } = await canCreateCertificate();
 
-  const templates = allTemplates.filter(
-    (t) => selectedCategory === 'all' || t.category === selectedCategory
-  );
-
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
       {/* Error Alert */}
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5" />
+          <AlertTriangle className="h-5 w-5 shrink-0" />
           <p>{error}</p>
         </div>
       )}
@@ -73,68 +54,8 @@ export default async function CertificateBuilderPage({
         )}
       </div>
 
-      {/* Category Filter */}
-      <div className="flex flex-wrap gap-2">
-        {CATEGORIES.map((cat) => (
-          <Link
-            key={cat.id}
-            href={
-              cat.id === 'all'
-                ? '/certificates/builder'
-                : `/certificates/builder?category=${cat.id}`
-            }
-          >
-            <Badge
-              variant={selectedCategory === cat.id ? 'default' : 'outline'}
-              className={cn(
-                'cursor-pointer px-3 py-1 text-xs font-medium rounded-md transition-colors',
-                selectedCategory === cat.id
-                  ? 'bg-violet-900 text-white hover:bg-violet-950 shadow-xs'
-                  : 'hover:bg-slate-100 border-slate-200 text-slate-600'
-              )}
-            >
-              {cat.label}
-            </Badge>
-          </Link>
-        ))}
-      </div>
-
-      {/* Templates Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {templates.length === 0 ? (
-          <div className="col-span-full flex flex-col items-center justify-center py-24 border border-dashed border-slate-200 rounded-lg bg-slate-50/50">
-            <div className="h-16 w-16 bg-white rounded-lg flex items-center justify-center mb-5 shadow-2xs border border-slate-200">
-              <FileImage className="h-10 w-10 text-primary/60" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2 text-gray-900">
-              No {selectedCategory !== 'all' ? selectedCategory : ''} templates
-            </h3>
-            <p className="text-gray-500 mb-8 text-center text-sm max-w-sm">
-              Start by creating your first certificate template.
-            </p>
-            {allowed ? (
-              <NewCertificateDialog>
-                <Button size="lg" className="bg-violet-900 hover:bg-violet-950 text-white rounded-md shadow-xs">
-                  Create Certificate Now
-                </Button>
-              </NewCertificateDialog>
-            ) : (
-              <PricingModal>
-                <Button
-                  size="lg"
-                  className="bg-violet-900 hover:bg-violet-950 text-white rounded-md shadow-xs"
-                >
-                  Upgrade to Create More
-                </Button>
-              </PricingModal>
-            )}
-          </div>
-        ) : (
-          templates.map((template) => (
-            <CertificateTemplateCard key={template.id} template={template} />
-          ))
-        )}
-      </div>
+      {/* Search & Templates Grid */}
+      <CertificateTemplatesGrid templates={templates} allowed={allowed} />
     </div>
   );
 }

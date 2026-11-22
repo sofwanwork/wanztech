@@ -208,9 +208,9 @@ export function CertificateBuilderClient({
     }
 
     const screenW = window.innerWidth;
-    const isMobile = (containerSize.width > 0 ? containerSize.width : screenW) < 640;
-    const padX = isMobile ? 16 : 40;
-    const padY = isMobile ? 24 : 40;
+    const isMobileViewport = screenW < 768;
+    const padX = screenW < 640 ? 32 : isMobileViewport ? 48 : 64;
+    const padY = isMobileViewport ? 148 : 112;
 
     const effectiveW = containerSize.width > 0 ? Math.min(containerSize.width, screenW) : screenW;
     const effectiveH =
@@ -922,18 +922,23 @@ export function CertificateBuilderClient({
           />
         )}
 
-        {/* Canvas Area */}
+        {/* Canvas Area (Non-scrolling viewport anchor so Floating Zoom Bar stays pinned at bottom) */}
         <div
           ref={containerRef}
-          className="flex-1 min-w-0 min-h-0 overflow-auto p-3 sm:p-4 md:p-6 pb-24 md:pb-6 flex relative bg-slate-100/90 select-none"
-          onClick={() => setSelectedId(null)}
+          className="flex-1 min-w-0 min-h-0 relative bg-slate-100/90 select-none overflow-hidden"
         >
+          {/* Scrollable Canvas Viewport */}
           <div
-            ref={canvasRef}
-            suppressHydrationWarning
-            className={`relative shadow-2xl bg-cover m-auto shrink-0 select-none ${
-              !mounted || isDragging || isResizing ? 'transition-none' : 'transition-[width,height] duration-100'
-            }`}
+            className="absolute inset-0 z-0 overflow-auto"
+            onClick={() => setSelectedId(null)}
+          >
+            <div className="min-w-full min-h-full w-max flex items-center justify-center p-3 sm:p-4 md:p-6 pb-32 md:pb-20">
+              <div
+                ref={canvasRef}
+                suppressHydrationWarning
+                className={`relative shadow-2xl bg-cover shrink-0 select-none ${
+                  !mounted || isDragging || isResizing ? 'transition-none' : 'transition-[width,height] duration-100'
+                }`}
             style={{
               width: `${renderedWidth}px`,
               height: `${renderedHeight}px`,
@@ -1179,11 +1184,13 @@ export function CertificateBuilderClient({
                 style={{ top: `${(y / template.height) * 100}%` }}
               />
             ))}
+              </div>
+            </div>
           </div>
 
           {/* Floating Zoom Bar (Canva/Apple Precision Capsule - Brand Theme) */}
           <div
-            className="absolute bottom-20 md:bottom-4 left-1/2 -translate-x-1/2 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800 shadow-[0_8px_25px_-4px_rgba(124,58,237,0.15),0_2px_8px_-2px_rgba(0,0,0,0.06)] ring-1 ring-primary/20 rounded-full p-1 flex items-center gap-1 z-30 text-xs text-slate-700 transition-all duration-200 select-none"
+            className="absolute bottom-20 md:bottom-5 left-1/2 -translate-x-1/2 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800 shadow-[0_8px_25px_-4px_rgba(124,58,237,0.15),0_2px_8px_-2px_rgba(0,0,0,0.06)] ring-1 ring-primary/20 rounded-full p-1 flex items-center gap-1 z-30 text-xs text-slate-700 transition-all duration-200 select-none"
             onClick={(e) => e.stopPropagation()}
           >
             <button

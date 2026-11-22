@@ -8,7 +8,12 @@ import { createClient } from '@/utils/supabase/server';
 import { TIER_LIMITS } from '@/lib/constants/subscription-tiers';
 
 import { canCreateCertificate, canUpdateCertificate } from '@/lib/storage/subscription';
-import { getPresetById } from '@/lib/certificates/presets';
+import {
+  getPresetById,
+  adaptElementsForOrientation,
+  resolvePresetForOrientation,
+  type CertificateOrientation,
+} from '@/lib/certificates/presets';
 
 const VALID_CATEGORIES: CertificateCategory[] = [
   'school',
@@ -144,19 +149,29 @@ export async function createCertificateTemplateAction(formData: FormData) {
 
     // ── Insert new template ───────────────────────────────────────────────
     const presetId = formData.get('preset') as string | null;
-    const preset = presetId ? getPresetById(presetId) : undefined;
+    const orientationInput = formData.get('orientation') as string | null;
+    const orientation: CertificateOrientation =
+      orientationInput === 'portrait' ? 'portrait' : 'landscape';
+
+    const basePreset = presetId ? getPresetById(presetId) : undefined;
+    const resolvedPreset = basePreset
+      ? resolvePresetForOrientation(basePreset, orientation)
+      : undefined;
+    const fallbackLayout = resolvedPreset
+      ? null
+      : adaptElementsForOrientation(DEFAULT_ELEMENTS, 1123, 794, orientation);
 
     const now = new Date().toISOString();
     const { data, error } = await supabase
       .from('certificate_templates')
       .insert({
         user_id: user.id,
-        name: preset ? preset.name : 'New Certificate',
-        category: preset ? preset.category : category,
-        elements: preset ? preset.elements : DEFAULT_ELEMENTS,
-        background_color: preset ? preset.backgroundColor : '#ffffff',
-        width: preset ? preset.width : 1123,
-        height: preset ? preset.height : 794,
+        name: resolvedPreset ? resolvedPreset.name : 'New Certificate',
+        category: resolvedPreset ? resolvedPreset.category : category,
+        elements: resolvedPreset ? resolvedPreset.elements : fallbackLayout!.elements,
+        background_color: resolvedPreset ? resolvedPreset.backgroundColor : '#ffffff',
+        width: resolvedPreset ? resolvedPreset.width : fallbackLayout!.width,
+        height: resolvedPreset ? resolvedPreset.height : fallbackLayout!.height,
         created_at: now,
         updated_at: now,
       })

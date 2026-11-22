@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { CERTIFICATE_PRESETS, getPresetById } from '@/lib/certificates/presets';
+import {
+  CERTIFICATE_PRESETS,
+  getPresetById,
+  resolvePresetForOrientation,
+} from '@/lib/certificates/presets';
 import { alignElements, distributeElements } from '@/lib/certificates/alignment';
 import { CertificateElement } from '@/lib/types';
 
@@ -46,6 +50,58 @@ describe('Certificate Starter Presets', () => {
 
   it('should return undefined for unknown preset ID', () => {
     expect(getPresetById('non-existent-preset')).toBeUndefined();
+  });
+
+  it('should keep landscape presets unchanged when landscape orientation is selected', () => {
+    const preset = getPresetById('royal-gold')!;
+    const resolved = resolvePresetForOrientation(preset, 'landscape');
+    expect(resolved.width).toBe(1123);
+    expect(resolved.height).toBe(794);
+    expect(resolved.elements).toBe(preset.elements);
+  });
+
+  it('should cleanly adapt all 6 starter presets into A4 portrait bounds without overflow', () => {
+    CERTIFICATE_PRESETS.forEach((preset) => {
+      const portrait = resolvePresetForOrientation(preset, 'portrait');
+      expect(portrait.width).toBe(794);
+      expect(portrait.height).toBe(1123);
+      expect(portrait.elements.length).toBe(preset.elements.length);
+
+      portrait.elements.forEach((el) => {
+        expect(el.x).toBeGreaterThanOrEqual(0);
+        expect(el.x).toBeLessThanOrEqual(portrait.width);
+        expect(el.y).toBeGreaterThanOrEqual(0);
+        expect(el.y).toBeLessThanOrEqual(portrait.height);
+        expect(el.width).toBeLessThanOrEqual(portrait.width);
+        expect(el.height).toBeLessThanOrEqual(portrait.height);
+      });
+    });
+
+    // Full-frame border preserves 80px inset margin in portrait
+    const royalPortrait = resolvePresetForOrientation(getPresetById('royal-gold')!, 'portrait');
+    const outerBorder = royalPortrait.elements.find((e) => e.id === 'outer-border')!;
+    expect(outerBorder.width).toBe(714);
+    expect(outerBorder.height).toBe(1043);
+    expect(outerBorder.x).toBe(397);
+    expect(outerBorder.y).toBe(562);
+
+    // Full-width horizontal bar adapts cleanly to portrait width
+    const corpPortrait = resolvePresetForOrientation(getPresetById('corporate-blue')!, 'portrait');
+    const topBar = corpPortrait.elements.find((e) => e.id === 'top-bar')!;
+    const bottomBar = corpPortrait.elements.find((e) => e.id === 'bottom-bar')!;
+    expect(topBar.width).toBe(794);
+    expect(bottomBar.width).toBe(794);
+    expect(bottomBar.y).toBeGreaterThan(1100);
+
+    // Full-height left accent stripe extends across full portrait height
+    const trainingPortrait = resolvePresetForOrientation(
+      getPresetById('modern-training')!,
+      'portrait'
+    );
+    const leftStripe = trainingPortrait.elements.find((e) => e.id === 'left-border-accent')!;
+    expect(leftStripe.height).toBe(1123);
+    expect(leftStripe.width).toBe(14);
+    expect(leftStripe.x).toBe(15);
   });
 });
 
