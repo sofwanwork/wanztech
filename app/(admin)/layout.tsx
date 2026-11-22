@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 export const metadata = {
   title: 'Admin Dashboard | KlikForm',
-  description: 'Pengurusan Klien dan Langganan KlikForm',
+  description: 'KlikForm Client & Subscription Management',
 };
 
 export default async function AdminLayout({
@@ -40,7 +40,7 @@ export default async function AdminLayout({
                   </Badge>
                 </div>
                 <span className="text-[11px] text-slate-400">
-                  Pengurusan Klien & Langganan
+                  Client &amp; Subscription Management
                 </span>
               </div>
             </Link>
@@ -65,8 +65,8 @@ export default async function AdminLayout({
             >
               <Link href="/forms" className="flex items-center gap-1.5">
                 <ArrowLeft className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Dashboard Klien</span>
-                <span className="sm:hidden">Keluar</span>
+                <span className="hidden sm:inline">Client Dashboard</span>
+                <span className="sm:hidden">Exit</span>
               </Link>
             </Button>
           </div>
@@ -80,7 +80,7 @@ export default async function AdminLayout({
 
       {/* Footer */}
       <footer className="border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-500">
-        <p>© {new Date().getFullYear()} KlikForm Admin Console. Akses terhad kepada pentadbir sistem yang sah.</p>
+        <p>© {new Date().getFullYear()} KlikForm Admin Console. Restricted to authorized system administrators.</p>
       </footer>
     </div>
   );

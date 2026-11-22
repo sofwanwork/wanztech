@@ -182,7 +182,7 @@ export async function POST(req: NextRequest) {
           userData?.user?.user_metadata?.full_name ||
           body.customer_name ||
           body.payer_name ||
-          'Pelanggan Pro';
+          'Pro Customer';
 
         if (userEmail) {
           const receiptUrl = body.receipt_url || body.payment_url || '#';
@@ -191,7 +191,11 @@ export async function POST(req: NextRequest) {
           const receiptEmail = getPaymentSuccessEmail(
             userName,
             `RM ${transaction.amount || '15.00'}`,
-            new Date(currentPeriodEnd).toLocaleDateString('ms-MY'),
+            new Date(currentPeriodEnd).toLocaleDateString('en-US', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+            }),
             receiptUrl
           );
 

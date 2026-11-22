@@ -1,5 +1,63 @@
 # Project Memory
 
+## Penyelarasan Penuh Bahasa Inggeris Sejagat (Termasuk Dashboard Admin) - 2026-11-22
+
+- **Konteks & Permintaan Pengguna**:
+  - Pengguna meminta: *"boleh ke semua dlm sistem ni nak dalam bahasa inggeris, termasuk dashboard admin"*.
+  - Audit menyeluruh ke atas keseluruhan kod (`188` fail di `app/` & `components/`, `77` fail di `actions/` & `lib/`, dan `53` suite ujian) mengenal pasti baki teks Bahasa Melayu di Admin Console, Form Builder/Grid Presets, Public Form fallback, Certificate Builder/Defaults, Daily Certificate labels, Bio Links share text, Flipbook metadata, Shortener validation, Pricing modal `mailto:`, Payment Webhook email, dan locale tarikh `'ms-MY'`.
+- **Tindakan Pembaikan**:
+  1. **Admin Console**:
+     - `app/(admin)/layout.tsx`: Selaraskan metadata, sub-tajuk (`Client & Subscription Management`), butang kembali (`Client Dashboard` / `Exit`), dan footer (`Restricted to authorized system administrators.`).
+     - `app/(admin)/admin/page.tsx`: Selaraskan tajuk utama, sub-tajuk, notis ralat (`Notice:`), dan kad metrik (`Total Clients`, `Pro Clients`).
+     - `components/admin/client-table.tsx`: Selaraskan toast, lencana status (`Active`, `Expired`), format tarikh `'en-US'` & `Lifetime`, carian, pilihan penapis, ringkasan bilangan (`Showing X of Y clients`), label `responses`, dialog padam klien, dan teks memuatkan `Deleting...`.
+     - `actions/admin.ts`: Selaraskan semua mesej ralat tindakan pelayan pentadbir ke Bahasa Inggeris.
+  2. **Forms, Builder & Public Form**:
+     - `app/builder/[id]/client.tsx`: Selaraskan label `Program Duration (Event Days)` dan teks panduan bilangan hari.
+     - `components/forms/fields-editor/index.tsx`: Selaraskan `Quick Scale Presets`, `Low Scale Label` / `High Scale Label`, dan placeholder skala.
+     - `lib/forms/grid.ts`: Selaraskan nilai lalai (`Strongly Disagree` / `Strongly Agree`) dan semua `GRID_PRESET_SCALES` (`Satisfaction (4-Point)`, `Agreement (4-Point)`, `Frequency (5-Point)`, `Lowest` / `Highest`).
+     - `app/(public)/form/[id]/client.tsx`: Selaraskan sandaran grid (`Statement 1..3`, `Strongly Disagree`, `Strongly Agree`).
+  3. **Certificates, Attendance & Google Sheets**:
+     - `app/(dashboard)/certificates/builder/[id]/client.tsx`: Selaraskan `Print Safe Margin (A4)`, `Print Safe Zone (A4)`, dan tooltip pemegang skala `Drag to scale`.
+     - `actions/certificate-template.ts`: Selaraskan teks lalai kanvas sijil (`CERTIFICATE OF APPRECIATION`, `Awarded to`, `for participating in`).
+     - `lib/forms/attendance.ts`: Selaraskan label pilihan sijil harian (`Day ${n}`, `All Days (Full)`) sambil mengekalkan 100% sokongan padanan lajur & tarikh Bahasa Melayu daripada Google Sheets pengguna.
+     - `lib/api/google-sheets.ts`: Tukar nama sandaran pengepala kosong daripada `Kolom_N` kepada `Column_N`.
+  4. **Bio Links, Flipbook, Pamphlets, Shortener, Pricing & Payment Webhook**:
+     - `app/(dashboard)/bio-builder/[id]/client.tsx`: Selaraskan mesej kongsi WhatsApp & Telegram.
+     - `app/(public)/flipbook/page.tsx`: Selaraskan `metadata.description` dan `openGraph.description`.
+     - `lib/storage/pamphlets.ts`: Selaraskan komen pengepala migrasi SQL.
+     - `lib/storage/short-links.ts`: Selaraskan mesej ralat validasi slug.
+     - `components/pricing-modal.tsx`: Selaraskan subjek dan isi pautan `mailto:`.
+     - `app/api/payment/webhook/route.ts`: Tukar nama sandaran kepada `'Pro Customer'` dan format tarikh resit kepada `'en-US'`.
+  5. **Ujian Unit**:
+     - Kemas kini jangkaan ujian dalam `tests/grid-field.test.ts`, `tests/sheet-capacity.test.ts`, `tests/attendance-multiday-sheet-tabs.test.ts`, dan `tests/certificate-multiday-options.test.ts`.
+  - **Keserasian Dikekalkan Sengaja**: Padanan lajur/tarikh Bahasa Melayu bagi Google Sheets sedia ada (`Nama`, `No. IC`, `No. KP`, `Emel`, `Hari X`, bulan Melayu), pengepala helaian kehadiran sedia ada, serta awalan siri deterministik `SIJIL-` dikekalkan supaya borang, helaian Google Sheets, dan sijil lama pengguna tidak terjejas.
+- **Status Ujian & Pengesahan**:
+  - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat (`eslint .`).
+  - `npm test`: 532/532 lulus merentas 53 fail suite (`vitest run`).
+  - `npm run build`: Binaan produksi Next.js 16.2.6 Turbopack berjaya sepenuhnya (36 halaman statik + semua laluan dinamik).
+
+
+## Penyingkiran Bar Skrol Mendatar pada Jadual Klien Admin (`ClientTable` & `Table`) - 2026-11-22
+
+- **Punca Isu & Permintaan Pengguna**:
+  - Pengguna berkongsi tangkapan skrin jadual klien di `/admin` yang memaparkan bar skrol mendatar kelabu Windows di bahagian bawah jadual (serta lajur `Usage` yang terhimpit sehingga `13 forms` / `0 respons` terpotong ke 2 baris), dan meminta: *"sy tak nak ada scroller ni"*.
+  - Dua punca dikenal pasti:
+    1. Dalam `components/admin/client-table.tsx`, teks `client.fullName` menggunakan `truncate` (`white-space: nowrap`) di dalam jadual `table-layout: auto` tanpa kekangan `max-w-*` pada kontena induknya, menyebabkan nama klien yang panjang mengembangkan lajur **Client** sehingga melimpah melepasi lebar kontena desktop dan menghimpit lajur `Usage`.
+    2. Pembalut berganda `<div className="overflow-x-auto">` di `client-table.tsx` di atas `<div className="relative w-full overflow-auto">` dalam `components/ui/table.tsx` memaparkan bar skrol natif Windows apabila berlaku sebarang limpahan.
+- **Tindakan Pembaikan**:
+  1. `components/ui/table.tsx`:
+     - Menambah prop pilihan `containerClassName` dan menukar pembalut kepada `overflow-x-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden` supaya skrol sentuhan/trackpad masih berfungsi pada skrin kecil tanpa memaparkan bar skrol natif.
+  2. `components/admin/client-table.tsx`:
+     - Membuang pembalut `<div className="overflow-x-auto">` berganda di luar `<Table>`.
+     - Mengekang lebar kontena lajur **Client** (`max-w-[230px] xl:max-w-[280px]`, `shrink-0` pada `Avatar` dan butang salin, serta `title` pada nama dan emel) supaya nama panjang dipendekkan kemas (`...`) tanpa melimpahkan jadual.
+     - Menyelaraskan padding sel (`px-2.5 xl:px-3.5`) dan `whitespace-nowrap` pada lajur **Plan**, **Status**, **Expiration Date**, **Usage**, **Registered**, dan **Actions** supaya keseluruhan jadual muat kemas pada desktop tanpa bar skrol dan tanpa pemecahan baris pada `forms`/`respons`.
+- **Status Ujian & Pengesahan**:
+  - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat (`eslint .`).
+  - `npm test`: 532/532 lulus merentas 53 fail suite (`vitest run`).
+
+
 ## Ketebalan Tindanan Helaian Dinamik Kiri & Kanan 3D Flipbook (`FlipbookView`) - 2026-11-20
 
 - **Konteks & Permintaan Pengguna**:

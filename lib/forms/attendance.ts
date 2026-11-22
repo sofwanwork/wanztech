@@ -430,7 +430,7 @@ export function buildDailyCertificateOptions(params: {
         if (formatted) {
           optionsMap.set(dayNum, {
             dayNumber: dayNum,
-            label: `Hari ${dayNum}`,
+            label: `Day ${dayNum}`,
             date: formatted,
             formattedDate: formatted,
             attendedDate: formatted,
@@ -460,7 +460,7 @@ export function buildDailyCertificateOptions(params: {
 
           optionsMap.set(dayNumber, {
             dayNumber,
-            label: `Hari ${dayNumber}`,
+            label: `Day ${dayNumber}`,
             date: displayDate,
             formattedDate: displayDate,
             attendedDate: displayDate,
@@ -497,7 +497,7 @@ export function buildDailyCertificateOptions(params: {
 
   const combinedOption: DailyCertificateOption = {
     dayNumber: 0,
-    label: 'Semua Hari (Penuh)',
+    label: 'All Days (Full)',
     date: combinedDate,
     formattedDate: formattedCombined,
     attendedDate: combinedDate,

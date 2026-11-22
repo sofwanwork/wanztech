@@ -7,11 +7,11 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   title: '3D Flipbook Viewer — E-Pamphlet KlikForm',
   description:
-    'Alami pengalaman membaca buku program digital & e-pamphlet 3D interaktif bertaraf antarabangsa di KlikForm dengan sentuhan seret-ke-selak (drag-to-flip) dan fizik realistik.',
+    'Experience interactive 3D digital program books and e-pamphlets on KlikForm with realistic drag-to-flip physics.',
   openGraph: {
     title: '3D Flipbook Viewer — E-Pamphlet KlikForm',
     description:
-      'Alami pengalaman membaca buku program digital & e-pamphlet 3D interaktif bertaraf antarabangsa di KlikForm dengan sentuhan seret-ke-selak (drag-to-flip) dan fizik realistik.',
+      'Experience interactive 3D digital program books and e-pamphlets on KlikForm with realistic drag-to-flip physics.',
   },
 };
 

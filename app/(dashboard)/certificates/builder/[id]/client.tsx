@@ -950,10 +950,10 @@ export function CertificateBuilderClient({
             {showSafeMargin && (
               <div
                 className="absolute inset-6 md:inset-8 border-2 border-dashed border-amber-500/70 pointer-events-none z-40 rounded-sm"
-                title="Sempadan Selamat Cetakan (A4 Margin)"
+                title="Print Safe Margin (A4)"
               >
                 <span className="absolute top-1 left-2 text-[10px] font-mono font-medium text-amber-700 bg-amber-100/90 px-1.5 py-0.5 rounded shadow-sm uppercase tracking-wider">
-                  Zon Selamat Cetakan (A4)
+                  Print Safe Zone (A4)
                 </span>
               </div>
             )}
@@ -1060,7 +1060,7 @@ export function CertificateBuilderClient({
                         className="pointer-events-auto absolute top-0 left-0 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white border-[1.5px] border-primary rounded-full shadow-sm cursor-nwse-resize hover:scale-125 transition-transform"
                         onMouseDown={(e) => handleResizeMouseDown(e, el, 'nw')}
                         onClick={(e) => e.stopPropagation()}
-                        title="Tarik untuk skala"
+                        title="Drag to scale"
                       />
                       <div
                         className="pointer-events-auto absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white border-[1.5px] border-primary rounded-full shadow-sm cursor-nesw-resize hover:scale-125 transition-transform"

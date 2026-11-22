@@ -48,7 +48,7 @@ export async function createShortLink(slug: string, originalUrl: string): Promis
     // Validate slug format — only allow safe alphanumeric slugs
     const SLUG_REGEX = /^[a-zA-Z0-9-_]{3,50}$/;
     if (!SLUG_REGEX.test(slug)) {
-        throw new Error('Slug mesti 3-50 aksara. Hanya huruf, nombor, "-" dan "_" dibenarkan.');
+        throw new Error('Slug must be 3–50 characters. Only letters, numbers, "-" and "_" are allowed.');
     }
 
     // Validate URL — use URL constructor to ensure only http/https are accepted

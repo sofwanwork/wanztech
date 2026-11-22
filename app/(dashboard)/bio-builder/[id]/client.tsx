@@ -1768,7 +1768,7 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                     <Label className="text-xs font-semibold text-slate-700">Quick Share</Label>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       <a
-                        href={`https://wa.me/?text=${encodeURIComponent(`Jom layari profil saya: ${publicUrl}`)}`}
+                        href={`https://wa.me/?text=${encodeURIComponent(`Check out my profile: ${publicUrl}`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center justify-center gap-2 p-2.5 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs font-medium hover:bg-emerald-100 transition-colors"
@@ -1777,7 +1777,7 @@ export function BioBuilderClient({ initialPage, forms, appUrl }: BioBuilderClien
                         WhatsApp
                       </a>
                       <a
-                        href={`https://t.me/share/url?url=${encodeURIComponent(publicUrl)}&text=${encodeURIComponent(`Profil saya: ${page.title}`)}`}
+                        href={`https://t.me/share/url?url=${encodeURIComponent(publicUrl)}&text=${encodeURIComponent(`My profile: ${page.title}`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center justify-center gap-2 p-2.5 rounded-md border border-sky-200 bg-sky-50 text-sky-800 text-xs font-medium hover:bg-sky-100 transition-colors"

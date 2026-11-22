@@ -109,7 +109,7 @@ describe('buildDailyCertificateOptions', () => {
 
     expect(options).toHaveLength(1);
     expect(options[0].dayNumber).toBe(1);
-    expect(options[0].label).toBe('Hari 1');
+    expect(options[0].label).toBe('Day 1');
     expect(options[0].date).toBe('October 7, 2026');
     expect(options[0].isCombined).toBe(false);
   });
@@ -136,17 +136,17 @@ describe('buildDailyCertificateOptions', () => {
 
     // Day 1
     expect(options[0].dayNumber).toBe(1);
-    expect(options[0].label).toBe('Hari 1');
+    expect(options[0].label).toBe('Day 1');
     expect(options[0].date).toBe('October 7, 2026');
 
     // Day 2
     expect(options[1].dayNumber).toBe(2);
-    expect(options[1].label).toBe('Hari 2');
+    expect(options[1].label).toBe('Day 2');
     expect(options[1].date).toBe('October 8, 2026');
 
     // Combined All Days
     expect(options[2].dayNumber).toBe(0);
-    expect(options[2].label).toBe('Semua Hari (Penuh)');
+    expect(options[2].label).toBe('All Days (Full)');
     expect(options[2].date).toBe('7 & 8 Oktober 2026');
     expect(options[2].isCombined).toBe(true);
   });
@@ -163,11 +163,11 @@ describe('buildDailyCertificateOptions', () => {
     });
 
     expect(options).toHaveLength(3);
-    expect(options[0].label).toBe('Hari 1');
+    expect(options[0].label).toBe('Day 1');
     expect(options[0].date).toBe('October 7, 2026');
-    expect(options[1].label).toBe('Hari 2');
+    expect(options[1].label).toBe('Day 2');
     expect(options[1].date).toBe('October 8, 2026');
-    expect(options[2].label).toBe('Semua Hari (Penuh)');
+    expect(options[2].label).toBe('All Days (Full)');
     expect(options[2].date).toBe('7 - 8 Oktober 2026');
   });
 
@@ -201,7 +201,7 @@ describe('buildDailyCertificateOptions', () => {
 
     // Day 2 MUST reflect the back-dated Google Sheet value (18 Oct), NOT the DB timestamp (19 Oct)
     expect(options[1].dayNumber).toBe(2);
-    expect(options[1].label).toBe('Hari 2');
+    expect(options[1].label).toBe('Day 2');
     expect(options[1].date).toBe('October 18, 2026');
     expect(options[1].formattedDate).toBe('October 18, 2026');
   });
@@ -239,12 +239,12 @@ describe('buildDailyCertificateOptions', () => {
     });
 
     expect(options).toHaveLength(1);
-    expect(options[0].label).toBe('Hari 1');
+    expect(options[0].label).toBe('Day 1');
     expect(options[0].date).toBe('October 7, 2026');
     expect(options[0].isCombined).toBe(false);
   });
 
-  it('synthesizes clean date range for Semua Hari when defaultDate is a single-day ISO timestamp', () => {
+  it('synthesizes clean date range for All Days when defaultDate is a single-day ISO timestamp', () => {
     const options = buildDailyCertificateOptions({
       records: [
         {
@@ -263,13 +263,13 @@ describe('buildDailyCertificateOptions', () => {
     });
 
     expect(options).toHaveLength(3);
-    expect(options[0].label).toBe('Hari 1');
+    expect(options[0].label).toBe('Day 1');
     expect(options[0].date).toBe('October 7, 2026');
-    expect(options[1].label).toBe('Hari 2');
+    expect(options[1].label).toBe('Day 2');
     expect(options[1].date).toBe('October 8, 2026');
 
-    // Semua Hari must NOT be raw ISO string '2026-10-07T02:05:47.358Z'
-    expect(options[2].label).toBe('Semua Hari (Penuh)');
+    // All Days must NOT be raw ISO string '2026-10-07T02:05:47.358Z'
+    expect(options[2].label).toBe('All Days (Full)');
     expect(options[2].date).toBe('October 7, 2026 - October 8, 2026');
     expect(options[2].formattedDate).toBe('October 7, 2026 - October 8, 2026');
   });
@@ -288,7 +288,7 @@ describe('buildDailyCertificateOptions', () => {
       },
     ];
 
-    it('returns only daily certificates (no combined Semua Hari) when multiDayCertMode is daily_only', () => {
+    it('returns only daily certificates (no combined All Days) when multiDayCertMode is daily_only', () => {
       const options = buildDailyCertificateOptions({
         records: twoDayRecords,
         totalDays: 2,
@@ -297,17 +297,17 @@ describe('buildDailyCertificateOptions', () => {
       });
 
       expect(options).toHaveLength(2);
-      expect(options[0].label).toBe('Hari 1');
+      expect(options[0].label).toBe('Day 1');
       expect(options[0].date).toBe('October 7, 2026');
       expect(options[0].isCombined).toBe(false);
 
-      expect(options[1].label).toBe('Hari 2');
+      expect(options[1].label).toBe('Day 2');
       expect(options[1].date).toBe('October 8, 2026');
       expect(options[1].isCombined).toBe(false);
 
-      // Ensures "Semua Hari (Penuh)" is NOT present
+      // Ensures "All Days (Full)" is NOT present
       expect(options.some((opt) => opt.isCombined)).toBe(false);
-      expect(options.some((opt) => opt.label.includes('Semua Hari'))).toBe(false);
+      expect(options.some((opt) => opt.label.includes('All Days'))).toBe(false);
     });
 
     it('returns ONLY the full combined certificate when multiDayCertMode is full_only', () => {
@@ -319,14 +319,14 @@ describe('buildDailyCertificateOptions', () => {
       });
 
       expect(options).toHaveLength(1);
-      expect(options[0].label).toBe('Semua Hari (Penuh)');
+      expect(options[0].label).toBe('All Days (Full)');
       expect(options[0].date).toBe('7 & 8 Oktober 2026');
       expect(options[0].isCombined).toBe(true);
       expect(options[0].dayNumber).toBe(0);
 
-      // Ensures individual daily certificates (Hari 1, Hari 2) are omitted
-      expect(options.some((opt) => opt.label === 'Hari 1')).toBe(false);
-      expect(options.some((opt) => opt.label === 'Hari 2')).toBe(false);
+      // Ensures individual daily certificates (Day 1, Day 2) are omitted
+      expect(options.some((opt) => opt.label === 'Day 1')).toBe(false);
+      expect(options.some((opt) => opt.label === 'Day 2')).toBe(false);
     });
 
     it('returns both daily certificates AND combined certificate when multiDayCertMode is both', () => {
@@ -338,9 +338,9 @@ describe('buildDailyCertificateOptions', () => {
       });
 
       expect(options).toHaveLength(3);
-      expect(options[0].label).toBe('Hari 1');
-      expect(options[1].label).toBe('Hari 2');
-      expect(options[2].label).toBe('Semua Hari (Penuh)');
+      expect(options[0].label).toBe('Day 1');
+      expect(options[1].label).toBe('Day 2');
+      expect(options[2].label).toBe('All Days (Full)');
       expect(options[2].isCombined).toBe(true);
     });
 
@@ -352,9 +352,9 @@ describe('buildDailyCertificateOptions', () => {
       });
 
       expect(options).toHaveLength(3);
-      expect(options[0].label).toBe('Hari 1');
-      expect(options[1].label).toBe('Hari 2');
-      expect(options[2].label).toBe('Semua Hari (Penuh)');
+      expect(options[0].label).toBe('Day 1');
+      expect(options[1].label).toBe('Day 2');
+      expect(options[2].label).toBe('All Days (Full)');
     });
   });
 });

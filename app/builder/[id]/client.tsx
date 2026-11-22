@@ -1757,7 +1757,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                             <div className="flex items-center gap-1.5">
                               <Calendar className="w-3.5 h-3.5 text-emerald-700" />
                               <Label htmlFor="total-days" className="text-xs font-semibold text-emerald-950">
-                                Program Duration (Event Days / Tempoh Acara)
+                                Program Duration (Event Days)
                               </Label>
                             </div>
                             <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
@@ -1791,7 +1791,7 @@ export function BuilderClient({ initialForm, userCertificates, useManualKeys }: 
                               }}
                             />
                             <span className="text-xs font-medium text-slate-600">
-                              Hari / Days (Boleh masukkan sebarang bilangan hari, cth: 1–30+)
+                              Days (Enter any number of days, e.g. 1–30+)
                             </span>
                           </div>
 

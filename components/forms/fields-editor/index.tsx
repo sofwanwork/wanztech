@@ -496,7 +496,7 @@ function SortableField({
               {/* Quick Scale Presets */}
               <div>
                 <Label className="text-xs font-semibold text-slate-700 uppercase tracking-wider block mb-2">
-                  Pratetap Skala Pantas (Quick Scale Presets)
+                  Quick Scale Presets
                 </Label>
                 <div className="flex flex-wrap gap-1.5 sm:gap-2">
                   {GRID_PRESET_SCALES.map((preset) => (
@@ -682,11 +682,11 @@ function SortableField({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-slate-200/80">
                 <div className="space-y-1.5">
                   <Label htmlFor={`grid-min-label-${field.id}`} className="text-xs text-slate-600 font-medium">
-                    Label Skala Rendah ({field.gridConfig?.columns?.[0] || '1'})
+                    Low Scale Label ({field.gridConfig?.columns?.[0] || '1'})
                   </Label>
                   <Input
                     id={`grid-min-label-${field.id}`}
-                    placeholder="contoh: Sangat Tidak Setuju"
+                    placeholder="e.g. Strongly Disagree"
                     value={field.gridConfig?.minLabel || ''}
                     onChange={(e) =>
                       updateField(index, {
@@ -702,11 +702,11 @@ function SortableField({
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor={`grid-max-label-${field.id}`} className="text-xs text-slate-600 font-medium">
-                    Label Skala Tinggi ({field.gridConfig?.columns?.[(field.gridConfig?.columns?.length || 1) - 1] || '5'})
+                    High Scale Label ({field.gridConfig?.columns?.[(field.gridConfig?.columns?.length || 1) - 1] || '5'})
                   </Label>
                   <Input
                     id={`grid-max-label-${field.id}`}
-                    placeholder="contoh: Sangat Setuju"
+                    placeholder="e.g. Strongly Agree"
                     value={field.gridConfig?.maxLabel || ''}
                     onChange={(e) =>
                       updateField(index, {

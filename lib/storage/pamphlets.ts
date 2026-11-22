@@ -10,7 +10,7 @@ import { DEFAULT_PAMPHLET_THEME } from '@/lib/pamphlets/themes';
 export const PAMPHLET_TABLE_MISSING_MESSAGE =
   'Database table "pamphlets" is not yet available in Supabase. Please run the SQL migration 20261002000000_add_pamphlets.sql in your Supabase SQL Editor.';
 
-export const PAMPHLETS_SQL_MIGRATION = `-- Migration: Add pamphlets table for E-Pamphlet & Buku Program Digital
+export const PAMPHLETS_SQL_MIGRATION = `-- Migration: Add pamphlets table for E-Pamphlet & Digital Program Book
 
 create table if not exists public.pamphlets (
   id uuid primary key default gen_random_uuid(),

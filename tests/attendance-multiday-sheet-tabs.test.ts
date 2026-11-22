@@ -55,18 +55,18 @@ describe('Multi-Day Dedicated Sheet Tabs Integration', () => {
 
     // Day 1
     expect(options[0].dayNumber).toBe(1);
-    expect(options[0].label).toBe('Hari 1');
+    expect(options[0].label).toBe('Day 1');
     expect(options[0].date).toBe('October 17, 2026');
 
     // Day 2 (Uses date extracted from tab Hari 2)
     expect(options[1].dayNumber).toBe(2);
-    expect(options[1].label).toBe('Hari 2');
+    expect(options[1].label).toBe('Day 2');
     expect(options[1].date).toBe('October 18, 2026');
     expect(options[1].formattedDate).toBe('October 18, 2026');
 
     // Combined option
     expect(options[2].dayNumber).toBe(0);
-    expect(options[2].label).toBe('Semua Hari (Penuh)');
+    expect(options[2].label).toBe('All Days (Full)');
     expect(options[2].isCombined).toBe(true);
   });
 
@@ -106,6 +106,6 @@ describe('Multi-Day Dedicated Sheet Tabs Integration', () => {
     expect(options[0].date).toBe('October 7, 2026');
     expect(options[1].date).toBe('October 8, 2026');
     expect(options[2].date).toBe('October 9, 2026');
-    expect(options[3].label).toBe('Semua Hari (Penuh)');
+    expect(options[3].label).toBe('All Days (Full)');
   });
 });

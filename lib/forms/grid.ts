@@ -11,8 +11,8 @@ export function createDefaultGridConfig(): GridConfig {
   return {
     rows: ['Statement 1', 'Statement 2', 'Statement 3'],
     columns: ['1', '2', '3', '4', '5'],
-    minLabel: 'Sangat Tidak Setuju',
-    maxLabel: 'Sangat Setuju',
+    minLabel: 'Strongly Disagree',
+    maxLabel: 'Strongly Agree',
   };
 }
 
@@ -24,37 +24,37 @@ export const GRID_PRESET_SCALES = [
     id: 'scale_1_5',
     name: '1 - 5',
     columns: ['1', '2', '3', '4', '5'],
-    minLabel: 'Sangat Tidak Setuju',
-    maxLabel: 'Sangat Setuju',
+    minLabel: 'Strongly Disagree',
+    maxLabel: 'Strongly Agree',
   },
   {
     id: 'scale_1_7',
     name: '1 - 7',
     columns: ['1', '2', '3', '4', '5', '6', '7'],
-    minLabel: 'Sangat Tidak Setuju',
-    maxLabel: 'Sangat Setuju',
+    minLabel: 'Strongly Disagree',
+    maxLabel: 'Strongly Agree',
   },
   {
     id: 'scale_1_10',
     name: '1 - 10',
     columns: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
-    minLabel: 'Paling Rendah',
-    maxLabel: 'Paling Tinggi',
+    minLabel: 'Lowest',
+    maxLabel: 'Highest',
   },
   {
     id: 'satisfaction_4',
-    name: 'Kepuasan (4 Tahap)',
-    columns: ['Tidak Puas Hati', 'Kurang Puas Hati', 'Puas Hati', 'Sangat Puas Hati'],
+    name: 'Satisfaction (4-Point)',
+    columns: ['Very Dissatisfied', 'Dissatisfied', 'Satisfied', 'Very Satisfied'],
   },
   {
     id: 'agreement_4',
-    name: 'Persetujuan (4 Tahap)',
-    columns: ['Sangat Tidak Setuju', 'Tidak Setuju', 'Setuju', 'Sangat Setuju'],
+    name: 'Agreement (4-Point)',
+    columns: ['Strongly Disagree', 'Disagree', 'Agree', 'Strongly Agree'],
   },
   {
     id: 'frequency_5',
-    name: 'Kekerapan (5 Tahap)',
-    columns: ['Tidak Pernah', 'Jarang', 'Kadang-kadang', 'Kerap', 'Sentiasa'],
+    name: 'Frequency (5-Point)',
+    columns: ['Never', 'Rarely', 'Sometimes', 'Often', 'Always'],
   },
 ];
 

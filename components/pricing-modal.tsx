@@ -244,7 +244,7 @@ export function PricingModal({ children }: PricingModalProps) {
         <p className="text-center text-xs text-gray-500 mt-6">
           Need help choosing? Contact us at{' '}
           <a
-            href="mailto:wanztechenterprise@gmail.com?subject=Pertanyaan%20tentang%20KlikForm&body=Salam%2C%0A%0ASaya%20ingin%20bertanya%20tentang%20pelan%20KlikForm.%0A%0ANama%3A%20%0ASyarikat%2FOrganisasi%3A%20%0ASoalan%3A%20%0A%0ATerima%20kasih."
+            href="mailto:wanztechenterprise@gmail.com?subject=KlikForm%20Plan%20Inquiry&body=Hello%2C%0A%0AI%20would%20like%20to%20inquire%20about%20KlikForm%20plans.%0A%0AName%3A%20%0ACompany%2FOrganization%3A%20%0AQuestion%3A%20%0A%0AThank%20you."
             className="text-violet-900 hover:underline"
           >
             wanztechenterprise@gmail.com

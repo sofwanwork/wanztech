@@ -16,8 +16,8 @@ describe('Multiple Choice Grid (Scale) helpers', () => {
     const config = createDefaultGridConfig();
     expect(config.rows).toHaveLength(3);
     expect(config.columns).toEqual(['1', '2', '3', '4', '5']);
-    expect(config.minLabel).toBe('Sangat Tidak Setuju');
-    expect(config.maxLabel).toBe('Sangat Setuju');
+    expect(config.minLabel).toBe('Strongly Disagree');
+    expect(config.maxLabel).toBe('Strongly Agree');
   });
 
   it('formats row keys consistently', () => {

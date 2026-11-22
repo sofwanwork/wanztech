@@ -9,7 +9,7 @@ describe('sanitizeHeaders', () => {
 
   it('replaces empty or whitespace-only headers with fallback names', () => {
     const raw = ['Nama', '', '   ', 'Email'];
-    expect(sanitizeHeaders(raw)).toEqual(['Nama', 'Kolom_2', 'Kolom_3', 'Email']);
+    expect(sanitizeHeaders(raw)).toEqual(['Nama', 'Column_2', 'Column_3', 'Email']);
   });
 
   it('disambiguates duplicate headers by adding sequential numeric suffixes', () => {
@@ -29,7 +29,7 @@ describe('sanitizeHeaders', () => {
 
   it('handles multiple empty headers without collisions', () => {
     const raw = ['', ''];
-    expect(sanitizeHeaders(raw)).toEqual(['Kolom_1', 'Kolom_2']);
+    expect(sanitizeHeaders(raw)).toEqual(['Column_1', 'Column_2']);
   });
 });
 

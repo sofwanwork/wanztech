@@ -2135,14 +2135,14 @@ export function PublicFormClient({
 
                     {field.type === 'grid' && (() => {
                       const gridConfig = field.gridConfig || {
-                        rows: ['Pernyataan 1', 'Pernyataan 2', 'Pernyataan 3'],
+                        rows: ['Statement 1', 'Statement 2', 'Statement 3'],
                         columns: ['1', '2', '3', '4', '5'],
-                        minLabel: 'Sangat Tidak Setuju',
-                        maxLabel: 'Sangat Setuju',
+                        minLabel: 'Strongly Disagree',
+                        maxLabel: 'Strongly Agree',
                       };
                       const rows = gridConfig.rows && gridConfig.rows.length > 0
                         ? gridConfig.rows
-                        : ['Pernyataan 1', 'Pernyataan 2', 'Pernyataan 3'];
+                        : ['Statement 1', 'Statement 2', 'Statement 3'];
                       const columns = gridConfig.columns && gridConfig.columns.length > 0
                         ? gridConfig.columns
                         : ['1', '2', '3', '4', '5'];

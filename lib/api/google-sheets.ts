@@ -48,15 +48,15 @@ export function sanitizeSheetValue(value: unknown): string | number | boolean {
 /**
  * Ensures header names are valid for Google Spreadsheet:
  * - Trims whitespace
- * - Assigns fallback name for blank headers (e.g. Kolom_1)
- * - Automatically resolves duplicates by suffixing (e.g. "Soalan (2)", "Soalan (3)")
+ * - Assigns fallback name for blank headers (e.g. Column_1)
+ * - Automatically resolves duplicates by suffixing (e.g. "Question (2)", "Question (3)")
  */
 export function sanitizeHeaders(rawHeaders: string[]): string[] {
   const seen = new Map<string, number>();
   return rawHeaders.map((rawHeader, idx) => {
     let trimmed = (rawHeader ?? '').toString().trim();
     if (!trimmed) {
-      trimmed = `Kolom_${idx + 1}`;
+      trimmed = `Column_${idx + 1}`;
     }
     const count = seen.get(trimmed) || 0;
     seen.set(trimmed, count + 1);

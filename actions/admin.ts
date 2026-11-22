@@ -105,7 +105,7 @@ export async function getAdminStatsAction(): Promise<{
       },
     };
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Gagal memuatkan statistik';
+    const message = err instanceof Error ? err.message : 'Failed to load statistics';
     return { success: false, error: message };
   }
 }
@@ -215,7 +215,7 @@ export async function getAdminClientsAction(): Promise<{
       data: clients,
     };
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Gagal memuatkan senarai klien';
+    const message = err instanceof Error ? err.message : 'Failed to load client list';
     return { success: false, error: message };
   }
 }
@@ -237,7 +237,7 @@ export async function updateClientSubscriptionAction(params: {
     await verifyAdminSession();
 
     if (!params.userId) {
-      return { success: false, error: 'ID Pengguna diperlukan' };
+      return { success: false, error: 'User ID is required' };
     }
 
     const admin = createAdminClient();
@@ -264,7 +264,7 @@ export async function updateClientSubscriptionAction(params: {
 
     return { success: true };
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Gagal mengemas kini langganan klien';
+    const message = err instanceof Error ? err.message : 'Failed to update client subscription';
     return { success: false, error: message };
   }
 }
@@ -275,17 +275,17 @@ async function permanentlyDeleteUserById(
   adminUserId: string
 ): Promise<{ success: boolean; error?: string }> {
   if (userId === adminUserId) {
-    return { success: false, error: 'Anda tidak boleh memadam akaun Super Admin anda sendiri!' };
+    return { success: false, error: 'You cannot delete your own Super Admin account!' };
   }
 
   const { data: targetData, error: targetError } = await admin.auth.admin.getUserById(userId);
   if (targetError || !targetData?.user) {
-    return { success: false, error: 'Pengguna tidak ditemui' };
+    return { success: false, error: 'User not found' };
   }
 
   const targetEmail = targetData.user.email?.toLowerCase().trim();
   if (targetEmail === PRIMARY_ADMIN_EMAIL.toLowerCase().trim()) {
-    return { success: false, error: 'Tidak dibenarkan memadam akaun Super Admin!' };
+    return { success: false, error: 'Deleting the Super Admin account is not allowed!' };
   }
 
   // Delete related rows that might not have ON DELETE CASCADE
@@ -323,7 +323,7 @@ export async function deleteClientAction(userId: string): Promise<{
     const adminUser = await verifyAdminSession();
 
     if (!userId) {
-      return { success: false, error: 'ID Pengguna diperlukan' };
+      return { success: false, error: 'User ID is required' };
     }
 
     const admin = createAdminClient();
@@ -335,7 +335,7 @@ export async function deleteClientAction(userId: string): Promise<{
     revalidatePath('/admin');
     return { success: true };
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Gagal memadam klien';
+    const message = err instanceof Error ? err.message : 'Failed to delete client';
     return { success: false, error: message };
   }
 }

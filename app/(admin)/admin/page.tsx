@@ -36,10 +36,10 @@ export default async function AdminPage() {
       {/* Page Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-          Pengurusan Klien & Langganan
+          Client &amp; Subscription Management
         </h1>
         <p className="mt-1 text-sm text-slate-500">
-          Pantau semua akaun berdaftar, semak aktiviti penggunaan, dan urus pelan langganan klien secara langsung.
+          Monitor all registered accounts, review usage activity, and manage client subscription plans directly.
         </p>
       </div>
 
@@ -48,7 +48,7 @@ export default async function AdminPage() {
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
           <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
           <div className="text-sm text-amber-800">
-            <p className="font-semibold">Perhatian:</p>
+            <p className="font-semibold">Notice:</p>
             <p>{statsRes.error || clientsRes.error}</p>
           </div>
         </div>
@@ -61,7 +61,7 @@ export default async function AdminPage() {
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                Jumlah Klien
+                Total Clients
               </p>
               <p className="text-2xl font-extrabold text-slate-900 mt-1">
                 {stats.totalClients}
@@ -78,7 +78,7 @@ export default async function AdminPage() {
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <p className="text-[11px] font-bold text-sky-600 uppercase tracking-wider">
-                Klien Pro
+                Pro Clients
               </p>
               <p className="text-2xl font-extrabold text-sky-700 mt-1">
                 {stats.totalPro}

@@ -88,7 +88,7 @@ export function ClientTable({ initialClients }: ClientTableProps) {
     try {
       const res = await deleteClientAction(clientToDelete.id);
       if (!res.success) {
-        toast.error(res.error || 'Gagal memadam klien');
+        toast.error(res.error || 'Failed to delete client');
         return;
       }
       setClients((prev) => prev.filter((c) => c.id !== clientToDelete.id));
@@ -229,7 +229,7 @@ export function ClientTable({ initialClients }: ClientTableProps) {
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
-    toast.success('Emel disalin ke papan keratan');
+    toast.success('Email copied to clipboard');
     setTimeout(() => setCopiedId(null), 2000);
   };
 
@@ -288,7 +288,7 @@ export function ClientTable({ initialClients }: ClientTableProps) {
       return (
         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          Aktif
+          Active
         </span>
       );
     }
@@ -296,7 +296,7 @@ export function ClientTable({ initialClients }: ClientTableProps) {
       return (
         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200">
           <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
-          Tamat
+          Expired
         </span>
       );
     }
@@ -313,8 +313,8 @@ export function ClientTable({ initialClients }: ClientTableProps) {
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return '—';
     // If year 2099 or later -> Lifetime
-    if (d.getFullYear() >= 2099) return 'Seumur Hidup';
-    return d.toLocaleDateString('ms-MY', {
+    if (d.getFullYear() >= 2099) return 'Lifetime';
+    return d.toLocaleDateString('en-US', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -328,7 +328,7 @@ export function ClientTable({ initialClients }: ClientTableProps) {
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input
-            placeholder="Cari mengikut nama, emel, atau username..."
+            placeholder="Search by name, email, or username..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9 h-10 border-slate-200 bg-slate-50/50 focus:bg-white text-sm"
@@ -357,8 +357,8 @@ export function ClientTable({ initialClients }: ClientTableProps) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="active">Aktif</SelectItem>
-              <SelectItem value="expired">Tamat</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="expired">Expired</SelectItem>
               <SelectItem value="cancelled">Cancelled</SelectItem>
             </SelectContent>
           </Select>
@@ -395,8 +395,8 @@ export function ClientTable({ initialClients }: ClientTableProps) {
       {/* Summary count & Bulk Actions */}
       <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-slate-500 font-medium">
         <span>
-          Memaparkan <strong className="text-slate-800 font-semibold">{filteredClients.length}</strong> daripada{' '}
-          <strong className="text-slate-800 font-semibold">{clients.length}</strong> klien
+          Showing <strong className="text-slate-800 font-semibold">{filteredClients.length}</strong> of{' '}
+          <strong className="text-slate-800 font-semibold">{clients.length}</strong> clients
         </span>
         <div className="flex items-center gap-2">
           {selectedIds.size > 0 && (
@@ -426,36 +426,35 @@ export function ClientTable({ initialClients }: ClientTableProps) {
 
       {/* Clients Table */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <Table>
+        <Table>
             <TableHeader className="bg-slate-50/80 border-b border-slate-200">
               <TableRow className="hover:bg-transparent">
-                <TableHead className="w-[40px] pl-4">
+                <TableHead className="w-[40px] pl-4 pr-2">
                   <Checkbox
                     checked={allVisibleSelected}
                     onCheckedChange={toggleSelectAllVisible}
                     aria-label="Select all visible clients"
                   />
                 </TableHead>
-                <TableHead className="w-[300px] text-xs font-bold text-slate-600 uppercase tracking-wider">
+                <TableHead className="px-2.5 xl:px-3.5 text-xs font-bold text-slate-600 uppercase tracking-wider">
                   Client
                 </TableHead>
-                <TableHead className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+                <TableHead className="px-2.5 xl:px-3.5 whitespace-nowrap text-xs font-bold text-slate-600 uppercase tracking-wider">
                   Plan
                 </TableHead>
-                <TableHead className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+                <TableHead className="px-2.5 xl:px-3.5 whitespace-nowrap text-xs font-bold text-slate-600 uppercase tracking-wider">
                   Status
                 </TableHead>
-                <TableHead className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+                <TableHead className="px-2.5 xl:px-3.5 whitespace-nowrap text-xs font-bold text-slate-600 uppercase tracking-wider">
                   Expiration Date
                 </TableHead>
-                <TableHead className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+                <TableHead className="px-2.5 xl:px-3.5 whitespace-nowrap text-xs font-bold text-slate-600 uppercase tracking-wider">
                   Usage
                 </TableHead>
-                <TableHead className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+                <TableHead className="px-2.5 xl:px-3.5 whitespace-nowrap text-xs font-bold text-slate-600 uppercase tracking-wider">
                   Registered
                 </TableHead>
-                <TableHead className="text-right text-xs font-bold text-slate-600 uppercase tracking-wider">
+                <TableHead className="px-2.5 xl:px-3.5 pr-4 text-right whitespace-nowrap text-xs font-bold text-slate-600 uppercase tracking-wider">
                   Actions
                 </TableHead>
               </TableRow>
@@ -483,7 +482,7 @@ export function ClientTable({ initialClients }: ClientTableProps) {
                   return (
                     <TableRow key={client.id} className="hover:bg-slate-50/60 transition-colors">
                       {/* Selection Checkbox */}
-                      <TableCell className="pl-4">
+                      <TableCell className="pl-4 pr-2">
                         <Checkbox
                           checked={selectedIds.has(client.id)}
                           disabled={adminAccount}
@@ -492,17 +491,20 @@ export function ClientTable({ initialClients }: ClientTableProps) {
                         />
                       </TableCell>
                       {/* Klien details */}
-                      <TableCell className="py-3.5">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-9 w-9 border border-slate-200">
+                      <TableCell className="py-3.5 px-2.5 xl:px-3.5">
+                        <div className="flex items-center gap-3 max-w-[230px] xl:max-w-[280px]">
+                          <Avatar className="h-9 w-9 shrink-0 border border-slate-200">
                             {client.avatarUrl && <AvatarImage src={client.avatarUrl} />}
                             <AvatarFallback className="bg-slate-100 text-slate-700 text-xs font-semibold">
                               {initials}
                             </AvatarFallback>
                           </Avatar>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <p className="text-sm font-semibold text-slate-900 truncate">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <p
+                                className="text-sm font-semibold text-slate-900 truncate"
+                                title={client.fullName}
+                              >
                                 {client.fullName}
                               </p>
                               {!client.isVerified && (
@@ -514,15 +516,15 @@ export function ClientTable({ initialClients }: ClientTableProps) {
                                 </Badge>
                               )}
                             </div>
-                            <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                              <span className="truncate max-w-[180px] sm:max-w-[220px]">
+                            <div className="flex items-center gap-1.5 text-xs text-slate-500 min-w-0">
+                              <span className="truncate" title={client.email}>
                                 {client.email}
                               </span>
                               <button
                                 type="button"
                                 onClick={() => copyToClipboard(client.email, client.id)}
                                 title="Copy email"
-                                className="text-slate-400 hover:text-slate-700 transition-colors"
+                                className="text-slate-400 hover:text-slate-700 transition-colors shrink-0"
                               >
                                 {copiedId === client.id ? (
                                   <Check className="h-3 w-3 text-emerald-600" />
@@ -536,45 +538,49 @@ export function ClientTable({ initialClients }: ClientTableProps) {
                       </TableCell>
 
                       {/* Pelan */}
-                      <TableCell>{renderTierBadge(client.tier)}</TableCell>
+                      <TableCell className="px-2.5 xl:px-3.5 whitespace-nowrap">
+                        {renderTierBadge(client.tier)}
+                      </TableCell>
 
                       {/* Status */}
-                      <TableCell>{renderStatusBadge(client.status)}</TableCell>
+                      <TableCell className="px-2.5 xl:px-3.5 whitespace-nowrap">
+                        {renderStatusBadge(client.status)}
+                      </TableCell>
 
                       {/* Tarikh Luput */}
-                      <TableCell className="text-xs text-slate-600 font-medium">
+                      <TableCell className="px-2.5 xl:px-3.5 text-xs text-slate-600 font-medium whitespace-nowrap">
                         {formatDate(client.currentPeriodEnd)}
                       </TableCell>
 
                       {/* Penggunaan */}
-                      <TableCell>
+                      <TableCell className="px-2.5 xl:px-3.5 whitespace-nowrap">
                         <div className="flex flex-col text-xs space-y-0.5">
-                          <span className="text-slate-700 font-medium flex items-center gap-1">
-                            <FileText className="h-3 w-3 text-slate-400" />
+                          <span className="text-slate-700 font-medium flex items-center gap-1 whitespace-nowrap">
+                            <FileText className="h-3 w-3 text-slate-400 shrink-0" />
                             {client.formsCount} forms
                           </span>
-                          <span className="text-slate-500 flex items-center gap-1">
-                            <Send className="h-3 w-3 text-slate-400" />
-                            {client.totalSubmissions} respons
+                          <span className="text-slate-500 flex items-center gap-1 whitespace-nowrap">
+                            <Send className="h-3 w-3 text-slate-400 shrink-0" />
+                            {client.totalSubmissions} responses
                           </span>
                         </div>
                       </TableCell>
 
                       {/* Tarikh Daftar */}
-                      <TableCell className="text-xs text-slate-500">
+                      <TableCell className="px-2.5 xl:px-3.5 text-xs text-slate-500 whitespace-nowrap">
                         {formatDate(client.createdAt)}
                       </TableCell>
 
                       {/* Tindakan */}
-                      <TableCell className="text-right">
+                      <TableCell className="px-2.5 xl:px-3.5 pr-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleOpenEdit(client)}
-                            className="h-8 text-xs font-medium text-slate-700 border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors"
+                            className="h-8 px-2.5 text-xs font-medium text-slate-700 border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors"
                           >
-                            <Edit className="h-3 w-3 mr-1.5" />
+                            <Edit className="h-3 w-3 mr-1.5 shrink-0" />
                             Manage Plan
                           </Button>
 
@@ -586,7 +592,7 @@ export function ClientTable({ initialClients }: ClientTableProps) {
                                 setClientToDelete(client);
                                 setDeleteDialogOpen(true);
                               }}
-                              className="h-8 w-8 p-0 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                              className="h-8 w-8 p-0 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer shrink-0"
                               title="Delete Client"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
@@ -599,8 +605,7 @@ export function ClientTable({ initialClients }: ClientTableProps) {
                 })
               )}
             </TableBody>
-          </Table>
-        </div>
+        </Table>
       </div>
 
       {/* Edit Subscription Modal */}
@@ -622,7 +627,7 @@ export function ClientTable({ initialClients }: ClientTableProps) {
               Permanently Delete Client?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-sm text-slate-600 pt-2 leading-relaxed">
-              Adakah anda pasti mahu memadam akaun{' '}
+              Are you sure you want to delete the account for{' '}
               <strong className="text-slate-900 font-semibold">{clientToDelete?.fullName}</strong> (
               <span className="font-mono text-xs text-slate-800">{clientToDelete?.email}</span>)?
               <br />
@@ -644,7 +649,7 @@ export function ClientTable({ initialClients }: ClientTableProps) {
               {isDeleting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-                  Memadam...
+                  Deleting...
                 </>
               ) : (
                 'Yes, Delete Client'
