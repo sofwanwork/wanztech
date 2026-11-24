@@ -1,5 +1,79 @@
 # Project Memory
 
+## Penyelarasan Saiz Butang Pengepala E-Pamphlet Builder (`PamphletBuilderClient`) - 2026-11-24
+
+- **Punca Isu & Laporan Pengguna**:
+  - Pengguna berkongsi tangkapan skrin bar pengepala kanan E-Pamphlet Builder yang membulatkan butang `Fullscreen`, `Public View`, dan `Save`, melaporkan: *"yg tu button tak sama saiz"*.
+  - Sebelum ini, ketinggian dan tipografi bercampur: pemilih `Desktop | Mobile` setinggi `38px`, `Fullscreen` menggunakan `h-7 text-xs` (`28px`), manakala `Public View` dan `Save` menggunakan lalai `size="sm"` (`h-8 text-sm`, `32px`) dengan saiz ikon berbeza (`h-3.5` vs `h-4`).
+- **Tindakan Pembaikan**:
+  - `app/(dashboard)/pamphlet-builder/[id]/client.tsx`: Menyeragamkan keempat-empat kawalan bar pengepala (`Desktop | Mobile`, `Fullscreen` / `Collapse`, `Public View`, dan `Save`) kepada ketinggian tepat `h-9` (`36px`), teks `text-xs`, dan ikon `h-3.5 w-3.5` yang konsisten.
+- **Status Ujian & Pengesahan**:
+  - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat (`eslint .`).
+
+
+## Penyelesaian Slug Unik Automatik E-Pamphlet (`createPamphlet` & `updatePamphlet`) - 2026-11-24
+
+- **Konteks & Permintaan Pengguna**:
+  - Pengguna membulatkan tajuk `test` & pautan `/p/test` pada E-Pamphlet Builder, bertanya *"contoh kalau org lain guna tajuk yg sama boleh ke"*, lalu memilih **Pilihan 1** (tajuk boleh sama + akhiran unik automatik pada slug jika bertembung semasa penciptaan).
+- **Tindakan Pelaksanaan**:
+  1. `lib/pamphlets/utils.ts`:
+     - Menambah `generatePamphletSlugSuffix(length = 4)` dan `appendUniqueSlugSuffix(baseSlug, customSuffix?)` yang memotong `baseSlug` dengan kemas agar panjang kekal `<= 60` aksara, tanpa sengkang berganda, dan sentiasa lulus `isValidPamphletSlug`.
+  2. `lib/storage/pamphlets.ts`:
+     - Menambah `isUniqueViolationError(error)` untuk mengesan ralat PostgreSQL `23505`.
+     - Mengemas kini `createPamphlet` supaya menyemak ketersediaan slug merentas keseluruhan jadual melalui `createAdminClient()` (termasuk pamphlet berstatus *Closed* milik pengguna lain), menjana akhiran unik automatik apabila bertembung, dan melakukan *retry* secara automatik jika berlaku perlumbaan serentak (`23505`) semasa `insert`.
+     - Mengemas kini `updatePamphlet` supaya menyemak pertembungan slug secara global melalui `createAdminClient()` dan memetakan ralat `23505` kepada mesej mesra pengguna.
+  3. `app/(dashboard)/pamphlets/client.tsx`:
+     - Mengemas kini nota bantuan bawah **Short URL Link** dan memaparkan toast `Program book created! Assigned unique link: /p/...` apabila sistem menetapkan akhiran unik automatik.
+  4. `tests/pamphlet.test.ts` & `tests/pamphlet-storage.test.ts`:
+     - Menambah ujian unit untuk `generatePamphletSlugSuffix` / `appendUniqueSlugSuffix` serta ujian integrasi penyimpanan bagi pertembungan slug, cubaan semula `23505` serentak, dan pengendalian ralat `updatePamphlet` (37/37 + 11/11 lulus).
+- **Status Ujian & Pengesahan**:
+  - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat (`eslint .`).
+  - `npm test`: 542/542 lulus merentas 53 fail suite (`vitest run`).
+  - `npm run build`: Binaan produksi Next.js 16.2.6 Turbopack berjaya sepenuhnya (36 halaman statik + semua laluan dinamik).
+
+
+## Pembaikan Pemotongan Bingkai Pratonton Mobile E-Pamphlet Builder (`PamphletBuilderClient` & `FlipbookView`) - 2026-11-24
+
+- **Punca Isu & Laporan Pengguna**:
+  - Pengguna berkongsi tangkapan skrin mod pratonton **Mobile** pada E-Pamphlet Builder yang terpotong bahagian atas (bar `test` & ikon) dan bawah (bar `< 1 / 4 >`), lalu bertanya: *"kenapa mobile view ni tak penuh"*.
+  - `app/(dashboard)/pamphlet-builder/[id]/client.tsx` menetapkan ketinggian keras `h-[780px] max-h-[92vh]` pada bingkai telefon di dalam panel pratonton `overflow-hidden` (serta `h-[calc(100vh-65px)]` pada kontena pembina yang membazir `65px` ruang bawah pada desktop), menyebabkan bingkai telefon melebihi tinggi panel pada skrin komputer riba dan terpotong atas/bawah.
+- **Tindakan Pembaikan**:
+  1. `app/(dashboard)/pamphlet-builder/[id]/client.tsx`:
+     - Menukar kontena luar kepada `h-[calc(100dvh-64px)] md:h-full` supaya mengisi 100% tinggi desktop tanpa ruang kosong di bawah.
+     - Menukar bingkai simulator telefon kepada `w-[380px] max-w-full h-full max-h-[760px] rounded-[28px] border-[6px] border-slate-800` dalam panel `min-w-0 min-h-0 p-3 sm:p-4` supaya keseluruhan telefon (bezel atas, bar atas, kandungan, bar `< 1 / N >`, dan bezel bawah) muat 100% tanpa pemotongan pada semua saiz skrin.
+  2. `components/pamphlet/viewer/flipbook-view.tsx`:
+     - Menyelaraskan padding khusus bagi mod 1-halaman mudah alih (`pt-3 pb-[72px] px-2.5`, `verticalBreathingRoom: 16`, `availW: width - 20`) agar muka surat tampil lebih penuh dan mudah dibaca pada telefon tanpa bertindih dengan bar bawah dan tanpa mengubah susun atur 2-halaman desktop.
+- **Status Ujian & Pengesahan**:
+  - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat (`eslint .`).
+  - `npm test`: 538/538 lulus merentas 53 fail suite (`vitest run`).
+
+
+## Sokongan Muat Naik & Baca Fail PDF untuk E-Pamphlet 3D Flipbook (`pdfjs-dist`) - 2026-11-24
+
+- **Konteks & Permintaan Pengguna**:
+  - Pengguna bertanya: *"dekat e phamplet tu boleh ke utk 3d flip boleh baca pdf"*, dan bersetuju meneruskan cadangan **Cara 1** (*auto-convert* halaman PDF kepada imej HD WebP/JPEG di pelayar semasa muat naik dalam E-Pamphlet Builder sambil menyimpan fail PDF asal sebagai `pdfUrl` secara *best-effort*).
+- **Tindakan Pelaksanaan**:
+  1. **Pakej & Aset PDF.js Lokal (`package.json`, `public/pdf.min.mjs`, `public/pdf.worker.min.mjs`, `eslint.config.mjs`)**:
+     - Memasang `pdfjs-dist@5.4.624` (serasi Node 20 CI `.github/workflows/ci.yml` dan pelayar moden/lama melalui binaan `legacy`).
+     - Menyalin kedua-dua `legacy/build/pdf.min.mjs` dan `legacy/build/pdf.worker.min.mjs` ke `public/` supaya dimuatkan sebagai ES Module natif pelayar (`import(/* webpackIgnore: true */ /* @vite-ignore */ moduleUrl)`) — menghapuskan ralat `Object.defineProperty called on non-object` akibat pertembungan pembungkusan berganda Webpack 5 dalam `next dev --webpack` di samping mematuhi CSP ketat (`'self'`, `worker-src 'self' blob:`, `X-Content-Type-Options: nosniff`) tanpa CDN luaran. Kedua-dua fail ditambah ke `ignores` dalam `eslint.config.mjs`.
+  2. **Modul Import PDF (`lib/pamphlets/pdf-import.ts`)**:
+     - Membina pembantu tulen (`isPdfFile`, `isSupportedImageFile`, `isSupportedPamphletFile`, `validatePdfForImport`, `computePdfRenderDimensions`) dan `renderPdfFileToPageImages` yang memuatkan `/pdf.min.mjs` secara natif di pelayar (sifar beban pada SSR dan halaman awam `/p/[slug]`), merender setiap halaman di atas latar kertas `#ffffff` pada resolusi HD (`1600px` sisi terpanjang), mengeksport ke `image/webp` (sandaran `image/jpeg`), menguatkuasakan had selamat (`30MB`, `60` halaman), membersihkan memori kanvas/dokumen, serta melaporkan kemajuan halaman demi halaman.
+  3. **Integrasi E-Pamphlet Builder & Pemapar (`app/(dashboard)/pamphlet-builder/[id]/client.tsx`, `app/(dashboard)/pamphlets/client.tsx`, `components/pamphlet/viewer/index.tsx`)**:
+     - Mengemas kini muat naik halaman untuk menerima `.pdf` (`application/pdf,.pdf`) bersama imej (`PNG`, `JPG`, `WebP`) serta menyokong seret-lepas (*drag-and-drop*).
+     - Menambah bar kemajuan masa nyata (*Converting PDF page X of Y...* → *Uploading PDF page X of Y...*), membetulkan auto-pengesanan orientasi (Portrait/Landscape) bagi buku baharu yang kosong, menyimpan fail `.pdf` asal secara *fail-safe* ke `pdfUrl` untuk butang *Download Original PDF*, dan mengehadkan `currentPage` dalam `PamphletViewer` agar sentiasa berada dalam julat sah semasa halaman diubah di pratonton.
+  4. **Ujian Unit (`tests/pamphlet.test.ts`)**:
+     - Menambah 4 ujian unit merangkumi pengesanan MIME/sambungan PDF & imej, pengesahan had saiz 30MB / fail kosong, pengiraan dimensi & orientasi HD (A4 Portrait, A4 Landscape, slaid 16:9, skala ekstrem, dan sandaran dimensi tidak sah), serta pengesahan kewujudan aset lokal `public/pdf.min.mjs` & `public/pdf.worker.min.mjs` (36/36 lulus dalam `tests/pamphlet.test.ts`).
+- **Status Ujian & Pengesahan**:
+  - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
+  - `npm run lint`: 0 ralat (`eslint .`).
+  - `npm test`: 538/538 lulus merentas 53 fail suite (`vitest run`).
+  - `npm run build`: Binaan produksi Next.js 16.2.6 Turbopack berjaya sepenuhnya (36 halaman statik + semua laluan dinamik); disahkan chunk emitted mengekalkan `import(new URL("/pdf.min.mjs", window.location.origin).href)` natif tanpa pembalut bundler.
+  - Pengesahan pelayar Chrome sebenar (`next start` + CSP penuh aktif): muat turun & render PDF 3 halaman A4 melalui `/pdf.min.mjs` + `/pdf.worker.min.mjs` menghasilkan 3 imej `image/webp` (`1131×1600`) dengan **0 ralat konsol** dan **0 pelanggaran CSP**.
+
+
 ## Pengemasan Paparan Telefon (Phone View) Pratonton Interaktif Landing (`LandingHero`) - 2026-11-23
 
 - **Konteks & Permintaan Pengguna**:
@@ -15,6 +89,8 @@
   - `npm run typecheck`: 0 ralat (`tsc --noEmit`).
   - `npm run lint`: 0 ralat (`eslint .`).
   - `npm test`: 534/534 lulus merentas 53 fail suite (`vitest run`).
+  - `npm run build`: Binaan produksi Next.js 16.2.6 Turbopack berjaya sepenuhnya (36 halaman statik + semua laluan dinamik).
+- **Vercel Production Deployment (2026-11-23)**: Deployment `dpl_CtYPS42976MnBryApRnEn66dVoxs` pushed live to `https://www.klikform.com` (`https://klikform-2esnuj2hw-sofwan-jailanis-projects.vercel.app`). Commit `ca83a3c` active on `origin/master`.
 
 
 ## Penambahan Pautan Kembali ke `Home` dalam Menu Mudah Alih Landing (`LandingMobileMenu`) - 2026-11-23

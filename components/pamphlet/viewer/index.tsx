@@ -99,6 +99,15 @@ export function PamphletViewer({
 
   const totalPages = pages.length;
 
+  // Keep currentPage within valid bounds if pages are added/removed live in the builder preview
+  React.useEffect(() => {
+    if (totalPages > 0 && currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    } else if (totalPages === 0 && currentPage !== 1) {
+      setCurrentPage(1);
+    }
+  }, [totalPages, currentPage]);
+
   // Auto-slide slideshow timer (advances every 3.5s with wrap-around)
   React.useEffect(() => {
     if (!isAutoSliding || displayMode !== 'slide' || totalPages <= 1) return;

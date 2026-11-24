@@ -31,8 +31,10 @@ vi.mock('@/lib/storage/subscription', () => ({
 import {
   getPamphlets,
   createPamphlet,
+  updatePamphlet,
   getPamphletPublic,
   isMissingTableError,
+  isUniqueViolationError,
   isPamphletsTableReady,
   PAMPHLET_TABLE_MISSING_MESSAGE,
 } from '@/lib/storage/pamphlets';
@@ -122,6 +124,131 @@ describe('E-Pamphlet — Storage Operations', () => {
         title: 'Buku Program 3',
       })
     ).rejects.toThrow('maximum limit of 2 pamphlets');
+  });
+
+  it('createPamphlet automatically appends a unique suffix when the requested slug is already taken', async () => {
+    const insertedPayloads: any[] = [];
+    let slugCheckCalls = 0;
+
+    const builder: any = {};
+    builder.select = vi.fn().mockReturnValue(builder);
+    builder.eq = vi.fn().mockReturnValue(builder);
+    builder.insert = vi.fn((payload: any) => {
+      insertedPayloads.push(payload);
+      return builder;
+    });
+    builder.maybeSingle = vi.fn(async () => {
+      slugCheckCalls += 1;
+      // First check ('test') collides with an existing pamphlet; second check ('test-xxxx') is free
+      if (slugCheckCalls === 1) {
+        return { data: { id: 'existing-other-user' }, error: null };
+      }
+      return { data: null, error: null };
+    });
+    builder.single = vi.fn(async () => {
+      const last = insertedPayloads[insertedPayloads.length - 1];
+      return {
+        data: {
+          id: 'pamphlet-new',
+          user_id: 'u1',
+          slug: last.slug,
+          title: last.title,
+          theme: 'light',
+          display_mode: 'flipbook',
+          pages: [],
+          action_buttons: [],
+          is_active: true,
+          views: 0,
+          created_at: '2026-11-24T00:00:00Z',
+          updated_at: '2026-11-24T00:00:00Z',
+        },
+        error: null,
+      };
+    });
+    builder.then = (resolve: any) => resolve({ count: 0, data: null, error: null });
+
+    mockState.from.mockReturnValue(builder);
+
+    const created = await createPamphlet({
+      slug: 'test',
+      title: 'test',
+    });
+
+    expect(created.title).toBe('test');
+    expect(created.slug).toMatch(/^test-[a-z0-9]{4}$/);
+    expect(slugCheckCalls).toBe(2);
+  });
+
+  it('createPamphlet retries with a fresh suffix when a concurrent insert triggers Postgres 23505', async () => {
+    const insertedSlugs: string[] = [];
+    let insertAttempt = 0;
+
+    const builder: any = {};
+    builder.select = vi.fn().mockReturnValue(builder);
+    builder.eq = vi.fn().mockReturnValue(builder);
+    builder.insert = vi.fn((payload: any) => {
+      insertedSlugs.push(payload.slug);
+      return builder;
+    });
+    builder.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+    builder.single = vi.fn(async () => {
+      insertAttempt += 1;
+      if (insertAttempt === 1) {
+        return {
+          data: null,
+          error: { code: '23505', message: 'duplicate key value violates unique constraint "pamphlets_slug_key"' },
+        };
+      }
+      const slug = insertedSlugs[insertedSlugs.length - 1];
+      return {
+        data: {
+          id: 'pamphlet-race-ok',
+          user_id: 'u1',
+          slug,
+          title: 'Hari Sukan 2026',
+          theme: 'light',
+          display_mode: 'flipbook',
+          pages: [],
+          action_buttons: [],
+          is_active: true,
+          views: 0,
+          created_at: '2026-11-24T00:00:00Z',
+          updated_at: '2026-11-24T00:00:00Z',
+        },
+        error: null,
+      };
+    });
+    builder.then = (resolve: any) => resolve({ count: 0, data: null, error: null });
+
+    mockState.from.mockReturnValue(builder);
+
+    const created = await createPamphlet({
+      slug: 'hari-sukan-2026',
+      title: 'Hari Sukan 2026',
+    });
+
+    expect(insertAttempt).toBe(2);
+    expect(insertedSlugs[0]).toBe('hari-sukan-2026');
+    expect(created.slug).toMatch(/^hari-sukan-2026-[a-z0-9]{4}$/);
+  });
+
+  it('updatePamphlet returns a friendly error on duplicate slug violation', async () => {
+    expect(isUniqueViolationError({ code: '23505' })).toBe(true);
+    expect(isUniqueViolationError({ message: 'duplicate key value violates unique constraint' })).toBe(true);
+    expect(isUniqueViolationError({ code: 'PGRST205' })).toBe(false);
+
+    const builder: any = {};
+    builder.select = vi.fn().mockReturnValue(builder);
+    builder.update = vi.fn().mockReturnValue(builder);
+    builder.eq = vi.fn().mockReturnValue(builder);
+    builder.neq = vi.fn().mockReturnValue(builder);
+    builder.maybeSingle = vi.fn().mockResolvedValue({ data: { id: 'other-id' }, error: null });
+
+    mockState.from.mockReturnValue(builder);
+
+    await expect(
+      updatePamphlet('my-id', { slug: 'taken-slug' })
+    ).rejects.toThrow('already in use');
   });
 
   it('getPamphletPublic looks up by slug using admin client', async () => {

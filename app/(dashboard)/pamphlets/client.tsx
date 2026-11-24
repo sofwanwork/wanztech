@@ -112,7 +112,12 @@ export function CreatePamphletDialog({
 
       if (res.success && res.id) {
         setOpen(false);
-        toast.success('Program book created successfully!');
+        const assignedSlug = res.pamphlet?.slug;
+        if (assignedSlug && assignedSlug !== slug) {
+          toast.success(`Program book created! Assigned unique link: /p/${assignedSlug}`);
+        } else {
+          toast.success('Program book created successfully!');
+        }
         router.push(`/pamphlet-builder/${res.id}`);
       } else {
         setError(res.error || 'Failed to create pamphlet');
@@ -144,7 +149,7 @@ export function CreatePamphletDialog({
               Create New E-Pamphlet
             </DialogTitle>
             <DialogDescription>
-              Start your digital event program book. You can upload pages right after.
+              Start your digital event program book. You can upload a PDF or page images right after.
             </DialogDescription>
           </DialogHeader>
 
@@ -186,7 +191,7 @@ export function CreatePamphletDialog({
                 />
               </div>
               <p className="text-[11px] text-muted-foreground">
-                Attendees can open the program book using this link or by scanning the QR Code.
+                Attendees can open the program book via this link or QR Code. If this link is already taken, a unique suffix is added automatically.
               </p>
             </div>
 

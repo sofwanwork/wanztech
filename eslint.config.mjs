@@ -25,6 +25,8 @@ const eslintConfig = [
             '*.config.ts',
             '*.config.mjs',
             'coverage/**',
+            'public/pdf.min.mjs',
+            'public/pdf.worker.min.mjs',
         ],
     },
     // Extend next/core-web-vitals

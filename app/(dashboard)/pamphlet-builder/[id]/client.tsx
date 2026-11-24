@@ -17,6 +17,12 @@ import {
   getSamplePamphlet,
   getSampleLandscapePamphlet,
 } from '@/lib/pamphlets/utils';
+import {
+  isPdfFile,
+  isSupportedPamphletFile,
+  renderPdfFileToPageImages,
+  MAX_PDF_PAGES,
+} from '@/lib/pamphlets/pdf-import';
 import { updatePamphletAction } from '@/actions/pamphlets';
 import { PamphletViewer } from '@/components/pamphlet/viewer';
 import { cn } from '@/lib/utils';
@@ -65,6 +71,11 @@ export function PamphletBuilderClient({
   const [pamphlet, setPamphlet] = useState<Pamphlet>(initialPamphlet);
   const [isSaving, startSaveTransition] = useTransition();
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{
+    label: string;
+    percent: number;
+  } | null>(null);
+  const [isDraggingFiles, setIsDraggingFiles] = useState(false);
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
   const [isPreviewExpanded, setIsPreviewExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<'pages' | 'details' | 'appearance'>('pages');
@@ -106,13 +117,72 @@ export function PamphletBuilderClient({
     });
   };
 
-  // Upload multiple images
-  const handleFilesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  // Helper to upload a File or rendered Blob to Supabase Storage (with Data URL fallback)
+  const uploadAssetToStorage = async (
+    supabase: ReturnType<typeof createClient>,
+    userId: string | undefined,
+    data: Blob,
+    fileExt: string,
+    contentType?: string,
+    allowDataUrlFallback: boolean = true
+  ): Promise<string> => {
+    if (userId) {
+      const safeExt = fileExt.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'webp';
+      const filePath = `${userId}/pamphlet_${pamphlet.id}_${uuidv4()}.${safeExt}`;
 
+      const { error: uploadError } = await supabase.storage
+        .from('certificate_backgrounds')
+        .upload(filePath, data, {
+          cacheControl: '3600',
+          upsert: true,
+          ...(contentType ? { contentType } : {}),
+        });
+
+      if (!uploadError) {
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from('certificate_backgrounds').getPublicUrl(filePath);
+        return publicUrl;
+      }
+    }
+
+    if (!allowDataUrlFallback) {
+      return '';
+    }
+
+    return new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (event) => resolve((event.target?.result as string) || '');
+      reader.readAsDataURL(data);
+    });
+  };
+
+  // Process uploaded PDF documents and/or raster image files into pamphlet pages
+  const processSelectedFiles = async (rawFiles: FileList | File[]) => {
+    const allFiles = Array.from(rawFiles);
+    if (allFiles.length === 0) return;
+
+    const supportedFiles = allFiles.filter((file) => isSupportedPamphletFile(file));
+    const skippedCount = allFiles.length - supportedFiles.length;
+
+    if (supportedFiles.length === 0) {
+      toast.error('Please upload a PDF (.pdf) or image files (PNG, JPG, WebP).');
+      return;
+    }
+
+    if (skippedCount > 0) {
+      toast.info(`Skipped ${skippedCount} unsupported file(s). Only PDF, PNG, JPG, and WebP are supported.`);
+    }
+
+    const hasPdf = supportedFiles.some((file) => isPdfFile(file));
     setIsUploading(true);
-    const toastId = toast.loading(`Uploading ${files.length} page images...`);
+    setUploadProgress({
+      label: hasPdf ? 'Preparing PDF document...' : `Uploading ${supportedFiles.length} image(s)...`,
+      percent: 5,
+    });
+    const toastId = toast.loading(
+      hasPdf ? 'Reading PDF pages for 3D Flipbook...' : `Uploading ${supportedFiles.length} page image(s)...`
+    );
 
     try {
       const supabase = createClient();
@@ -121,82 +191,194 @@ export function PamphletBuilderClient({
       } = await supabase.auth.getUser();
 
       const newPages: PamphletPageItem[] = [];
+      let resolvedPdfUrl = '';
+      const pdfWarnings: string[] = [];
+      const failedErrors: string[] = [];
 
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        let imageUrl = '';
+      for (let fileIdx = 0; fileIdx < supportedFiles.length; fileIdx++) {
+        const file = supportedFiles[fileIdx];
 
-        if (user) {
-          const fileExt = file.name.split('.').pop() || 'png';
-          const filePath = `${user.id}/pamphlet_${pamphlet.id}_${uuidv4()}.${fileExt}`;
+        if (isPdfFile(file)) {
+          try {
+            const pdfResult = await renderPdfFileToPageImages(file, {
+              maxPages: MAX_PDF_PAGES,
+              onProgress: ({ stage, currentPage, totalPages }) => {
+                if (stage === 'loading') {
+                  const label = `Opening "${file.name}"...`;
+                  setUploadProgress({ label, percent: 8 });
+                  toast.loading(label, { id: toastId });
+                } else {
+                  const pct = totalPages > 0 ? Math.round((currentPage / totalPages) * 50) : 15;
+                  const label = `Converting PDF page ${currentPage} of ${totalPages}...`;
+                  setUploadProgress({ label, percent: pct });
+                  toast.loading(label, { id: toastId });
+                }
+              },
+            });
 
-          const { error: uploadError } = await supabase.storage
-            .from('certificate_backgrounds')
-            .upload(filePath, file, { cacheControl: '3600', upsert: true });
-
-          if (!uploadError) {
-            const {
-              data: { publicUrl },
-            } = supabase.storage.from('certificate_backgrounds').getPublicUrl(filePath);
-            imageUrl = publicUrl;
-          }
-        }
-
-        // Fallback to Data URL if storage bucket fails or not configured
-        if (!imageUrl) {
-          imageUrl = await new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (event) => resolve(event.target?.result as string);
-            reader.readAsDataURL(file);
-          });
-        }
-
-        // Auto-detect image aspect ratio and orientation
-        let pageOrientation: PamphletOrientation = pamphlet.orientation || 'portrait';
-        let pageRatio = 1.414;
-        try {
-          const img = new Image();
-          img.src = imageUrl;
-          await new Promise<void>((resolve) => {
-            img.onload = () => resolve();
-            img.onerror = () => resolve();
-          });
-          if (img.naturalWidth && img.naturalHeight) {
-            pageRatio = +(img.naturalWidth / img.naturalHeight).toFixed(3);
-            if (pageRatio > 1.05) {
-              pageOrientation = 'landscape';
+            if (pdfResult.truncated) {
+              pdfWarnings.push(
+                `"${file.name}" has ${pdfResult.totalPdfPages} pages — imported the first ${MAX_PDF_PAGES} pages.`
+              );
             }
-          }
-        } catch {
-          // fallback gracefully
-        }
 
-        const existingCount = (pamphlet.pages || []).length + newPages.length;
-        newPages.push({
-          id: uuidv4(),
-          pageNumber: existingCount + 1,
-          title: `Page ${existingCount + 1}`,
-          imageUrl,
-          aspectRatio: pageRatio,
-          orientation: pageOrientation,
-        });
+            // Upload each rendered PDF page image sequentially with clear progress feedback
+            for (let pIdx = 0; pIdx < pdfResult.pages.length; pIdx++) {
+              const rendered = pdfResult.pages[pIdx];
+              const pct =
+                50 + Math.round(((pIdx + 1) / Math.max(1, pdfResult.pages.length)) * 45);
+              const label = `Uploading PDF page ${pIdx + 1} of ${pdfResult.pages.length}...`;
+              setUploadProgress({ label, percent: pct });
+              toast.loading(label, { id: toastId });
+
+              const imageUrl = await uploadAssetToStorage(
+                supabase,
+                user?.id,
+                rendered.blob,
+                rendered.fileExt,
+                rendered.mimeType,
+                true
+              );
+
+              if (!imageUrl) continue;
+
+              const existingCount = (pamphlet.pages || []).length + newPages.length;
+              newPages.push({
+                id: uuidv4(),
+                pageNumber: existingCount + 1,
+                title: `Page ${existingCount + 1}`,
+                imageUrl,
+                aspectRatio: rendered.aspectRatio,
+                orientation: rendered.orientation,
+              });
+            }
+
+            // Best-effort: save the original PDF file to storage so "Download Original PDF" works automatically
+            if (!resolvedPdfUrl && user?.id) {
+              try {
+                setUploadProgress({ label: 'Linking original PDF for download...', percent: 97 });
+                const uploadedPdfUrl = await uploadAssetToStorage(
+                  supabase,
+                  user.id,
+                  file,
+                  'pdf',
+                  'application/pdf',
+                  false
+                );
+                if (uploadedPdfUrl) {
+                  resolvedPdfUrl = uploadedPdfUrl;
+                }
+              } catch {
+                // Non-blocking: rendered flipbook pages are already ready
+              }
+            }
+          } catch (pdfErr) {
+            failedErrors.push(
+              pdfErr instanceof Error ? pdfErr.message : `Failed to process "${file.name}".`
+            );
+          }
+        } else {
+          // Standard raster image upload (PNG, JPG, WebP)
+          const pct = Math.round(((fileIdx + 1) / supportedFiles.length) * 95);
+          const label = `Uploading image ${fileIdx + 1} of ${supportedFiles.length}...`;
+          setUploadProgress({ label, percent: pct });
+          toast.loading(label, { id: toastId });
+
+          const fileExt = file.name.split('.').pop() || 'png';
+          const imageUrl = await uploadAssetToStorage(
+            supabase,
+            user?.id,
+            file,
+            fileExt,
+            file.type || undefined,
+            true
+          );
+
+          if (!imageUrl) continue;
+
+          // Auto-detect image aspect ratio (width/height) and orientation
+          let pageOrientation: PamphletOrientation = 'portrait';
+          let pageRatio = 0.707;
+          try {
+            const img = new Image();
+            img.src = imageUrl;
+            await new Promise<void>((resolve) => {
+              img.onload = () => resolve();
+              img.onerror = () => resolve();
+            });
+            if (img.naturalWidth && img.naturalHeight) {
+              pageRatio = +(img.naturalWidth / img.naturalHeight).toFixed(3);
+              pageOrientation = pageRatio > 1.05 ? 'landscape' : 'portrait';
+            }
+          } catch {
+            // fallback gracefully
+          }
+
+          const existingCount = (pamphlet.pages || []).length + newPages.length;
+          newPages.push({
+            id: uuidv4(),
+            pageNumber: existingCount + 1,
+            title: `Page ${existingCount + 1}`,
+            imageUrl,
+            aspectRatio: pageRatio,
+            orientation: pageOrientation,
+          });
+        }
       }
 
-      setPamphlet((prev) => {
-        const updatedPages = [...(prev.pages || []), ...newPages];
-        // Set cover image automatically if not set yet
-        const coverImage = prev.coverImage || updatedPages[0]?.imageUrl || '';
-        const orientation = prev.orientation || newPages[0]?.orientation || 'portrait';
-        return { ...prev, pages: updatedPages, coverImage, orientation };
-      });
+      if (newPages.length > 0) {
+        setPamphlet((prev) => {
+          const wasEmpty = !prev.pages || prev.pages.length === 0;
+          const updatedPages = [...(prev.pages || []), ...newPages];
+          const coverImage = prev.coverImage || updatedPages[0]?.imageUrl || '';
+          const orientation = wasEmpty
+            ? newPages[0]?.orientation || prev.orientation || 'portrait'
+            : prev.orientation || newPages[0]?.orientation || 'portrait';
+          const pdfUrl = resolvedPdfUrl || prev.pdfUrl;
+          return { ...prev, pages: updatedPages, coverImage, orientation, pdfUrl };
+        });
 
-      toast.success(`${files.length} page(s) uploaded successfully!`, { id: toastId });
+        setUploadProgress({ label: 'Done!', percent: 100 });
+        toast.success(
+          hasPdf
+            ? `${newPages.length} page(s) imported into 3D Flipbook! Remember to click Save.`
+            : `${newPages.length} page(s) uploaded successfully!`,
+          { id: toastId }
+        );
+
+        pdfWarnings.forEach((msg) => toast.info(msg));
+        failedErrors.forEach((msg) => toast.error(msg));
+      } else {
+        toast.error(
+          failedErrors[0] || 'Failed to import pages. Please check the file and try again.',
+          { id: toastId }
+        );
+      }
     } catch (err) {
       console.error('File upload error:', err);
-      toast.error('Failed to upload images. Please try again.', { id: toastId });
+      toast.error(
+        err instanceof Error ? err.message : 'Failed to upload files. Please try again.',
+        { id: toastId }
+      );
     } finally {
       setIsUploading(false);
+      setUploadProgress(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleFilesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    await processSelectedFiles(e.target.files);
+  };
+
+  const handleDropFiles = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingFiles(false);
+    if (isUploading) return;
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      await processSelectedFiles(e.dataTransfer.files);
     }
   };
 
@@ -328,7 +510,7 @@ export function PamphletBuilderClient({
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-65px)] overflow-hidden bg-slate-50">
+    <div className="flex flex-col h-[calc(100dvh-64px)] md:h-full overflow-hidden bg-slate-50">
       {/* Top Action Header */}
       <header className="h-16 bg-white border-b border-slate-200 px-4 md:px-6 flex items-center justify-between gap-3 shrink-0 z-20">
         <div className="flex items-center gap-3 min-w-0">
@@ -354,7 +536,7 @@ export function PamphletBuilderClient({
         {/* Header Right Actions */}
         <div className="flex items-center gap-2 shrink-0">
           {/* Preview Device Toggle */}
-          <div className="hidden sm:flex items-center bg-slate-100 p-1 rounded-md border border-slate-200 mr-1">
+          <div className="hidden sm:flex items-center h-9 bg-slate-100 p-1 rounded-md border border-slate-200">
             <Button
               variant="ghost"
               size="sm"
@@ -381,11 +563,13 @@ export function PamphletBuilderClient({
 
           {/* Expand / Minimize Preview Toggle */}
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             onClick={() => setIsPreviewExpanded((prev) => !prev)}
-            className={`hidden md:flex h-7 px-2.5 rounded-md text-xs gap-1.5 border border-slate-200 ${
-              isPreviewExpanded ? 'bg-violet-50 text-violet-900 font-semibold border-violet-200' : 'text-slate-600 hover:text-slate-900'
+            className={`hidden md:inline-flex h-9 px-3 rounded-md text-xs font-medium gap-1.5 border-slate-200 ${
+              isPreviewExpanded
+                ? 'bg-violet-50 text-violet-900 font-semibold border-violet-200 hover:bg-violet-100/70'
+                : 'text-slate-700 hover:text-slate-900'
             }`}
             title={isPreviewExpanded ? 'Return to split view' : 'Expand preview to fullscreen'}
           >
@@ -402,7 +586,12 @@ export function PamphletBuilderClient({
             )}
           </Button>
 
-          <Button asChild variant="outline" size="sm" className="gap-1.5 font-medium rounded-md border-slate-200">
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="h-9 px-3 rounded-md text-xs font-medium gap-1.5 border-slate-200 text-slate-700 hover:text-slate-900"
+          >
             <Link href={`/p/${pamphlet.slug}`} target="_blank">
               <ExternalLink className="h-3.5 w-3.5 text-slate-500" />
               <span className="hidden sm:inline">Public View</span>
@@ -413,12 +602,12 @@ export function PamphletBuilderClient({
             onClick={handleSave}
             disabled={isSaving}
             size="sm"
-            className="gap-1.5 font-semibold bg-violet-900 hover:bg-violet-950 text-white rounded-md shadow-xs"
+            className="h-9 px-3.5 rounded-md text-xs font-semibold gap-1.5 bg-violet-900 hover:bg-violet-950 text-white shadow-xs"
           >
             {isSaving ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
-              <Save className="h-4 w-4" />
+              <Save className="h-3.5 w-3.5" />
             )}
             <span>{isSaving ? 'Saving...' : 'Save'}</span>
           </Button>
@@ -458,24 +647,58 @@ export function PamphletBuilderClient({
 
             {/* TAB 1: PAGES MANAGER */}
             <TabsContent value="pages" className="p-4 space-y-4 flex-1 m-0">
-              {/* Upload Actions Banner */}
-              <div className="p-4 rounded-lg border border-dashed border-violet-300 bg-violet-50/50 flex flex-col items-center justify-center text-center gap-3">
+              {/* Upload Actions Banner (Supports PDF & Images + Drag-and-Drop) */}
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  if (!isUploading) setIsDraggingFiles(true);
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  setIsDraggingFiles(false);
+                }}
+                onDrop={handleDropFiles}
+                className={cn(
+                  'p-4 rounded-lg border border-dashed flex flex-col items-center justify-center text-center gap-3 transition-colors',
+                  isDraggingFiles
+                    ? 'border-violet-900 bg-violet-100/70'
+                    : 'border-violet-300 bg-violet-50/50'
+                )}
+              >
                 <div className="h-10 w-10 rounded-md bg-white border border-slate-200 text-violet-900 flex items-center justify-center">
                   <Upload className="h-5 w-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-slate-900">Upload Pamphlet Pages</h4>
+                  <h4 className="text-sm font-bold text-slate-900">
+                    Upload Pages (PDF or Images)
+                  </h4>
                   <p className="text-xs text-slate-600 mt-0.5">
-                    Select images (PNG, JPG, WebP). You can upload multiple images at once.
+                    Drop a <strong>PDF file</strong> to auto-split into 3D Flipbook pages, or select multiple images (PNG, JPG, WebP).
                   </p>
                 </div>
+
+                {isUploading && uploadProgress && (
+                  <div className="w-full max-w-xs space-y-1.5">
+                    <div className="h-1.5 w-full rounded-full bg-violet-200/80 overflow-hidden">
+                      <div
+                        className="h-full bg-violet-900 transition-all duration-200 rounded-full"
+                        style={{
+                          width: `${Math.max(6, Math.min(100, uploadProgress.percent))}%`,
+                        }}
+                      />
+                    </div>
+                    <p className="text-[11px] font-medium text-violet-900 truncate">
+                      {uploadProgress.label}
+                    </p>
+                  </div>
+                )}
 
                 <div className="flex flex-wrap items-center justify-center gap-2">
                   <input
                     ref={fileInputRef}
                     type="file"
                     multiple
-                    accept="image/png,image/jpeg,image/webp"
+                    accept="application/pdf,.pdf,image/png,image/jpeg,image/webp"
                     className="hidden"
                     onChange={handleFilesUpload}
                     disabled={isUploading}
@@ -487,8 +710,12 @@ export function PamphletBuilderClient({
                     size="sm"
                     className="gap-2 font-semibold bg-violet-900 hover:bg-violet-950 text-white rounded-md shadow-xs"
                   >
-                    {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                    <span>Choose Image Files</span>
+                    {isUploading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Plus className="w-4 h-4" />
+                    )}
+                    <span>{isUploading ? 'Processing...' : 'Choose PDF / Images'}</span>
                   </Button>
 
                   {(!pamphlet.pages || pamphlet.pages.length === 0) && (
@@ -516,6 +743,10 @@ export function PamphletBuilderClient({
                     </>
                   )}
                 </div>
+
+                <p className="text-[11px] text-slate-500">
+                  PDF up to 30MB &amp; {MAX_PDF_PAGES} pages &bull; Auto-detects Portrait / Landscape
+                </p>
               </div>
 
               {/* Orientation Selector Card */}
@@ -574,7 +805,7 @@ export function PamphletBuilderClient({
 
                 {(!pamphlet.pages || pamphlet.pages.length === 0) ? (
                   <div className="p-8 text-center border border-slate-200 rounded-lg bg-slate-50/70 text-slate-500 text-xs">
-                    No pages yet. Please upload images or click &ldquo;Load Sample&rdquo; above.
+                    No pages yet. Upload a PDF or images, or click a sample template above.
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -743,7 +974,7 @@ export function PamphletBuilderClient({
                   className="text-xs font-mono"
                 />
                 <p className="text-[11px] text-muted-foreground">
-                  If provided, a &ldquo;Download Original PDF&rdquo; button will appear in the viewer sharing menu.
+                  Automatically filled when you upload a PDF in the Pages tab, or paste a link to show a &ldquo;Download Original PDF&rdquo; button in the viewer sharing menu.
                 </p>
               </div>
             </TabsContent>
@@ -931,15 +1162,15 @@ export function PamphletBuilderClient({
         {/* Right Side: Live Interactive Pamphlet Preview */}
         <div
           className={cn(
-            'flex flex-1 bg-slate-950 items-center justify-center p-3 sm:p-6 overflow-hidden relative transition-all duration-300',
+            'flex flex-1 min-w-0 min-h-0 bg-slate-950 items-center justify-center p-3 sm:p-4 overflow-hidden relative transition-all duration-300',
             !isPreviewExpanded && 'hidden lg:flex'
           )}
         >
           <div
-            className={`transition-all duration-300 relative shadow-sm overflow-hidden rounded-lg border border-white/10 ${
+            className={`transition-all duration-300 relative shadow-sm overflow-hidden border border-white/10 ${
               previewDevice === 'mobile'
-                ? 'w-[400px] h-[780px] max-h-[92vh] rounded-[40px] border-8 border-slate-800 shadow-2xl ring-1 ring-white/20'
-                : 'w-full h-full'
+                ? 'w-[380px] max-w-full h-full max-h-[760px] rounded-[28px] border-[6px] border-slate-800 shadow-2xl ring-1 ring-white/20'
+                : 'w-full h-full rounded-lg'
             }`}
           >
             <PamphletViewer

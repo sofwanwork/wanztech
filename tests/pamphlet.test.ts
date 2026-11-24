@@ -1,11 +1,25 @@
 import { describe, it, expect } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 import {
   isValidPamphletSlug,
   cleanPamphletSlug,
+  generatePamphletSlugSuffix,
+  appendUniqueSlugSuffix,
   getSamplePamphlet,
   getSampleLandscapePamphlet,
   getPamphletOrientation,
 } from '@/lib/pamphlets/utils';
+import {
+  isPdfFile,
+  isSupportedImageFile,
+  isSupportedPamphletFile,
+  validatePdfForImport,
+  computePdfRenderDimensions,
+  MAX_PDF_FILE_SIZE_BYTES,
+  PDF_LIB_SRC,
+  PDF_WORKER_SRC,
+} from '@/lib/pamphlets/pdf-import';
 import { PAMPHLET_THEMES, DEFAULT_PAMPHLET_THEME } from '@/lib/pamphlets/themes';
 import { mapPamphletFromRow } from '@/lib/storage/pamphlets';
 import { PamphletTheme, PamphletPageItem } from '@/lib/types/pamphlets';
@@ -41,6 +55,30 @@ describe('E-Pamphlet — Slug Validation & Cleaning', () => {
     expect(cleanPamphletSlug('  @Kejohanan__Sukan!!  ')).toBe('kejohanan-sukan');
     expect(cleanPamphletSlug('Bengkel Web Dev 101')).toBe('bengkel-web-dev-101');
     expect(cleanPamphletSlug('a'.repeat(80)).length).toBe(60);
+  });
+
+  it('appends clean unique suffixes while staying within 3-60 valid slug bounds', () => {
+    const suffix = generatePamphletSlugSuffix(4);
+    expect(suffix).toMatch(/^[a-z0-9]{4}$/);
+
+    const normal = appendUniqueSlugSuffix('test', 'k4m9');
+    expect(normal).toBe('test-k4m9');
+    expect(isValidPamphletSlug(normal)).toBe(true);
+
+    // 60-character base slug must truncate cleanly to stay <= 60 chars
+    const maxLenSlug = appendUniqueSlugSuffix('a'.repeat(60), 'x7p2');
+    expect(maxLenSlug.length).toBe(60);
+    expect(maxLenSlug.endsWith('-x7p2')).toBe(true);
+    expect(isValidPamphletSlug(maxLenSlug)).toBe(true);
+
+    // Trailing hyphen at truncation boundary must not produce double hyphens
+    const boundarySlug = appendUniqueSlugSuffix(`${'a'.repeat(54)}-bbbbbb`, 'r8n3');
+    expect(boundarySlug).toBe(`${'a'.repeat(54)}-r8n3`);
+    expect(boundarySlug).not.toContain('--');
+    expect(isValidPamphletSlug(boundarySlug)).toBe(true);
+
+    // Empty base safely falls back to book-<suffix>
+    expect(appendUniqueSlugSuffix('', 'k4m9')).toBe('book-k4m9');
   });
 });
 
@@ -523,6 +561,105 @@ describe('E-Pamphlet — Dynamic 3D Outer Paper-Stack Thickness (computeBookEdge
     expect(mobileLast.rightThickness).toBe(0);
   });
 });
+
+describe('E-Pamphlet — PDF Import Validation, Dimensions & Self-Hosted Worker', () => {
+  it('detects PDF and supported image files accurately by MIME type or extension', () => {
+    expect(isPdfFile({ name: 'buku-program.pdf', type: 'application/pdf' })).toBe(true);
+    expect(isPdfFile({ name: 'ANNUAL_REPORT.PDF', type: '' })).toBe(true);
+    expect(isPdfFile({ name: 'brochure', type: 'application/x-pdf' })).toBe(true);
+    expect(isPdfFile({ name: 'cover.png', type: 'image/png' })).toBe(false);
+    expect(isPdfFile(null)).toBe(false);
+
+    expect(isSupportedImageFile({ name: 'page1.png', type: 'image/png' })).toBe(true);
+    expect(isSupportedImageFile({ name: 'page2.jpg', type: 'image/jpeg' })).toBe(true);
+    expect(isSupportedImageFile({ name: 'page3.webp', type: '' })).toBe(true);
+    expect(isSupportedImageFile({ name: 'doc.pdf', type: 'application/pdf' })).toBe(false);
+
+    expect(isSupportedPamphletFile({ name: 'booklet.pdf', type: 'application/pdf' })).toBe(true);
+    expect(isSupportedPamphletFile({ name: 'page1.webp', type: 'image/webp' })).toBe(true);
+    expect(isSupportedPamphletFile({ name: 'notes.docx', type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' })).toBe(false);
+    expect(isSupportedPamphletFile({ name: 'vector.svg', type: 'image/svg+xml' })).toBe(false);
+  });
+
+  it('validates PDF type, non-empty size, and maximum file size limit', () => {
+    expect(
+      validatePdfForImport({ name: 'program.pdf', type: 'application/pdf', size: 2_500_000 })
+    ).toEqual({ valid: true });
+
+    const notPdf = validatePdfForImport({ name: 'image.png', type: 'image/png', size: 50_000 });
+    expect(notPdf.valid).toBe(false);
+
+    const emptyPdf = validatePdfForImport({ name: 'empty.pdf', type: 'application/pdf', size: 0 });
+    expect(emptyPdf.valid).toBe(false);
+    if (!emptyPdf.valid) {
+      expect(emptyPdf.error).toContain('empty');
+    }
+
+    const hugePdf = validatePdfForImport({
+      name: 'huge.pdf',
+      type: 'application/pdf',
+      size: MAX_PDF_FILE_SIZE_BYTES + 1,
+    });
+    expect(hugePdf.valid).toBe(false);
+    if (!hugePdf.valid) {
+      expect(hugePdf.error).toContain('30MB');
+    }
+  });
+
+  it('computes accurate HD render dimensions, aspect ratio, and orientation for portrait, landscape, slide, and edge-case PDFs', () => {
+    // A4 Portrait (595 x 842 pt)
+    const a4Portrait = computePdfRenderDimensions(595, 842);
+    expect(a4Portrait.orientation).toBe('portrait');
+    expect(a4Portrait.aspectRatio).toBeCloseTo(0.707, 2);
+    expect(a4Portrait.height).toBe(1600);
+    expect(a4Portrait.width).toBeLessThan(a4Portrait.height);
+
+    // A4 Landscape (842 x 595 pt)
+    const a4Landscape = computePdfRenderDimensions(842, 595);
+    expect(a4Landscape.orientation).toBe('landscape');
+    expect(a4Landscape.aspectRatio).toBeCloseTo(1.414, 2);
+    expect(a4Landscape.width).toBe(1600);
+    expect(a4Landscape.width).toBeGreaterThan(a4Landscape.height);
+
+    // 16:9 Presentation Slide (960 x 540 pt)
+    const slide = computePdfRenderDimensions(960, 540);
+    expect(slide.orientation).toBe('landscape');
+    expect(slide.aspectRatio).toBeCloseTo(1.778, 2);
+    expect(slide.width).toBe(1600);
+
+    // Tiny PDF clamps scale <= 3.0
+    const tiny = computePdfRenderDimensions(100, 100);
+    expect(tiny.scale).toBeLessThanOrEqual(3);
+    expect(tiny.orientation).toBe('portrait');
+
+    // Giant poster clamps within canvas safety bounds (<= 2400px)
+    const poster = computePdfRenderDimensions(5000, 3500);
+    expect(poster.width).toBeLessThanOrEqual(2400);
+    expect(poster.height).toBeLessThanOrEqual(2400);
+    expect(poster.orientation).toBe('landscape');
+
+    // Invalid / zero dimensions fall back gracefully to A4 portrait
+    const invalid = computePdfRenderDimensions(0, -100);
+    expect(invalid.orientation).toBe('portrait');
+    expect(invalid.width).toBeGreaterThan(0);
+    expect(invalid.height).toBeGreaterThan(0);
+    expect(Number.isFinite(invalid.aspectRatio)).toBe(true);
+  });
+
+  it('serves both PDF.js runtime and worker from self-hosted /public paths (CSP & Webpack 5 safe)', () => {
+    expect(PDF_LIB_SRC).toBe('/pdf.min.mjs');
+    expect(PDF_WORKER_SRC).toBe('/pdf.worker.min.mjs');
+
+    const libAbsPath = path.join(process.cwd(), 'public', 'pdf.min.mjs');
+    const workerAbsPath = path.join(process.cwd(), 'public', 'pdf.worker.min.mjs');
+
+    expect(fs.existsSync(libAbsPath)).toBe(true);
+    expect(fs.statSync(libAbsPath).size).toBeGreaterThan(100_000);
+    expect(fs.existsSync(workerAbsPath)).toBe(true);
+    expect(fs.statSync(workerAbsPath).size).toBeGreaterThan(100_000);
+  });
+});
+
 
 
 

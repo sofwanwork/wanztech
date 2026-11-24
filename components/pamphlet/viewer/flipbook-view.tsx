@@ -243,9 +243,10 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
       });
 
     const isVeryCompactHeight = containerDimensions.height < 450;
-    const stagePadTop = isVeryCompactHeight ? 8 : 20;
-    const stagePadBottom = isVeryCompactHeight ? 68 : 88;
-    const verticalBreathingRoom = isVeryCompactHeight ? 20 : 36;
+    const isMobileSinglePage = !isTwoPageSpread && !isVeryCompactHeight;
+    const stagePadTop = isVeryCompactHeight ? 8 : isMobileSinglePage ? 12 : 20;
+    const stagePadBottom = isVeryCompactHeight ? 68 : isMobileSinglePage ? 72 : 88;
+    const verticalBreathingRoom = isVeryCompactHeight ? 20 : isMobileSinglePage ? 16 : 36;
 
     // Calculate dimensions (explicitly reserves bottom floating toolbar zone + breathing room)
     let bookWidth: number;
@@ -271,7 +272,7 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
       bookWidth = Math.round(targetW);
       bookHeight = Math.round(targetH);
     } else {
-      const availW = Math.max(240, containerDimensions.width - 24);
+      const availW = Math.max(240, containerDimensions.width - (isMobileSinglePage ? 20 : 24));
       const availH = Math.max(
         160,
         containerDimensions.height - stagePadTop - stagePadBottom - verticalBreathingRoom
@@ -852,7 +853,11 @@ export const FlipbookView = React.forwardRef<FlipbookViewRef, FlipbookViewProps>
         onMouseLeave={handleMouseUpPan}
         className={cn(
           'relative w-full h-full flex items-center justify-center select-none overflow-hidden',
-          isVeryCompactHeight ? 'pt-2 pb-[68px] px-3' : 'pt-5 pb-[88px] px-3 sm:px-4 md:px-6'
+          isVeryCompactHeight
+            ? 'pt-2 pb-[68px] px-3'
+            : isMobileSinglePage
+              ? 'pt-3 pb-[72px] px-2.5'
+              : 'pt-5 pb-[88px] px-3 sm:px-4 md:px-6'
         )}
         style={{
           touchAction: zoom > 1 ? 'auto' : 'none',

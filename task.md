@@ -1,3 +1,76 @@
+# Penyelesaian Slug Unik Automatik E-Pamphlet (`createPamphlet` & `updatePamphlet`) ✅ SELESAI
+
+**Konteks & Permintaan Pengguna**:
+- Pengguna membulatkan tajuk `test` & pautan `/p/test` pada pengepala E-Pamphlet Builder dan bertanya: *"contoh kalau org lain guna tajuk yg sama boleh ke"*, lalu bersetuju meneruskan **Pilihan 1**: kekalkan tajuk boleh sama dan tambah akhiran unik automatik pada slug apabila bertembung semasa penciptaan.
+
+### Pelan Tindakan Pelaksanaan
+- [x] 1. **Pembantu Akhiran Slug Unik ([lib/pamphlets/utils.ts](file:///c:/Users/Sofwan/Desktop/klikform/lib/pamphlets/utils.ts))**:
+  - Tambah `generatePamphletSlugSuffix(length)` (4 aksara huruf kecil/nombor jelas tanpa aksara mengelirukan `0/o/1/l/i`) dan `appendUniqueSlugSuffix(baseSlug, customSuffix?)` yang mengekalkan panjang sah `3–60` aksara tanpa sengkang berganda.
+- [x] 2. **Penyelesaian Slug Unik Global & Kalis Perlumbaan ([lib/storage/pamphlets.ts](file:///c:/Users/Sofwan/Desktop/klikform/lib/storage/pamphlets.ts))**:
+  - Tambah `isUniqueViolationError(error)` untuk mengesan kod PostgreSQL `23505`.
+  - Dalam `createPamphlet`: semak ketersediaan slug secara menyeluruh melalui `createAdminClient()` (merangkumi pamphlet berstatus *Closed* milik pengguna lain); jika sudah dipakai, jana akhiran unik automatik (`<slug>-xxxx`) berserta cubaan semula (*retry*) jika berlaku pertembungan serentak semasa `insert`.
+  - Dalam `updatePamphlet`: semak pertembungan slug secara global melalui `createAdminClient()` dan petakan `23505` kepada mesej ralat mesra (*"This link (slug) is already in use. Please choose a different link."*).
+- [x] 3. **Maklum Balas Dialog Penciptaan ([app/(dashboard)/pamphlets/client.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/(dashboard)/pamphlets/client.tsx))**:
+  - Paparkan toast jelas apabila slug unik baharu diberikan (`Program book created! Assigned unique link: /p/...`) dan kemas kini nota ringkas bawah ruangan **Short URL Link**.
+- [x] 4. **Ujian & Pengesahan ([tests/pamphlet.test.ts](file:///c:/Users/Sofwan/Desktop/klikform/tests/pamphlet.test.ts), [tests/pamphlet-storage.test.ts](file:///c:/Users/Sofwan/Desktop/klikform/tests/pamphlet-storage.test.ts))**:
+  - Tambah ujian unit `appendUniqueSlugSuffix` / `generatePamphletSlugSuffix` serta ujian penyimpanan bagi pertembungan slug, cubaan semula `23505` serentak, dan ralat mesra `updatePamphlet` (542/542 lulus merentas 53 fail).
+  - Jalankan `npm run typecheck` (0 ralat), `npm run lint` (0 ralat), dan `npm run build` (Next.js 16.2.6 Turbopack berjaya, 36 halaman statik).
+  - Kemas kini `task.md` dan `memory.md`.
+
+### Seksyen Reviu
+- **Bebas Sangkut untuk Tajuk Sama**: Pengguna kini bebas mencipta E-Pamphlet dengan tajuk sama seperti pengguna lain; jika `/p/<slug>` masih kosong mereka mendapat pautan bersih asal, manakala jika sudah digunakan (termasuk status *Closed* atau penciptaan serentak), sistem terus menjana `/p/<slug>-xxxx` yang sah secara automatik.
+
+---
+
+# Pembaikan Pemotongan Bingkai Pratonton Mobile E-Pamphlet Builder (`PamphletBuilderClient` & `FlipbookView`) ✅ SELESAI
+
+**Konteks & Laporan Pengguna**:
+- Pengguna menghantar tangkapan skrin mod pratonton **Mobile** di E-Pamphlet Builder yang menunjukkan bahagian atas bingkai telefon (bar pengepala `test` & ikon) dan bahagian bawah (bar navigasi `< 1 / 4 >`) terpotong, lalu bertanya: *"kenapa mobile view ni tak penuh"*.
+- **Punca Akar**:
+  1. Bingkai simulator telefon di [client.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/(dashboard)/pamphlet-builder/[id]/client.tsx) menetapkan ketinggian keras `h-[780px] max-h-[92vh]` di dalam panel pratonton `overflow-hidden` (~`600px` pada skrin komputer riba), menyebabkan bingkai telefon melimpah dan terpotong atas/bawah.
+  2. Kontena luar `PamphletBuilderClient` menggunakan `h-[calc(100vh-65px)]` pada desktop walaupun `DashboardShell` tidak mempunyai bar atas pada desktop (`md:pt-0`), membazirkan `65px` ruang kosong di bahagian bawah.
+  3. Dalam mod 1-halaman mudah alih pada [flipbook-view.tsx](file:///c:/Users/Sofwan/Desktop/klikform/components/pamphlet/viewer/flipbook-view.tsx), peruntukan ruang legar menegak (`144px`) mengecilkan saiz halaman pada skrin telefon.
+
+### Pelan Tindakan Pelaksanaan
+- [x] 1. **Kemas Kini Ketinggian Kontena & Bingkai Simulator Mobile ([app/(dashboard)/pamphlet-builder/[id]/client.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/(dashboard)/pamphlet-builder/[id]/client.tsx))**:
+  - Tukar kontena luar kepada `h-[calc(100dvh-64px)] md:h-full` supaya memenuhi 100% ketinggian skrin desktop tanpa ruang kosong bawah.
+  - Tukar bingkai simulator telefon kepada `w-[380px] max-w-full h-full max-h-[760px] rounded-[28px] border-[6px] border-slate-800` di dalam panel pratonton `min-w-0 min-h-0 p-3 sm:p-4` supaya keseluruhan telefon (bezel atas, bar judul, muka surat, bar `< 1 / N >`, dan bezel bawah) sentiasa muat 100% tanpa pemotongan pada komputer riba mahupun monitor besar.
+- [x] 2. **Optimumkan Saiz Halaman 1-Muka Mudah Alih ([components/pamphlet/viewer/flipbook-view.tsx](file:///c:/Users/Sofwan/Desktop/klikform/components/pamphlet/viewer/flipbook-view.tsx))**:
+  - Selaraskan ruang legar khusus untuk mod 1-halaman mudah alih (`pt-3 pb-[72px] px-2.5` + `verticalBreathingRoom: 16px`, `availW: width - 20`) supaya dokumen PDF/imej tampil lebih penuh dan jelas pada telefon sambil mengekalkan jarak lega kemas di atas bar bawah tanpa mengubah paparan desktop 2-halaman.
+- [x] 3. **Pengesahan & Dokumentasi**:
+  - Jalankan `npm run typecheck` (0 ralat), `npm run lint` (0 ralat), dan `npm test` (538/538 lulus).
+  - Kemas kini `task.md`, `lessons.md`, dan `memory.md`.
+
+### Seksyen Reviu
+- **Pratonton Mobile 100% Penuh Tanpa Terpotong**: Menukar bingkai telefon daripada `h-[780px] max-h-[92vh]` kepada `h-full max-h-[760px]` (berserta `md:h-full` pada kontena pembina) memastikan keseluruhan simulator telefon sentiasa kelihatan penuh dari bezel atas ke bezel bawah pada semua saiz skrin komputer riba, manakala halaman tunggal mudah alih pada `FlipbookView` kini memanfaatkan ruang skrin dengan lebih optimum.
+
+---
+
+# Sokongan Muat Naik & Baca Fail PDF untuk E-Pamphlet 3D Flipbook ✅ SELESAI
+
+**Konteks & Permintaan Pengguna**:
+- Pengguna bertanya: *"dekat e phamplet tu boleh ke utk 3d flip boleh baca pdf"*, dan bersetuju meneruskan cadangan **Cara 1** (*auto-convert* halaman PDF ke imej HD WebP/JPEG semasa muat naik di E-Pamphlet Builder menggunakan `pdfjs-dist` berserta pilihan simpan pautan fail PDF asal).
+
+### Pelan Tindakan Pelaksanaan
+- [x] 1. **Pemasangan `pdfjs-dist` & Aset Lokal Bebas Pertembungan Webpack (`public/pdf.min.mjs`, `public/pdf.worker.min.mjs`)**:
+  - Pasang `pdfjs-dist@5.4.624` (serasi Node 20 CI & browser moden/lama) dan salin kedua-dua `legacy/build/pdf.min.mjs` serta `legacy/build/pdf.worker.min.mjs` ke `public/` supaya dimuatkan sebagai ES Module natif pelayar (`/* webpackIgnore: true */`), mengelakkan ralat `Object.defineProperty called on non-object` dalam `next dev --webpack` sambil mematuhi CSP ketat (`'self'`); kecualikan kedua-duanya dalam `eslint.config.mjs`.
+- [x] 2. **Modul Ekstraksi PDF ke Halaman ([lib/pamphlets/pdf-import.ts](file:///c:/Users/Sofwan/Desktop/klikform/lib/pamphlets/pdf-import.ts))**:
+  - Bina pembantu tulen teruji (`isPdfFile`, `isSupportedImageFile`, `isSupportedPamphletFile`, `validatePdfForImport`, `computePdfRenderDimensions`) dan fungsi klien `renderPdfFileToPageImages` dengan pemuatan natif `/pdf.min.mjs`, latar belakang kertas putih `#ffffff`, resolusi HD (`1600px` sisi terpanjang), eksport WebP (sandaran JPEG), had selamat (`30MB` / `60 halaman`), pembersihan memori halaman & kanvas, dan laporan kemajuan (*progress callback*).
+- [x] 3. **Integrasi Muat Naik PDF & Drag-and-Drop di E-Pamphlet Builder ([app/(dashboard)/pamphlet-builder/[id]/client.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/(dashboard)/pamphlet-builder/[id]/client.tsx), [app/(dashboard)/pamphlets/client.tsx](file:///c:/Users/Sofwan/Desktop/klikform/app/(dashboard)/pamphlets/client.tsx), [components/pamphlet/viewer/index.tsx](file:///c:/Users/Sofwan/Desktop/klikform/components/pamphlet/viewer/index.tsx))**:
+  - Terima fail `.pdf` bersama imej (`PNG`, `JPG`, `WebP`) pada input fail dan zon seret-lepas (*drag-and-drop*).
+  - Paparkan bar kemajuan masa nyata (*Converting PDF page X of Y...* → *Uploading PDF page X of Y...*), auto-kesan orientasi (Portrait/Landscape) untuk buku baharu, muat naik fail `.pdf` asal secara *fail-safe* ke `pdfUrl` untuk butang *Download Original PDF*, serta pastikan `currentPage` pada `PamphletViewer` kekal dalam julat sah apabila halaman berubah dalam pratonton.
+- [x] 4. **Ujian Unit & Pengesahan Menyeluruh ([tests/pamphlet.test.ts](file:///c:/Users/Sofwan/Desktop/klikform/tests/pamphlet.test.ts))**:
+  - Tambah 4 ujian unit baharu bagi pengesanan fail PDF/imej, pengesahan saiz/jenis, pengiraan dimensi & orientasi render PDF (Portrait A4, Landscape A4, slaid 16:9, had skala & sempadan kanvas), dan kewujudan aset lokal `public/pdf.min.mjs` & `public/pdf.worker.min.mjs` (36/36 lulus dalam `tests/pamphlet.test.ts`; 538/538 lulus merentas 53 fail).
+  - Jalankan `npm run typecheck` (0 ralat), `npm run lint` (0 ralat), dan `npm run build` (Next.js 16.2.6 Turbopack berjaya, 36 halaman statik).
+  - Sahkan secara *end-to-end* dalam Chrome sebenar dengan CSP penuh aktif: render PDF 3 halaman A4 melalui `/pdf.min.mjs` + `/pdf.worker.min.mjs` menghasilkan 3 imej `image/webp` (`1131×1600`) dengan **0 ralat konsol**.
+- [x] 5. **Dokumentasi**:
+  - Kemas kini seksyen reviu `task.md`, `lessons.md`, dan `memory.md`.
+
+### Seksyen Reviu
+- **Muat Naik PDF Terus ke 3D Flipbook (Bebas Ralat Webpack 5 & Turbopack)**: Memuatkan `/pdf.min.mjs` dan `/pdf.worker.min.mjs` secara natif dari `public/` menyelesaikan sepenuhnya ralat `Object.defineProperty called on non-object` yang berpunca daripada pembungkusan berganda Webpack 5 (`next dev --webpack`) ke atas `pdfjs-dist`. Setiap halaman PDF kini ditukar automatik kepada imej WebP/JPEG HD di pelayar dengan auto-pengesanan orientasi dan pautan PDF asal, sambil mengekalkan prestasi ringan pada pemapar awam (`/p/[slug]`).
+
+---
+
 # Pengemasan Paparan Telefon (Phone View) Pratonton Interaktif Landing (`LandingHero`) ✅ SELESAI
 
 **Konteks & Permintaan Pengguna**:

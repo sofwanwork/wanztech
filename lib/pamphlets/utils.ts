@@ -27,6 +27,53 @@ export function cleanPamphletSlug(raw: string): string {
     .slice(0, 60);
 }
 
+const SLUG_SUFFIX_ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789';
+
+/**
+ * Generates a short, readable, URL-safe lowercase alphanumeric suffix (default 4 chars)
+ * excluding visually ambiguous characters (0, o, 1, l, i).
+ */
+export function generatePamphletSlugSuffix(length: number = 4): string {
+  const safeLen = Math.max(2, Math.min(12, Math.floor(length)));
+  let result = '';
+
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const bytes = new Uint8Array(safeLen);
+    crypto.getRandomValues(bytes);
+    for (let i = 0; i < safeLen; i++) {
+      result += SLUG_SUFFIX_ALPHABET[bytes[i] % SLUG_SUFFIX_ALPHABET.length];
+    }
+    return result;
+  }
+
+  for (let i = 0; i < safeLen; i++) {
+    result += SLUG_SUFFIX_ALPHABET[Math.floor(Math.random() * SLUG_SUFFIX_ALPHABET.length)];
+  }
+  return result;
+}
+
+/**
+ * Appends a unique suffix to a base slug while strictly preserving the 3-60 char
+ * validity constraints of `isValidPamphletSlug`.
+ */
+export function appendUniqueSlugSuffix(baseSlug: string, customSuffix?: string): string {
+  const cleanSuffix = (customSuffix ?? generatePamphletSlugSuffix(4))
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
+    .slice(0, 12) || generatePamphletSlugSuffix(4);
+
+  const maxBaseLen = Math.max(1, 60 - 1 - cleanSuffix.length);
+  const cleanedBase = cleanPamphletSlug(baseSlug)
+    .slice(0, maxBaseLen)
+    .replace(/[-_]+$/g, '');
+
+  if (!cleanedBase) {
+    return `book-${cleanSuffix}`;
+  }
+
+  return `${cleanedBase}-${cleanSuffix}`;
+}
+
 /**
  * Audio synthesis helper using Web Audio API for page flip effect.
  * Produces a soft, realistic paper rustle without requiring external mp3 assets!

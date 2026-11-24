@@ -3,7 +3,11 @@ import { createAdminClient } from '@/utils/supabase/admin';
 import { Pamphlet } from '@/lib/types/pamphlets';
 import { TIER_LIMITS } from '@/lib/constants/subscription-tiers';
 import { getEffectiveTier } from '@/lib/storage/subscription';
-import { cleanPamphletSlug, isValidPamphletSlug } from '@/lib/pamphlets/utils';
+import {
+  appendUniqueSlugSuffix,
+  cleanPamphletSlug,
+  isValidPamphletSlug,
+} from '@/lib/pamphlets/utils';
 import { DEFAULT_PAMPHLET_THEME } from '@/lib/pamphlets/themes';
 
 // Error message when database migration has not been run
@@ -96,6 +100,24 @@ export function isMissingTableError(error: unknown): boolean {
     msg.includes('could not find the table') ||
     msg.includes('does not exist') ||
     details.includes('schema cache')
+  );
+}
+
+/**
+ * Checks whether a Postgres / PostgREST error is a unique constraint violation (23505)
+ */
+export function isUniqueViolationError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const err = error as { code?: string; message?: string; details?: string };
+  const code = String(err.code || '');
+  const msg = String(err.message || '').toLowerCase();
+  const details = String(err.details || '').toLowerCase();
+
+  return (
+    code === '23505' ||
+    msg.includes('duplicate key') ||
+    msg.includes('unique constraint') ||
+    details.includes('already exists')
   );
 }
 
@@ -282,50 +304,88 @@ export async function createPamphlet(payload: {
     }
   }
 
-  // Check slug uniqueness
-  const { data: existingSlug, error: slugErr } = await supabase
-    .from('pamphlets')
-    .select('id')
-    .eq('slug', cleanSlug)
-    .maybeSingle();
+  // Resolve a globally unique slug (using admin client so deactivated/other users' slugs are also seen).
+  // If the requested slug is already taken, automatically append a short unique suffix so multiple
+  // users can freely reuse common titles (e.g. "Annual Sports Day 2026") without getting blocked.
+  const admin = createAdminClient();
+  let finalSlug = cleanSlug;
+  const MAX_SLUG_CHECK_ATTEMPTS = 6;
 
-  if (slugErr && isMissingTableError(slugErr)) {
-    throw new Error(PAMPHLET_TABLE_MISSING_MESSAGE);
+  for (let attempt = 0; attempt < MAX_SLUG_CHECK_ATTEMPTS; attempt++) {
+    const { data: existingSlug, error: slugErr } = await admin
+      .from('pamphlets')
+      .select('id')
+      .eq('slug', finalSlug)
+      .maybeSingle();
+
+    if (slugErr && isMissingTableError(slugErr)) {
+      throw new Error(PAMPHLET_TABLE_MISSING_MESSAGE);
+    }
+
+    if (!existingSlug) {
+      break;
+    }
+
+    finalSlug = appendUniqueSlugSuffix(cleanSlug);
   }
 
-  if (existingSlug) {
-    throw new Error('This link (slug) is already in use. Please choose a different link.');
-  }
+  // Insert with race-condition retry if another request claimed the same slug concurrently
+  const MAX_INSERT_ATTEMPTS = 3;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let createdRow: any = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let lastInsertError: any = null;
 
-  const { data, error } = await supabase
-    .from('pamphlets')
-    .insert({
-      user_id: user.id,
-      slug: cleanSlug,
-      title: payload.title || 'Untitled Program Book',
-      description: payload.description || '',
-      event_date: payload.eventDate || '',
-      location: payload.location || '',
-      cover_image: payload.coverImage || '',
-      pdf_url: payload.pdfUrl || '',
-      theme: payload.theme || DEFAULT_PAMPHLET_THEME,
-      display_mode: payload.displayMode || 'flipbook',
-      pages: payload.pages || [],
-      action_buttons: payload.actionButtons || [],
-      is_active: true,
-      views: 0,
-    })
-    .select()
-    .single();
+  for (let attempt = 0; attempt < MAX_INSERT_ATTEMPTS; attempt++) {
+    const { data, error } = await supabase
+      .from('pamphlets')
+      .insert({
+        user_id: user.id,
+        slug: finalSlug,
+        title: payload.title || 'Untitled Program Book',
+        description: payload.description || '',
+        event_date: payload.eventDate || '',
+        location: payload.location || '',
+        cover_image: payload.coverImage || '',
+        pdf_url: payload.pdfUrl || '',
+        theme: payload.theme || DEFAULT_PAMPHLET_THEME,
+        display_mode: payload.displayMode || 'flipbook',
+        pages: payload.pages || [],
+        action_buttons: payload.actionButtons || [],
+        is_active: true,
+        views: 0,
+      })
+      .select()
+      .single();
 
-  if (error) {
+    if (!error && data) {
+      createdRow = data;
+      lastInsertError = null;
+      break;
+    }
+
+    lastInsertError = error;
+
     if (isMissingTableError(error)) {
       throw new Error(PAMPHLET_TABLE_MISSING_MESSAGE);
     }
-    throw new Error(error.message || 'Failed to save pamphlet.');
+
+    if (isUniqueViolationError(error) && attempt < MAX_INSERT_ATTEMPTS - 1) {
+      finalSlug = appendUniqueSlugSuffix(cleanSlug);
+      continue;
+    }
+
+    break;
   }
 
-  return mapPamphletFromRow(data);
+  if (lastInsertError || !createdRow) {
+    if (isUniqueViolationError(lastInsertError)) {
+      throw new Error('This link (slug) is already in use. Please choose a different link.');
+    }
+    throw new Error(lastInsertError?.message || 'Failed to save pamphlet.');
+  }
+
+  return mapPamphletFromRow(createdRow);
 }
 
 /**
@@ -363,8 +423,9 @@ export async function updatePamphlet(
     if (!isValidPamphletSlug(cleanSlug)) {
       throw new Error('Invalid slug.');
     }
-    // Check slug collision
-    const { data: existing, error: checkSlugErr } = await supabase
+    // Check global slug collision (including deactivated pamphlets owned by other users)
+    const admin = createAdminClient();
+    const { data: existing, error: checkSlugErr } = await admin
       .from('pamphlets')
       .select('id')
       .eq('slug', cleanSlug)
@@ -376,7 +437,7 @@ export async function updatePamphlet(
     }
 
     if (existing) {
-      throw new Error('This link (slug) is already in use.');
+      throw new Error('This link (slug) is already in use. Please choose a different link.');
     }
     rowUpdates.slug = cleanSlug;
   }
@@ -392,6 +453,9 @@ export async function updatePamphlet(
   if (error) {
     if (isMissingTableError(error)) {
       throw new Error(PAMPHLET_TABLE_MISSING_MESSAGE);
+    }
+    if (isUniqueViolationError(error)) {
+      throw new Error('This link (slug) is already in use. Please choose a different link.');
     }
     throw new Error(error.message || 'Failed to update pamphlet.');
   }
